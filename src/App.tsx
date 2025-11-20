@@ -7,9 +7,10 @@ import StreamModeView from './components/StreamModeView';
 import TopBar from './components/TopBar';
 import audioEngine from './audio/AudioEngine';
 import './App.css';
+import type { SongMeta } from '../shared/songTypes';
 
 type View = 'library' | 'lyrics' | 'stream';
-type TrackInfo = { path: string; name: string };
+type TrackInfo = { id: string; path: string; title: string; artist?: string };
 
 function App() {
   const [currentView, setCurrentView] = useState<View>('library');
@@ -37,20 +38,14 @@ function App() {
     };
   }, []);
 
-  const getFileName = (filePath: string) => {
-    const segments = filePath.split(/[/\\]/);
-    return segments[segments.length - 1] || filePath;
-  };
-
-  const handleTrackSelect = async (filePath: string) => {
+  const handleSongSelect = async (song: SongMeta, filePath: string) => {
     try {
       await audioEngine.loadFile(filePath);
-      const name = getFileName(filePath);
-      setCurrentTrack({ path: filePath, name });
+      setCurrentTrack({ id: song.id, path: filePath, title: song.title, artist: song.artist });
       setDuration(audioEngine.getDuration());
       setCurrentTime(0);
       setIsPlaying(false);
-      console.log('[AudioEngine] Loaded file', filePath);
+      console.log('[AudioEngine] Loaded file', song.id, filePath);
     } catch (err) {
       console.error('[AudioEngine] Failed to load file', filePath, err);
     }
@@ -79,13 +74,13 @@ function App() {
   const renderContent = () => {
     switch (currentView) {
       case 'library':
-        return <LibraryView onSelectFile={handleTrackSelect} selectedTrackName={currentTrack?.name} />;
+        return <LibraryView onSongSelect={handleSongSelect} selectedSongId={currentTrack?.id} />;
       case 'lyrics':
         return <LyricEditorView />;
       case 'stream':
         return <StreamModeView />;
       default:
-        return <LibraryView onSelectFile={handleTrackSelect} selectedTrackName={currentTrack?.name} />;
+        return <LibraryView onSongSelect={handleSongSelect} selectedSongId={currentTrack?.id} />;
     }
   };
 
@@ -115,7 +110,13 @@ function App() {
         currentTime={currentTime}
         duration={duration}
         isPlaying={isPlaying}
-        currentTrackName={currentTrack?.name}
+        currentTrackName={
+          currentTrack
+            ? currentTrack.artist
+              ? `${currentTrack.title} – ${currentTrack.artist}`
+              : currentTrack.title
+            : undefined
+        }
       />
     </div>
   );

@@ -23,3 +23,14 @@ electron.contextBridge.exposeInMainWorld("ipcRenderer", {
 electron.contextBridge.exposeInMainWorld("api", {
   openAudioFileDialog: () => electron.ipcRenderer.invoke("dialog:open-audio-file")
 });
+electron.contextBridge.exposeInMainWorld("khelper", {
+  dialogs: {
+    pickAudioFile: () => electron.ipcRenderer.invoke("dialog:open-audio-file")
+  },
+  songLibrary: {
+    addLocalSong: (payload) => electron.ipcRenderer.invoke("library:add-local-song", payload),
+    loadAllSongs: () => electron.ipcRenderer.invoke("library:load-all"),
+    getSongFilePath: (id) => electron.ipcRenderer.invoke("library:get-song-file-path", id),
+    getBasePath: () => electron.ipcRenderer.invoke("library:get-base-path")
+  }
+});
