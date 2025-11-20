@@ -1,12 +1,16 @@
 import { app } from 'electron';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { AudioStatus, SongMeta, SongType } from '../shared/songTypes';
+import type { AudioStatus, LyricsStatus, SongMeta, SongType } from '../shared/songTypes';
 
 const APP_FOLDER_NAME = 'KHelperLive';
 const SONGS_FOLDER_NAME = 'songs';
 const AUDIO_STATUS_VALUES: AudioStatus[] = ['original_only', 'separation_pending', 'separating', 'separation_failed', 'separated'];
 const DEFAULT_AUDIO_STATUS: AudioStatus = 'original_only';
+const LYRICS_STATUS_VALUES: LyricsStatus[] = ['none', 'text_only', 'synced'];
+const DEFAULT_LYRICS_STATUS: LyricsStatus = 'none';
+export const RAW_LYRICS_FILENAME = 'lyrics_raw.txt';
+export const SYNCED_LYRICS_FILENAME = 'lyrics_synced.lrc';
 
 function getAppDataRoot() {
   const userData = app.getPath('userData');
@@ -17,7 +21,7 @@ function getSongsDir() {
   return path.join(getAppDataRoot(), SONGS_FOLDER_NAME);
 }
 
-function getSongDirById(id: string) {
+export function getSongDirById(id: string) {
   return path.join(getSongsDir(), id);
 }
 
@@ -27,7 +31,7 @@ async function ensureSongsDir() {
   return base;
 }
 
-function normalizeAudioStatus(status: AudioStatus | undefined, type?: SongType): AudioStatus {
+function normalizeAudioStatus(status: AudioStatus | undefined): AudioStatus {
   if (status && AUDIO_STATUS_VALUES.includes(status as AudioStatus)) {
     return status;
   }
@@ -35,18 +39,34 @@ function normalizeAudioStatus(status: AudioStatus | undefined, type?: SongType):
   if (status === 'ready' || status === 'missing' || status === 'error') {
     return DEFAULT_AUDIO_STATUS;
   }
-  if (type === '伴奏') {
-    return DEFAULT_AUDIO_STATUS;
-  }
   return DEFAULT_AUDIO_STATUS;
+}
+
+function normalizeLyricsStatus(status: LyricsStatus | 'ready' | 'missing' | undefined | null): LyricsStatus {
+  if (status && LYRICS_STATUS_VALUES.includes(status)) {
+    return status;
+  }
+  if (status === 'ready') return 'synced';
+  if (status === 'missing') return 'none';
+  return DEFAULT_LYRICS_STATUS;
+}
+
+function getOriginalFilename(meta: SongMeta) {
+  return meta.stored_filename || `Original${path.extname(meta.source.originalPath) || '.mp3'}`;
+}
+
+function getOriginalPath(meta: SongMeta, songDir: string) {
+  return path.join(songDir, getOriginalFilename(meta));
 }
 
 function normalizeMeta(meta: SongMeta): SongMeta {
   const normalized: SongMeta = {
     ...meta,
-    audio_status: normalizeAudioStatus(meta.audio_status, meta.type),
-    lyrics_status: meta.lyrics_status ?? 'none',
-    stored_filename: meta.stored_filename ?? `Original${path.extname(meta.source.originalPath) || '.mp3'}`,
+    audio_status: normalizeAudioStatus(meta.audio_status),
+    lyrics_status: normalizeLyricsStatus(meta.lyrics_status),
+    stored_filename: getOriginalFilename(meta),
+    lyrics_raw_path: meta.lyrics_raw_path ?? undefined,
+    lyrics_lrc_path: meta.lyrics_lrc_path ?? undefined,
     instrumental_path: meta.instrumental_path ?? undefined,
     vocal_path: meta.vocal_path ?? undefined,
     last_separation_error: meta.last_separation_error ?? null,
@@ -78,8 +98,9 @@ export async function addLocalSong(params: {
   title: string;
   artist?: string;
   type: SongType;
+  lyricsText?: string;
 }): Promise<SongMeta> {
-  const { sourcePath, title, artist, type } = params;
+  const { sourcePath, title, artist, type, lyricsText } = params;
   if (!sourcePath || !title) {
     throw new Error('sourcePath and title are required');
   }
@@ -96,6 +117,13 @@ export async function addLocalSong(params: {
   console.log('[Library] Adding song', { sourcePath, songDir, id });
   await fs.copyFile(sourcePath, targetPath);
 
+  const rawLyrics = (lyricsText ?? '').replace(/\r\n/g, '\n');
+  const hasLyrics = rawLyrics.trim().length > 0;
+  const lyricsRawPath = hasLyrics ? path.join(songDir, RAW_LYRICS_FILENAME) : undefined;
+  if (hasLyrics && lyricsRawPath) {
+    await fs.writeFile(lyricsRawPath, rawLyrics, 'utf-8');
+  }
+
   const now = new Date().toISOString();
   const meta: SongMeta = {
     id,
@@ -103,7 +131,9 @@ export async function addLocalSong(params: {
     artist: artist?.trim() || undefined,
     type,
     audio_status: DEFAULT_AUDIO_STATUS,
-    lyrics_status: 'none',
+    lyrics_status: hasLyrics ? 'text_only' : DEFAULT_LYRICS_STATUS,
+    lyrics_raw_path: lyricsRawPath,
+    lyrics_lrc_path: undefined,
     source: {
       kind: 'file',
       originalPath: sourcePath,
@@ -178,7 +208,7 @@ export async function getSongFilePath(id: string): Promise<string | null> {
   if (meta.audio_status === 'separated' && meta.instrumental_path) {
     candidates.push(meta.instrumental_path);
   }
-  candidates.push(path.join(songDir, meta.stored_filename || `Original${path.extname(meta.source.originalPath)}`));
+  candidates.push(getOriginalPath(meta, songDir));
 
   for (const candidate of candidates) {
     try {
@@ -195,6 +225,23 @@ export async function getSongFilePath(id: string): Promise<string | null> {
 
   console.warn('[Library] Stored audio file missing', { id, candidates });
   return null;
+}
+
+export async function getOriginalSongFilePath(id: string): Promise<string | null> {
+  if (!id) return null;
+  const songsDir = await ensureSongsDir();
+  const songDir = path.join(songsDir, id);
+  const meta = await readMeta(songDir);
+  if (!meta) return null;
+
+  const originalPath = getOriginalPath(meta, songDir);
+  try {
+    await fs.access(originalPath);
+    return originalPath;
+  } catch {
+    console.warn('[Library] Original audio file missing', { id, originalPath });
+    return null;
+  }
 }
 
 export function getSongsBaseDir() {

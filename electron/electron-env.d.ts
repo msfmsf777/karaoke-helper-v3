@@ -37,9 +37,11 @@ interface Window {
         title: string
         artist?: string
         type: import('../shared/songTypes').SongType
+        lyricsText?: string
       }) => Promise<import('../shared/songTypes').SongMeta>
       loadAllSongs: () => Promise<import('../shared/songTypes').SongMeta[]>
       getSongFilePath: (id: string) => Promise<string | null>
+      getOriginalSongFilePath: (id: string) => Promise<string | null>
       getBasePath: () => Promise<string>
     }
     jobs: {
@@ -48,6 +50,18 @@ interface Window {
       subscribeJobUpdates: (
         callback: (jobs: import('../shared/separationTypes').SeparationJob[]) => void
       ) => () => void
+    }
+    lyrics: {
+      readRawLyrics: (songId: string) => Promise<{ path: string; content: string } | null>
+      readSyncedLyrics: (songId: string) => Promise<{ path: string; content: string } | null>
+      writeRawLyrics: (payload: { songId: string; content: string }) => Promise<{
+        path: string
+        meta: import('../shared/songTypes').SongMeta
+      }>
+      writeSyncedLyrics: (payload: { songId: string; content: string }) => Promise<{
+        path: string
+        meta: import('../shared/songTypes').SongMeta
+      }>
     }
   }
 }

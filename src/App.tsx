@@ -27,6 +27,7 @@ function App() {
     streamDeviceId: null as string | null,
     headphoneDeviceId: null as string | null,
   });
+  const [lyricsEditorSongId, setLyricsEditorSongId] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribeTime = audioEngine.onTimeUpdate((time) => {
@@ -111,9 +112,30 @@ function App() {
   const renderContent = () => {
     switch (currentView) {
       case 'library':
-        return <LibraryView onSongSelect={handleSongSelect} selectedSongId={currentTrack?.id} />;
+        return (
+          <LibraryView
+            onSongSelect={handleSongSelect}
+            selectedSongId={currentTrack?.id}
+            onOpenLyrics={(song) => {
+              setLyricsEditorSongId(song.id);
+              setCurrentView('lyrics');
+            }}
+          />
+        );
       case 'lyrics':
-        return <LyricEditorView />;
+        return (
+          <LyricEditorView
+            onSongLoad={handleSongSelect}
+            activeSongId={currentTrack?.id}
+            initialSongId={lyricsEditorSongId}
+            onSongSelectedChange={(songId) => setLyricsEditorSongId(songId)}
+            isPlaying={isPlaying}
+            currentTime={currentTime}
+            duration={duration}
+            onPlayPause={handlePlayPause}
+            onSeek={handleSeek}
+          />
+        );
       case 'stream':
         return <StreamModeView />;
       default:

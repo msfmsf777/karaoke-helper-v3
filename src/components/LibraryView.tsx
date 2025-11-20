@@ -5,6 +5,7 @@ import { queueSeparationJob, subscribeJobUpdates } from '../jobs/separationJobs'
 interface LibraryViewProps {
   onSongSelect: (song: SongMeta, filePath: string) => Promise<void>;
   selectedSongId?: string;
+  onOpenLyrics?: (song: SongMeta) => void;
 }
 
 interface AddSongFormState {
@@ -12,30 +13,40 @@ interface AddSongFormState {
   title: string;
   artist: string;
   type: SongType;
+  lyricsMode: 'none' | 'paste';
+  lyricsText: string;
 }
 
 const defaultForm: AddSongFormState = {
   sourcePath: '',
   title: '',
   artist: '',
-  type: '伴奏',
+  type: '原曲',
+  lyricsMode: 'none',
+  lyricsText: '',
 };
 
 const audioStatusLabels: Record<SongMeta['audio_status'], string> = {
   original_only: '未分離',
-  separation_pending: '已排程',
-  separating: '處理中',
-  separation_failed: '失敗',
-  separated: '已完成',
+  separation_pending: '等待分離',
+  separating: '分離中',
+  separation_failed: '分離失敗',
+  separated: '已分離',
   ready: '未分離',
   missing: '未分離',
-  error: '失敗',
+  error: '錯誤',
 };
 
-const lyricsLabels: Record<SongMeta['lyrics_status'], string> = {
-  none: '無',
-  ready: '已完成',
-  missing: '遺失',
+const lyricsLabel = (status?: SongMeta['lyrics_status']) => {
+  switch (status) {
+    case 'text_only':
+      return '純文字';
+    case 'synced':
+      return '已對齊';
+    case 'none':
+    default:
+      return '無';
+  }
 };
 
 const AddSongDialog: React.FC<{
@@ -61,7 +72,7 @@ const AddSongDialog: React.FC<{
     >
       <div
         style={{
-          width: '520px',
+          width: '540px',
           background: '#1f1f1f',
           border: '1px solid #2f2f2f',
           borderRadius: '12px',
@@ -70,9 +81,9 @@ const AddSongDialog: React.FC<{
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ margin: 0, marginBottom: '12px', fontSize: '20px', color: '#fff' }}>新增歌曲</h2>
+        <h2 style={{ margin: 0, marginBottom: '12px', fontSize: '20px', color: '#fff' }}>＋ 新增歌曲</h2>
         <p style={{ margin: '0 0 16px', color: '#b3b3b3', fontSize: '14px' }}>
-          選擇檔案、填寫標題與類型，歌曲會被拷貝到應用程式資料夾並加入歌曲庫。
+          選擇音訊檔（mp3/wav/flac…），填寫基本資訊，必要時可直接貼上歌詞文字。
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -102,7 +113,7 @@ const AddSongDialog: React.FC<{
               選擇音訊檔
             </button>
             <div style={{ color: form.sourcePath ? '#fff' : '#777', fontSize: '14px', flex: 1 }}>
-              {form.sourcePath || '尚未選擇，支援 mp3 / wav / flac'}
+              {form.sourcePath || '尚未選擇檔案（支援 mp3 / wav / flac）'}
             </div>
           </div>
 
@@ -112,7 +123,7 @@ const AddSongDialog: React.FC<{
                 類型
               </label>
               <div style={{ display: 'flex', gap: '12px' }}>
-                {(['伴奏', '原曲'] as SongType[]).map((type) => (
+                {(['原曲', '伴奏'] as SongType[]).map((type) => (
                   <label
                     key={type}
                     style={{
@@ -148,7 +159,7 @@ const AddSongDialog: React.FC<{
               type="text"
               value={form.title}
               onChange={(e) => onChange({ title: e.target.value })}
-              placeholder="歌曲標題"
+              placeholder="輸入歌曲名稱"
               style={{
                 width: '100%',
                 padding: '10px 12px',
@@ -162,13 +173,13 @@ const AddSongDialog: React.FC<{
 
           <div>
             <label style={{ display: 'block', marginBottom: '6px', color: '#b3b3b3', fontSize: '13px' }}>
-              歌手 / 團體 <span style={{ color: '#888', fontSize: '12px' }}>(選填)</span>
+              歌手 / 團名 <span style={{ color: '#888', fontSize: '12px' }}>(選填)</span>
             </label>
             <input
               type="text"
               value={form.artist}
               onChange={(e) => onChange({ artist: e.target.value })}
-              placeholder="歌手名稱"
+              placeholder="輸入歌手 / 團名"
               style={{
                 width: '100%',
                 padding: '10px 12px',
@@ -178,6 +189,58 @@ const AddSongDialog: React.FC<{
                 borderRadius: '8px',
               }}
             />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '6px', color: '#b3b3b3', fontSize: '13px' }}>
+              歌詞
+            </label>
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '8px' }}>
+              {([
+                { value: 'none', label: '無歌詞' },
+                { value: 'paste', label: '貼上歌詞' },
+              ] as const).map((option) => (
+                <label
+                  key={option.value}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 12px',
+                    background: form.lyricsMode === option.value ? '#2f2f2f' : '#252525',
+                    border: '1px solid #333',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="lyrics-mode"
+                    value={option.value}
+                    checked={form.lyricsMode === option.value}
+                    onChange={() => onChange({ lyricsMode: option.value })}
+                  />
+                  <span style={{ color: '#fff', fontSize: '13px' }}>{option.label}</span>
+                </label>
+              ))}
+            </div>
+            {form.lyricsMode === 'paste' && (
+              <textarea
+                value={form.lyricsText}
+                onChange={(e) => onChange({ lyricsText: e.target.value })}
+                placeholder="一行一行貼上歌詞文字"
+                rows={6}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  background: '#252525',
+                  color: '#fff',
+                  border: '1px solid #3a3a3a',
+                  borderRadius: '8px',
+                  resize: 'vertical',
+                }}
+              />
+            )}
           </div>
         </div>
 
@@ -221,7 +284,7 @@ const AddSongDialog: React.FC<{
   );
 };
 
-const LibraryView: React.FC<LibraryViewProps> = ({ onSongSelect, selectedSongId }) => {
+const LibraryView: React.FC<LibraryViewProps> = ({ onSongSelect, selectedSongId, onOpenLyrics }) => {
   const [songs, setSongs] = useState<SongMeta[]>([]);
   const [loading, setLoading] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -262,11 +325,11 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onSongSelect, selectedSongId 
   const handleAddConfirm = async () => {
     setFormError(null);
     if (!formState.sourcePath) {
-      setFormError('請先選擇音訊檔案');
+      setFormError('請先選擇音訊檔');
       return;
     }
     if (!formState.title.trim()) {
-      setFormError('請填寫歌曲名稱');
+      setFormError('請輸入歌曲名稱');
       return;
     }
 
@@ -277,6 +340,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onSongSelect, selectedSongId 
         title: formState.title.trim(),
         artist: formState.artist.trim(),
         type: formState.type,
+        lyricsText: formState.lyricsMode === 'paste' ? formState.lyricsText : undefined,
       });
       setSongs((prev) => [meta, ...prev.filter((s) => s.id !== meta.id)]);
       setShowAddDialog(false);
@@ -284,7 +348,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onSongSelect, selectedSongId 
       setFormError(null);
     } catch (err) {
       console.error('[Library] Failed to add song', err);
-      setFormError('新增歌曲失敗，請檢查檔案路徑或檔案權限。');
+      setFormError('新增歌曲失敗，請確認檔案路徑與權限。');
     } finally {
       setIsAdding(false);
     }
@@ -350,7 +414,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onSongSelect, selectedSongId 
       </div>
 
       <div style={{ color: '#b3b3b3', marginBottom: '12px', fontSize: '14px' }}>
-        點擊歌曲即可播放。原曲支援「開始分離」，處理狀態會即時更新。
+        支援原曲與伴奏，原曲可排入分離任務；點擊列可以直接載入播放器。
       </div>
 
       <div
@@ -364,7 +428,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onSongSelect, selectedSongId 
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '40px 3fr 2fr 1fr 1.2fr 1fr 1fr',
+            gridTemplateColumns: '40px 3fr 2fr 1fr 1.2fr 1fr 1.2fr',
             padding: '12px 16px',
             borderBottom: '1px solid #252525',
             color: '#b3b3b3',
@@ -385,16 +449,14 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onSongSelect, selectedSongId 
           <div style={{ padding: '20px', color: '#b3b3b3' }}>載入中...</div>
         ) : currentSongs.length === 0 ? (
           <div style={{ padding: '20px', color: '#b3b3b3' }}>
-            尚未加入任何歌曲，點擊右上方「新增歌曲」開始建立你的歌單。
+            尚未有歌曲，點右上角「＋ 新增歌曲」開始建立你的歌單。
           </div>
         ) : (
           currentSongs.map((song, idx) => {
             const isActive = currentSelection === song.id;
             const canStartSeparation =
               song.type === '原曲' &&
-              (song.audio_status === 'original_only' ||
-                song.audio_status === 'separation_failed' ||
-                song.audio_status === 'ready');
+              (song.audio_status === 'original_only' || song.audio_status === 'separation_failed' || song.audio_status === 'ready');
             const isWorking =
               song.audio_status === 'separation_pending' || song.audio_status === 'separating' || separationBusyId === song.id;
             const audioColor =
@@ -409,7 +471,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onSongSelect, selectedSongId 
                 key={song.id}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '40px 3fr 2fr 1fr 1.2fr 1fr 1fr',
+                  gridTemplateColumns: '40px 3fr 2fr 1fr 1.2fr 1fr 1.2fr',
                   padding: '12px 16px',
                   borderBottom: '1px solid #252525',
                   color: '#fff',
@@ -428,13 +490,13 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onSongSelect, selectedSongId 
                 <div style={{ color: '#b3b3b3' }}>{song.type}</div>
                 <div style={{ color: audioColor }} title={song.last_separation_error || undefined}>
                   {audioStatusLabels[song.audio_status]}
-                  {song.audio_status === 'separating' && <span style={{ marginLeft: 6, fontSize: '12px' }}>⏳</span>}
+                  {song.audio_status === 'separating' && <span style={{ marginLeft: 6, fontSize: '12px' }}>⋯</span>}
                   {song.audio_status === 'separation_failed' && song.last_separation_error && (
                     <span style={{ marginLeft: 6, color: '#ffb3b3', fontSize: '12px' }}>查看錯誤</span>
                   )}
                 </div>
-                <div style={{ color: '#b3b3b3' }}>{lyricsLabels[song.lyrics_status]}</div>
-                <div>
+                <div style={{ color: '#b3b3b3' }}>{lyricsLabel(song.lyrics_status)}</div>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   {song.type === '原曲' ? (
                     canStartSeparation ? (
                       <button
@@ -453,16 +515,33 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onSongSelect, selectedSongId 
                           fontWeight: 700,
                         }}
                       >
-                        {song.audio_status === 'separation_failed' ? '重新分離' : '開始分離'}
+                        {song.audio_status === 'separation_failed' ? '重新分離' : '分離伴奏'}
                       </button>
                     ) : song.audio_status === 'separated' ? (
-                      <span style={{ color: '#8be28b' }}>完成</span>
+                      <span style={{ color: '#8be28b' }}>已分離</span>
                     ) : (
                       <span style={{ color: '#b3b3b3' }}>{audioStatusLabels[song.audio_status]}</span>
                     )
                   ) : (
                     <span style={{ color: '#555' }}>—</span>
                   )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenLyrics?.(song);
+                    }}
+                    style={{
+                      padding: '6px 10px',
+                      backgroundColor: '#2d2d2d',
+                      color: '#fff',
+                      border: '1px solid #3a3a3a',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                    }}
+                  >
+                    歌詞對齊
+                  </button>
                 </div>
               </div>
             );

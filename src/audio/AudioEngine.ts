@@ -14,6 +14,8 @@ export interface AudioEngine {
   enumerateOutputDevices(): Promise<MediaDeviceInfo[]>;
   setOutputDevice(role: OutputRole, deviceId: string | null): Promise<void>;
   setOutputVolume(role: OutputRole, volume: number): void;
+  setPlaybackRate(rate: number): void;
+  getPlaybackRate(): number;
 }
 
 type SinkableAudioElement = HTMLAudioElement & { setSinkId?: (sinkId: string) => Promise<void> };
@@ -41,6 +43,7 @@ class HtmlAudioEngine implements AudioEngine {
   private endedSubscribers = new Set<() => void>();
   private currentFilePath: string | null = null;
   private sinkWarningLogged = false;
+  private playbackRate = 1;
 
   constructor() {
     this.source = new Audio();
@@ -166,6 +169,7 @@ class HtmlAudioEngine implements AudioEngine {
       this.source.addEventListener('error', handleError as EventListener);
 
       this.source.src = source;
+      this.source.playbackRate = this.playbackRate;
       this.source.load();
     });
   }
@@ -282,6 +286,17 @@ class HtmlAudioEngine implements AudioEngine {
     output.volume = clamped;
     output.element.volume = clamped;
     console.log(`[AudioEngine] Set ${role} output volume`, clamped);
+  }
+
+  setPlaybackRate(rate: number): void {
+    const clamped = Math.max(0.5, Math.min(rate, 2));
+    this.playbackRate = clamped;
+    this.source.playbackRate = clamped;
+    console.log('[AudioEngine] Set playback rate', clamped);
+  }
+
+  getPlaybackRate(): number {
+    return this.playbackRate;
   }
 }
 

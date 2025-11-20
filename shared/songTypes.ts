@@ -11,7 +11,7 @@ export type AudioStatus =
   | 'missing'
   | 'error';
 
-export type LyricsStatus = 'none' | 'ready' | 'missing';
+export type LyricsStatus = 'none' | 'text_only' | 'synced';
 
 export interface SongSourceFile {
   kind: 'file';
@@ -24,7 +24,9 @@ export interface SongMeta {
   artist?: string;
   type: SongType;
   audio_status: AudioStatus;
-  lyrics_status: LyricsStatus;
+  lyrics_status?: LyricsStatus;
+  lyrics_raw_path?: string;
+  lyrics_lrc_path?: string;
   source: SongSourceFile;
   stored_filename: string;
   instrumental_path?: string;
