@@ -2,22 +2,19 @@ import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
-
+import { addLocalSong, getSongFilePath, getSongsBaseDir, loadAllSongs } from './songLibrary'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-// The built directory structure
-//
-// ├─┬─┬ dist
-// │ │ └── index.html
-// │ │
-// │ ├─┬ dist-electron
-// │ │ ├── main.js
-// │ │ └── preload.mjs
-// │
+// The built directory structure (electron-vite output)
+// /dist              -> renderer build
+// /dist/index.html   -> renderer entry
+// /dist-electron     -> main/preload build outputs
+// /dist-electron/main.js
+// /dist-electron/preload.mjs
 process.env.APP_ROOT = path.join(__dirname, '..')
 
-// 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
+// Use ['ENV_NAME'] to avoid vite:define plugin rewriting during build.
 export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
 export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron')
 export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
@@ -36,7 +33,6 @@ function createWindow() {
     },
   })
 
-  // Test active push message to Renderer-process.
   win.webContents.on('did-finish-load', () => {
     win?.webContents.send('main-process-message', (new Date).toLocaleString())
   })
@@ -44,7 +40,6 @@ function createWindow() {
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL)
   } else {
-    // win.loadFile('dist/index.html')
     win.loadFile(path.join(RENDERER_DIST, 'index.html'))
   }
 }
@@ -60,8 +55,6 @@ app.on('window-all-closed', () => {
 })
 
 app.on('activate', () => {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow()
   }
@@ -84,4 +77,25 @@ ipcMain.handle('dialog:open-audio-file', async () => {
   return filePaths[0]
 })
 
-app.whenReady().then(createWindow)
+ipcMain.handle('library:add-local-song', async (_event, payload) => {
+  return addLocalSong(payload)
+})
+
+ipcMain.handle('library:load-all', async () => {
+  const songs = await loadAllSongs()
+  return songs
+})
+
+ipcMain.handle('library:get-song-file-path', async (_event, id: string) => {
+  return getSongFilePath(id)
+})
+
+ipcMain.handle('library:get-base-path', async () => {
+  return getSongsBaseDir()
+})
+
+app.whenReady().then(() => {
+  console.log('[App] userData path:', app.getPath('userData'))
+  console.log('[Library] base songs dir:', getSongsBaseDir())
+  createWindow()
+})

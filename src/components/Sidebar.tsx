@@ -13,13 +13,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
     cursor: 'pointer',
     backgroundColor: isActive ? '#282828' : 'transparent',
     color: isActive ? '#fff' : '#b3b3b3',
-    borderRadius: '4px',
-    marginBottom: '4px',
+    borderRadius: '6px',
+    marginBottom: '6px',
     display: 'flex',
     alignItems: 'center',
     transition: 'background-color 0.2s',
     fontSize: '14px',
-    fontWeight: isActive ? 600 : 400,
+    fontWeight: isActive ? 700 : 500,
   });
 
   const sectionTitleStyle = {
@@ -28,22 +28,22 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
     fontSize: '12px',
     fontWeight: 600,
     textTransform: 'uppercase' as const,
+    letterSpacing: '0.8px',
   };
 
   return (
-    <div style={{
-      width: '240px',
-      height: '100%',
-      backgroundColor: 'var(--bg-sidebar)',
-      display: 'flex',
-      flexDirection: 'column',
-      borderRight: '1px solid var(--border-color)',
-    }}>
-      {/* Logo moved to TopBar */}
-
-
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0 8px' }}>
-        <div style={sectionTitleStyle}>視圖</div>
+    <div
+      style={{
+        width: '240px',
+        height: '100%',
+        backgroundColor: 'var(--bg-sidebar)',
+        display: 'flex',
+        flexDirection: 'column',
+        borderRight: '1px solid var(--border-color)',
+      }}
+    >
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 10px' }}>
+        <div style={sectionTitleStyle}>主功能</div>
         <div style={navItemStyle(currentView === 'library')} onClick={() => onViewChange('library')}>
           歌曲庫
         </div>
@@ -53,14 +53,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
 
         <div style={{ height: '1px', backgroundColor: '#282828', margin: '16px 8px' }}></div>
 
-        <div style={sectionTitleStyle}>資料庫</div>
+        <div style={sectionTitleStyle}>播放清單</div>
         <div style={navItemStyle(false)}>最近播放</div>
         <div style={navItemStyle(false)}>當前歌單</div>
-        <div style={navItemStyle(false)}>日文歌單</div>
-        <div style={navItemStyle(false)}>中文歌單</div>
+        <div style={navItemStyle(false)}>收藏清單</div>
+        <div style={navItemStyle(false)}>歷史記錄</div>
       </div>
-
-
     </div>
   );
 };
