@@ -2,15 +2,16 @@ import React from 'react';
 
 interface TopBarProps {
   onOpenSettings?: () => void;
+  onOpenProcessing?: () => void;
 }
 
-const TopBar: React.FC<TopBarProps> = ({ onOpenSettings }) => {
+const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing }) => {
   const buttonStyle = {
     backgroundColor: '#282828',
     color: '#fff',
     border: '1px solid #3e3e3e',
-    borderRadius: '4px',
-    padding: '6px 12px',
+    borderRadius: '6px',
+    padding: '8px 12px',
     fontSize: '13px',
     cursor: 'pointer',
     marginLeft: '8px',
@@ -72,8 +73,9 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings }) => {
 
       {/* Right: Actions */}
       <div style={{ display: 'flex', alignItems: 'center' }}>
-        <button style={buttonStyle}>新增歌曲</button>
-        <button style={buttonStyle}>匯入歌詞</button>
+        <button style={buttonStyle} onClick={onOpenProcessing}>
+          處理中任務
+        </button>
         <button style={buttonStyle} onClick={onOpenSettings}>
           設定
         </button>

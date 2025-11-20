@@ -42,5 +42,12 @@ interface Window {
       getSongFilePath: (id: string) => Promise<string | null>
       getBasePath: () => Promise<string>
     }
+    jobs: {
+      queueSeparationJob: (songId: string) => Promise<import('../shared/separationTypes').SeparationJob>
+      getAllJobs: () => Promise<import('../shared/separationTypes').SeparationJob[]>
+      subscribeJobUpdates: (
+        callback: (jobs: import('../shared/separationTypes').SeparationJob[]) => void
+      ) => () => void
+    }
   }
 }

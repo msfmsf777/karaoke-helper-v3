@@ -1,5 +1,6 @@
 import { ipcRenderer, contextBridge } from 'electron'
 import type { SongMeta, SongType } from '../shared/songTypes'
+import type { SeparationJob } from '../shared/separationTypes'
 
 // --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld('ipcRenderer', {
@@ -38,5 +39,20 @@ contextBridge.exposeInMainWorld('khelper', {
     loadAllSongs: (): Promise<SongMeta[]> => ipcRenderer.invoke('library:load-all'),
     getSongFilePath: (id: string): Promise<string | null> => ipcRenderer.invoke('library:get-song-file-path', id),
     getBasePath: (): Promise<string> => ipcRenderer.invoke('library:get-base-path'),
+  },
+  jobs: {
+    queueSeparationJob: (songId: string): Promise<SeparationJob> =>
+      ipcRenderer.invoke('jobs:queue-separation', songId),
+    getAllJobs: (): Promise<SeparationJob[]> => ipcRenderer.invoke('jobs:get-all'),
+    subscribeJobUpdates: (callback: (jobs: SeparationJob[]) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, jobs: SeparationJob[]) => callback(jobs)
+      const subscriptionId = `jobs-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`
+      ipcRenderer.send('jobs:subscribe', subscriptionId)
+      ipcRenderer.on('jobs:updated', listener)
+      return () => {
+        ipcRenderer.send('jobs:unsubscribe', subscriptionId)
+        ipcRenderer.off('jobs:updated', listener)
+      }
+    },
   },
 })
