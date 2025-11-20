@@ -159,3 +159,41 @@ app.whenReady().then(() => {
   console.log('[Library] base songs dir:', getSongsBaseDir())
   createWindow()
 })
+
+let overlayWindow: BrowserWindow | null = null
+
+ipcMain.on('window:open-overlay', () => {
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.focus()
+    return
+  }
+
+  overlayWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    transparent: true,
+    frame: false,
+    alwaysOnTop: true,
+    hasShadow: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.mjs'),
+      webSecurity: false,
+    },
+  })
+
+  if (VITE_DEV_SERVER_URL) {
+    overlayWindow.loadURL(`${VITE_DEV_SERVER_URL}#/overlay`)
+  } else {
+    overlayWindow.loadFile(path.join(RENDERER_DIST, 'index.html'), { hash: 'overlay' })
+  }
+
+  overlayWindow.on('closed', () => {
+    overlayWindow = null
+  })
+})
+
+ipcMain.on('overlay:update', (_event, payload) => {
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.webContents.send('overlay:update', payload)
+  }
+})

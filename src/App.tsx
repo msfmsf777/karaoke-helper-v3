@@ -61,6 +61,17 @@ function App() {
     });
   }, []);
 
+  // Send updates to overlay window
+  useEffect(() => {
+    if (currentTrack) {
+      window.api.sendOverlayUpdate({
+        songId: currentTrack.id,
+        currentTime,
+        isPlaying,
+      });
+    }
+  }, [currentTrack, currentTime, isPlaying]);
+
   const handleSongSelect = async (song: SongMeta, filePath: string) => {
     try {
       await audioEngine.loadFile(filePath);
@@ -137,7 +148,15 @@ function App() {
           />
         );
       case 'stream':
-        return <StreamModeView />;
+        return (
+          <StreamModeView
+            currentTrack={currentTrack}
+            currentTime={currentTime}
+            isPlaying={isPlaying}
+            onExit={() => setCurrentView('library')}
+            onOpenOverlayWindow={() => window.api.openOverlayWindow()}
+          />
+        );
       default:
         return <LibraryView onSongSelect={handleSongSelect} selectedSongId={currentTrack?.id} />;
     }

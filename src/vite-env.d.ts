@@ -4,6 +4,9 @@ interface Window {
   ipcRenderer: import('electron').IpcRenderer;
   api: {
     openAudioFileDialog: () => Promise<string | null>;
+    openOverlayWindow: () => void;
+    sendOverlayUpdate: (payload: { songId: string; currentTime: number; isPlaying: boolean }) => void;
+    subscribeOverlayUpdates: (callback: (payload: { songId: string; currentTime: number; isPlaying: boolean }) => void) => () => void;
   };
   khelper?: {
     dialogs: {

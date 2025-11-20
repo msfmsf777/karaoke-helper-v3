@@ -21,7 +21,14 @@ electron.contextBridge.exposeInMainWorld("ipcRenderer", {
   // ...
 });
 electron.contextBridge.exposeInMainWorld("api", {
-  openAudioFileDialog: () => electron.ipcRenderer.invoke("dialog:open-audio-file")
+  openAudioFileDialog: () => electron.ipcRenderer.invoke("dialog:open-audio-file"),
+  openOverlayWindow: () => electron.ipcRenderer.send("window:open-overlay"),
+  sendOverlayUpdate: (payload) => electron.ipcRenderer.send("overlay:update", payload),
+  subscribeOverlayUpdates: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    electron.ipcRenderer.on("overlay:update", listener);
+    return () => electron.ipcRenderer.off("overlay:update", listener);
+  }
 });
 electron.contextBridge.exposeInMainWorld("khelper", {
   dialogs: {
