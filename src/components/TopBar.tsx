@@ -1,6 +1,10 @@
 import React from 'react';
 
-const TopBar: React.FC = () => {
+interface TopBarProps {
+  onOpenSettings?: () => void;
+}
+
+const TopBar: React.FC<TopBarProps> = ({ onOpenSettings }) => {
   const buttonStyle = {
     backgroundColor: '#282828',
     color: '#fff',
@@ -52,7 +56,7 @@ const TopBar: React.FC = () => {
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', paddingLeft: '16px' }}>
         <input
           type="text"
-          placeholder="搜尋歌曲或歌手（目前僅外觀）"
+          placeholder="搜尋歌曲 / 歌手"
           style={{
             backgroundColor: '#282828',
             border: '1px solid #3e3e3e',
@@ -68,9 +72,11 @@ const TopBar: React.FC = () => {
 
       {/* Right: Actions */}
       <div style={{ display: 'flex', alignItems: 'center' }}>
-        <button style={buttonStyle}>匯入書籤</button>
-        <button style={buttonStyle}>建立播放清單</button>
-        <button style={buttonStyle}>設定</button>
+        <button style={buttonStyle}>新增歌曲</button>
+        <button style={buttonStyle}>匯入歌詞</button>
+        <button style={buttonStyle} onClick={onOpenSettings}>
+          設定
+        </button>
       </div>
     </div>
   );

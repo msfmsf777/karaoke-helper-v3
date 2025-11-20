@@ -5,7 +5,9 @@ import LibraryView from './components/LibraryView';
 import LyricEditorView from './components/LyricEditorView';
 import StreamModeView from './components/StreamModeView';
 import TopBar from './components/TopBar';
-import audioEngine from './audio/AudioEngine';
+import SettingsModal from './components/SettingsModal';
+import audioEngine, { OutputRole } from './audio/AudioEngine';
+import { loadOutputDevicePreferences, saveOutputDevicePreferences } from './settings/devicePreferences';
 import './App.css';
 import type { SongMeta } from '../shared/songTypes';
 
@@ -18,6 +20,11 @@ function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [showSettings, setShowSettings] = useState(false);
+  const [outputDevices, setOutputDevices] = useState({
+    streamDeviceId: null as string | null,
+    headphoneDeviceId: null as string | null,
+  });
 
   useEffect(() => {
     const unsubscribeTime = audioEngine.onTimeUpdate((time) => {
@@ -36,6 +43,19 @@ function App() {
       unsubscribeTime();
       unsubscribeEnded();
     };
+  }, []);
+
+  useEffect(() => {
+    const saved = loadOutputDevicePreferences();
+    if (!saved) return;
+
+    setOutputDevices(saved);
+    audioEngine.setOutputDevice('stream', saved.streamDeviceId ?? null).catch((err) => {
+      console.warn('[AudioEngine] Failed to apply saved stream device', saved.streamDeviceId, err);
+    });
+    audioEngine.setOutputDevice('headphone', saved.headphoneDeviceId ?? null).catch((err) => {
+      console.warn('[AudioEngine] Failed to apply saved headphone device', saved.headphoneDeviceId, err);
+    });
   }, []);
 
   const handleSongSelect = async (song: SongMeta, filePath: string) => {
@@ -71,6 +91,21 @@ function App() {
     setCurrentTime(seconds);
   };
 
+  const handleDeviceChange = async (role: OutputRole, deviceId: string | null) => {
+    const next = {
+      ...outputDevices,
+      [role === 'stream' ? 'streamDeviceId' : 'headphoneDeviceId']: deviceId ?? null,
+    };
+    setOutputDevices(next);
+    saveOutputDevicePreferences(next);
+
+    try {
+      await audioEngine.setOutputDevice(role, deviceId);
+    } catch (err) {
+      console.error(`[Settings] Failed to set output device for ${role}`, deviceId, err);
+    }
+  };
+
   const renderContent = () => {
     switch (currentView) {
       case 'library':
@@ -87,7 +122,7 @@ function App() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
       {/* 1. Top Header (Hidden in Stream Mode) */}
-      {currentView !== 'stream' && <TopBar />}
+      {currentView !== 'stream' && <TopBar onOpenSettings={() => setShowSettings(true)} />}
 
       {/* 2. Middle Region (Sidebar + Content) */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
@@ -113,10 +148,17 @@ function App() {
         currentTrackName={
           currentTrack
             ? currentTrack.artist
-              ? `${currentTrack.title} – ${currentTrack.artist}`
+              ? `${currentTrack.title} - ${currentTrack.artist}`
               : currentTrack.title
             : undefined
         }
+      />
+      <SettingsModal
+        open={showSettings}
+        onClose={() => setShowSettings(false)}
+        streamDeviceId={outputDevices.streamDeviceId}
+        headphoneDeviceId={outputDevices.headphoneDeviceId}
+        onChangeDevice={handleDeviceChange}
       />
     </div>
   );
