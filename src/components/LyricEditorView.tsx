@@ -626,57 +626,66 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                   <div
                     key={line.id}
                     ref={(el) => (lineRefs.current[line.id] = el)}
+                    onClick={(e) => {
+                      const target = e.target as HTMLElement;
+                      if (target.tagName === 'INPUT' || target.tagName === 'BUTTON') return;
+                      if (line.timeSeconds !== null) {
+                        onSeek(line.timeSeconds);
+                      }
+                    }}
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: '120px 1fr',
+                      gridTemplateColumns: '140px 1fr',
                       gap: '10px',
                       padding: '10px',
                       borderRadius: '10px',
                       background: isCurrent ? '#1e1e1e' : '#151515',
                       border: isCurrent ? '1px solid var(--accent-color)' : '1px solid #1f1f1f',
+                      cursor: line.timeSeconds !== null ? 'pointer' : 'default',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fff' }}>
-                      <input
-                        type="text"
-                        defaultValue={formatDisplayTime(line.timeSeconds)}
-                        key={line.timeSeconds} // Force re-render on time change
-                        onBlur={(e) => {
-                          const val = e.target.value.trim();
-                          const parts = val.split(':');
-                          let newTime = null;
-                          if (parts.length === 2) {
-                            const m = parseFloat(parts[0]);
-                            const s = parseFloat(parts[1]);
-                            if (!isNaN(m) && !isNaN(s)) newTime = m * 60 + s;
-                          } else {
-                            const s = parseFloat(val);
-                            if (!isNaN(s)) newTime = s;
-                          }
-                          if (newTime !== null && newTime >= 0 && newTime <= duration) {
-                            updateLineTime(idx, newTime);
-                          } else {
-                            e.target.value = formatDisplayTime(line.timeSeconds);
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') e.currentTarget.blur();
-                        }}
-                        style={{
-                          width: '70px', background: 'transparent', border: '1px solid #333',
-                          color: '#fff', borderRadius: '4px', padding: '2px 4px', fontFamily: 'monospace', fontSize: '12px'
-                        }}
-                      />
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                        <input
+                          type="text"
+                          defaultValue={formatDisplayTime(line.timeSeconds)}
+                          key={line.timeSeconds} // Force re-render on time change
+                          onBlur={(e) => {
+                            const val = e.target.value.trim();
+                            const parts = val.split(':');
+                            let newTime = null;
+                            if (parts.length === 2) {
+                              const m = parseFloat(parts[0]);
+                              const s = parseFloat(parts[1]);
+                              if (!isNaN(m) && !isNaN(s)) newTime = m * 60 + s;
+                            } else {
+                              const s = parseFloat(val);
+                              if (!isNaN(s)) newTime = s;
+                            }
+                            if (newTime !== null && newTime >= 0 && newTime <= duration) {
+                              updateLineTime(idx, newTime);
+                            } else {
+                              e.target.value = formatDisplayTime(line.timeSeconds);
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') e.currentTarget.blur();
+                          }}
+                          style={{
+                            width: '80px', background: 'transparent', border: '1px solid #333',
+                            color: '#fff', borderRadius: '4px', padding: '2px 4px', fontFamily: 'monospace', fontSize: '12px',
+                            textAlign: 'center'
+                          }}
+                        />
                         <button
                           onClick={() => updateLineTime(idx, currentTime)}
                           style={{
-                            padding: '2px 4px', background: '#2a2a2a', color: '#fff', border: '1px solid #333',
-                            borderRadius: '4px', cursor: 'pointer', fontSize: '10px'
+                            padding: '2px 6px', background: '#2a2a2a', color: '#fff', border: '1px solid #333',
+                            borderRadius: '4px', cursor: 'pointer', fontSize: '10px', width: '100%'
                           }}
                           title="套用目前播放時間"
                         >
-                          套用
+                          套用當前時間
                         </button>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -755,7 +764,13 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, justifyContent: 'center' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none' }}>
+            <label
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none' }}
+              onClick={(e) => {
+                e.preventDefault();
+                setTapMode((prev) => !prev);
+              }}
+            >
               <div style={{
                 width: '36px', height: '20px', background: tapMode ? 'var(--accent-color)' : '#333',
                 borderRadius: '10px', position: 'relative', transition: 'background 0.2s'
