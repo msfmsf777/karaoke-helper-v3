@@ -22,3 +22,7 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
   // You can expose other APTs you need here.
   // ...
 })
+
+contextBridge.exposeInMainWorld('api', {
+  openAudioFileDialog: () => ipcRenderer.invoke('dialog:open-audio-file'),
+})

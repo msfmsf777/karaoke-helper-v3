@@ -20,3 +20,6 @@ electron.contextBridge.exposeInMainWorld("ipcRenderer", {
   // You can expose other APTs you need here.
   // ...
 });
+electron.contextBridge.exposeInMainWorld("api", {
+  openAudioFileDialog: () => electron.ipcRenderer.invoke("dialog:open-audio-file")
+});

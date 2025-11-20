@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain, dialog } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
@@ -12,7 +12,9 @@ function createWindow() {
   win = new BrowserWindow({
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {
-      preload: path.join(__dirname$1, "preload.mjs")
+      preload: path.join(__dirname$1, "preload.mjs"),
+      // Allow loading local file:// resources from the renderer (needed for direct audio file playback in dev/HTTP origin).
+      webSecurity: false
     }
   });
   win.webContents.on("did-finish-load", () => {
@@ -34,6 +36,20 @@ app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
+});
+ipcMain.handle("dialog:open-audio-file", async () => {
+  const browserWindow = BrowserWindow.getFocusedWindow() ?? win;
+  const { canceled, filePaths } = await dialog.showOpenDialog(browserWindow ?? void 0, {
+    properties: ["openFile"],
+    filters: [
+      { name: "Audio Files", extensions: ["mp3", "wav", "flac", "aac", "m4a", "ogg"] },
+      { name: "All Files", extensions: ["*"] }
+    ]
+  });
+  if (canceled || filePaths.length === 0) {
+    return null;
+  }
+  return filePaths[0];
 });
 app.whenReady().then(createWindow);
 export {
