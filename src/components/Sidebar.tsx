@@ -43,7 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
       }}
     >
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 10px' }}>
-        <div style={sectionTitleStyle}>主功能</div>
+        <div style={sectionTitleStyle}>瀏覽</div>
         <div style={navItemStyle(currentView === 'library')} onClick={() => onViewChange('library')}>
           歌曲庫
         </div>
@@ -53,11 +53,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
 
         <div style={{ height: '1px', backgroundColor: '#282828', margin: '16px 8px' }}></div>
 
-        <div style={sectionTitleStyle}>播放清單</div>
+        <div style={sectionTitleStyle}>快速存取</div>
         <div style={navItemStyle(false)}>最近播放</div>
         <div style={navItemStyle(false)}>當前歌單</div>
-        <div style={navItemStyle(false)}>收藏清單</div>
-        <div style={navItemStyle(false)}>歷史記錄</div>
+        <div style={navItemStyle(false)}>歌詞草稿</div>
+        <div style={navItemStyle(false)}>下載管理</div>
       </div>
     </div>
   );

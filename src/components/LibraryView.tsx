@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { addLocalSong, getSongFilePath, loadAllSongs, pickAudioFile, SongMeta, SongType } from '../library/songLibrary';
+import { queueSeparationJob, subscribeJobUpdates } from '../jobs/separationJobs';
 
 interface LibraryViewProps {
   onSongSelect: (song: SongMeta, filePath: string) => Promise<void>;
@@ -20,15 +21,20 @@ const defaultForm: AddSongFormState = {
   type: '伴奏',
 };
 
-const statusLabels: Record<SongMeta['audio_status'], string> = {
-  ready: '已就緒',
-  missing: '遺失',
-  error: '錯誤',
+const audioStatusLabels: Record<SongMeta['audio_status'], string> = {
+  original_only: '未分離',
+  separation_pending: '已排程',
+  separating: '處理中',
+  separation_failed: '失敗',
+  separated: '已完成',
+  ready: '未分離',
+  missing: '未分離',
+  error: '失敗',
 };
 
 const lyricsLabels: Record<SongMeta['lyrics_status'], string> = {
   none: '無',
-  ready: '已就緒',
+  ready: '已完成',
   missing: '遺失',
 };
 
@@ -66,7 +72,7 @@ const AddSongDialog: React.FC<{
       >
         <h2 style={{ margin: 0, marginBottom: '12px', fontSize: '20px', color: '#fff' }}>新增歌曲</h2>
         <p style={{ margin: '0 0 16px', color: '#b3b3b3', fontSize: '14px' }}>
-          選擇本機音訊檔，填寫歌曲資訊後匯入到資料庫。
+          選擇檔案、填寫標題與類型，歌曲會被拷貝到應用程式資料夾並加入歌曲庫。
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -93,10 +99,10 @@ const AddSongDialog: React.FC<{
               }}
               disabled={busy}
             >
-              選擇檔案…
+              選擇音訊檔
             </button>
             <div style={{ color: form.sourcePath ? '#fff' : '#777', fontSize: '14px', flex: 1 }}>
-              {form.sourcePath || '尚未選取檔案 (.mp3/.wav)'}
+              {form.sourcePath || '尚未選擇，支援 mp3 / wav / flac'}
             </div>
           </div>
 
@@ -142,7 +148,7 @@ const AddSongDialog: React.FC<{
               type="text"
               value={form.title}
               onChange={(e) => onChange({ title: e.target.value })}
-              placeholder="請輸入歌曲名稱"
+              placeholder="歌曲標題"
               style={{
                 width: '100%',
                 padding: '10px 12px',
@@ -156,13 +162,13 @@ const AddSongDialog: React.FC<{
 
           <div>
             <label style={{ display: 'block', marginBottom: '6px', color: '#b3b3b3', fontSize: '13px' }}>
-              歌手 / 演出者 <span style={{ color: '#888', fontSize: '12px' }}>(選填)</span>
+              歌手 / 團體 <span style={{ color: '#888', fontSize: '12px' }}>(選填)</span>
             </label>
             <input
               type="text"
               value={form.artist}
               onChange={(e) => onChange({ artist: e.target.value })}
-              placeholder="可留空"
+              placeholder="歌手名稱"
               style={{
                 width: '100%',
                 padding: '10px 12px',
@@ -207,7 +213,7 @@ const AddSongDialog: React.FC<{
             }}
             disabled={busy}
           >
-            {busy ? '新增中…' : '確認新增'}
+            {busy ? '新增中...' : '新增歌曲'}
           </button>
         </div>
       </div>
@@ -223,6 +229,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onSongSelect, selectedSongId 
   const [formError, setFormError] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [currentSelection, setCurrentSelection] = useState<string | undefined>(selectedSongId);
+  const [separationBusyId, setSeparationBusyId] = useState<string | null>(null);
 
   useEffect(() => {
     if (selectedSongId) setCurrentSelection(selectedSongId);
@@ -245,14 +252,21 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onSongSelect, selectedSongId 
     fetchSongs();
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = subscribeJobUpdates(() => {
+      fetchSongs();
+    });
+    return () => unsubscribe();
+  }, []);
+
   const handleAddConfirm = async () => {
     setFormError(null);
     if (!formState.sourcePath) {
-      setFormError('請選擇歌曲檔案');
+      setFormError('請先選擇音訊檔案');
       return;
     }
     if (!formState.title.trim()) {
-      setFormError('請輸入歌曲名稱');
+      setFormError('請填寫歌曲名稱');
       return;
     }
 
@@ -270,7 +284,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onSongSelect, selectedSongId 
       setFormError(null);
     } catch (err) {
       console.error('[Library] Failed to add song', err);
-      setFormError('新增歌曲時發生錯誤，請再試一次');
+      setFormError('新增歌曲失敗，請檢查檔案路徑或檔案權限。');
     } finally {
       setIsAdding(false);
     }
@@ -288,6 +302,23 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onSongSelect, selectedSongId 
       console.log('[Library] Selected song', song.id, filePath);
     } catch (err) {
       console.error('[Library] Failed to select song', song.id, err);
+    }
+  };
+
+  const handleStartSeparation = async (song: SongMeta) => {
+    setSeparationBusyId(song.id);
+    const previousStatus = song.audio_status;
+    setSongs((prev) =>
+      prev.map((item) => (item.id === song.id ? { ...item, audio_status: 'separation_pending', last_separation_error: null } : item)),
+    );
+    try {
+      await queueSeparationJob(song.id);
+      console.log('[Library] Queued separation job', song.id);
+    } catch (err) {
+      console.error('[Library] Failed to queue separation', song.id, err);
+      setSongs((prev) => prev.map((item) => (item.id === song.id ? { ...item, audio_status: previousStatus } : item)));
+    } finally {
+      setSeparationBusyId(null);
     }
   };
 
@@ -319,7 +350,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onSongSelect, selectedSongId 
       </div>
 
       <div style={{ color: '#b3b3b3', marginBottom: '12px', fontSize: '14px' }}>
-        點擊歌曲即可透過播放器播放；右上角可以新增歌曲到本機資料庫。
+        點擊歌曲即可播放。原曲支援「開始分離」，處理狀態會即時更新。
       </div>
 
       <div
@@ -333,7 +364,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onSongSelect, selectedSongId 
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '40px 3fr 2fr 1fr 1fr',
+            gridTemplateColumns: '40px 3fr 2fr 1fr 1.2fr 1fr 1fr',
             padding: '12px 16px',
             borderBottom: '1px solid #252525',
             color: '#b3b3b3',
@@ -344,23 +375,41 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onSongSelect, selectedSongId 
           <div>#</div>
           <div>歌曲名稱</div>
           <div>歌手</div>
+          <div>類型</div>
           <div>音訊狀態</div>
           <div>歌詞狀態</div>
+          <div>操作</div>
         </div>
 
         {loading ? (
-          <div style={{ padding: '20px', color: '#b3b3b3' }}>載入中…</div>
+          <div style={{ padding: '20px', color: '#b3b3b3' }}>載入中...</div>
         ) : currentSongs.length === 0 ? (
-          <div style={{ padding: '20px', color: '#b3b3b3' }}>尚無歌曲，點擊「＋ 新增歌曲」開始建立歌庫。</div>
+          <div style={{ padding: '20px', color: '#b3b3b3' }}>
+            尚未加入任何歌曲，點擊右上方「新增歌曲」開始建立你的歌單。
+          </div>
         ) : (
           currentSongs.map((song, idx) => {
             const isActive = currentSelection === song.id;
+            const canStartSeparation =
+              song.type === '原曲' &&
+              (song.audio_status === 'original_only' ||
+                song.audio_status === 'separation_failed' ||
+                song.audio_status === 'ready');
+            const isWorking =
+              song.audio_status === 'separation_pending' || song.audio_status === 'separating' || separationBusyId === song.id;
+            const audioColor =
+              song.audio_status === 'separated'
+                ? '#8be28b'
+                : song.audio_status === 'separation_failed' || song.audio_status === 'error'
+                ? '#ff8b8b'
+                : '#e0a040';
+
             return (
               <div
                 key={song.id}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '40px 3fr 2fr 1fr 1fr',
+                  gridTemplateColumns: '40px 3fr 2fr 1fr 1.2fr 1fr 1fr',
                   padding: '12px 16px',
                   borderBottom: '1px solid #252525',
                   color: '#fff',
@@ -376,10 +425,45 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onSongSelect, selectedSongId 
                 <div style={{ color: '#b3b3b3' }}>{idx + 1}</div>
                 <div style={{ fontWeight: isActive ? 700 : 500 }}>{song.title}</div>
                 <div style={{ color: '#b3b3b3' }}>{song.artist || '—'}</div>
-                <div style={{ color: song.audio_status === 'ready' ? '#8be28b' : '#e0a040' }}>
-                  {statusLabels[song.audio_status]}
+                <div style={{ color: '#b3b3b3' }}>{song.type}</div>
+                <div style={{ color: audioColor }} title={song.last_separation_error || undefined}>
+                  {audioStatusLabels[song.audio_status]}
+                  {song.audio_status === 'separating' && <span style={{ marginLeft: 6, fontSize: '12px' }}>⏳</span>}
+                  {song.audio_status === 'separation_failed' && song.last_separation_error && (
+                    <span style={{ marginLeft: 6, color: '#ffb3b3', fontSize: '12px' }}>查看錯誤</span>
+                  )}
                 </div>
                 <div style={{ color: '#b3b3b3' }}>{lyricsLabels[song.lyrics_status]}</div>
+                <div>
+                  {song.type === '原曲' ? (
+                    canStartSeparation ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStartSeparation(song);
+                        }}
+                        disabled={isWorking}
+                        style={{
+                          padding: '6px 10px',
+                          backgroundColor: isWorking ? '#3a3a3a' : 'var(--accent-color)',
+                          color: '#000',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: isWorking ? 'not-allowed' : 'pointer',
+                          fontWeight: 700,
+                        }}
+                      >
+                        {song.audio_status === 'separation_failed' ? '重新分離' : '開始分離'}
+                      </button>
+                    ) : song.audio_status === 'separated' ? (
+                      <span style={{ color: '#8be28b' }}>完成</span>
+                    ) : (
+                      <span style={{ color: '#b3b3b3' }}>{audioStatusLabels[song.audio_status]}</span>
+                    )
+                  ) : (
+                    <span style={{ color: '#555' }}>—</span>
+                  )}
+                </div>
               </div>
             );
           })

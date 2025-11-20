@@ -6,6 +6,7 @@ import LyricEditorView from './components/LyricEditorView';
 import StreamModeView from './components/StreamModeView';
 import TopBar from './components/TopBar';
 import SettingsModal from './components/SettingsModal';
+import ProcessingListModal from './components/ProcessingListModal';
 import audioEngine, { OutputRole } from './audio/AudioEngine';
 import { loadOutputDevicePreferences, saveOutputDevicePreferences } from './settings/devicePreferences';
 import './App.css';
@@ -21,6 +22,7 @@ function App() {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
+  const [showProcessingList, setShowProcessingList] = useState(false);
   const [outputDevices, setOutputDevices] = useState({
     streamDeviceId: null as string | null,
     headphoneDeviceId: null as string | null,
@@ -122,7 +124,9 @@ function App() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
       {/* 1. Top Header (Hidden in Stream Mode) */}
-      {currentView !== 'stream' && <TopBar onOpenSettings={() => setShowSettings(true)} />}
+      {currentView !== 'stream' && (
+        <TopBar onOpenSettings={() => setShowSettings(true)} onOpenProcessing={() => setShowProcessingList(true)} />
+      )}
 
       {/* 2. Middle Region (Sidebar + Content) */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
@@ -160,6 +164,7 @@ function App() {
         headphoneDeviceId={outputDevices.headphoneDeviceId}
         onChangeDevice={handleDeviceChange}
       />
+      <ProcessingListModal open={showProcessingList} onClose={() => setShowProcessingList(false)} />
     </div>
   );
 }

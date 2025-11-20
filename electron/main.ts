@@ -3,6 +3,7 @@ import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { addLocalSong, getSongFilePath, getSongsBaseDir, loadAllSongs } from './songLibrary'
+import { getAllJobs, queueSeparationJob, subscribeJobUpdates } from './separationJobs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -22,6 +23,7 @@ export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST
 
 let win: BrowserWindow | null
+const jobSubscriptions = new Map<number, Map<string, () => void>>()
 
 function createWindow() {
   win = new BrowserWindow({
@@ -92,6 +94,43 @@ ipcMain.handle('library:get-song-file-path', async (_event, id: string) => {
 
 ipcMain.handle('library:get-base-path', async () => {
   return getSongsBaseDir()
+})
+
+ipcMain.handle('jobs:queue-separation', async (_event, songId: string) => {
+  return queueSeparationJob(songId)
+})
+
+ipcMain.handle('jobs:get-all', async () => {
+  return getAllJobs()
+})
+
+ipcMain.on('jobs:subscribe', (event, subscriptionId: string) => {
+  const wc = event.sender
+  const disposer = subscribeJobUpdates((jobs) => wc.send('jobs:updated', jobs))
+
+  let disposers = jobSubscriptions.get(wc.id)
+  if (!disposers) {
+    disposers = new Map()
+    jobSubscriptions.set(wc.id, disposers)
+    wc.once('destroyed', () => {
+      disposers?.forEach((fn) => fn())
+      jobSubscriptions.delete(wc.id)
+    })
+  }
+  disposers.set(subscriptionId, disposer)
+})
+
+ipcMain.on('jobs:unsubscribe', (event, subscriptionId: string) => {
+  const disposers = jobSubscriptions.get(event.sender.id)
+  if (!disposers) return
+  if (subscriptionId) {
+    const fn = disposers.get(subscriptionId)
+    fn?.()
+    disposers.delete(subscriptionId)
+  } else {
+    disposers.forEach((fn) => fn())
+    disposers.clear()
+  }
 })
 
 app.whenReady().then(() => {

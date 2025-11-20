@@ -32,5 +32,19 @@ electron.contextBridge.exposeInMainWorld("khelper", {
     loadAllSongs: () => electron.ipcRenderer.invoke("library:load-all"),
     getSongFilePath: (id) => electron.ipcRenderer.invoke("library:get-song-file-path", id),
     getBasePath: () => electron.ipcRenderer.invoke("library:get-base-path")
+  },
+  jobs: {
+    queueSeparationJob: (songId) => electron.ipcRenderer.invoke("jobs:queue-separation", songId),
+    getAllJobs: () => electron.ipcRenderer.invoke("jobs:get-all"),
+    subscribeJobUpdates: (callback) => {
+      const listener = (_event, jobs) => callback(jobs);
+      const subscriptionId = `jobs-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`;
+      electron.ipcRenderer.send("jobs:subscribe", subscriptionId);
+      electron.ipcRenderer.on("jobs:updated", listener);
+      return () => {
+        electron.ipcRenderer.send("jobs:unsubscribe", subscriptionId);
+        electron.ipcRenderer.off("jobs:updated", listener);
+      };
+    }
   }
 });
