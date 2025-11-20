@@ -60,11 +60,16 @@ export function parseLrc(content: string): EditableLyricLine[] {
         timeSeconds: Number.isFinite(timeSeconds) ? timeSeconds : null,
       });
     } else if (row.trim().length > 0) {
-      lines.push({
-        id: createLineId(),
-        text: row,
-        timeSeconds: null,
-      });
+      // Ignore standard LRC tags like [ti:Title], [ar:Artist], etc.
+      // If it starts with [ and contains a colon, but wasn't a timestamp match above, treat as tag.
+      const isTag = /^\s*\[[^\]]+:/.test(row);
+      if (!isTag) {
+        lines.push({
+          id: createLineId(),
+          text: row,
+          timeSeconds: null,
+        });
+      }
     }
   }
 
