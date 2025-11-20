@@ -1,0 +1,42 @@
+:root {
+  --bg-main: #1e1e1e;
+  --bg-sidebar: #121212;
+  --bg-player: #181818;
+  --text-primary: #ffffff;
+  --text-secondary: #b3b3b3;
+  --accent-color: #1db954; /* Placeholder green, can be changed to a more "QQ" teal/pink */
+  --accent-hover: #1ed760;
+  --border-color: #282828;
+  --font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family);
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  overflow: hidden; /* App-like feel */
+  user-select: none;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}
+
+button {
+  font-family: inherit;
+}
