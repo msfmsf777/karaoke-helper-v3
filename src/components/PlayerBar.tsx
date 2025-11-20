@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import audioEngine from '../audio/AudioEngine';
+import { loadVolumePreferences, saveVolumePreferences } from '../settings/volumePreferences';
 
 type View = 'library' | 'lyrics' | 'stream';
 
@@ -23,9 +25,10 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   duration,
   currentTrackName,
 }) => {
+  const initialVolumes = loadVolumePreferences() ?? { streamVolume: 0.8, headphoneVolume: 1 };
   const [isHovered, setIsHovered] = useState(false);
-  const [backingVolume, setBackingVolume] = useState(80);
-  const [vocalVolume, setVocalVolume] = useState(100);
+  const [backingVolume, setBackingVolume] = useState(() => Math.round(initialVolumes.streamVolume * 100));
+  const [vocalVolume, setVocalVolume] = useState(() => Math.round(initialVolumes.headphoneVolume * 100));
 
   const iconStyle = {
     cursor: 'pointer',
@@ -59,6 +62,16 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
     const nextTime = Number(event.target.value);
     onSeek(nextTime);
   };
+
+  useEffect(() => {
+    audioEngine.setOutputVolume('stream', backingVolume / 100);
+    saveVolumePreferences({ streamVolume: backingVolume / 100, headphoneVolume: vocalVolume / 100 });
+  }, [backingVolume]);
+
+  useEffect(() => {
+    audioEngine.setOutputVolume('headphone', vocalVolume / 100);
+    saveVolumePreferences({ streamVolume: backingVolume / 100, headphoneVolume: vocalVolume / 100 });
+  }, [vocalVolume]);
 
   return (
     <div
@@ -107,15 +120,15 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
               Stream<br />Mode
             </div>
           ) : (
-            <span>切換</span>
+            <span>音樂</span>
           )}
         </div>
         <div>
           <div style={{ color: '#fff', fontSize: '14px', marginBottom: '4px' }}>
-            {currentTrackName || '尚未選取歌曲'}
+            {currentTrackName || '尚未選擇歌曲'}
           </div>
           <div style={{ color: '#b3b3b3', fontSize: '12px' }}>
-            {currentView === 'stream' ? '直播模式' : '點擊左方可切換直播模式'}
+            {currentView === 'stream' ? '直播模式' : '切換至直播模式'}
           </div>
         </div>
       </div>
