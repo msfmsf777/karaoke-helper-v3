@@ -1,5 +1,16 @@
 # KHelperLive (Phase 3)
 
+## Phase 5 - Manual Lyric Editor & LRC Export
+
+- 歌詞檔案：每首歌資料夾 (`<userData>/KHelperLive/songs/<id>/`) 內會儲存 `lyrics_raw.txt`（純文字）與 `lyrics_synced.lrc`（對齊後的 LRC）。
+- 歌曲庫：新增「歌詞狀態」欄，操作欄提供「歌詞對齊」可直接切換到編輯器並選中該曲。
+- 歌詞編輯視圖：
+  - 左側列表選歌，顯示歌詞狀態；右側為編輯 + 對齊區。
+  - 可貼上/編輯多行歌詞文字並按「儲存歌詞文字」寫入 `lyrics_raw.txt`（狀態變為純文字）。
+  - 點「開始重新對齊」重置時間標記並跳回 0 秒，播放原始音訊；按「敲擊對齊 (Space)」逐行寫入時間戳（tapIndex 會往下走），播放時會自動醒目目前行並自動捲動。
+  - 可用「稍早 / 稍晚」微調每行時間（每次 50ms），速度滑桿可在 0.5x~1.25x 之間調整對齊難度。
+  - 按「儲存同步歌詞 (LRC)」會輸出 `[mm:ss.xx]Lyric text` 行格式（含可選 [ti]/[ar] 標籤），寫入 `lyrics_synced.lrc` 並將歌詞狀態設為已對齊。
+- 除錯：載入/儲存歌詞檔、敲擊事件、微調與 LRC 匯出都會在主控台留下 debug 訊息，方便追蹤流程。
 KHelperLive is a desktop application designed for VTubers and streamers who sing live. It provides a song library, lyric tools, and live mode controls built on Electron + React + TypeScript + Vite.
 
 ## Tech Stack

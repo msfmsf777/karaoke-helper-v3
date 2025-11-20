@@ -34,10 +34,17 @@ contextBridge.exposeInMainWorld('khelper', {
     pickAudioFile: () => ipcRenderer.invoke('dialog:open-audio-file'),
   },
   songLibrary: {
-    addLocalSong: (payload: { sourcePath: string; title: string; artist?: string; type: SongType }): Promise<SongMeta> =>
-      ipcRenderer.invoke('library:add-local-song', payload),
+    addLocalSong: (payload: {
+      sourcePath: string
+      title: string
+      artist?: string
+      type: SongType
+      lyricsText?: string
+    }): Promise<SongMeta> => ipcRenderer.invoke('library:add-local-song', payload),
     loadAllSongs: (): Promise<SongMeta[]> => ipcRenderer.invoke('library:load-all'),
     getSongFilePath: (id: string): Promise<string | null> => ipcRenderer.invoke('library:get-song-file-path', id),
+    getOriginalSongFilePath: (id: string): Promise<string | null> =>
+      ipcRenderer.invoke('library:get-original-song-file-path', id),
     getBasePath: (): Promise<string> => ipcRenderer.invoke('library:get-base-path'),
   },
   jobs: {
@@ -54,5 +61,15 @@ contextBridge.exposeInMainWorld('khelper', {
         ipcRenderer.off('jobs:updated', listener)
       }
     },
+  },
+  lyrics: {
+    readRawLyrics: (songId: string): Promise<{ path: string; content: string } | null> =>
+      ipcRenderer.invoke('lyrics:read-raw', songId),
+    readSyncedLyrics: (songId: string): Promise<{ path: string; content: string } | null> =>
+      ipcRenderer.invoke('lyrics:read-synced', songId),
+    writeRawLyrics: (payload: { songId: string; content: string }): Promise<{ path: string; meta: SongMeta }> =>
+      ipcRenderer.invoke('lyrics:write-raw', payload),
+    writeSyncedLyrics: (payload: { songId: string; content: string }): Promise<{ path: string; meta: SongMeta }> =>
+      ipcRenderer.invoke('lyrics:write-synced', payload),
   },
 })

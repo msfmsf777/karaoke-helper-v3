@@ -9,6 +9,10 @@ const APP_FOLDER_NAME = "KHelperLive";
 const SONGS_FOLDER_NAME = "songs";
 const AUDIO_STATUS_VALUES = ["original_only", "separation_pending", "separating", "separation_failed", "separated"];
 const DEFAULT_AUDIO_STATUS = "original_only";
+const LYRICS_STATUS_VALUES = ["none", "text_only", "synced"];
+const DEFAULT_LYRICS_STATUS = "none";
+const RAW_LYRICS_FILENAME = "lyrics_raw.txt";
+const SYNCED_LYRICS_FILENAME = "lyrics_synced.lrc";
 function getAppDataRoot() {
   const userData = app.getPath("userData");
   return path.join(userData, APP_FOLDER_NAME);
@@ -21,24 +25,37 @@ async function ensureSongsDir() {
   await fs.mkdir(base, { recursive: true });
   return base;
 }
-function normalizeAudioStatus(status, type) {
+function normalizeAudioStatus(status) {
   if (status && AUDIO_STATUS_VALUES.includes(status)) {
     return status;
   }
   if (status === "ready" || status === "missing" || status === "error") {
     return DEFAULT_AUDIO_STATUS;
   }
-  if (type === "伴奏") {
-    return DEFAULT_AUDIO_STATUS;
-  }
   return DEFAULT_AUDIO_STATUS;
+}
+function normalizeLyricsStatus(status) {
+  if (status && LYRICS_STATUS_VALUES.includes(status)) {
+    return status;
+  }
+  if (status === "ready") return "synced";
+  if (status === "missing") return "none";
+  return DEFAULT_LYRICS_STATUS;
+}
+function getOriginalFilename(meta) {
+  return meta.stored_filename || `Original${path.extname(meta.source.originalPath) || ".mp3"}`;
+}
+function getOriginalPath(meta, songDir) {
+  return path.join(songDir, getOriginalFilename(meta));
 }
 function normalizeMeta(meta) {
   const normalized = {
     ...meta,
-    audio_status: normalizeAudioStatus(meta.audio_status, meta.type),
-    lyrics_status: meta.lyrics_status ?? "none",
-    stored_filename: meta.stored_filename ?? `Original${path.extname(meta.source.originalPath) || ".mp3"}`,
+    audio_status: normalizeAudioStatus(meta.audio_status),
+    lyrics_status: normalizeLyricsStatus(meta.lyrics_status),
+    stored_filename: getOriginalFilename(meta),
+    lyrics_raw_path: meta.lyrics_raw_path ?? void 0,
+    lyrics_lrc_path: meta.lyrics_lrc_path ?? void 0,
     instrumental_path: meta.instrumental_path ?? void 0,
     vocal_path: meta.vocal_path ?? void 0,
     last_separation_error: meta.last_separation_error ?? null
@@ -62,7 +79,7 @@ function generateSongId() {
   return `${Date.now()}`;
 }
 async function addLocalSong(params) {
-  const { sourcePath, title, artist, type } = params;
+  const { sourcePath, title, artist, type, lyricsText } = params;
   if (!sourcePath || !title) {
     throw new Error("sourcePath and title are required");
   }
@@ -75,6 +92,12 @@ async function addLocalSong(params) {
   const targetPath = path.join(songDir, storedFilename);
   console.log("[Library] Adding song", { sourcePath, songDir, id });
   await fs.copyFile(sourcePath, targetPath);
+  const rawLyrics = (lyricsText ?? "").replace(/\r\n/g, "\n");
+  const hasLyrics = rawLyrics.trim().length > 0;
+  const lyricsRawPath = hasLyrics ? path.join(songDir, RAW_LYRICS_FILENAME) : void 0;
+  if (hasLyrics && lyricsRawPath) {
+    await fs.writeFile(lyricsRawPath, rawLyrics, "utf-8");
+  }
   const now = (/* @__PURE__ */ new Date()).toISOString();
   const meta = {
     id,
@@ -82,7 +105,9 @@ async function addLocalSong(params) {
     artist: (artist == null ? void 0 : artist.trim()) || void 0,
     type,
     audio_status: DEFAULT_AUDIO_STATUS,
-    lyrics_status: "none",
+    lyrics_status: hasLyrics ? "text_only" : DEFAULT_LYRICS_STATUS,
+    lyrics_raw_path: lyricsRawPath,
+    lyrics_lrc_path: void 0,
     source: {
       kind: "file",
       originalPath: sourcePath
@@ -146,7 +171,7 @@ async function getSongFilePath(id) {
   if (meta.audio_status === "separated" && meta.instrumental_path) {
     candidates.push(meta.instrumental_path);
   }
-  candidates.push(path.join(songDir, meta.stored_filename || `Original${path.extname(meta.source.originalPath)}`));
+  candidates.push(getOriginalPath(meta, songDir));
   for (const candidate of candidates) {
     try {
       await fs.access(candidate);
@@ -160,6 +185,21 @@ async function getSongFilePath(id) {
   }
   console.warn("[Library] Stored audio file missing", { id, candidates });
   return null;
+}
+async function getOriginalSongFilePath(id) {
+  if (!id) return null;
+  const songsDir = await ensureSongsDir();
+  const songDir = path.join(songsDir, id);
+  const meta = await readMeta(songDir);
+  if (!meta) return null;
+  const originalPath = getOriginalPath(meta, songDir);
+  try {
+    await fs.access(originalPath);
+    return originalPath;
+  } catch {
+    console.warn("[Library] Original audio file missing", { id, originalPath });
+    return null;
+  }
 }
 function getSongsBaseDir() {
   return getSongsDir();
@@ -316,6 +356,73 @@ function getAllJobs() {
 function subscribeJobUpdates(callback) {
   return jobManager.subscribe(callback);
 }
+async function ensureSongFolder(songId) {
+  const base = getSongsBaseDir();
+  const songDir = path.join(base, songId);
+  const meta = await getSongMeta(songId);
+  if (!meta) {
+    throw new Error(`Song ${songId} not found for lyrics operation`);
+  }
+  await fs.mkdir(songDir, { recursive: true });
+  return { songDir, meta };
+}
+async function readRawLyrics(songId) {
+  const { songDir, meta } = await ensureSongFolder(songId);
+  const filePath = meta.lyrics_raw_path || path.join(songDir, RAW_LYRICS_FILENAME);
+  try {
+    const content = await fs.readFile(filePath, "utf-8");
+    console.log("[Lyrics] Loaded raw lyrics", { songId, filePath });
+    return { path: filePath, content };
+  } catch (err) {
+    console.warn("[Lyrics] No raw lyrics found", { songId, filePath, err });
+    return null;
+  }
+}
+async function readSyncedLyrics(songId) {
+  const { songDir, meta } = await ensureSongFolder(songId);
+  const filePath = meta.lyrics_lrc_path || path.join(songDir, SYNCED_LYRICS_FILENAME);
+  try {
+    const content = await fs.readFile(filePath, "utf-8");
+    console.log("[Lyrics] Loaded synced lyrics", { songId, filePath });
+    return { path: filePath, content };
+  } catch (err) {
+    console.warn("[Lyrics] No synced lyrics found", { songId, filePath, err });
+    return null;
+  }
+}
+async function writeRawLyrics(songId, content) {
+  const { songDir } = await ensureSongFolder(songId);
+  const normalized = content.replace(/\r\n/g, "\n");
+  const filePath = path.join(songDir, RAW_LYRICS_FILENAME);
+  await fs.writeFile(filePath, normalized, "utf-8");
+  console.log("[Lyrics] Saved raw lyrics", { songId, filePath });
+  const updated = await updateSongMeta(songId, (current) => ({
+    ...current,
+    lyrics_status: normalized.trim().length > 0 ? "text_only" : "none",
+    lyrics_raw_path: filePath
+  }));
+  if (!updated) {
+    throw new Error(`Failed to update meta after saving lyrics for ${songId}`);
+  }
+  return { path: filePath, meta: updated };
+}
+async function writeSyncedLyrics(songId, content) {
+  const { songDir } = await ensureSongFolder(songId);
+  const normalized = content.replace(/\r\n/g, "\n");
+  const filePath = path.join(songDir, SYNCED_LYRICS_FILENAME);
+  await fs.writeFile(filePath, normalized, "utf-8");
+  console.log("[Lyrics] Saved synced lyrics", { songId, filePath });
+  const updated = await updateSongMeta(songId, (current) => ({
+    ...current,
+    lyrics_status: "synced",
+    lyrics_lrc_path: filePath,
+    lyrics_raw_path: current.lyrics_raw_path ?? path.join(songDir, RAW_LYRICS_FILENAME)
+  }));
+  if (!updated) {
+    throw new Error(`Failed to update meta after saving synced lyrics for ${songId}`);
+  }
+  return { path: filePath, meta: updated };
+}
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname$1, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
@@ -377,6 +484,9 @@ ipcMain.handle("library:load-all", async () => {
 ipcMain.handle("library:get-song-file-path", async (_event, id) => {
   return getSongFilePath(id);
 });
+ipcMain.handle("library:get-original-song-file-path", async (_event, id) => {
+  return getOriginalSongFilePath(id);
+});
 ipcMain.handle("library:get-base-path", async () => {
   return getSongsBaseDir();
 });
@@ -385,6 +495,18 @@ ipcMain.handle("jobs:queue-separation", async (_event, songId) => {
 });
 ipcMain.handle("jobs:get-all", async () => {
   return getAllJobs();
+});
+ipcMain.handle("lyrics:read-raw", async (_event, songId) => {
+  return readRawLyrics(songId);
+});
+ipcMain.handle("lyrics:read-synced", async (_event, songId) => {
+  return readSyncedLyrics(songId);
+});
+ipcMain.handle("lyrics:write-raw", async (_event, payload) => {
+  return writeRawLyrics(payload.songId, payload.content);
+});
+ipcMain.handle("lyrics:write-synced", async (_event, payload) => {
+  return writeSyncedLyrics(payload.songId, payload.content);
 });
 ipcMain.on("jobs:subscribe", (event, subscriptionId) => {
   const wc = event.sender;

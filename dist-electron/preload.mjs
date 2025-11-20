@@ -31,6 +31,7 @@ electron.contextBridge.exposeInMainWorld("khelper", {
     addLocalSong: (payload) => electron.ipcRenderer.invoke("library:add-local-song", payload),
     loadAllSongs: () => electron.ipcRenderer.invoke("library:load-all"),
     getSongFilePath: (id) => electron.ipcRenderer.invoke("library:get-song-file-path", id),
+    getOriginalSongFilePath: (id) => electron.ipcRenderer.invoke("library:get-original-song-file-path", id),
     getBasePath: () => electron.ipcRenderer.invoke("library:get-base-path")
   },
   jobs: {
@@ -46,5 +47,11 @@ electron.contextBridge.exposeInMainWorld("khelper", {
         electron.ipcRenderer.off("jobs:updated", listener);
       };
     }
+  },
+  lyrics: {
+    readRawLyrics: (songId) => electron.ipcRenderer.invoke("lyrics:read-raw", songId),
+    readSyncedLyrics: (songId) => electron.ipcRenderer.invoke("lyrics:read-synced", songId),
+    writeRawLyrics: (payload) => electron.ipcRenderer.invoke("lyrics:write-raw", payload),
+    writeSyncedLyrics: (payload) => electron.ipcRenderer.invoke("lyrics:write-synced", payload)
   }
 });

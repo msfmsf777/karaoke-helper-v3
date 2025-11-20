@@ -2,8 +2,9 @@ import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
-import { addLocalSong, getSongFilePath, getSongsBaseDir, loadAllSongs } from './songLibrary'
+import { addLocalSong, getOriginalSongFilePath, getSongFilePath, getSongsBaseDir, loadAllSongs } from './songLibrary'
 import { getAllJobs, queueSeparationJob, subscribeJobUpdates } from './separationJobs'
+import { readRawLyrics, readSyncedLyrics, writeRawLyrics, writeSyncedLyrics } from './lyrics'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -92,6 +93,10 @@ ipcMain.handle('library:get-song-file-path', async (_event, id: string) => {
   return getSongFilePath(id)
 })
 
+ipcMain.handle('library:get-original-song-file-path', async (_event, id: string) => {
+  return getOriginalSongFilePath(id)
+})
+
 ipcMain.handle('library:get-base-path', async () => {
   return getSongsBaseDir()
 })
@@ -102,6 +107,22 @@ ipcMain.handle('jobs:queue-separation', async (_event, songId: string) => {
 
 ipcMain.handle('jobs:get-all', async () => {
   return getAllJobs()
+})
+
+ipcMain.handle('lyrics:read-raw', async (_event, songId: string) => {
+  return readRawLyrics(songId)
+})
+
+ipcMain.handle('lyrics:read-synced', async (_event, songId: string) => {
+  return readSyncedLyrics(songId)
+})
+
+ipcMain.handle('lyrics:write-raw', async (_event, payload: { songId: string; content: string }) => {
+  return writeRawLyrics(payload.songId, payload.content)
+})
+
+ipcMain.handle('lyrics:write-synced', async (_event, payload: { songId: string; content: string }) => {
+  return writeSyncedLyrics(payload.songId, payload.content)
 })
 
 ipcMain.on('jobs:subscribe', (event, subscriptionId: string) => {

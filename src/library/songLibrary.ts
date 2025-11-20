@@ -25,6 +25,7 @@ export async function addLocalSong(params: {
   title: string;
   artist?: string;
   type: SongType;
+  lyricsText?: string;
 }): Promise<SongMeta> {
   const api = getApi();
   const meta = await api.addLocalSong(params);
@@ -43,6 +44,13 @@ export async function getSongFilePath(id: string): Promise<string | null> {
   const api = getApi();
   const filePath = await api.getSongFilePath(id);
   console.log('[Library] Resolved song file path', { id, filePath });
+  return filePath;
+}
+
+export async function getOriginalSongFilePath(id: string): Promise<string | null> {
+  const api = getApi();
+  const filePath = await api.getOriginalSongFilePath(id);
+  console.log('[Library] Resolved original song file path', { id, filePath });
   return filePath;
 }
 
