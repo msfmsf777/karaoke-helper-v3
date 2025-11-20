@@ -136,7 +136,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
         console.log('[Lyrics] Loaded raw lyrics', { songId: song.id, path: raw.path });
       }
 
-      // Update status in list if different
+      // Always update status based on what we found
       if (song.lyrics_status !== computedStatus) {
         updateSongMetaInList({ ...song, lyrics_status: computedStatus });
       }
@@ -317,21 +317,24 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
     try {
       const result = await writeRawLyrics(selectedSongId, rawTextDraft);
       if (!isAuto) setStatusMessage(`已儲存歌詞文字：${result.path}`);
-      updateSongMetaInList(result.meta);
-      // Only update lines if we are not in the middle of editing lines directly?
-      // Actually, rawTextDraft is the source of truth for text.
-      // But we don't want to reset times if we just auto-saved text.
-      // applyDraftToLines(false) is safe as it preserves times.
-      // However, if the user is typing, we don't want to re-render lines unnecessarily if not needed.
-      // But applyDraftToLines updates 'lines' state based on 'rawTextDraft'.
-      // If 'lines' and 'rawTextDraft' are already in sync (which they should be), this is fine.
+
+      let newStatus = result.meta.lyrics_status;
+      if (selectedSong?.lyrics_status === 'synced') {
+        newStatus = 'synced';
+      } else if (rawTextDraft.trim().length > 0) {
+        newStatus = 'text_only';
+      } else {
+        newStatus = 'none';
+      }
+
+      updateSongMetaInList({ ...result.meta, lyrics_status: newStatus });
     } catch (err) {
       console.error('[Lyrics] Failed to save raw lyrics', err);
       if (!isAuto) setErrorMessage('儲存歌詞文字失敗，請確認磁碟權限。');
     } finally {
       setSavingRaw(false);
     }
-  }, [rawTextDraft, selectedSongId, updateSongMetaInList]);
+  }, [rawTextDraft, selectedSongId, updateSongMetaInList, selectedSong]);
 
   // Auto-save effect
   useEffect(() => {
@@ -373,7 +376,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
       const lrcText = formatLrc(lines, { title: selectedSong.title, artist: selectedSong.artist });
       const result = await writeSyncedLyrics(selectedSongId, lrcText);
       setStatusMessage(`已儲存同步歌詞：${result.path}`);
-      updateSongMetaInList(result.meta);
+      updateSongMetaInList({ ...result.meta, lyrics_status: 'synced' });
     } catch (err) {
       console.error('[Lyrics] Failed to save synced lyrics', err);
       setErrorMessage('儲存 LRC 失敗，請重試。');
@@ -391,7 +394,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
     <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
       <div
         style={{
-          width: '28%',
+          width: '220px',
           borderRight: '1px solid #242424',
           background: '#131313',
           overflowY: 'auto',
@@ -597,48 +600,6 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                 </button>
               </div>
             </div>
-
-            <div style={{ marginTop: 'auto' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none' }}>
-                  <div style={{
-                    width: '36px', height: '20px', background: tapMode ? 'var(--accent-color)' : '#333',
-                    borderRadius: '10px', position: 'relative', transition: 'background 0.2s'
-                  }}>
-                    <div style={{
-                      width: '16px', height: '16px', background: '#fff', borderRadius: '50%',
-                      position: 'absolute', top: '2px', left: tapMode ? '18px' : '2px', transition: 'left 0.2s'
-                    }} />
-                  </div>
-                  <span style={{ color: tapMode ? '#fff' : '#888', fontWeight: 500 }}>敲擊模式</span>
-                </label>
-                <div style={{ color: '#f0c36b', fontSize: '14px', fontWeight: 'bold', fontFamily: 'monospace' }}>
-                  TapIndex: {tapDisplayIndex}/{lines.length}
-                </div>
-              </div>
-
-              <button
-                onClick={handleTap}
-                disabled={!selectedSong}
-                style={{
-                  width: '100%',
-                  padding: '16px',
-                  background: tapMode ? 'var(--accent-color)' : '#222',
-                  color: tapMode ? '#000' : '#555',
-                  border: 'none',
-                  borderRadius: '12px',
-                  fontWeight: 800,
-                  fontSize: '16px',
-                  cursor: selectedSong ? 'pointer' : 'not-allowed',
-                  transition: 'transform 0.1s',
-                }}
-                onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
-                onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-              >
-                敲擊對齊 (Space)
-              </button>
-            </div>
           </div>
         </div>
 
@@ -793,7 +754,46 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
             </div>
           </div>
 
-          <div style={{ flex: 1 }}></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, justifyContent: 'center' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none' }}>
+              <div style={{
+                width: '36px', height: '20px', background: tapMode ? 'var(--accent-color)' : '#333',
+                borderRadius: '10px', position: 'relative', transition: 'background 0.2s'
+              }}>
+                <div style={{
+                  width: '16px', height: '16px', background: '#fff', borderRadius: '50%',
+                  position: 'absolute', top: '2px', left: tapMode ? '18px' : '2px', transition: 'left 0.2s'
+                }} />
+              </div>
+              <span style={{ color: tapMode ? '#fff' : '#888', fontWeight: 500, fontSize: '13px' }}>敲擊模式</span>
+            </label>
+
+            <button
+              onClick={handleTap}
+              disabled={!selectedSong}
+              style={{
+                padding: '10px 24px',
+                background: tapMode ? 'var(--accent-color)' : '#222',
+                color: tapMode ? '#000' : '#555',
+                border: 'none',
+                borderRadius: '8px',
+                fontWeight: 800,
+                fontSize: '14px',
+                cursor: selectedSong ? 'pointer' : 'not-allowed',
+                transition: 'transform 0.1s',
+                minWidth: '160px'
+              }}
+              onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
+              onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              敲擊對齊 (Space)
+            </button>
+
+            <div style={{ color: '#f0c36b', fontSize: '12px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+              Index: {tapDisplayIndex}/{lines.length}
+            </div>
+          </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
             <span style={{ color: '#aaa', fontSize: '12px' }}>速度</span>
