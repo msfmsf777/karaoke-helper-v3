@@ -10,7 +10,7 @@ interface PlaylistViewProps {
 const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId }) => {
     const { getSongById } = useLibrary();
     const { playlists, renamePlaylist, deletePlaylist, removeSongFromPlaylist, toggleFavorite, isFavorite } = useUserData();
-    const { playImmediate, playSongList, clearQueue } = useQueue();
+    const { playImmediate, playSongList, replaceQueue } = useQueue();
     const [isRenaming, setIsRenaming] = useState(false);
     const [newName, setNewName] = useState('');
 
@@ -34,16 +34,7 @@ const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId }) => {
 
     const handleReplaceAndPlay = () => {
         if (playlistSongs.length === 0) return;
-        clearQueue();
-        // Similar to FavoritesView, we queue this up
-        setTimeout(() => {
-            playSongList(playlistSongs.map(s => s.id));
-            setTimeout(() => {
-                if (playlistSongs.length > 0) {
-                    playImmediate(playlistSongs[0].id);
-                }
-            }, 50);
-        }, 0);
+        replaceQueue(playlistSongs.map(s => s.id));
     };
 
     const handleDeletePlaylist = () => {
