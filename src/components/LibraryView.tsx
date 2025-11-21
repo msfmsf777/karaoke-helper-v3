@@ -289,7 +289,7 @@ const AddSongDialog: React.FC<{
 
 const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics }) => {
   const { songs, loading, refreshSongs } = useLibrary();
-  const { playSong, addToQueue, currentSongId } = useQueue();
+  const { playSong, addToQueue, playImmediate, currentSongId } = useQueue();
 
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [formState, setFormState] = useState<AddSongFormState>(defaultForm);
@@ -329,8 +329,8 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics }) => {
     }
   };
 
-  const handleRowClick = async (song: SongMeta) => {
-    playSong(song.id);
+  const handleRowDoubleClick = async (song: SongMeta) => {
+    playImmediate(song.id);
   };
 
   const handleStartSeparation = async (song: SongMeta) => {
@@ -441,7 +441,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics }) => {
                   backgroundColor: isActive ? '#262626' : 'transparent',
                   cursor: 'pointer',
                 }}
-                onClick={() => handleRowClick(song)}
+                onDoubleClick={() => handleRowDoubleClick(song)}
                 onMouseOver={(e) => (e.currentTarget.style.backgroundColor = isActive ? '#262626' : '#202020')}
                 onMouseOut={(e) => (e.currentTarget.style.backgroundColor = isActive ? '#262626' : 'transparent')}
               >

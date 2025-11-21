@@ -12,6 +12,10 @@ interface QueueContextType {
     playNext: () => void;
     playPrev: () => void;
     playQueueIndex: (index: number) => void;
+    removeFromQueue: (index: number) => void;
+    moveQueueItem: (fromIndex: number, toIndex: number) => void;
+    playSongList: (songIds: string[]) => void;
+    playImmediate: (songId: string) => void;
     clearQueue: () => void;
 }
 
@@ -20,12 +24,12 @@ const QueueContext = createContext<QueueContextType | null>(null);
 export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [queue, setQueue] = useState<string[]>([]);
     const [currentIndex, setCurrentIndex] = useState<number>(-1);
-    const { getSongById } = useLibrary();
+    const { getSongById, loading: libraryLoading } = useLibrary();
     const isInitialized = useRef(false);
 
     // Load queue from disk on startup
     useEffect(() => {
-        if (isInitialized.current) return;
+        if (isInitialized.current || libraryLoading) return;
 
         const load = async () => {
             try {
@@ -33,6 +37,28 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 if (saved) {
                     setQueue(saved.songIds);
                     setCurrentIndex(saved.currentIndex);
+
+                    // Prevent autoplay on startup by syncing lastPlayedIndex with saved index
+                    lastPlayedIndex.current = saved.currentIndex;
+
+                    // Load the current song into audio engine so it's ready to play
+                    if (saved.currentIndex >= 0 && saved.currentIndex < saved.songIds.length) {
+                        const songId = saved.songIds[saved.currentIndex];
+                        lastPlayedSongId.current = songId; // Sync song ID too
+
+                        const song = getSongById(songId);
+                        if (song) {
+                            try {
+                                const filePath = await getSongFilePath(songId);
+                                if (filePath) {
+                                    await audioEngine.loadFile(filePath);
+                                }
+                            } catch (e) {
+                                console.warn('[QueueContext] Failed to preload song on startup', songId, e);
+                            }
+                        }
+                    }
+
                     console.log('[QueueContext] Restored queue', saved.songIds.length, saved.currentIndex);
                 }
             } catch (err) {
@@ -42,7 +68,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             }
         };
         load();
-    }, []);
+    }, [libraryLoading, getSongById]);
 
     // Save queue to disk on change
     useEffect(() => {
@@ -92,19 +118,21 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, []);
 
     // React to currentIndex changes to trigger playback
-    // We use a ref to track the last played index to avoid double plays or loops if not intended
+    // We use a ref to track the last played index/song to avoid double plays or loops if not intended
     const lastPlayedIndex = useRef<number>(-1);
+    const lastPlayedSongId = useRef<string | null>(null);
 
     useEffect(() => {
         if (currentIndex >= 0 && currentIndex < queue.length) {
             const songId = queue[currentIndex];
-            // Only play if the index actually changed or if it's a forced replay (logic can be refined)
-            if (currentIndex !== lastPlayedIndex.current) {
+            // Play if index changed OR song ID changed (e.g. replaced song at same index)
+            if (currentIndex !== lastPlayedIndex.current || songId !== lastPlayedSongId.current) {
                 playSongInternal(songId);
                 lastPlayedIndex.current = currentIndex;
+                lastPlayedSongId.current = songId;
             }
         }
-    }, [currentIndex, queue, getSongById]); // Dependencies need care to avoid loops
+    }, [currentIndex, queue, getSongById]);
 
     const addToQueue = useCallback((songId: string) => {
         setQueue((prev) => [...prev, songId]);
@@ -134,6 +162,86 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
     }, [queue.length]);
 
+    const removeFromQueue = useCallback((index: number) => {
+        setQueue((prev) => {
+            const newQueue = [...prev];
+            newQueue.splice(index, 1);
+            return newQueue;
+        });
+        setCurrentIndex((prev) => {
+            if (index < prev) {
+                return prev - 1;
+            } else if (index === prev) {
+                // If removing current song, what to do?
+                // Option 1: Move to next (keep index same, but check bounds)
+                // Option 2: Stop (set to -1)
+                // Let's go with Option 1: Keep index same unless it was the last one
+                if (prev >= queue.length - 1) { // queue.length is old length
+                    return prev - 1; // Move back if we removed the last one
+                }
+                return prev;
+            }
+            return prev;
+        });
+    }, [queue.length]);
+
+    const moveQueueItem = useCallback((fromIndex: number, toIndex: number) => {
+        if (fromIndex < 0 || fromIndex >= queue.length || toIndex < 0 || toIndex >= queue.length) return;
+
+        setQueue((prev) => {
+            const newQueue = [...prev];
+            const [movedItem] = newQueue.splice(fromIndex, 1);
+            newQueue.splice(toIndex, 0, movedItem);
+            return newQueue;
+        });
+
+        setCurrentIndex((prev) => {
+            if (prev === fromIndex) return toIndex;
+            if (prev === toIndex) return prev + (fromIndex > toIndex ? 1 : -1); // This logic is tricky
+            // Let's simplify: if current was between from and to, it shifts
+            if (fromIndex < prev && toIndex >= prev) return prev - 1;
+            if (fromIndex > prev && toIndex <= prev) return prev + 1;
+            return prev;
+        });
+    }, [queue.length]);
+
+    const playSongList = useCallback((songIds: string[]) => {
+        if (songIds.length === 0) return;
+        setQueue((prev) => {
+            const startIndex = prev.length;
+            setCurrentIndex(startIndex);
+            return [...prev, ...songIds];
+        });
+    }, []);
+
+    const playImmediate = useCallback(async (songId: string) => {
+        // Stop any currently playing song first
+        await audioEngine.stop();
+
+        // We need to access the current state to make decisions.
+        // Since we are inside a callback, we can't easily get the fresh state without adding it to deps.
+        // But adding 'queue' to deps is fine.
+
+        const existingIndex = queue.indexOf(songId);
+
+        if (existingIndex !== -1) {
+            if (existingIndex === currentIndex) {
+                // If it's the same song, force replay manually because state won't change
+                playSongInternal(songId);
+                // Ensure we don't double play if state somehow updates later
+                lastPlayedIndex.current = existingIndex;
+                lastPlayedSongId.current = songId;
+            } else {
+                // Different song in queue, jump to it. Effect will handle playback.
+                setCurrentIndex(existingIndex);
+            }
+        } else {
+            // New song, insert at front and play. Effect will handle playback.
+            setQueue((prev) => [songId, ...prev]);
+            setCurrentIndex(0);
+        }
+    }, [queue, currentIndex]);
+
     const clearQueue = useCallback(() => {
         setQueue([]);
         setCurrentIndex(-1);
@@ -151,6 +259,10 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 playNext,
                 playPrev,
                 playQueueIndex,
+                removeFromQueue,
+                moveQueueItem,
+                playSongList,
+                playImmediate,
                 clearQueue,
             }}
         >
