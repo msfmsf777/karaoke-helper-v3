@@ -16,8 +16,18 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({ status, lines, currentTim
     const isUserScrolling = useRef(false);
     const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
 
-    // Handle scroll events to detect user interaction
-    const handleScroll = () => {
+    // Find current line index
+    let currentIdx = -1;
+    for (let i = 0; i < lines.length; i++) {
+        if (lines[i].timeSeconds !== null && lines[i].timeSeconds! <= currentTime) {
+            currentIdx = i;
+        } else if (lines[i].timeSeconds !== null && lines[i].timeSeconds! > currentTime) {
+            break;
+        }
+    }
+
+    // Handle user scroll interactions
+    const handleUserScroll = () => {
         isUserScrolling.current = true;
         if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
         scrollTimeout.current = setTimeout(() => {
@@ -27,13 +37,29 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({ status, lines, currentTim
 
     // Auto-scroll for synced lyrics
     useEffect(() => {
-        if (status === 'synced' && activeLineRef.current && !isUserScrolling.current) {
-            activeLineRef.current.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center',
-            });
+        if (status === 'synced' && activeLineRef.current && containerRef.current && !isUserScrolling.current) {
+            const container = containerRef.current;
+            const activeLine = activeLineRef.current;
+
+            const containerRect = container.getBoundingClientRect();
+            const activeLineRect = activeLine.getBoundingClientRect();
+
+            // Calculate the center of the container relative to the viewport
+            const containerCenter = containerRect.top + (containerRect.height / 2);
+            // Calculate the center of the active line relative to the viewport
+            const activeLineCenter = activeLineRect.top + (activeLineRect.height / 2);
+
+            // The distance we need to scroll is the difference between the line center and the container center
+            const scrollDelta = activeLineCenter - containerCenter;
+
+            if (Math.abs(scrollDelta) > 5) { // Only scroll if difference is significant to avoid jitter
+                container.scrollTo({
+                    top: container.scrollTop + scrollDelta,
+                    behavior: 'smooth'
+                });
+            }
         }
-    }, [currentTime, status]);
+    }, [currentIdx, status]); // Only scroll when the active line changes
 
     if (status === 'none') {
         return (
@@ -95,7 +121,8 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({ status, lines, currentTim
         <div
             className={className}
             ref={containerRef}
-            onScroll={handleScroll}
+            onWheel={handleUserScroll}
+            onTouchMove={handleUserScroll}
             style={{
                 height: '100%',
                 overflowY: 'auto', // Enable manual scrolling
@@ -103,6 +130,8 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({ status, lines, currentTim
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
+                position: 'relative', // Ensure offsetTop is relative to this container
+                boxSizing: 'border-box', // Ensure padding is included in height calculations
                 // We use a large padding top/bottom so the first/last lines can be centered
                 paddingTop: '40vh',
                 paddingBottom: '40vh',
@@ -115,48 +144,36 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({ status, lines, currentTim
                     display: none; /* Chrome/Safari/Opera */
                 }
             `}</style>
-            {(() => {
-                // Find current line index
-                let currentIdx = -1;
-                for (let i = 0; i < lines.length; i++) {
-                    if (lines[i].timeSeconds !== null && lines[i].timeSeconds! <= currentTime) {
-                        currentIdx = i;
-                    } else if (lines[i].timeSeconds !== null && lines[i].timeSeconds! > currentTime) {
-                        break;
-                    }
-                }
+            {lines.map((line, idx) => {
+                const isActive = idx === currentIdx;
+                const isPast = idx < currentIdx;
 
-                return lines.map((line, idx) => {
-                    const isActive = idx === currentIdx;
-                    const isPast = idx < currentIdx;
-
-                    return (
-                        <div
-                            key={line.id}
-                            ref={isActive ? activeLineRef : null}
-                            onClick={() => {
-                                if (line.timeSeconds !== null && onLineClick) {
-                                    onLineClick(line.timeSeconds);
-                                }
-                            }}
-                            style={{
-                                fontSize: isActive ? '48px' : '32px',
-                                fontWeight: isActive ? 800 : 500,
-                                color: isActive ? 'var(--accent-color, #ff4444)' : isPast ? '#444' : '#888',
-                                textAlign: 'center',
-                                marginBottom: '24px',
-                                transition: 'all 0.3s ease-out',
-                                transform: isActive ? 'scale(1.05)' : 'scale(1)',
-                                opacity: isActive ? 1 : isPast ? 0.4 : 0.6,
-                                textShadow: isActive ? '0 0 20px rgba(255, 68, 68, 0.4)' : 'none',
-                                cursor: onLineClick ? 'pointer' : 'default',
-                            }}
-                        >
-                            {line.text}
-                        </div>
-                    );
-                });
-            })()}
+                return (
+                    <div
+                        key={line.id}
+                        ref={isActive ? activeLineRef : null}
+                        onClick={() => {
+                            if (line.timeSeconds !== null && onLineClick) {
+                                onLineClick(line.timeSeconds);
+                            }
+                        }}
+                        style={{
+                            fontSize: isActive ? '48px' : '32px',
+                            fontWeight: isActive ? 800 : 500,
+                            color: isActive ? 'var(--accent-color, #ff4444)' : isPast ? '#444' : '#888',
+                            textAlign: 'center',
+                            marginBottom: '24px',
+                            transition: 'all 0.3s ease-out',
+                            transform: isActive ? 'scale(1.05)' : 'scale(1)',
+                            opacity: isActive ? 1 : isPast ? 0.4 : 0.6,
+                            textShadow: isActive ? '0 0 20px rgba(255, 68, 68, 0.4)' : 'none',
+                            cursor: onLineClick ? 'pointer' : 'default',
+                        }}
+                    >
+                        {line.text}
+                    </div>
+                );
+            })}
         </div>
     );
 };

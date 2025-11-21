@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import PlayerBar from './components/PlayerBar';
 import LibraryView from './components/LibraryView';
@@ -28,6 +28,14 @@ function App() {
     headphoneDeviceId: null as string | null,
   });
   const [lyricsEditorSongId, setLyricsEditorSongId] = useState<string | null>(null);
+  const mainContentRef = useRef<HTMLDivElement>(null);
+
+  // Reset scroll when view changes
+  useEffect(() => {
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTop = 0;
+    }
+  }, [currentView]);
 
   useEffect(() => {
     const unsubscribeTime = audioEngine.onTimeUpdate((time) => {
@@ -176,7 +184,7 @@ function App() {
           <Sidebar currentView={currentView} onViewChange={setCurrentView} />
         )}
 
-        <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+        <div ref={mainContentRef} style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
           {renderContent()}
         </div>
       </div>
