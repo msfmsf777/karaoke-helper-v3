@@ -17,6 +17,7 @@ interface QueueContextType {
     playSongList: (songIds: string[]) => void;
     playImmediate: (songId: string) => void;
     clearQueue: () => void;
+    replaceQueue: (songIds: string[]) => void;
 }
 
 const QueueContext = createContext<QueueContextType | null>(null);
@@ -266,6 +267,15 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         audioEngine.stop();
     }, []);
 
+    const replaceQueue = useCallback((songIds: string[]) => {
+        if (songIds.length === 0) return;
+        const uniqueIds = Array.from(new Set(songIds));
+        setQueue(uniqueIds);
+        setCurrentIndex(0);
+        // The useEffect [currentIndex, queue] will handle the playback trigger
+        // because queue changed (so songId at index 0 likely changed)
+    }, []);
+
     return (
         <QueueContext.Provider
             value={{
@@ -282,6 +292,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 playSongList,
                 playImmediate,
                 clearQueue,
+                replaceQueue,
             }}
         >
             {children}

@@ -6,7 +6,7 @@ import { useQueue } from '../contexts/QueueContext';
 const FavoritesView: React.FC = () => {
     const { getSongById } = useLibrary();
     const { favorites, toggleFavorite, isFavorite } = useUserData();
-    const { playImmediate, playSongList, clearQueue, playSong } = useQueue();
+    const { playImmediate, playSongList, replaceQueue } = useQueue();
 
     const favoriteSongs = useMemo(() => {
         return favorites
@@ -21,52 +21,7 @@ const FavoritesView: React.FC = () => {
 
     const handleReplaceAndPlay = () => {
         if (favoriteSongs.length === 0) return;
-        clearQueue();
-        // We need to wait for clear? No, clearQueue is synchronous in state update usually, 
-        // but playSongList appends.
-        // Actually playSongList appends. 
-        // To replace, we should probably have a replaceQueue method, but we can simulate it:
-        // clearQueue() then playSongList().
-        // However, React state updates are batched.
-        // Let's use a small timeout or just rely on the fact that we can pass a new queue.
-        // Wait, QueueContext doesn't have replaceQueue.
-        // I should probably add it or just use clearQueue + playSongList.
-        // Let's try clearQueue then playSongList.
-        // Since they set state, the second one might overwrite the first if not careful with functional updates.
-        // QueueContext: setQueue([]) then setQueue(prev => ...).
-        // If playSongList uses functional update, it will see the empty queue from the previous update if they are in same render cycle?
-        // No, they are batched.
-        // Let's assume playSongList works.
-        // Actually, playSongList implementation: setQueue(prev => [...prev, ...ids]).
-        // If I call clearQueue (setQueue([])), then playSongList (setQueue(prev => ...)), 
-        // React batches them. The second setQueue will see the *old* state if not functional?
-        // No, functional updates receive the *pending* state.
-        // So clearQueue sets to [], playSongList receives [] and appends. It should work.
-
-        // But wait, clearQueue also stops audio.
-
-        // Let's just implement a helper here or assume it works.
-        // Ideally I'd add replaceQueue to Context, but I can't modify it right now easily without going back.
-        // Let's try the batch approach.
-
-        clearQueue();
-        setTimeout(() => {
-            playSongList(favoriteSongs.map(s => s.id));
-            // And play first one
-            // playSongList sets currentIndex to start of new items.
-            // So it should be fine.
-            // But playSongList doesn't auto play.
-            // We need to play the first one.
-            // We can call playImmediate(firstId) after a delay?
-            // Or just playSongList then playQueueIndex(0).
-            setTimeout(() => {
-                if (favoriteSongs.length > 0) {
-                    // We need to play the song at index 0.
-                    // But playImmediate expects a songId.
-                    playImmediate(favoriteSongs[0].id);
-                }
-            }, 50);
-        }, 0);
+        replaceQueue(favoriteSongs.map(s => s.id));
     };
 
     return (

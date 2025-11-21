@@ -6,7 +6,7 @@ import { useQueue } from '../contexts/QueueContext';
 const HistoryView: React.FC = () => {
     const { getSongById } = useLibrary();
     const { history, clearHistory } = useUserData();
-    const { playImmediate, playSongList, clearQueue } = useQueue();
+    const { playImmediate, playSongList, replaceQueue } = useQueue();
 
     const historySongs = useMemo(() => {
         return history
@@ -21,15 +21,7 @@ const HistoryView: React.FC = () => {
 
     const handleReplaceAndPlay = () => {
         if (historySongs.length === 0) return;
-        clearQueue();
-        setTimeout(() => {
-            playSongList(historySongs.map(s => s.id));
-            setTimeout(() => {
-                if (historySongs.length > 0) {
-                    playImmediate(historySongs[0].id);
-                }
-            }, 50);
-        }, 0);
+        replaceQueue(historySongs.map(s => s.id));
     };
 
     return (
