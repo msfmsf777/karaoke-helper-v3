@@ -264,8 +264,8 @@ const AddSongDialog: React.FC<{
 
 const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics }) => {
   const { songs, loading, refreshSongs } = useLibrary();
-  const { playSong, addToQueue, playImmediate, currentSongId } = useQueue();
-  const { isFavorite, toggleFavorite } = useUserData();
+  const { } = useQueue();
+  const { } = useUserData();
 
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [formState, setFormState] = useState<AddSongFormState>(defaultForm);
