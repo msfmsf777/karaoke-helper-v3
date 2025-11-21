@@ -203,9 +203,41 @@ async function getOriginalSongFilePath(id) {
     return null;
   }
 }
+async function deleteSong(id) {
+  if (!id) return;
+  const songsDir = await ensureSongsDir();
+  const songDir = path.join(songsDir, id);
+  try {
+    await fs.rm(songDir, { recursive: true, force: true });
+    console.log("[Library] Deleted song folder", { id, songDir });
+  } catch (err) {
+    console.error("[Library] Failed to delete song folder", { id, songDir }, err);
+    throw err;
+  }
+}
+async function updateSong(id, updates) {
+  return updateSongMeta(id, (current) => ({
+    ...current,
+    ...updates
+  }));
+}
 function getSongsBaseDir() {
   return getSongsDir();
 }
+const songLibrary = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  RAW_LYRICS_FILENAME,
+  SYNCED_LYRICS_FILENAME,
+  addLocalSong,
+  deleteSong,
+  getOriginalSongFilePath,
+  getSongFilePath,
+  getSongMeta,
+  getSongsBaseDir,
+  loadAllSongs,
+  updateSong,
+  updateSongMeta
+}, Symbol.toStringTag, { value: "Module" }));
 function generateJobId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 }
@@ -593,6 +625,14 @@ ipcMain.handle("library:get-original-song-file-path", async (_event, id) => {
 });
 ipcMain.handle("library:get-base-path", async () => {
   return getSongsBaseDir();
+});
+ipcMain.handle("library:delete-song", async (_event, id) => {
+  const { deleteSong: deleteSong2 } = await Promise.resolve().then(() => songLibrary);
+  return deleteSong2(id);
+});
+ipcMain.handle("library:update-song", async (_event, payload) => {
+  const { updateSong: updateSong2 } = await Promise.resolve().then(() => songLibrary);
+  return updateSong2(payload.id, payload.updates);
 });
 ipcMain.handle("jobs:queue-separation", async (_event, songId) => {
   return queueSeparationJob(songId);

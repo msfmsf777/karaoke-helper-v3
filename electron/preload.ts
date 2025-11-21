@@ -53,6 +53,9 @@ contextBridge.exposeInMainWorld('khelper', {
     getOriginalSongFilePath: (id: string): Promise<string | null> =>
       ipcRenderer.invoke('library:get-original-song-file-path', id),
     getBasePath: (): Promise<string> => ipcRenderer.invoke('library:get-base-path'),
+    deleteSong: (id: string): Promise<void> => ipcRenderer.invoke('library:delete-song', id),
+    updateSong: (id: string, updates: Partial<SongMeta>): Promise<SongMeta | null> =>
+      ipcRenderer.invoke('library:update-song', { id, updates }),
   },
   jobs: {
     queueSeparationJob: (songId: string): Promise<SeparationJob> =>

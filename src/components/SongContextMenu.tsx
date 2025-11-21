@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { SongMeta } from '../../shared/songTypes';
 import { useQueue } from '../contexts/QueueContext';
 import { useUserData } from '../contexts/UserDataContext';
+import { useLibrary } from '../contexts/LibraryContext';
+import EditSongDialog from './EditSongDialog';
 
 interface SongContextMenuProps {
     song: SongMeta;
@@ -12,25 +14,30 @@ interface SongContextMenuProps {
 
 const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClose, onEditLyrics }) => {
     const menuRef = useRef<HTMLDivElement>(null);
-    const { playImmediate, addToQueue } = useQueue();
-    const { isFavorite, toggleFavorite, playlists, createPlaylist, addSongToPlaylist } = useUserData();
+    const { playImmediate, addToQueue, queue, removeFromQueue } = useQueue();
+    const { isFavorite, toggleFavorite, playlists, createPlaylist, addSongToPlaylist, cleanupSong } = useUserData();
+    const { deleteSong } = useLibrary();
 
     const [showPlaylistSubmenu, setShowPlaylistSubmenu] = useState(false);
     const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
     const [newPlaylistName, setNewPlaylistName] = useState('');
+    const [showEditDialog, setShowEditDialog] = useState(false);
 
     // Close on click outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                onClose();
+                // Only close if not interacting with the edit dialog
+                if (!showEditDialog) {
+                    onClose();
+                }
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [onClose]);
+    }, [onClose, showEditDialog]);
 
     // Adjust position if it goes off screen (basic)
     const style: React.CSSProperties = {
@@ -91,18 +98,45 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
     };
 
     const handleEditDetails = () => {
-        // Placeholder for future implementation
-        alert('編輯歌曲資訊功能尚未實作');
-        onClose();
+        setShowEditDialog(true);
     };
 
-    const handleDeleteSong = () => {
-        // Placeholder for future implementation
-        if (window.confirm(`確定要刪除「${song.title}」嗎？(此功能尚未實作)`)) {
-            console.log('Delete song requested', song.id);
+    const handleDeleteSong = async () => {
+        if (window.confirm(`此操作將刪除歌曲「${song.title}」與相關檔案（原曲、伴奏、人聲、歌詞），且無法復原。確定要刪除嗎？`)) {
+            try {
+                // 1. Remove from Queue
+                const index = queue.indexOf(song.id);
+                if (index !== -1) {
+                    removeFromQueue(index);
+                }
+
+                // 2. Remove from User Data (Favorites, History, Playlists)
+                cleanupSong(song.id);
+
+                // 3. Delete from Library (Filesystem)
+                await deleteSong(song.id);
+
+                onClose();
+            } catch (err) {
+                console.error('Failed to delete song', err);
+                alert('刪除失敗，請查看 Console 錯誤訊息');
+            }
+        } else {
+            onClose();
         }
-        onClose();
     };
+
+    if (showEditDialog) {
+        return (
+            <EditSongDialog
+                song={song}
+                onClose={() => {
+                    setShowEditDialog(false);
+                    onClose();
+                }}
+            />
+        );
+    }
 
     return (
         <div ref={menuRef} style={style} onClick={(e) => e.stopPropagation()}>
