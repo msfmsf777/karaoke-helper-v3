@@ -544,7 +544,7 @@ app.whenReady().then(() => {
 const clients = /* @__PURE__ */ new Set();
 const OVERLAY_PORT = 10001;
 const server = http.createServer((req, res) => {
-  var _a;
+  var _a, _b;
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -594,6 +594,13 @@ const server = http.createServer((req, res) => {
       res.end("Internal Server Error");
     });
     return;
+  }
+  if (process.env.VITE_DEV_SERVER_URL) {
+    if (req.url === "/" || req.url === "/overlay" || ((_b = req.url) == null ? void 0 : _b.startsWith("/#/"))) {
+      res.writeHead(302, { "Location": `${process.env.VITE_DEV_SERVER_URL}#/overlay` });
+      res.end();
+      return;
+    }
   }
   let filePath = path.join(RENDERER_DIST, req.url === "/" ? "index.html" : req.url || "index.html");
   if (req.url === "/" || req.url === "/overlay") {

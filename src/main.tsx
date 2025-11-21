@@ -4,7 +4,11 @@ import App from './App.tsx'
 import OverlayWindow from './components/OverlayWindow.tsx'
 import './index.css'
 
-const isOverlay = window.location.hash === '#/overlay';
+const isOverlay = window.location.hash === '#/overlay' || window.location.pathname === '/overlay';
+
+if (isOverlay) {
+  document.body.style.backgroundColor = 'transparent';
+}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
