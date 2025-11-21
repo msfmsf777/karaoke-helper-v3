@@ -1,16 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { addLocalSong, getSongFilePath, pickAudioFile, SongMeta, SongType } from '../library/songLibrary';
-import { queueSeparationJob } from '../jobs/separationJobs';
+import React, { useMemo, useState } from 'react';
+import { addLocalSong, pickAudioFile, SongMeta, SongType } from '../library/songLibrary';
 import { useLibrary } from '../contexts/LibraryContext';
 import { useQueue } from '../contexts/QueueContext';
 import { useUserData } from '../contexts/UserDataContext';
+import SongList from './SongList';
 
 interface LibraryViewProps {
   onOpenLyrics?: (song: SongMeta) => void;
 }
-
-
-
 
 interface AddSongFormState {
   sourcePath: string;
@@ -28,29 +25,6 @@ const defaultForm: AddSongFormState = {
   type: '原曲',
   lyricsMode: 'none',
   lyricsText: '',
-};
-
-const audioStatusLabels: Record<SongMeta['audio_status'], string> = {
-  original_only: '未分離',
-  separation_pending: '等待分離',
-  separating: '分離中',
-  separation_failed: '分離失敗',
-  separated: '已分離',
-  ready: '未分離',
-  missing: '未分離',
-  error: '錯誤',
-};
-
-const lyricsLabel = (status?: SongMeta['lyrics_status']) => {
-  switch (status) {
-    case 'text_only':
-      return '純文字';
-    case 'synced':
-      return '已對齊';
-    case 'none':
-    default:
-      return '無';
-  }
 };
 
 const AddSongDialog: React.FC<{
@@ -297,10 +271,6 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics }) => {
   const [formState, setFormState] = useState<AddSongFormState>(defaultForm);
   const [formError, setFormError] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
-  const [separationBusyId, setSeparationBusyId] = useState<string | null>(null);
-
-  const [addToPlaylistSongId, setAddToPlaylistSongId] = useState<string | null>(null);
-  const [addToPlaylistPosition, setAddToPlaylistPosition] = useState<{ x: number, y: number } | null>(null);
 
   const handleAddConfirm = async () => {
     setFormError(null);
@@ -334,29 +304,11 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics }) => {
     }
   };
 
-  const handleRowDoubleClick = async (song: SongMeta) => {
-    playImmediate(song.id);
-  };
-
-  const handleStartSeparation = async (song: SongMeta) => {
-    setSeparationBusyId(song.id);
-    // Optimistic update not strictly needed if we rely on job updates, but good for UI feedback
-    // For now, we just rely on refreshSongs triggered by job updates or manual refresh
-    try {
-      await queueSeparationJob(song.id);
-      console.log('[Library] Queued separation job', song.id);
-    } catch (err) {
-      console.error('[Library] Failed to queue separation', song.id, err);
-    } finally {
-      setSeparationBusyId(null);
-    }
-  };
-
   const currentSongs = useMemo(() => songs, [songs]);
 
   return (
-    <div style={{ padding: '32px', height: '100%', overflowY: 'auto', position: 'relative' }} onClick={() => setAddToPlaylistSongId(null)}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+    <div style={{ padding: '32px', height: '100%', overflowY: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexShrink: 0 }}>
         <h1 style={{ fontSize: '32px', fontWeight: 'bold', margin: 0 }}>歌曲庫</h1>
         <button
           onClick={() => {
@@ -379,193 +331,20 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics }) => {
         </button>
       </div>
 
-      <div style={{ color: '#b3b3b3', marginBottom: '12px', fontSize: '14px' }}>
+      <div style={{ color: '#b3b3b3', marginBottom: '12px', fontSize: '14px', flexShrink: 0 }}>
         支援原曲與伴奏，原曲可排入分離任務；點擊列可以直接載入播放器。
       </div>
 
-      <div
-        style={{
-          backgroundColor: '#181818',
-          borderRadius: '10px',
-          overflow: 'hidden',
-          border: '1px solid #2a2a2a',
-        }}
-      >
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '40px 3fr 2fr 1fr 1.2fr 1fr 1.5fr',
-            padding: '12px 16px',
-            borderBottom: '1px solid #252525',
-            color: '#b3b3b3',
-            fontSize: '13px',
-            letterSpacing: '0.2px',
-          }}
-        >
-          <div>#</div>
-          <div>歌曲名稱</div>
-          <div>歌手</div>
-          <div>類型</div>
-          <div>音訊狀態</div>
-          <div>歌詞狀態</div>
-          <div>操作</div>
-        </div>
-
+      <div style={{ flex: 1, overflow: 'hidden' }}>
         {loading ? (
           <div style={{ padding: '20px', color: '#b3b3b3' }}>載入中...</div>
-        ) : currentSongs.length === 0 ? (
-          <div style={{ padding: '20px', color: '#b3b3b3' }}>
-            尚未有歌曲，點右上角「＋ 新增歌曲」開始建立你的歌單。
-          </div>
         ) : (
-          currentSongs.map((song, idx) => {
-            const isActive = currentSongId === song.id;
-            const canStartSeparation =
-              song.type === '原曲' &&
-              (song.audio_status === 'original_only' || song.audio_status === 'separation_failed' || song.audio_status === 'ready');
-            const isWorking =
-              song.audio_status === 'separation_pending' || song.audio_status === 'separating' || separationBusyId === song.id;
-            const audioColor =
-              song.audio_status === 'separated'
-                ? '#8be28b'
-                : song.audio_status === 'separation_failed' || song.audio_status === 'error'
-                  ? '#ff8b8b'
-                  : '#e0a040';
-
-            return (
-              <div
-                key={song.id}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '40px 3fr 2fr 1fr 1.2fr 1fr 1.5fr',
-                  padding: '12px 16px',
-                  borderBottom: '1px solid #252525',
-                  color: '#fff',
-                  fontSize: '14px',
-                  alignItems: 'center',
-                  backgroundColor: isActive ? '#262626' : 'transparent',
-                  cursor: 'pointer',
-                }}
-                onDoubleClick={() => handleRowDoubleClick(song)}
-                onMouseOver={(e) => (e.currentTarget.style.backgroundColor = isActive ? '#262626' : '#202020')}
-                onMouseOut={(e) => (e.currentTarget.style.backgroundColor = isActive ? '#262626' : 'transparent')}
-              >
-                <div style={{ color: '#b3b3b3' }}>{idx + 1}</div>
-                <div style={{ fontWeight: isActive ? 700 : 500 }}>{song.title}</div>
-                <div style={{ color: '#b3b3b3' }}>{song.artist || '—'}</div>
-                <div style={{ textAlign: 'center' }}>
-                  <span
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFavorite(song.id);
-                    }}
-                    style={{
-                      color: isFavorite(song.id) ? 'var(--primary-color)' : '#444',
-                      cursor: 'pointer',
-                      fontSize: '16px'
-                    }}
-                  >
-                    {isFavorite(song.id) ? '♥' : '♡'}
-                  </span>
-                </div>
-                <div style={{ color: '#b3b3b3' }}>{song.type}</div>
-                <div style={{ color: audioColor }} title={song.last_separation_error || undefined}>
-                  {audioStatusLabels[song.audio_status]}
-                  {song.audio_status === 'separating' && <span style={{ marginLeft: 6, fontSize: '12px' }}>⋯</span>}
-                  {song.audio_status === 'separation_failed' && song.last_separation_error && (
-                    <span style={{ marginLeft: 6, color: '#ffb3b3', fontSize: '12px' }}>查看錯誤</span>
-                  )}
-                </div>
-                <div style={{ color: '#b3b3b3' }}>{lyricsLabel(song.lyrics_status)}</div>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      addToQueue(song.id);
-                    }}
-                    title="加入播放隊列"
-                    style={{
-                      padding: '6px 10px',
-                      backgroundColor: '#2d2d2d',
-                      color: '#fff',
-                      border: '1px solid #3a3a3a',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontWeight: 600,
-                    }}
-                  >
-                    ＋
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      setAddToPlaylistPosition({ x: rect.left, y: rect.bottom + 5 });
-                      setAddToPlaylistSongId(song.id);
-                    }}
-                    title="加入歌單..."
-                    style={{
-                      padding: '6px 10px',
-                      backgroundColor: '#2d2d2d',
-                      color: '#fff',
-                      border: '1px solid #3a3a3a',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontWeight: 600,
-                      fontSize: '12px'
-                    }}
-                  >
-                    ≡
-                  </button>
-                  {song.type === '原曲' ? (
-                    canStartSeparation ? (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStartSeparation(song);
-                        }}
-                        disabled={isWorking}
-                        style={{
-                          padding: '6px 10px',
-                          backgroundColor: isWorking ? '#3a3a3a' : 'var(--accent-color)',
-                          color: '#000',
-                          border: 'none',
-                          borderRadius: '8px',
-                          cursor: isWorking ? 'not-allowed' : 'pointer',
-                          fontWeight: 700,
-                        }}
-                      >
-                        {song.audio_status === 'separation_failed' ? '重新分離' : '分離伴奏'}
-                      </button>
-                    ) : song.audio_status === 'separated' ? (
-                      <span style={{ color: '#8be28b' }}>已分離</span>
-                    ) : (
-                      <span style={{ color: '#b3b3b3' }}>{audioStatusLabels[song.audio_status]}</span>
-                    )
-                  ) : (
-                    <span style={{ color: '#555' }}>—</span>
-                  )}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onOpenLyrics?.(song);
-                    }}
-                    style={{
-                      padding: '6px 10px',
-                      backgroundColor: '#2d2d2d',
-                      color: '#fff',
-                      border: '1px solid #3a3a3a',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontWeight: 600,
-                    }}
-                  >
-                    歌詞對齊
-                  </button>
-                </div>
-              </div>
-            );
-          })
+          <SongList
+            songs={currentSongs}
+            context="library"
+            onEditLyrics={onOpenLyrics}
+            emptyMessage="尚未有歌曲，點右上角「＋ 新增歌曲」開始建立你的歌單。"
+          />
         )}
       </div>
 
@@ -578,118 +357,6 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics }) => {
           busy={isAdding}
           error={formError}
         />
-      )}
-
-      {addToPlaylistSongId && addToPlaylistPosition && (
-        <AddToPlaylistMenu
-          songId={addToPlaylistSongId}
-          position={addToPlaylistPosition}
-          onClose={() => setAddToPlaylistSongId(null)}
-        />
-      )}
-    </div>
-  );
-};
-
-const AddToPlaylistMenu: React.FC<{
-  songId: string;
-  position: { x: number, y: number };
-  onClose: () => void;
-}> = ({ songId, position, onClose }) => {
-  const { playlists, createPlaylist, addSongToPlaylist } = useUserData();
-  const [isCreating, setIsCreating] = useState(false);
-  const [newPlaylistName, setNewPlaylistName] = useState('');
-
-  const handleAddToPlaylist = (playlistId: string) => {
-    addSongToPlaylist(playlistId, songId);
-    onClose();
-  };
-
-  const handleCreateAndAdd = () => {
-    if (newPlaylistName.trim()) {
-      const id = createPlaylist(newPlaylistName.trim());
-      addSongToPlaylist(id, songId);
-      onClose();
-    }
-  };
-
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        left: position.x,
-        top: position.y,
-        backgroundColor: '#2d2d2d',
-        border: '1px solid #3a3a3a',
-        borderRadius: '8px',
-        padding: '8px',
-        zIndex: 100,
-        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-        minWidth: '160px',
-      }}
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div style={{ fontSize: '12px', color: '#888', marginBottom: '8px', padding: '0 8px' }}>加入歌單...</div>
-
-      {playlists.map(p => (
-        <div
-          key={p.id}
-          onClick={() => handleAddToPlaylist(p.id)}
-          style={{
-            padding: '6px 8px',
-            cursor: 'pointer',
-            color: '#fff',
-            fontSize: '14px',
-            borderRadius: '4px',
-          }}
-          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
-          onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-        >
-          {p.name}
-        </div>
-      ))}
-
-      <div style={{ height: '1px', backgroundColor: '#3a3a3a', margin: '4px 0' }}></div>
-
-      {isCreating ? (
-        <div style={{ padding: '4px' }}>
-          <input
-            autoFocus
-            type="text"
-            value={newPlaylistName}
-            onChange={(e) => setNewPlaylistName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleCreateAndAdd();
-              if (e.key === 'Escape') setIsCreating(false);
-            }}
-            placeholder="新歌單名稱"
-            style={{
-              width: '100%',
-              padding: '4px',
-              backgroundColor: '#1f1f1f',
-              border: '1px solid #3a3a3a',
-              color: '#fff',
-              borderRadius: '4px',
-              fontSize: '12px'
-            }}
-          />
-        </div>
-      ) : (
-        <div
-          onClick={() => setIsCreating(true)}
-          style={{
-            padding: '6px 8px',
-            cursor: 'pointer',
-            color: 'var(--accent-color)',
-            fontSize: '14px',
-            borderRadius: '4px',
-            fontWeight: 600
-          }}
-          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
-          onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-        >
-          ＋ 新建歌單
-        </div>
       )}
     </div>
   );
