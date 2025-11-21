@@ -1,6 +1,6 @@
 import React from 'react';
 
-type View = 'library' | 'lyrics' | 'stream';
+type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history';
 
 interface SidebarProps {
   currentView: View;
@@ -53,10 +53,22 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
 
         <div style={{ height: '1px', backgroundColor: '#282828', margin: '16px 8px' }}></div>
 
+        <div style={sectionTitleStyle}>我的音樂</div>
+        <div style={navItemStyle(currentView === 'favorites')} onClick={() => onViewChange('favorites')}>
+          我的最愛
+        </div>
+        <div style={navItemStyle(currentView === 'history')} onClick={() => onViewChange('history')}>
+          最近播放
+        </div>
+
+        <div style={{ height: '1px', backgroundColor: '#282828', margin: '16px 8px' }}></div>
+
+        <div style={sectionTitleStyle}>我的歌單</div>
+        {/* Placeholder for future playlists */}
+
+        <div style={{ height: '1px', backgroundColor: '#282828', margin: '16px 8px' }}></div>
+
         <div style={sectionTitleStyle}>快速存取</div>
-        <div style={navItemStyle(false)}>最近播放</div>
-        <div style={navItemStyle(false)}>當前歌單</div>
-        <div style={navItemStyle(false)}>歌詞草稿</div>
         <div style={navItemStyle(false)}>下載管理</div>
       </div>
     </div>

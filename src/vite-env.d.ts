@@ -42,5 +42,11 @@ interface Window {
       save: (payload: { songIds: string[]; currentIndex: number }) => Promise<void>;
       load: () => Promise<{ songIds: string[]; currentIndex: number } | null>;
     };
+    userData: {
+      saveFavorites: (favorites: string[]) => Promise<void>;
+      loadFavorites: () => Promise<string[]>;
+      saveHistory: (history: string[]) => Promise<void>;
+      loadHistory: () => Promise<string[]>;
+    };
   };
 }

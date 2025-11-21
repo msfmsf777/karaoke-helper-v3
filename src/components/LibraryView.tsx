@@ -3,6 +3,7 @@ import { addLocalSong, getSongFilePath, pickAudioFile, SongMeta, SongType } from
 import { queueSeparationJob } from '../jobs/separationJobs';
 import { useLibrary } from '../contexts/LibraryContext';
 import { useQueue } from '../contexts/QueueContext';
+import { useUserData } from '../contexts/UserDataContext';
 
 interface LibraryViewProps {
   onOpenLyrics?: (song: SongMeta) => void;
@@ -290,6 +291,7 @@ const AddSongDialog: React.FC<{
 const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics }) => {
   const { songs, loading, refreshSongs } = useLibrary();
   const { playSong, addToQueue, playImmediate, currentSongId } = useQueue();
+  const { isFavorite, toggleFavorite } = useUserData();
 
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [formState, setFormState] = useState<AddSongFormState>(defaultForm);
@@ -448,6 +450,21 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics }) => {
                 <div style={{ color: '#b3b3b3' }}>{idx + 1}</div>
                 <div style={{ fontWeight: isActive ? 700 : 500 }}>{song.title}</div>
                 <div style={{ color: '#b3b3b3' }}>{song.artist || '—'}</div>
+                <div style={{ textAlign: 'center' }}>
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(song.id);
+                    }}
+                    style={{
+                      color: isFavorite(song.id) ? 'var(--primary-color)' : '#444',
+                      cursor: 'pointer',
+                      fontSize: '16px'
+                    }}
+                  >
+                    {isFavorite(song.id) ? '♥' : '♡'}
+                  </span>
+                </div>
                 <div style={{ color: '#b3b3b3' }}>{song.type}</div>
                 <div style={{ color: audioColor }} title={song.last_separation_error || undefined}>
                   {audioStatusLabels[song.audio_status]}

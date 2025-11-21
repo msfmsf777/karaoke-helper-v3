@@ -84,4 +84,10 @@ contextBridge.exposeInMainWorld('khelper', {
       ipcRenderer.invoke('queue:save', payload),
     load: (): Promise<{ songIds: string[]; currentIndex: number } | null> => ipcRenderer.invoke('queue:load'),
   },
+  userData: {
+    saveFavorites: (songIds: string[]): Promise<void> => ipcRenderer.invoke('userData:save-favorites', songIds),
+    loadFavorites: (): Promise<string[]> => ipcRenderer.invoke('userData:load-favorites'),
+    saveHistory: (songIds: string[]): Promise<void> => ipcRenderer.invoke('userData:save-history', songIds),
+    loadHistory: (): Promise<string[]> => ipcRenderer.invoke('userData:load-history'),
+  },
 })

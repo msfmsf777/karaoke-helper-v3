@@ -13,8 +13,11 @@ import { loadOutputDevicePreferences, saveOutputDevicePreferences } from './sett
 import './App.css';
 import { LibraryProvider, useLibrary } from './contexts/LibraryContext';
 import { QueueProvider, useQueue } from './contexts/QueueContext';
+import { UserDataProvider } from './contexts/UserDataContext';
+import FavoritesView from './components/FavoritesView';
+import HistoryView from './components/HistoryView';
 
-type View = 'library' | 'lyrics' | 'stream';
+type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history';
 
 function AppContent() {
   const [currentView, setCurrentView] = useState<View>('library');
@@ -182,6 +185,11 @@ function AppContent() {
             onOpenOverlayWindow={() => window.api.openOverlayWindow()}
           />
         );
+
+      case 'favorites':
+        return <FavoritesView />;
+      case 'history':
+        return <HistoryView />;
       default:
         return <LibraryView />;
     }
@@ -241,7 +249,9 @@ function App() {
   return (
     <LibraryProvider>
       <QueueProvider>
-        <AppContent />
+        <UserDataProvider>
+          <AppContent />
+        </UserDataProvider>
       </QueueProvider>
     </LibraryProvider>
   );
