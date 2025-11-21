@@ -38,5 +38,9 @@ interface Window {
       writeRawLyrics: (payload: { songId: string; content: string }) => Promise<{ path: string; meta: import('../shared/songTypes').SongMeta }>;
       writeSyncedLyrics: (payload: { songId: string; content: string }) => Promise<{ path: string; meta: import('../shared/songTypes').SongMeta }>;
     };
+    queue: {
+      save: (payload: { songIds: string[]; currentIndex: number }) => Promise<void>;
+      load: () => Promise<{ songIds: string[]; currentIndex: number } | null>;
+    };
   };
 }

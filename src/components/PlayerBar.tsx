@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import audioEngine from '../audio/AudioEngine';
 import { loadVolumePreferences, saveVolumePreferences } from '../settings/volumePreferences';
+import { useQueue } from '../contexts/QueueContext';
 
 type View = 'library' | 'lyrics' | 'stream';
 
@@ -25,18 +26,13 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   duration,
   currentTrackName,
 }) => {
+  const { playNext, playPrev } = useQueue();
   const initialVolumes = loadVolumePreferences() ?? { streamVolume: 0.8, headphoneVolume: 1 };
   const [isHovered, setIsHovered] = useState(false);
   const [backingVolume, setBackingVolume] = useState(() => Math.round(initialVolumes.streamVolume * 100));
   const [vocalVolume, setVocalVolume] = useState(() => Math.round(initialVolumes.headphoneVolume * 100));
 
-  const iconStyle = {
-    cursor: 'pointer',
-    fontSize: '14px',
-    color: '#b3b3b3',
-    margin: '0 10px',
-    userSelect: 'none' as const,
-  };
+
 
   const formatTime = (value: number) => {
     if (!Number.isFinite(value) || value < 0) return '0:00';
@@ -133,26 +129,51 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
         </div>
       </div>
 
-      {/* Center: Controls */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '40%' }}>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-          <span style={iconStyle}>Prev</span>
+      {/* Center Controls */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: '600px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '4px' }}>
           <button
+            onClick={playPrev}
             style={{
-              ...iconStyle,
-              padding: '6px 14px',
-              borderRadius: '20px',
-              backgroundColor: '#fff',
-              color: '#000',
-              fontWeight: 700,
+              background: 'none',
               border: 'none',
-              fontSize: '14px',
+              color: '#b3b3b3',
+              cursor: 'pointer',
+              fontSize: '20px',
             }}
-            onClick={onPlayPause}
           >
-            {isPlaying ? 'Pause' : 'Play'}
+            ⏮
           </button>
-          <span style={iconStyle}>Next</span>
+          <button
+            onClick={onPlayPause}
+            style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              backgroundColor: '#fff',
+              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              fontSize: '18px',
+              color: '#000',
+            }}
+          >
+            {isPlaying ? '⏸' : '▶'}
+          </button>
+          <button
+            onClick={playNext}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#b3b3b3',
+              cursor: 'pointer',
+              fontSize: '20px',
+            }}
+          >
+            ⏭
+          </button>
         </div>
         <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '11px', color: '#b3b3b3', minWidth: '42px', textAlign: 'right' }}>
