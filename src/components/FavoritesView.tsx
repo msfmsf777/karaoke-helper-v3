@@ -2,11 +2,17 @@ import React, { useMemo } from 'react';
 import { useLibrary } from '../contexts/LibraryContext';
 import { useUserData } from '../contexts/UserDataContext';
 import { useQueue } from '../contexts/QueueContext';
+import SongList from './SongList';
+import { SongMeta } from '../../shared/songTypes';
 
-const FavoritesView: React.FC = () => {
+interface FavoritesViewProps {
+    onOpenLyrics?: (song: SongMeta) => void;
+}
+
+const FavoritesView: React.FC<FavoritesViewProps> = ({ onOpenLyrics }) => {
     const { getSongById } = useLibrary();
-    const { favorites, toggleFavorite, isFavorite } = useUserData();
-    const { playImmediate, playSongList, replaceQueue } = useQueue();
+    const { favorites } = useUserData();
+    const { playSongList, replaceQueue } = useQueue();
 
     const favoriteSongs = useMemo(() => {
         return favorites
@@ -25,9 +31,9 @@ const FavoritesView: React.FC = () => {
     };
 
     return (
-        <div style={{ height: '100%', display: 'flex', flexDirection: 'column', color: '#fff', padding: '20px' }}>
-            <div style={{ marginBottom: '20px' }}>
-                <h1 style={{ margin: '0 0 10px 0', fontSize: '24px' }}>我的最愛</h1>
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column', color: '#fff', padding: '32px' }}>
+            <div style={{ marginBottom: '20px', flexShrink: 0 }}>
+                <h1 style={{ margin: '0 0 10px 0', fontSize: '32px', fontWeight: 'bold' }}>我的最愛</h1>
                 <div style={{ fontSize: '14px', color: '#888', marginBottom: '16px' }}>
                     共 {favoriteSongs.length} 首歌曲
                 </div>
@@ -61,56 +67,13 @@ const FavoritesView: React.FC = () => {
                 </div>
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto' }}>
-                {favoriteSongs.length === 0 ? (
-                    <div style={{ color: '#666', marginTop: '20px' }}>尚未加入任何最愛歌曲</div>
-                ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                        <thead>
-                            <tr style={{ borderBottom: '1px solid #333', color: '#888', fontSize: '12px' }}>
-                                <th style={{ padding: '8px', width: '40px' }}></th>
-                                <th style={{ padding: '8px' }}>歌曲標題</th>
-                                <th style={{ padding: '8px' }}>歌手</th>
-                                <th style={{ padding: '8px' }}>狀態</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {favoriteSongs.map((song) => (
-                                <tr
-                                    key={song.id}
-                                    onDoubleClick={() => playImmediate(song.id)}
-                                    style={{
-                                        borderBottom: '1px solid #222',
-                                        cursor: 'pointer',
-                                        fontSize: '14px'
-                                    }}
-                                    className="song-row" // Assuming global CSS for hover effect
-                                >
-                                    <td style={{ padding: '8px', textAlign: 'center' }}>
-                                        <span
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                toggleFavorite(song.id);
-                                            }}
-                                            style={{
-                                                color: isFavorite(song.id) ? 'var(--primary-color)' : '#444',
-                                                cursor: 'pointer',
-                                                fontSize: '16px'
-                                            }}
-                                        >
-                                            {isFavorite(song.id) ? '♥' : '♡'}
-                                        </span>
-                                    </td>
-                                    <td style={{ padding: '8px' }}>{song.title}</td>
-                                    <td style={{ padding: '8px' }}>{song.artist || 'Unknown'}</td>
-                                    <td style={{ padding: '8px' }}>
-                                        {song.lyricsRaw ? '📝' : ''} {song.lyricsSynced ? '🎤' : ''}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+                <SongList
+                    songs={favoriteSongs}
+                    context="favorites"
+                    onEditLyrics={onOpenLyrics}
+                    emptyMessage="尚未加入任何最愛歌曲"
+                />
             </div>
         </div>
     );
