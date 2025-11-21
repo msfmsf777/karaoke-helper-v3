@@ -57,3 +57,34 @@ export async function loadHistory(): Promise<string[]> {
         return [];
     }
 }
+
+export interface Playlist {
+    id: string;
+    name: string;
+    description?: string;
+    songIds: string[];
+}
+
+const PLAYLISTS_FILE = 'playlists.json';
+
+export async function savePlaylists(playlists: Playlist[]): Promise<void> {
+    try {
+        const filePath = getUserDataPath(PLAYLISTS_FILE);
+        await fs.writeFile(filePath, JSON.stringify(playlists, null, 2), 'utf-8');
+    } catch (err) {
+        console.error('[UserData] Failed to save playlists', err);
+    }
+}
+
+export async function loadPlaylists(): Promise<Playlist[]> {
+    try {
+        const filePath = getUserDataPath(PLAYLISTS_FILE);
+        const content = await fs.readFile(filePath, 'utf-8');
+        return JSON.parse(content) as Playlist[];
+    } catch (err: any) {
+        if (err.code !== 'ENOENT') {
+            console.error('[UserData] Failed to load playlists', err);
+        }
+        return [];
+    }
+}

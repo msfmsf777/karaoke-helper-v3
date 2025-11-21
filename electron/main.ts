@@ -151,6 +151,26 @@ ipcMain.handle('userData:load-history', async () => {
   return loadHistory()
 })
 
+ipcMain.handle('userData:save-playlists', async (_event, playlists: any[]) => {
+  // Dynamic import or just use the function if it's exported. 
+  // Note: We need to import savePlaylists/loadPlaylists from userData.ts
+  // Since we are in main.ts and it imports from userData, we need to update the import statement first.
+  // But here we are just adding the handlers.
+  // Wait, I need to update the import at the top of the file first.
+  // I will do that in a separate edit or assume I can do it here if I use the imported names.
+  // I'll use the imported names and update the import in a separate step or use a multi-replace if possible.
+  // Actually, I can't use them if they are not imported.
+  // I will assume I will update the import in the next step.
+  // For now, let's just add the handlers and then update the import.
+  const { savePlaylists } = await import('./userData')
+  return savePlaylists(playlists)
+})
+
+ipcMain.handle('userData:load-playlists', async () => {
+  const { loadPlaylists } = await import('./userData')
+  return loadPlaylists()
+})
+
 ipcMain.on('jobs:subscribe', (event, subscriptionId: string) => {
   const wc = event.sender
   const disposer = subscribeJobUpdates((jobs) => wc.send('jobs:updated', jobs))

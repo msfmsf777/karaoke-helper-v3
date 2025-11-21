@@ -89,5 +89,7 @@ contextBridge.exposeInMainWorld('khelper', {
     loadFavorites: (): Promise<string[]> => ipcRenderer.invoke('userData:load-favorites'),
     saveHistory: (songIds: string[]): Promise<void> => ipcRenderer.invoke('userData:save-history', songIds),
     loadHistory: (): Promise<string[]> => ipcRenderer.invoke('userData:load-history'),
+    savePlaylists: (playlists: any[]): Promise<void> => ipcRenderer.invoke('userData:save-playlists', playlists),
+    loadPlaylists: (): Promise<any[]> => ipcRenderer.invoke('userData:load-playlists'),
   },
 })

@@ -16,8 +16,9 @@ import { QueueProvider, useQueue } from './contexts/QueueContext';
 import { UserDataProvider } from './contexts/UserDataContext';
 import FavoritesView from './components/FavoritesView';
 import HistoryView from './components/HistoryView';
+import PlaylistView from './components/PlaylistView';
 
-type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history';
+type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history' | string;
 
 function AppContent() {
   const [currentView, setCurrentView] = useState<View>('library');
@@ -151,6 +152,11 @@ function AppContent() {
   };
 
   const renderContent = () => {
+    if (currentView.startsWith('playlist:')) {
+      const playlistId = currentView.split(':')[1];
+      return <PlaylistView playlistId={playlistId} />;
+    }
+
     switch (currentView) {
       case 'library':
         return (

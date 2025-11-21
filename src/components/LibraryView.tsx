@@ -299,6 +299,9 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [separationBusyId, setSeparationBusyId] = useState<string | null>(null);
 
+  const [addToPlaylistSongId, setAddToPlaylistSongId] = useState<string | null>(null);
+  const [addToPlaylistPosition, setAddToPlaylistPosition] = useState<{ x: number, y: number } | null>(null);
+
   const handleAddConfirm = async () => {
     setFormError(null);
     if (!formState.sourcePath) {
@@ -352,7 +355,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics }) => {
   const currentSongs = useMemo(() => songs, [songs]);
 
   return (
-    <div style={{ padding: '32px', height: '100%', overflowY: 'auto', position: 'relative' }}>
+    <div style={{ padding: '32px', height: '100%', overflowY: 'auto', position: 'relative' }} onClick={() => setAddToPlaylistSongId(null)}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
         <h1 style={{ fontSize: '32px', fontWeight: 'bold', margin: 0 }}>歌曲庫</h1>
         <button
@@ -391,7 +394,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics }) => {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '40px 3fr 2fr 1fr 1.2fr 1fr 1.2fr',
+            gridTemplateColumns: '40px 3fr 2fr 1fr 1.2fr 1fr 1.5fr',
             padding: '12px 16px',
             borderBottom: '1px solid #252525',
             color: '#b3b3b3',
@@ -434,7 +437,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics }) => {
                 key={song.id}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '40px 3fr 2fr 1fr 1.2fr 1fr 1.2fr',
+                  gridTemplateColumns: '40px 3fr 2fr 1fr 1.2fr 1fr 1.5fr',
                   padding: '12px 16px',
                   borderBottom: '1px solid #252525',
                   color: '#fff',
@@ -479,7 +482,6 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics }) => {
                     onClick={(e) => {
                       e.stopPropagation();
                       addToQueue(song.id);
-                      // Optional: Show toast
                     }}
                     title="加入播放隊列"
                     style={{
@@ -493,6 +495,27 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics }) => {
                     }}
                   >
                     ＋
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setAddToPlaylistPosition({ x: rect.left, y: rect.bottom + 5 });
+                      setAddToPlaylistSongId(song.id);
+                    }}
+                    title="加入歌單..."
+                    style={{
+                      padding: '6px 10px',
+                      backgroundColor: '#2d2d2d',
+                      color: '#fff',
+                      border: '1px solid #3a3a3a',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      fontSize: '12px'
+                    }}
+                  >
+                    ≡
                   </button>
                   {song.type === '原曲' ? (
                     canStartSeparation ? (
@@ -555,6 +578,118 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics }) => {
           busy={isAdding}
           error={formError}
         />
+      )}
+
+      {addToPlaylistSongId && addToPlaylistPosition && (
+        <AddToPlaylistMenu
+          songId={addToPlaylistSongId}
+          position={addToPlaylistPosition}
+          onClose={() => setAddToPlaylistSongId(null)}
+        />
+      )}
+    </div>
+  );
+};
+
+const AddToPlaylistMenu: React.FC<{
+  songId: string;
+  position: { x: number, y: number };
+  onClose: () => void;
+}> = ({ songId, position, onClose }) => {
+  const { playlists, createPlaylist, addSongToPlaylist } = useUserData();
+  const [isCreating, setIsCreating] = useState(false);
+  const [newPlaylistName, setNewPlaylistName] = useState('');
+
+  const handleAddToPlaylist = (playlistId: string) => {
+    addSongToPlaylist(playlistId, songId);
+    onClose();
+  };
+
+  const handleCreateAndAdd = () => {
+    if (newPlaylistName.trim()) {
+      const id = createPlaylist(newPlaylistName.trim());
+      addSongToPlaylist(id, songId);
+      onClose();
+    }
+  };
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        left: position.x,
+        top: position.y,
+        backgroundColor: '#2d2d2d',
+        border: '1px solid #3a3a3a',
+        borderRadius: '8px',
+        padding: '8px',
+        zIndex: 100,
+        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+        minWidth: '160px',
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div style={{ fontSize: '12px', color: '#888', marginBottom: '8px', padding: '0 8px' }}>加入歌單...</div>
+
+      {playlists.map(p => (
+        <div
+          key={p.id}
+          onClick={() => handleAddToPlaylist(p.id)}
+          style={{
+            padding: '6px 8px',
+            cursor: 'pointer',
+            color: '#fff',
+            fontSize: '14px',
+            borderRadius: '4px',
+          }}
+          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
+          onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+        >
+          {p.name}
+        </div>
+      ))}
+
+      <div style={{ height: '1px', backgroundColor: '#3a3a3a', margin: '4px 0' }}></div>
+
+      {isCreating ? (
+        <div style={{ padding: '4px' }}>
+          <input
+            autoFocus
+            type="text"
+            value={newPlaylistName}
+            onChange={(e) => setNewPlaylistName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleCreateAndAdd();
+              if (e.key === 'Escape') setIsCreating(false);
+            }}
+            placeholder="新歌單名稱"
+            style={{
+              width: '100%',
+              padding: '4px',
+              backgroundColor: '#1f1f1f',
+              border: '1px solid #3a3a3a',
+              color: '#fff',
+              borderRadius: '4px',
+              fontSize: '12px'
+            }}
+          />
+        </div>
+      ) : (
+        <div
+          onClick={() => setIsCreating(true)}
+          style={{
+            padding: '6px 8px',
+            cursor: 'pointer',
+            color: 'var(--accent-color)',
+            fontSize: '14px',
+            borderRadius: '4px',
+            fontWeight: 600
+          }}
+          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
+          onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+        >
+          ＋ 新建歌單
+        </div>
       )}
     </div>
   );

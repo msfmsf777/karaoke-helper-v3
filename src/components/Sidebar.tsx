@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useUserData } from '../contexts/UserDataContext';
 
-type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history';
+type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history' | string;
 
 interface SidebarProps {
   currentView: View;
@@ -8,6 +9,27 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
+  const { playlists, createPlaylist } = useUserData();
+  const [isCreating, setIsCreating] = useState(false);
+  const [newPlaylistName, setNewPlaylistName] = useState('');
+
+  const handleCreateClick = () => {
+    setIsCreating(true);
+    setNewPlaylistName('');
+  };
+
+  const handleCreateConfirm = () => {
+    if (newPlaylistName.trim()) {
+      const id = createPlaylist(newPlaylistName.trim());
+      onViewChange(`playlist:${id}`);
+    }
+    setIsCreating(false);
+  };
+
+  const handleCreateCancel = () => {
+    setIsCreating(false);
+  };
+
   const navItemStyle = (isActive: boolean) => ({
     padding: '10px 16px',
     cursor: 'pointer',
@@ -29,6 +51,16 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
     fontWeight: 600,
     textTransform: 'uppercase' as const,
     letterSpacing: '0.8px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  };
+
+  const addButtonStyle = {
+    cursor: 'pointer',
+    fontSize: '16px',
+    color: '#888',
+    transition: 'color 0.2s',
   };
 
   return (
@@ -63,8 +95,52 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
 
         <div style={{ height: '1px', backgroundColor: '#282828', margin: '16px 8px' }}></div>
 
-        <div style={sectionTitleStyle}>我的歌單</div>
-        {/* Placeholder for future playlists */}
+        <div style={sectionTitleStyle}>
+          我的歌單
+          <span
+            style={addButtonStyle}
+            onClick={handleCreateClick}
+            title="新增歌單"
+          >
+            +
+          </span>
+        </div>
+
+        {isCreating && (
+          <div style={{ padding: '0 16px 8px' }}>
+            <input
+              autoFocus
+              type="text"
+              value={newPlaylistName}
+              onChange={(e) => setNewPlaylistName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleCreateConfirm();
+                if (e.key === 'Escape') handleCreateCancel();
+              }}
+              onBlur={handleCreateCancel}
+              placeholder="歌單名稱"
+              style={{
+                width: '100%',
+                padding: '4px 8px',
+                backgroundColor: '#333',
+                border: '1px solid #555',
+                borderRadius: '4px',
+                color: '#fff',
+                fontSize: '12px'
+              }}
+            />
+          </div>
+        )}
+
+        {playlists.map(playlist => (
+          <div
+            key={playlist.id}
+            style={navItemStyle(currentView === `playlist:${playlist.id}`)}
+            onClick={() => onViewChange(`playlist:${playlist.id}`)}
+          >
+            {playlist.name}
+          </div>
+        ))}
 
         <div style={{ height: '1px', backgroundColor: '#282828', margin: '16px 8px' }}></div>
 
