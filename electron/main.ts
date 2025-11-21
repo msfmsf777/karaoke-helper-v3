@@ -160,40 +160,151 @@ app.whenReady().then(() => {
   createWindow()
 })
 
-let overlayWindow: BrowserWindow | null = null
+const clients: Set<Response> = new Set()
 
-ipcMain.on('window:open-overlay', () => {
-  if (overlayWindow && !overlayWindow.isDestroyed()) {
-    overlayWindow.focus()
+// Create a simple HTTP server to serve the overlay and SSE
+import http from 'node:http'
+import fs from 'node:fs'
+
+const OVERLAY_PORT = 10001
+
+const server = http.createServer((req, res) => {
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204)
+    res.end()
     return
   }
 
-  overlayWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    transparent: true,
-    frame: false,
-    alwaysOnTop: true,
-    hasShadow: false,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.mjs'),
-      webSecurity: false,
-    },
-  })
+  if (req.url === '/events') {
+    // SSE Endpoint
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    })
+    res.write('data: {"type":"connected"}\n\n')
 
-  if (VITE_DEV_SERVER_URL) {
-    overlayWindow.loadURL(`${VITE_DEV_SERVER_URL}#/overlay`)
-  } else {
-    overlayWindow.loadFile(path.join(RENDERER_DIST, 'index.html'), { hash: 'overlay' })
+    // Keep connection alive
+    const keepAlive = setInterval(() => {
+      res.write(': keep-alive\n\n')
+    }, 15000)
+
+    // Add to clients
+    const client = res as unknown as Response // Type casting for simplicity in this context
+    // @ts-ignore
+    clients.add(client)
+
+    req.on('close', () => {
+      clearInterval(keepAlive)
+      // @ts-ignore
+      clients.delete(client)
+    })
+    return
   }
 
-  overlayWindow.on('closed', () => {
-    overlayWindow = null
+  if (req.url?.startsWith('/lyrics')) {
+    const url = new URL(req.url, `http://localhost:${OVERLAY_PORT}`)
+    const songId = url.searchParams.get('id')
+
+    if (!songId) {
+      res.writeHead(400)
+      res.end('Missing songId')
+      return
+    }
+
+    Promise.all([
+      readSyncedLyrics(songId),
+      readRawLyrics(songId)
+    ]).then(([synced, raw]) => {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({
+        synced: synced?.content || null,
+        raw: raw?.content || null
+      }))
+    }).catch(err => {
+      console.error('[OverlayServer] Failed to read lyrics', err)
+      res.writeHead(500)
+      res.end('Internal Server Error')
+    })
+    return
+  }
+
+  // Serve static files for the overlay
+  // We want to serve the renderer dist folder
+  let filePath = path.join(RENDERER_DIST, req.url === '/' ? 'index.html' : req.url || 'index.html')
+
+  // If requesting root or /overlay, serve index.html
+  if (req.url === '/' || req.url === '/overlay') {
+    filePath = path.join(RENDERER_DIST, 'index.html')
+  }
+
+  const extname = path.extname(filePath)
+  let contentType = 'text/html'
+  switch (extname) {
+    case '.js':
+      contentType = 'text/javascript'
+      break
+    case '.css':
+      contentType = 'text/css'
+      break
+    case '.json':
+      contentType = 'application/json'
+      break
+    case '.png':
+      contentType = 'image/png'
+      break
+    case '.jpg':
+      contentType = 'image/jpg'
+      break
+    case '.svg':
+      contentType = 'image/svg+xml'
+      break
+  }
+
+  fs.readFile(filePath, (err, content) => {
+    if (err) {
+      if (err.code === 'ENOENT') {
+        // Fallback to index.html for SPA routing
+        fs.readFile(path.join(RENDERER_DIST, 'index.html'), (err2, content2) => {
+          if (err2) {
+            res.writeHead(500)
+            res.end('Error loading index.html')
+          } else {
+            res.writeHead(200, { 'Content-Type': 'text/html' })
+            res.end(content2, 'utf-8')
+          }
+        })
+      } else {
+        res.writeHead(500)
+        res.end(`Server Error: ${err.code}`)
+      }
+    } else {
+      res.writeHead(200, { 'Content-Type': contentType })
+      res.end(content, 'utf-8')
+    }
   })
 })
 
+server.listen(OVERLAY_PORT, () => {
+  console.log(`[OverlayServer] Listening on port ${OVERLAY_PORT}`)
+})
+
+ipcMain.on('window:open-overlay', () => {
+  // Deprecated: We now use the browser source URL
+  console.log('[Main] window:open-overlay called but deprecated in favor of OBS URL')
+})
+
 ipcMain.on('overlay:update', (_event, payload) => {
-  if (overlayWindow && !overlayWindow.isDestroyed()) {
-    overlayWindow.webContents.send('overlay:update', payload)
+  // Broadcast to all SSE clients
+  const data = JSON.stringify(payload)
+  // @ts-ignore
+  for (const client of clients) {
+    // @ts-ignore
+    client.write(`data: ${data}\n\n`)
   }
 })
