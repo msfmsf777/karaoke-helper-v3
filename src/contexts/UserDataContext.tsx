@@ -2,13 +2,26 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { useQueue } from './QueueContext';
 import { useLibrary } from './LibraryContext';
 
+export interface Playlist {
+    id: string;
+    name: string;
+    description?: string;
+    songIds: string[];
+}
+
 interface UserDataContextType {
     favorites: string[];
     history: string[];
+    playlists: Playlist[];
     toggleFavorite: (songId: string) => void;
     isFavorite: (songId: string) => boolean;
     addToHistory: (songId: string) => void;
     clearHistory: () => void;
+    createPlaylist: (name: string) => string;
+    deletePlaylist: (id: string) => void;
+    renamePlaylist: (id: string, name: string) => void;
+    addSongToPlaylist: (playlistId: string, songId: string) => void;
+    removeSongFromPlaylist: (playlistId: string, songId: string) => void;
 }
 
 const UserDataContext = createContext<UserDataContextType | null>(null);
@@ -16,6 +29,7 @@ const UserDataContext = createContext<UserDataContextType | null>(null);
 export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [favorites, setFavorites] = useState<string[]>([]);
     const [history, setHistory] = useState<string[]>([]);
+    const [playlists, setPlaylists] = useState<Playlist[]>([]);
     const { currentSongId } = useQueue();
     const { getSongById } = useLibrary();
     const isInitialized = useRef(false);
@@ -26,13 +40,15 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
         const load = async () => {
             try {
-                const [favs, hist] = await Promise.all([
+                const [favs, hist, pl] = await Promise.all([
                     window.khelper?.userData.loadFavorites() || [],
-                    window.khelper?.userData.loadHistory() || []
+                    window.khelper?.userData.loadHistory() || [],
+                    window.khelper?.userData.loadPlaylists() || []
                 ]);
                 setFavorites(Array.from(new Set(favs)));
                 setHistory(Array.from(new Set(hist)));
-                console.log('[UserData] Loaded', favs.length, 'favorites and', hist.length, 'history items');
+                setPlaylists(pl);
+                console.log('[UserData] Loaded', favs.length, 'favorites,', hist.length, 'history items, and', pl.length, 'playlists');
             } catch (err) {
                 console.error('[UserData] Failed to load user data', err);
             } finally {
@@ -58,13 +74,17 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         );
     }, [history]);
 
+    // Save playlists on change
+    useEffect(() => {
+        if (!isInitialized.current) return;
+        window.khelper?.userData.savePlaylists(playlists).catch(err =>
+            console.error('[UserData] Failed to save playlists', err)
+        );
+    }, [playlists]);
+
     // Listen to currentSongId changes to update history
     useEffect(() => {
         if (currentSongId) {
-            // Verify song exists in library (optional, but good practice)
-            // Actually, we might want to keep history even if song is temporarily missing?
-            // But requirement says "Remove entries that refer to missing songs... on startup".
-            // For runtime, let's just add it.
             addToHistory(currentSongId);
         }
     }, [currentSongId]);
@@ -98,14 +118,53 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setHistory([]);
     }, []);
 
+    const createPlaylist = useCallback((name: string) => {
+        const newPlaylist: Playlist = {
+            id: crypto.randomUUID(),
+            name,
+            songIds: []
+        };
+        setPlaylists(prev => [...prev, newPlaylist]);
+        return newPlaylist.id;
+    }, []);
+
+    const deletePlaylist = useCallback((id: string) => {
+        setPlaylists(prev => prev.filter(p => p.id !== id));
+    }, []);
+
+    const renamePlaylist = useCallback((id: string, name: string) => {
+        setPlaylists(prev => prev.map(p => p.id === id ? { ...p, name } : p));
+    }, []);
+
+    const addSongToPlaylist = useCallback((playlistId: string, songId: string) => {
+        setPlaylists(prev => prev.map(p => {
+            if (p.id !== playlistId) return p;
+            if (p.songIds.includes(songId)) return p; // No duplicate
+            return { ...p, songIds: [...p.songIds, songId] };
+        }));
+    }, []);
+
+    const removeSongFromPlaylist = useCallback((playlistId: string, songId: string) => {
+        setPlaylists(prev => prev.map(p => {
+            if (p.id !== playlistId) return p;
+            return { ...p, songIds: p.songIds.filter(id => id !== songId) };
+        }));
+    }, []);
+
     return (
         <UserDataContext.Provider value={{
             favorites,
             history,
+            playlists,
             toggleFavorite,
             isFavorite,
             addToHistory,
-            clearHistory
+            clearHistory,
+            createPlaylist,
+            deletePlaylist,
+            renamePlaylist,
+            addSongToPlaylist,
+            removeSongFromPlaylist
         }}>
             {children}
         </UserDataContext.Provider>

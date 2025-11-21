@@ -69,6 +69,8 @@ electron.contextBridge.exposeInMainWorld("khelper", {
     saveFavorites: (songIds) => electron.ipcRenderer.invoke("userData:save-favorites", songIds),
     loadFavorites: () => electron.ipcRenderer.invoke("userData:load-favorites"),
     saveHistory: (songIds) => electron.ipcRenderer.invoke("userData:save-history", songIds),
-    loadHistory: () => electron.ipcRenderer.invoke("userData:load-history")
+    loadHistory: () => electron.ipcRenderer.invoke("userData:load-history"),
+    savePlaylists: (playlists) => electron.ipcRenderer.invoke("userData:save-playlists", playlists),
+    loadPlaylists: () => electron.ipcRenderer.invoke("userData:load-playlists")
   }
 });

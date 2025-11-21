@@ -47,6 +47,8 @@ interface Window {
       loadFavorites: () => Promise<string[]>;
       saveHistory: (history: string[]) => Promise<void>;
       loadHistory: () => Promise<string[]>;
+      savePlaylists: (playlists: any[]) => Promise<void>;
+      loadPlaylists: () => Promise<any[]>;
     };
   };
 }

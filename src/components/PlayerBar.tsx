@@ -3,7 +3,7 @@ import audioEngine from '../audio/AudioEngine';
 import { loadVolumePreferences, saveVolumePreferences } from '../settings/volumePreferences';
 import { useQueue } from '../contexts/QueueContext';
 
-type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history';
+type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history' | string;
 
 interface PlayerBarProps {
   currentView: View;

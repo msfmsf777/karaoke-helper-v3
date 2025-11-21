@@ -16,8 +16,8 @@ const DEFAULT_LYRICS_STATUS = "none";
 const RAW_LYRICS_FILENAME = "lyrics_raw.txt";
 const SYNCED_LYRICS_FILENAME = "lyrics_synced.lrc";
 function getAppDataRoot() {
-  const userData = app.getPath("userData");
-  return path.join(userData, APP_FOLDER_NAME);
+  const userData2 = app.getPath("userData");
+  return path.join(userData2, APP_FOLDER_NAME);
 }
 function getSongsDir() {
   return path.join(getAppDataRoot(), SONGS_FOLDER_NAME);
@@ -497,6 +497,36 @@ async function loadHistory() {
     return [];
   }
 }
+const PLAYLISTS_FILE = "playlists.json";
+async function savePlaylists(playlists) {
+  try {
+    const filePath = getUserDataPath(PLAYLISTS_FILE);
+    await fs.writeFile(filePath, JSON.stringify(playlists, null, 2), "utf-8");
+  } catch (err) {
+    console.error("[UserData] Failed to save playlists", err);
+  }
+}
+async function loadPlaylists() {
+  try {
+    const filePath = getUserDataPath(PLAYLISTS_FILE);
+    const content = await fs.readFile(filePath, "utf-8");
+    return JSON.parse(content);
+  } catch (err) {
+    if (err.code !== "ENOENT") {
+      console.error("[UserData] Failed to load playlists", err);
+    }
+    return [];
+  }
+}
+const userData = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  loadFavorites,
+  loadHistory,
+  loadPlaylists,
+  saveFavorites,
+  saveHistory,
+  savePlaylists
+}, Symbol.toStringTag, { value: "Module" }));
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname$1, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
@@ -599,6 +629,14 @@ ipcMain.handle("userData:save-history", async (_event, songIds) => {
 });
 ipcMain.handle("userData:load-history", async () => {
   return loadHistory();
+});
+ipcMain.handle("userData:save-playlists", async (_event, playlists) => {
+  const { savePlaylists: savePlaylists2 } = await Promise.resolve().then(() => userData);
+  return savePlaylists2(playlists);
+});
+ipcMain.handle("userData:load-playlists", async () => {
+  const { loadPlaylists: loadPlaylists2 } = await Promise.resolve().then(() => userData);
+  return loadPlaylists2();
 });
 ipcMain.on("jobs:subscribe", (event, subscriptionId) => {
   const wc = event.sender;
