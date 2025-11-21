@@ -22,6 +22,7 @@ interface UserDataContextType {
     renamePlaylist: (id: string, name: string) => void;
     addSongToPlaylist: (playlistId: string, songId: string) => void;
     removeSongFromPlaylist: (playlistId: string, songId: string) => void;
+    cleanupSong: (songId: string) => void;
 }
 
 const UserDataContext = createContext<UserDataContextType | null>(null);
@@ -151,6 +152,15 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }));
     }, []);
 
+    const cleanupSong = useCallback((songId: string) => {
+        setFavorites(prev => prev.filter(id => id !== songId));
+        setHistory(prev => prev.filter(id => id !== songId));
+        setPlaylists(prev => prev.map(p => ({
+            ...p,
+            songIds: p.songIds.filter(id => id !== songId)
+        })));
+    }, []);
+
     return (
         <UserDataContext.Provider value={{
             favorites,
@@ -164,7 +174,8 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             deletePlaylist,
             renamePlaylist,
             addSongToPlaylist,
-            removeSongFromPlaylist
+            removeSongFromPlaylist,
+            cleanupSong
         }}>
             {children}
         </UserDataContext.Provider>

@@ -24,6 +24,8 @@ interface Window {
       getSongFilePath: (id: string) => Promise<string | null>;
       getOriginalSongFilePath: (id: string) => Promise<string | null>;
       getBasePath: () => Promise<string>;
+      deleteSong: (id: string) => Promise<void>;
+      updateSong: (id: string, updates: Partial<import('../shared/songTypes').SongMeta>) => Promise<import('../shared/songTypes').SongMeta | null>;
     };
     jobs: {
       queueSeparationJob: (songId: string) => Promise<import('../shared/separationTypes').SeparationJob>;

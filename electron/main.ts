@@ -103,6 +103,17 @@ ipcMain.handle('library:get-base-path', async () => {
   return getSongsBaseDir()
 })
 
+ipcMain.handle('library:delete-song', async (_event, id: string) => {
+  // Dynamic import to avoid circular dependencies if any, or just import from songLibrary
+  const { deleteSong } = await import('./songLibrary')
+  return deleteSong(id)
+})
+
+ipcMain.handle('library:update-song', async (_event, payload: { id: string; updates: any }) => {
+  const { updateSong } = await import('./songLibrary')
+  return updateSong(payload.id, payload.updates)
+})
+
 ipcMain.handle('jobs:queue-separation', async (_event, songId: string) => {
   return queueSeparationJob(songId)
 })

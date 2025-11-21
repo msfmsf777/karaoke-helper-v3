@@ -244,6 +244,27 @@ export async function getOriginalSongFilePath(id: string): Promise<string | null
   }
 }
 
+export async function deleteSong(id: string): Promise<void> {
+  if (!id) return;
+  const songsDir = await ensureSongsDir();
+  const songDir = path.join(songsDir, id);
+
+  try {
+    await fs.rm(songDir, { recursive: true, force: true });
+    console.log('[Library] Deleted song folder', { id, songDir });
+  } catch (err) {
+    console.error('[Library] Failed to delete song folder', { id, songDir }, err);
+    throw err;
+  }
+}
+
+export async function updateSong(id: string, updates: Partial<SongMeta>): Promise<SongMeta | null> {
+  return updateSongMeta(id, (current) => ({
+    ...current,
+    ...updates,
+  }));
+}
+
 export function getSongsBaseDir() {
   return getSongsDir();
 }
