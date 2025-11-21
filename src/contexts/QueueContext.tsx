@@ -11,6 +11,7 @@ interface QueueContextType {
     addToQueue: (songId: string) => void;
     playNext: () => void;
     playPrev: () => void;
+    playQueueIndex: (index: number) => void;
     clearQueue: () => void;
 }
 
@@ -127,6 +128,12 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         });
     }, []);
 
+    const playQueueIndex = useCallback((index: number) => {
+        if (index >= 0 && index < queue.length) {
+            setCurrentIndex(index);
+        }
+    }, [queue.length]);
+
     const clearQueue = useCallback(() => {
         setQueue([]);
         setCurrentIndex(-1);
@@ -143,6 +150,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 addToQueue,
                 playNext,
                 playPrev,
+                playQueueIndex,
                 clearQueue,
             }}
         >

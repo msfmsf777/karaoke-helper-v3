@@ -3,6 +3,8 @@ import LyricsOverlay from './LyricsOverlay';
 import { SongMeta } from '../../shared/songTypes';
 import { EditableLyricLine, linesFromRawText, parseLrc, readRawLyrics, readSyncedLyrics } from '../library/lyrics';
 import audioEngine from '../audio/AudioEngine';
+import { useQueue } from '../contexts/QueueContext';
+import { useLibrary } from '../contexts/LibraryContext';
 
 interface StreamModeViewProps {
   currentTrack: { id: string; title: string; artist?: string } | null;
@@ -13,17 +15,20 @@ interface StreamModeViewProps {
 }
 
 const StreamModeView: React.FC<StreamModeViewProps> = ({
-  currentTrack,
   currentTime,
-  isPlaying,
   onExit,
-  onOpenOverlayWindow,
 }) => {
+  const { queue, currentIndex, playQueueIndex } = useQueue();
+  const { getSongById } = useLibrary();
+
   const [lines, setLines] = useState<EditableLyricLine[]>([]);
   const [lyricsStatus, setLyricsStatus] = useState<SongMeta['lyrics_status']>('none');
 
+  const currentSongId = queue[currentIndex];
+  const currentSong = currentSongId ? getSongById(currentSongId) : null;
+
   useEffect(() => {
-    if (!currentTrack) {
+    if (!currentSongId) {
       setLines([]);
       setLyricsStatus('none');
       return;
@@ -33,8 +38,8 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
     const fetchLyrics = async () => {
       try {
         const [synced, raw] = await Promise.all([
-          readSyncedLyrics(currentTrack.id),
-          readRawLyrics(currentTrack.id),
+          readSyncedLyrics(currentSongId),
+          readRawLyrics(currentSongId),
         ]);
 
         if (!active) return;
@@ -62,7 +67,7 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
     return () => {
       active = false;
     };
-  }, [currentTrack]);
+  }, [currentSongId]);
 
   return (
     <div
@@ -106,7 +111,6 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
             onClick={() => {
               const url = 'http://localhost:10001/#/overlay';
               navigator.clipboard.writeText(url);
-              // Optional: Show a toast or visual feedback
               alert('已複製 OBS 網址: ' + url);
             }}
             style={{
@@ -156,13 +160,13 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
             <h3 style={{ color: '#666', fontSize: '12px', textTransform: 'uppercase', marginBottom: '8px' }}>
               Now Playing
             </h3>
-            {currentTrack ? (
+            {currentSong ? (
               <div>
                 <div style={{ color: '#fff', fontSize: '24px', fontWeight: 'bold', lineHeight: 1.3, marginBottom: '4px' }}>
-                  {currentTrack.title}
+                  {currentSong.title}
                 </div>
                 <div style={{ color: 'var(--accent-color)', fontSize: '16px' }}>
-                  {currentTrack.artist || 'Unknown Artist'}
+                  {currentSong.artist || 'Unknown Artist'}
                 </div>
               </div>
             ) : (
@@ -183,24 +187,54 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
             >
               Queue / Setlist
             </h3>
-            {/* Placeholder for Queue - reusing current track as the "list" for now since we don't have a real queue system yet */}
-            {currentTrack && (
-              <div
-                style={{
-                  padding: '12px',
-                  backgroundColor: '#1f1f1f',
-                  borderRadius: '8px',
-                  borderLeft: '4px solid var(--accent-color)',
-                  marginBottom: '8px',
-                }}
-              >
-                <div style={{ color: '#fff', fontWeight: 'bold', fontSize: '14px' }}>{currentTrack.title}</div>
-                <div style={{ color: '#888', fontSize: '12px' }}>{currentTrack.artist}</div>
+
+            {queue.length === 0 ? (
+              <div style={{ padding: '12px', color: '#444', fontSize: '13px', fontStyle: 'italic' }}>
+                播放隊列是空的，請先在歌曲庫中加入歌曲。
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {queue.map((songId, index) => {
+                  const song = getSongById(songId);
+                  const isCurrent = index === currentIndex;
+
+                  if (!song) return null; // Should handle missing songs gracefully
+
+                  return (
+                    <div
+                      key={`${songId}-${index}`}
+                      onClick={() => playQueueIndex(index)}
+                      style={{
+                        padding: '10px 12px',
+                        backgroundColor: isCurrent ? '#1f1f1f' : 'transparent',
+                        borderRadius: '8px',
+                        borderLeft: isCurrent ? '4px solid var(--accent-color)' : '4px solid transparent',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.2s',
+                      }}
+                      onMouseOver={(e) => {
+                        if (!isCurrent) e.currentTarget.style.backgroundColor = '#1a1a1a';
+                      }}
+                      onMouseOut={(e) => {
+                        if (!isCurrent) e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                    >
+                      <div style={{
+                        color: isCurrent ? '#fff' : '#ccc',
+                        fontWeight: isCurrent ? 'bold' : 'normal',
+                        fontSize: '14px',
+                        marginBottom: '2px'
+                      }}>
+                        {song.title}
+                      </div>
+                      <div style={{ color: '#666', fontSize: '12px' }}>
+                        {song.artist || 'Unknown'}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
-            <div style={{ padding: '12px', color: '#444', fontSize: '13px', fontStyle: 'italic' }}>
-              (播放清單功能開發中...)
-            </div>
           </div>
         </div>
 
