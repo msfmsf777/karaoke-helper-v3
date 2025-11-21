@@ -425,6 +425,33 @@ async function writeSyncedLyrics(songId, content) {
   }
   return { path: filePath, meta: updated };
 }
+const QUEUE_FILE = "playback_queue.json";
+function getQueueFilePath() {
+  return path.join(app.getPath("userData"), QUEUE_FILE);
+}
+async function saveQueue(data) {
+  try {
+    const filePath = getQueueFilePath();
+    await fs.writeFile(filePath, JSON.stringify(data, null, 2), "utf-8");
+    console.log("[Queue] Saved queue to", filePath);
+  } catch (err) {
+    console.error("[Queue] Failed to save queue", err);
+  }
+}
+async function loadQueue() {
+  try {
+    const filePath = getQueueFilePath();
+    const content = await fs.readFile(filePath, "utf-8");
+    const data = JSON.parse(content);
+    console.log("[Queue] Loaded queue from", filePath);
+    return data;
+  } catch (err) {
+    if (err.code !== "ENOENT") {
+      console.error("[Queue] Failed to load queue", err);
+    }
+    return null;
+  }
+}
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname$1, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
@@ -509,6 +536,12 @@ ipcMain.handle("lyrics:write-raw", async (_event, payload) => {
 });
 ipcMain.handle("lyrics:write-synced", async (_event, payload) => {
   return writeSyncedLyrics(payload.songId, payload.content);
+});
+ipcMain.handle("queue:save", async (_event, payload) => {
+  return saveQueue(payload);
+});
+ipcMain.handle("queue:load", async () => {
+  return loadQueue();
 });
 ipcMain.on("jobs:subscribe", (event, subscriptionId) => {
   const wc = event.sender;

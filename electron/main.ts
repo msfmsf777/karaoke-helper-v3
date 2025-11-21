@@ -5,6 +5,7 @@ import path from 'node:path'
 import { addLocalSong, getOriginalSongFilePath, getSongFilePath, getSongsBaseDir, loadAllSongs } from './songLibrary'
 import { getAllJobs, queueSeparationJob, subscribeJobUpdates } from './separationJobs'
 import { readRawLyrics, readSyncedLyrics, writeRawLyrics, writeSyncedLyrics } from './lyrics'
+import { loadQueue, saveQueue } from './queue'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -123,6 +124,14 @@ ipcMain.handle('lyrics:write-raw', async (_event, payload: { songId: string; con
 
 ipcMain.handle('lyrics:write-synced', async (_event, payload: { songId: string; content: string }) => {
   return writeSyncedLyrics(payload.songId, payload.content)
+})
+
+ipcMain.handle('queue:save', async (_event, payload: { songIds: string[]; currentIndex: number }) => {
+  return saveQueue(payload)
+})
+
+ipcMain.handle('queue:load', async () => {
+  return loadQueue()
 })
 
 ipcMain.on('jobs:subscribe', (event, subscriptionId: string) => {

@@ -79,4 +79,9 @@ contextBridge.exposeInMainWorld('khelper', {
     writeSyncedLyrics: (payload: { songId: string; content: string }): Promise<{ path: string; meta: SongMeta }> =>
       ipcRenderer.invoke('lyrics:write-synced', payload),
   },
+  queue: {
+    save: (payload: { songIds: string[]; currentIndex: number }): Promise<void> =>
+      ipcRenderer.invoke('queue:save', payload),
+    load: (): Promise<{ songIds: string[]; currentIndex: number } | null> => ipcRenderer.invoke('queue:load'),
+  },
 })

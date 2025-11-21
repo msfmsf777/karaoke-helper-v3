@@ -60,5 +60,9 @@ electron.contextBridge.exposeInMainWorld("khelper", {
     readSyncedLyrics: (songId) => electron.ipcRenderer.invoke("lyrics:read-synced", songId),
     writeRawLyrics: (payload) => electron.ipcRenderer.invoke("lyrics:write-raw", payload),
     writeSyncedLyrics: (payload) => electron.ipcRenderer.invoke("lyrics:write-synced", payload)
+  },
+  queue: {
+    save: (payload) => electron.ipcRenderer.invoke("queue:save", payload),
+    load: () => electron.ipcRenderer.invoke("queue:load")
   }
 });

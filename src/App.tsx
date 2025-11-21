@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import Sidebar from './components/Sidebar';
 import PlayerBar from './components/PlayerBar';
 import LibraryView from './components/LibraryView';
@@ -10,14 +10,13 @@ import ProcessingListModal from './components/ProcessingListModal';
 import audioEngine, { OutputRole } from './audio/AudioEngine';
 import { loadOutputDevicePreferences, saveOutputDevicePreferences } from './settings/devicePreferences';
 import './App.css';
-import type { SongMeta } from '../shared/songTypes';
+import { LibraryProvider, useLibrary } from './contexts/LibraryContext';
+import { QueueProvider, useQueue } from './contexts/QueueContext';
 
 type View = 'library' | 'lyrics' | 'stream';
-type TrackInfo = { id: string; path: string; title: string; artist?: string };
 
-function App() {
+function AppContent() {
   const [currentView, setCurrentView] = useState<View>('library');
-  const [currentTrack, setCurrentTrack] = useState<TrackInfo | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -29,6 +28,16 @@ function App() {
   });
   const [lyricsEditorSongId, setLyricsEditorSongId] = useState<string | null>(null);
   const mainContentRef = useRef<HTMLDivElement>(null);
+
+  const { currentSongId, playNext } = useQueue();
+  const { getSongById } = useLibrary();
+
+  const currentTrack = useMemo(() => {
+    if (!currentSongId) return null;
+    const song = getSongById(currentSongId);
+    if (!song) return null;
+    return { id: song.id, title: song.title, artist: song.artist };
+  }, [currentSongId, getSongById]);
 
   // Reset scroll when view changes
   useEffect(() => {
@@ -46,15 +55,34 @@ function App() {
       });
     });
     const unsubscribeEnded = audioEngine.onEnded(() => {
-      setIsPlaying(false);
-      setCurrentTime(audioEngine.getDuration());
+      // Auto-play next song
+      playNext();
     });
+
+    // Sync initial state
+    setIsPlaying(audioEngine.isPlaying());
+
+    // Poll for play state changes that might happen outside of React (e.g. audio engine internals)
+    // Or better, add a listener to AudioEngine if it supported it. 
+    // For now, we hook into play/pause methods or rely on timeupdate.
+    // Actually, let's just rely on the fact that we control play/pause via the UI mostly.
+    // But to be safe, we can update isPlaying on timeupdate too.
 
     return () => {
       unsubscribeTime();
       unsubscribeEnded();
     };
-  }, []);
+  }, [playNext]);
+
+  // A simple way to keep isPlaying in sync if we don't have explicit events for it
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (audioEngine.isPlaying() !== isPlaying) {
+        setIsPlaying(audioEngine.isPlaying());
+      }
+    }, 500);
+    return () => clearInterval(interval);
+  }, [isPlaying]);
 
   useEffect(() => {
     const saved = loadOutputDevicePreferences();
@@ -80,21 +108,10 @@ function App() {
     }
   }, [currentTrack, currentTime, isPlaying]);
 
-  const handleSongSelect = async (song: SongMeta, filePath: string) => {
-    try {
-      await audioEngine.loadFile(filePath);
-      setCurrentTrack({ id: song.id, path: filePath, title: song.title, artist: song.artist });
-      setDuration(audioEngine.getDuration());
-      setCurrentTime(0);
-      setIsPlaying(false);
-      console.log('[AudioEngine] Loaded file', song.id, filePath);
-    } catch (err) {
-      console.error('[AudioEngine] Failed to load file', filePath, err);
-    }
-  };
-
   const handlePlayPause = () => {
     if (!currentTrack) {
+      // If no track loaded, maybe try to play the first one in queue?
+      // For now, just warn.
       console.warn('[AudioEngine] Play requested but no track is loaded');
       return;
     }
@@ -133,8 +150,6 @@ function App() {
       case 'library':
         return (
           <LibraryView
-            onSongSelect={handleSongSelect}
-            selectedSongId={currentTrack?.id}
             onOpenLyrics={(song) => {
               setLyricsEditorSongId(song.id);
               setCurrentView('lyrics');
@@ -144,7 +159,7 @@ function App() {
       case 'lyrics':
         return (
           <LyricEditorView
-            onSongLoad={handleSongSelect}
+            onSongLoad={async () => { /* No-op, handled by queue now */ }}
             activeSongId={currentTrack?.id}
             initialSongId={lyricsEditorSongId}
             onSongSelectedChange={(songId) => setLyricsEditorSongId(songId)}
@@ -166,7 +181,7 @@ function App() {
           />
         );
       default:
-        return <LibraryView onSongSelect={handleSongSelect} selectedSongId={currentTrack?.id} />;
+        return <LibraryView />;
     }
   };
 
@@ -215,6 +230,16 @@ function App() {
       />
       <ProcessingListModal open={showProcessingList} onClose={() => setShowProcessingList(false)} />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <LibraryProvider>
+      <QueueProvider>
+        <AppContent />
+      </QueueProvider>
+    </LibraryProvider>
   );
 }
 
