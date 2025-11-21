@@ -7,6 +7,7 @@ import StreamModeView from './components/StreamModeView';
 import TopBar from './components/TopBar';
 import SettingsModal from './components/SettingsModal';
 import ProcessingListModal from './components/ProcessingListModal';
+import QueuePanel from './components/QueuePanel';
 import audioEngine, { OutputRole } from './audio/AudioEngine';
 import { loadOutputDevicePreferences, saveOutputDevicePreferences } from './settings/devicePreferences';
 import './App.css';
@@ -22,6 +23,7 @@ function AppContent() {
   const [duration, setDuration] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [showProcessingList, setShowProcessingList] = useState(false);
+  const [showQueuePanel, setShowQueuePanel] = useState(false);
   const [outputDevices, setOutputDevices] = useState({
     streamDeviceId: null as string | null,
     headphoneDeviceId: null as string | null,
@@ -220,7 +222,9 @@ function AppContent() {
               : currentTrack.title
             : undefined
         }
+        onToggleQueue={() => setShowQueuePanel((prev) => !prev)}
       />
+      <QueuePanel isOpen={showQueuePanel} onClose={() => setShowQueuePanel(false)} />
       <SettingsModal
         open={showSettings}
         onClose={() => setShowSettings(false)}

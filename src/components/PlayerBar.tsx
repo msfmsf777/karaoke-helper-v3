@@ -14,6 +14,7 @@ interface PlayerBarProps {
   currentTime: number;
   duration: number;
   currentTrackName?: string;
+  onToggleQueue: () => void;
 }
 
 const PlayerBar: React.FC<PlayerBarProps> = ({
@@ -25,6 +26,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   currentTime,
   duration,
   currentTrackName,
+  onToggleQueue,
 }) => {
   const { playNext, playPrev } = useQueue();
   const initialVolumes = loadVolumePreferences() ?? { streamVolume: 0.8, headphoneVolume: 1 };
@@ -194,7 +196,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
         </div>
       </div>
 
-      {/* Right: Volume */}
+      {/* Right: Volume & Queue */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', width: '30%', gap: '16px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '120px' }}>
           <label style={{ fontSize: '12px', color: '#b3b3b3', marginBottom: '4px' }}>伴奏音量</label>
@@ -218,6 +220,33 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
             style={{ width: '100%', accentColor: 'var(--accent-color)' }}
           />
         </div>
+
+        <div
+          style={{
+            width: '1px',
+            height: '32px',
+            backgroundColor: '#333',
+            margin: '0 8px'
+          }}
+        />
+
+        <button
+          onClick={onToggleQueue}
+          title="播放隊列"
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#b3b3b3',
+            cursor: 'pointer',
+            fontSize: '18px',
+            padding: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          ☰
+        </button>
       </div>
     </div>
   );
