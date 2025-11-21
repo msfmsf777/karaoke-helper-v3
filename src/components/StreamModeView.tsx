@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import LyricsOverlay from './LyricsOverlay';
 import { SongMeta } from '../../shared/songTypes';
 import { EditableLyricLine, linesFromRawText, parseLrc, readRawLyrics, readSyncedLyrics } from '../library/lyrics';
+import audioEngine from '../audio/AudioEngine';
 
 interface StreamModeViewProps {
   currentTrack: { id: string; title: string; artist?: string } | null;
@@ -102,7 +103,12 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
           <button
-            onClick={onOpenOverlayWindow}
+            onClick={() => {
+              const url = 'http://localhost:10001/#/overlay';
+              navigator.clipboard.writeText(url);
+              // Optional: Show a toast or visual feedback
+              alert('已複製 OBS 網址: ' + url);
+            }}
             style={{
               padding: '8px 16px',
               backgroundColor: '#222',
@@ -113,7 +119,7 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
               fontSize: '14px',
             }}
           >
-            開啟歌詞投影片視窗
+            複製 OBS 網址
           </button>
           <button
             onClick={onExit}
@@ -214,6 +220,9 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
             lines={lines}
             currentTime={currentTime}
             className="stream-lyrics-container"
+            onLineClick={(time) => {
+              audioEngine.seek(time);
+            }}
           />
         </div>
       </div>

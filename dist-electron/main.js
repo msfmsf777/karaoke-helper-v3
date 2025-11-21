@@ -5,6 +5,8 @@ import { app, BrowserWindow, ipcMain, dialog } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import fs from "node:fs/promises";
+import http from "node:http";
+import fs$1 from "node:fs";
 const APP_FOLDER_NAME = "KHelperLive";
 const SONGS_FOLDER_NAME = "songs";
 const AUDIO_STATUS_VALUES = ["original_only", "separation_pending", "separating", "separation_failed", "separated"];
@@ -539,36 +541,120 @@ app.whenReady().then(() => {
   console.log("[Library] base songs dir:", getSongsBaseDir());
   createWindow();
 });
-let overlayWindow = null;
-ipcMain.on("window:open-overlay", () => {
-  if (overlayWindow && !overlayWindow.isDestroyed()) {
-    overlayWindow.focus();
+const clients = /* @__PURE__ */ new Set();
+const OVERLAY_PORT = 10001;
+const server = http.createServer((req, res) => {
+  var _a;
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") {
+    res.writeHead(204);
+    res.end();
     return;
   }
-  overlayWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    transparent: true,
-    frame: false,
-    alwaysOnTop: true,
-    hasShadow: false,
-    webPreferences: {
-      preload: path.join(__dirname$1, "preload.mjs"),
-      webSecurity: false
+  if (req.url === "/events") {
+    res.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive"
+    });
+    res.write('data: {"type":"connected"}\n\n');
+    const keepAlive = setInterval(() => {
+      res.write(": keep-alive\n\n");
+    }, 15e3);
+    const client = res;
+    clients.add(client);
+    req.on("close", () => {
+      clearInterval(keepAlive);
+      clients.delete(client);
+    });
+    return;
+  }
+  if ((_a = req.url) == null ? void 0 : _a.startsWith("/lyrics")) {
+    const url = new URL(req.url, `http://localhost:${OVERLAY_PORT}`);
+    const songId = url.searchParams.get("id");
+    if (!songId) {
+      res.writeHead(400);
+      res.end("Missing songId");
+      return;
+    }
+    Promise.all([
+      readSyncedLyrics(songId),
+      readRawLyrics(songId)
+    ]).then(([synced, raw]) => {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({
+        synced: (synced == null ? void 0 : synced.content) || null,
+        raw: (raw == null ? void 0 : raw.content) || null
+      }));
+    }).catch((err) => {
+      console.error("[OverlayServer] Failed to read lyrics", err);
+      res.writeHead(500);
+      res.end("Internal Server Error");
+    });
+    return;
+  }
+  let filePath = path.join(RENDERER_DIST, req.url === "/" ? "index.html" : req.url || "index.html");
+  if (req.url === "/" || req.url === "/overlay") {
+    filePath = path.join(RENDERER_DIST, "index.html");
+  }
+  const extname = path.extname(filePath);
+  let contentType = "text/html";
+  switch (extname) {
+    case ".js":
+      contentType = "text/javascript";
+      break;
+    case ".css":
+      contentType = "text/css";
+      break;
+    case ".json":
+      contentType = "application/json";
+      break;
+    case ".png":
+      contentType = "image/png";
+      break;
+    case ".jpg":
+      contentType = "image/jpg";
+      break;
+    case ".svg":
+      contentType = "image/svg+xml";
+      break;
+  }
+  fs$1.readFile(filePath, (err, content) => {
+    if (err) {
+      if (err.code === "ENOENT") {
+        fs$1.readFile(path.join(RENDERER_DIST, "index.html"), (err2, content2) => {
+          if (err2) {
+            res.writeHead(500);
+            res.end("Error loading index.html");
+          } else {
+            res.writeHead(200, { "Content-Type": "text/html" });
+            res.end(content2, "utf-8");
+          }
+        });
+      } else {
+        res.writeHead(500);
+        res.end(`Server Error: ${err.code}`);
+      }
+    } else {
+      res.writeHead(200, { "Content-Type": contentType });
+      res.end(content, "utf-8");
     }
   });
-  if (VITE_DEV_SERVER_URL) {
-    overlayWindow.loadURL(`${VITE_DEV_SERVER_URL}#/overlay`);
-  } else {
-    overlayWindow.loadFile(path.join(RENDERER_DIST, "index.html"), { hash: "overlay" });
-  }
-  overlayWindow.on("closed", () => {
-    overlayWindow = null;
-  });
+});
+server.listen(OVERLAY_PORT, () => {
+  console.log(`[OverlayServer] Listening on port ${OVERLAY_PORT}`);
+});
+ipcMain.on("window:open-overlay", () => {
+  console.log("[Main] window:open-overlay called but deprecated in favor of OBS URL");
 });
 ipcMain.on("overlay:update", (_event, payload) => {
-  if (overlayWindow && !overlayWindow.isDestroyed()) {
-    overlayWindow.webContents.send("overlay:update", payload);
+  const data = JSON.stringify(payload);
+  for (const client of clients) {
+    client.write(`data: ${data}
+
+`);
   }
 });
 export {

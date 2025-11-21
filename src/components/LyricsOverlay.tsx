@@ -7,15 +7,27 @@ interface LyricsOverlayProps {
     lines: EditableLyricLine[];
     currentTime: number;
     className?: string;
+    onLineClick?: (time: number) => void;
 }
 
-const LyricsOverlay: React.FC<LyricsOverlayProps> = ({ status, lines, currentTime, className }) => {
+const LyricsOverlay: React.FC<LyricsOverlayProps> = ({ status, lines, currentTime, className, onLineClick }) => {
     const activeLineRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const isUserScrolling = useRef(false);
+    const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
+
+    // Handle scroll events to detect user interaction
+    const handleScroll = () => {
+        isUserScrolling.current = true;
+        if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
+        scrollTimeout.current = setTimeout(() => {
+            isUserScrolling.current = false;
+        }, 3000); // Resume auto-scroll after 3 seconds of no scrolling
+    };
 
     // Auto-scroll for synced lyrics
     useEffect(() => {
-        if (status === 'synced' && activeLineRef.current) {
+        if (status === 'synced' && activeLineRef.current && !isUserScrolling.current) {
             activeLineRef.current.scrollIntoView({
                 behavior: 'smooth',
                 block: 'center',
@@ -83,9 +95,10 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({ status, lines, currentTim
         <div
             className={className}
             ref={containerRef}
+            onScroll={handleScroll}
             style={{
                 height: '100%',
-                overflowY: 'hidden', // Hide scrollbar for karaoke feel
+                overflowY: 'auto', // Enable manual scrolling
                 padding: '0 32px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -93,8 +106,15 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({ status, lines, currentTim
                 // We use a large padding top/bottom so the first/last lines can be centered
                 paddingTop: '40vh',
                 paddingBottom: '40vh',
+                scrollbarWidth: 'none', // Firefox
+                msOverflowStyle: 'none', // IE/Edge
             }}
         >
+            <style>{`
+                .${className}::-webkit-scrollbar {
+                    display: none; /* Chrome/Safari/Opera */
+                }
+            `}</style>
             {(() => {
                 // Find current line index
                 let currentIdx = -1;
@@ -114,6 +134,11 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({ status, lines, currentTim
                         <div
                             key={line.id}
                             ref={isActive ? activeLineRef : null}
+                            onClick={() => {
+                                if (line.timeSeconds !== null && onLineClick) {
+                                    onLineClick(line.timeSeconds);
+                                }
+                            }}
                             style={{
                                 fontSize: isActive ? '48px' : '32px',
                                 fontWeight: isActive ? 800 : 500,
@@ -124,6 +149,7 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({ status, lines, currentTim
                                 transform: isActive ? 'scale(1.05)' : 'scale(1)',
                                 opacity: isActive ? 1 : isPast ? 0.4 : 0.6,
                                 textShadow: isActive ? '0 0 20px rgba(255, 68, 68, 0.4)' : 'none',
+                                cursor: onLineClick ? 'pointer' : 'default',
                             }}
                         >
                             {line.text}
