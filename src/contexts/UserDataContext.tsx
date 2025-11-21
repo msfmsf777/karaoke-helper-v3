@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useQueue } from './QueueContext';
-import { useLibrary } from './LibraryContext';
+// import { useLibrary } from './LibraryContext';
 
 export interface Playlist {
     id: string;
@@ -32,7 +32,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [history, setHistory] = useState<string[]>([]);
     const [playlists, setPlaylists] = useState<Playlist[]>([]);
     const { currentSongId } = useQueue();
-    const { getSongById } = useLibrary();
+    // const { getSongById } = useLibrary();
     const isInitialized = useRef(false);
 
     // Load data on startup

@@ -43,8 +43,8 @@ function normalizeAudioStatus(status: AudioStatus | undefined): AudioStatus {
 }
 
 function normalizeLyricsStatus(status: LyricsStatus | 'ready' | 'missing' | undefined | null): LyricsStatus {
-  if (status && LYRICS_STATUS_VALUES.includes(status)) {
-    return status;
+  if (status && LYRICS_STATUS_VALUES.includes(status as LyricsStatus)) {
+    return status as LyricsStatus;
   }
   if (status === 'ready') return 'synced';
   if (status === 'missing') return 'none';

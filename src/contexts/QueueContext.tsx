@@ -86,6 +86,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, [queue, currentIndex]);
 
     const playSongInternal = async (songId: string) => {
+        console.debug('[QueueContext] playSongInternal', songId);
         const song = getSongById(songId);
         if (!song) {
             console.warn('[QueueContext] Song not found in library', songId);

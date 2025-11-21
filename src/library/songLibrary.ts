@@ -7,7 +7,7 @@ const getApi = () => {
 
 const getDialogs = () => {
   if (window.khelper?.dialogs) return window.khelper.dialogs;
-  if (window.api?.openAudioFileDialog) {
+  if (window.api && !!window.api.openAudioFileDialog) {
     // Backward compatibility for Phase 1
     return {
       pickAudioFile: () => window.api!.openAudioFileDialog(),

@@ -44,7 +44,7 @@ const SongRow: React.FC<SongRowProps> = ({
     song,
     index,
     isActive,
-    context,
+    // context,
     onEditLyrics,
     showType = true,
     showAudioStatus = true,

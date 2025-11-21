@@ -598,13 +598,14 @@ app.on("activate", () => {
 });
 ipcMain.handle("dialog:open-audio-file", async () => {
   const browserWindow = BrowserWindow.getFocusedWindow() ?? win;
-  const { canceled, filePaths } = await dialog.showOpenDialog(browserWindow ?? void 0, {
+  const options = {
     properties: ["openFile"],
     filters: [
       { name: "Audio Files", extensions: ["mp3", "wav", "flac", "aac", "m4a", "ogg"] },
       { name: "All Files", extensions: ["*"] }
     ]
-  });
+  };
+  const { canceled, filePaths } = browserWindow ? await dialog.showOpenDialog(browserWindow, options) : await dialog.showOpenDialog(options);
   if (canceled || filePaths.length === 0) {
     return null;
   }
