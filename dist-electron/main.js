@@ -452,6 +452,51 @@ async function loadQueue() {
     return null;
   }
 }
+const FAVORITES_FILE = "favorites.json";
+const HISTORY_FILE = "history.json";
+function getUserDataPath(filename) {
+  return path.join(app.getPath("userData"), filename);
+}
+async function saveFavorites(songIds) {
+  try {
+    const filePath = getUserDataPath(FAVORITES_FILE);
+    await fs.writeFile(filePath, JSON.stringify(songIds, null, 2), "utf-8");
+  } catch (err) {
+    console.error("[UserData] Failed to save favorites", err);
+  }
+}
+async function loadFavorites() {
+  try {
+    const filePath = getUserDataPath(FAVORITES_FILE);
+    const content = await fs.readFile(filePath, "utf-8");
+    return JSON.parse(content);
+  } catch (err) {
+    if (err.code !== "ENOENT") {
+      console.error("[UserData] Failed to load favorites", err);
+    }
+    return [];
+  }
+}
+async function saveHistory(songIds) {
+  try {
+    const filePath = getUserDataPath(HISTORY_FILE);
+    await fs.writeFile(filePath, JSON.stringify(songIds, null, 2), "utf-8");
+  } catch (err) {
+    console.error("[UserData] Failed to save history", err);
+  }
+}
+async function loadHistory() {
+  try {
+    const filePath = getUserDataPath(HISTORY_FILE);
+    const content = await fs.readFile(filePath, "utf-8");
+    return JSON.parse(content);
+  } catch (err) {
+    if (err.code !== "ENOENT") {
+      console.error("[UserData] Failed to load history", err);
+    }
+    return [];
+  }
+}
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname$1, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
@@ -542,6 +587,18 @@ ipcMain.handle("queue:save", async (_event, payload) => {
 });
 ipcMain.handle("queue:load", async () => {
   return loadQueue();
+});
+ipcMain.handle("userData:save-favorites", async (_event, songIds) => {
+  return saveFavorites(songIds);
+});
+ipcMain.handle("userData:load-favorites", async () => {
+  return loadFavorites();
+});
+ipcMain.handle("userData:save-history", async (_event, songIds) => {
+  return saveHistory(songIds);
+});
+ipcMain.handle("userData:load-history", async () => {
+  return loadHistory();
 });
 ipcMain.on("jobs:subscribe", (event, subscriptionId) => {
   const wc = event.sender;

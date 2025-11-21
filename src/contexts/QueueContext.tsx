@@ -135,8 +135,24 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, [currentIndex, queue, getSongById]);
 
     const addToQueue = useCallback((songId: string) => {
-        setQueue((prev) => [...prev, songId]);
-    }, []);
+        // Use current state to calculate new state
+        const currentSongId = queue[currentIndex];
+
+        // Remove existing instance if any
+        const newQueue = queue.filter(id => id !== songId);
+        // Append to end
+        newQueue.push(songId);
+
+        setQueue(newQueue);
+
+        // Update currentIndex if current song moved
+        if (currentSongId) {
+            const newIndex = newQueue.indexOf(currentSongId);
+            if (newIndex !== -1 && newIndex !== currentIndex) {
+                setCurrentIndex(newIndex);
+            }
+        }
+    }, [queue, currentIndex]);
 
     const playNext = useCallback(() => {
         setCurrentIndex((prev) => {
@@ -172,12 +188,8 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             if (index < prev) {
                 return prev - 1;
             } else if (index === prev) {
-                // If removing current song, what to do?
-                // Option 1: Move to next (keep index same, but check bounds)
-                // Option 2: Stop (set to -1)
-                // Let's go with Option 1: Keep index same unless it was the last one
-                if (prev >= queue.length - 1) { // queue.length is old length
-                    return prev - 1; // Move back if we removed the last one
+                if (prev >= queue.length - 1) {
+                    return prev - 1;
                 }
                 return prev;
             }
@@ -197,8 +209,6 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         setCurrentIndex((prev) => {
             if (prev === fromIndex) return toIndex;
-            if (prev === toIndex) return prev + (fromIndex > toIndex ? 1 : -1); // This logic is tricky
-            // Let's simplify: if current was between from and to, it shifts
             if (fromIndex < prev && toIndex >= prev) return prev - 1;
             if (fromIndex > prev && toIndex <= prev) return prev + 1;
             return prev;
@@ -207,12 +217,20 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const playSongList = useCallback((songIds: string[]) => {
         if (songIds.length === 0) return;
-        setQueue((prev) => {
-            const startIndex = prev.length;
-            setCurrentIndex(startIndex);
-            return [...prev, ...songIds];
-        });
-    }, []);
+
+        const uniqueNewIds = Array.from(new Set(songIds));
+
+        // Filter existing from current queue
+        const filteredQueue = queue.filter(id => !uniqueNewIds.includes(id));
+        const newQueue = [...filteredQueue, ...uniqueNewIds];
+
+        setQueue(newQueue);
+
+        // Jump to the first of the new songs
+        const firstNewId = uniqueNewIds[0];
+        const newIndex = newQueue.indexOf(firstNewId);
+        setCurrentIndex(newIndex);
+    }, [queue]);
 
     const playImmediate = useCallback(async (songId: string) => {
         // Stop any currently playing song first

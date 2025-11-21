@@ -6,6 +6,7 @@ import { addLocalSong, getOriginalSongFilePath, getSongFilePath, getSongsBaseDir
 import { getAllJobs, queueSeparationJob, subscribeJobUpdates } from './separationJobs'
 import { readRawLyrics, readSyncedLyrics, writeRawLyrics, writeSyncedLyrics } from './lyrics'
 import { loadQueue, saveQueue } from './queue'
+import { loadFavorites, saveFavorites, loadHistory, saveHistory } from './userData'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -132,6 +133,22 @@ ipcMain.handle('queue:save', async (_event, payload: { songIds: string[]; curren
 
 ipcMain.handle('queue:load', async () => {
   return loadQueue()
+})
+
+ipcMain.handle('userData:save-favorites', async (_event, songIds: string[]) => {
+  return saveFavorites(songIds)
+})
+
+ipcMain.handle('userData:load-favorites', async () => {
+  return loadFavorites()
+})
+
+ipcMain.handle('userData:save-history', async (_event, songIds: string[]) => {
+  return saveHistory(songIds)
+})
+
+ipcMain.handle('userData:load-history', async () => {
+  return loadHistory()
 })
 
 ipcMain.on('jobs:subscribe', (event, subscriptionId: string) => {

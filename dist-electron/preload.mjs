@@ -64,5 +64,11 @@ electron.contextBridge.exposeInMainWorld("khelper", {
   queue: {
     save: (payload) => electron.ipcRenderer.invoke("queue:save", payload),
     load: () => electron.ipcRenderer.invoke("queue:load")
+  },
+  userData: {
+    saveFavorites: (songIds) => electron.ipcRenderer.invoke("userData:save-favorites", songIds),
+    loadFavorites: () => electron.ipcRenderer.invoke("userData:load-favorites"),
+    saveHistory: (songIds) => electron.ipcRenderer.invoke("userData:save-history", songIds),
+    loadHistory: () => electron.ipcRenderer.invoke("userData:load-history")
   }
 });
