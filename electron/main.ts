@@ -234,6 +234,15 @@ const server = http.createServer((req, res) => {
     return
   }
 
+  // If in Dev mode, redirect to Vite server for the overlay page
+  if (process.env.VITE_DEV_SERVER_URL) {
+    if (req.url === '/' || req.url === '/overlay' || req.url?.startsWith('/#/')) {
+      res.writeHead(302, { 'Location': `${process.env.VITE_DEV_SERVER_URL}#/overlay` })
+      res.end()
+      return
+    }
+  }
+
   // Serve static files for the overlay
   // We want to serve the renderer dist folder
   let filePath = path.join(RENDERER_DIST, req.url === '/' ? 'index.html' : req.url || 'index.html')

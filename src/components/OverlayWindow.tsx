@@ -11,7 +11,7 @@ const OverlayWindow: React.FC = () => {
 
     useEffect(() => {
         // Check if we are in Electron or Browser
-        // In Electron, window.api is defined. In Browser, it might not be, or we check userAgent.
+        // In Electron, window.api is defined.
         const isElectron = !!window.api;
 
         if (isElectron) {
@@ -29,7 +29,9 @@ const OverlayWindow: React.FC = () => {
             };
         } else {
             // Browser / OBS Mode: Use SSE
-            const eventSource = new EventSource('/events');
+            // If running on port 5173 (Vite Dev), connect to port 10001
+            const baseUrl = window.location.port === '5173' ? 'http://localhost:10001' : '';
+            const eventSource = new EventSource(`${baseUrl}/events`);
 
             eventSource.onmessage = (event) => {
                 try {
@@ -82,16 +84,9 @@ const OverlayWindow: React.FC = () => {
                         setLyricsStatus('none');
                     }
                 } else {
-                    // Browser Mode: We can't use IPC to read files.
-                    // However, since the main process is serving the overlay, we could potentially expose lyrics via HTTP.
-                    // BUT, for simplicity in this phase, we might rely on the fact that we don't have an easy way to fetch lyrics via HTTP yet without adding more endpoints.
-                    // WAIT: The implementation plan didn't specify adding HTTP endpoints for lyrics content.
-                    // Let's add a simple fetch to the main process via a new endpoint or just assume we need to add it.
-                    // Actually, let's add a simple endpoint in main.ts to serve lyrics content, or pass lyrics content in the SSE update?
-                    // Passing content in SSE is heavy. Better to fetch.
-                    // Let's try to fetch from a new endpoint `/lyrics?id=...`
-
-                    const response = await fetch(`/lyrics?id=${currentTrackId}`);
+                    // Browser Mode
+                    const baseUrl = window.location.port === '5173' ? 'http://localhost:10001' : '';
+                    const response = await fetch(`${baseUrl}/lyrics?id=${currentTrackId}`);
                     if (!response.ok) throw new Error('Failed to fetch lyrics');
                     const data = await response.json();
 
@@ -128,11 +123,8 @@ const OverlayWindow: React.FC = () => {
             style={{
                 height: '100vh',
                 width: '100vw',
-                backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background for readability
+                backgroundColor: 'transparent', // Transparent background
                 overflow: 'hidden',
-                // Make the window drag region usually at the top, but here we might want it everywhere or specific spot?
-                // For now, let's just make it transparent and assume the user can resize/move via OS controls if frame is present,
-                // or we add a drag region. The requirement said "frameless", so we need a drag region.
             }}
         >
             <div style={{
