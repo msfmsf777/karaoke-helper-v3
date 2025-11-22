@@ -19,6 +19,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
     const { deleteSong } = useLibrary();
 
     const [showPlaylistSubmenu, setShowPlaylistSubmenu] = useState(false);
+    const [showSeparationSubmenu, setShowSeparationSubmenu] = useState(false);
     const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
     const [newPlaylistName, setNewPlaylistName] = useState('');
     const [showEditDialog, setShowEditDialog] = useState(false);
@@ -251,6 +252,93 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
             </div>
 
             <div style={separatorStyle} />
+
+            {song.type === '原曲' && (
+                <>
+                    {(() => {
+                        const isSeparated = song.audio_status === 'separated';
+                        const currentQuality = song.separation_quality;
+
+                        // Map quality to numeric value for comparison
+                        const qualityValue = {
+                            'fast': 1,
+                            'normal': 2,
+                            'high': 3
+                        };
+
+                        const currentVal = currentQuality ? qualityValue[currentQuality] : 0;
+
+                        // If already HQ (3), hide the option entirely as per request
+                        if (isSeparated && currentVal === 3) return null;
+
+                        const label = isSeparated ? '重新分離' : '開始分離';
+
+                        return (
+                            <div
+                                style={{ ...itemStyle, position: 'relative' }}
+                                onMouseEnter={() => setShowSeparationSubmenu(true)}
+                                onMouseLeave={() => setShowSeparationSubmenu(false)}
+                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
+                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                            >
+                                <span>{label}</span>
+                                <span>▶</span>
+
+                                {showSeparationSubmenu && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        left: '100%',
+                                        top: 0,
+                                        backgroundColor: '#2d2d2d',
+                                        border: '1px solid #3a3a3a',
+                                        borderRadius: '8px',
+                                        padding: '6px 0',
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                                        minWidth: '160px',
+                                        marginLeft: '4px',
+                                        zIndex: 1001
+                                    }}>
+                                        {[
+                                            { id: 'fast', label: '快速 (Fast)', val: 1 },
+                                            { id: 'normal', label: '標準 (Normal)', val: 2 },
+                                            { id: 'high', label: '高品質 (High)', val: 3 }
+                                        ].map((option) => {
+                                            const isDisabled = isSeparated && option.val <= currentVal;
+
+                                            return (
+                                                <div
+                                                    key={option.id}
+                                                    onClick={async (e) => {
+                                                        e.stopPropagation();
+                                                        if (isDisabled) return;
+                                                        try {
+                                                            const { queueSeparationJob } = await import('../jobs/separationJobs');
+                                                            await queueSeparationJob(song.id, option.id as 'high' | 'normal' | 'fast');
+                                                            onClose();
+                                                        } catch (err) {
+                                                            console.error('Failed to queue separation', err);
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        ...itemStyle,
+                                                        color: isDisabled ? '#666' : '#fff',
+                                                        cursor: isDisabled ? 'not-allowed' : 'pointer'
+                                                    }}
+                                                    onMouseOver={(e) => !isDisabled && (e.currentTarget.style.backgroundColor = '#3d3d3d')}
+                                                    onMouseOut={(e) => !isDisabled && (e.currentTarget.style.backgroundColor = 'transparent')}
+                                                >
+                                                    {option.label}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })()}
+                    <div style={separatorStyle} />
+                </>
+            )}
 
             <div
                 style={itemStyle}
