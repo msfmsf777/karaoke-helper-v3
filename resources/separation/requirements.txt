@@ -1,4 +1,1 @@
-demucs
-torch
-torchaudio
-soundfile
+audio-separator[cpu]
