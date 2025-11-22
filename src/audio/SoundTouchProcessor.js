@@ -46,6 +46,7 @@ class SoundTouchProcessor extends AudioWorkletProcessor {
             } else if (type === 'stop') {
                 this.playing = false;
                 this.filter.clear();
+                this.soundTouch.clear();
                 this.filter.sourcePosition = 0; // Reset position
                 this.port.postMessage({ type: 'time', time: 0 });
             } else if (type === 'seek') {
@@ -71,6 +72,7 @@ class SoundTouchProcessor extends AudioWorkletProcessor {
 
         this.playing = false;
         this.filter.clear();
+        this.soundTouch.clear();
         this.filter.sourcePosition = 0;
 
         this.port.postMessage({ type: 'loaded', duration: this.bufferLength / sampleRate });
@@ -82,6 +84,7 @@ class SoundTouchProcessor extends AudioWorkletProcessor {
         if (cursor >= this.bufferLength) cursor = this.bufferLength - 1;
 
         this.filter.clear();
+        this.soundTouch.clear();
         this.filter.sourcePosition = cursor;
         this.port.postMessage({ type: 'time', time: cursor / sampleRate });
     }

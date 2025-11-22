@@ -205,7 +205,11 @@ class AudioPlayer {
   }
 
   setTransform(transform: PlaybackTransform) {
-    this.workletNode?.port.postMessage({ type: 'setPlaybackTransform', payload: transform });
+    if (this.workletNode) {
+      this.workletNode.port.postMessage({ type: 'setPlaybackTransform', payload: transform });
+    } else {
+      console.warn(`[${this.role}Player] setTransform called but workletNode is null`);
+    }
   }
 
   // Getters
@@ -319,8 +323,8 @@ class DualAudioEngine implements AudioEngine {
       })()
     ]);
 
-    // Reset transform
-    this.setPlaybackTransform({ speed: 1.0, transpose: 0 });
+    // Reset transform - REMOVED to allow external control and avoid race/redundancy
+    // this.setPlaybackTransform({ speed: 1.0, transpose: 0 });
     this.applyTrackVolumes();
   }
 
