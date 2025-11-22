@@ -186,56 +186,60 @@ const SongRow: React.FC<SongRowProps> = ({
                 {/* Audio Status */}
                 <div style={{ color: audioColor, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }} title={song.last_separation_error || undefined}>
                     {showAudioStatus && (
-                        <>
-                            {audioStatusLabels[song.audio_status]}
+                        song.type === '伴奏' ? (
+                            <span>-</span>
+                        ) : (
+                            <>
+                                {audioStatusLabels[song.audio_status]}
 
-                            {/* Quality Badge */}
-                            {song.audio_status === 'separated' && song.separation_quality && (
-                                <span style={{
-                                    fontSize: '10px',
-                                    padding: '1px 4px',
-                                    borderRadius: '4px',
-                                    backgroundColor: song.separation_quality === 'high' ? '#4caf50' : song.separation_quality === 'fast' ? '#ff9800' : '#2196f3',
-                                    color: '#fff',
-                                    fontWeight: 'bold',
-                                    marginLeft: '4px'
-                                }}>
-                                    {song.separation_quality === 'high' ? 'HQ' : song.separation_quality === 'fast' ? '快速' : '標準'}
-                                </span>
-                            )}
+                                {/* Quality Badge */}
+                                {song.audio_status === 'separated' && song.separation_quality && (
+                                    <span style={{
+                                        fontSize: '10px',
+                                        padding: '1px 4px',
+                                        borderRadius: '4px',
+                                        backgroundColor: song.separation_quality === 'high' ? '#4caf50' : song.separation_quality === 'fast' ? '#ff9800' : '#2196f3',
+                                        color: '#fff',
+                                        fontWeight: 'bold',
+                                        marginLeft: '4px'
+                                    }}>
+                                        {song.separation_quality === 'high' ? 'HQ' : song.separation_quality === 'fast' ? '快速' : '標準'}
+                                    </span>
+                                )}
 
-                            {song.audio_status === 'separating' && <span style={{ fontSize: '12px' }}>⋯</span>}
+                                {song.audio_status === 'separating' && <span style={{ fontSize: '12px' }}>⋯</span>}
 
-                            {/* Separation Button for Original Songs */}
-                            {song.type === '原曲' && (
-                                (song.audio_status === 'original_only' || song.audio_status === 'separation_failed' || song.audio_status === 'ready') ? (
-                                    <button
-                                        onClick={async (e) => {
-                                            e.stopPropagation();
-                                            try {
-                                                const { queueSeparationJob } = await import('../jobs/separationJobs');
-                                                await queueSeparationJob(song.id);
-                                            } catch (err) {
-                                                console.error('Failed to queue separation', err);
-                                            }
-                                        }}
-                                        style={{
-                                            padding: '2px 6px',
-                                            backgroundColor: 'var(--accent-color)',
-                                            color: '#000',
-                                            border: 'none',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer',
-                                            fontSize: '11px',
-                                            fontWeight: 700,
-                                            marginLeft: '4px'
-                                        }}
-                                    >
-                                        {song.audio_status === 'separation_failed' ? '重試' : '分離'}
-                                    </button>
-                                ) : null
-                            )}
-                        </>
+                                {/* Separation Button for Original Songs */}
+                                {song.type === '原曲' && (
+                                    (song.audio_status === 'original_only' || song.audio_status === 'separation_failed' || song.audio_status === 'ready') ? (
+                                        <button
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                try {
+                                                    const { queueSeparationJob } = await import('../jobs/separationJobs');
+                                                    await queueSeparationJob(song.id);
+                                                } catch (err) {
+                                                    console.error('Failed to queue separation', err);
+                                                }
+                                            }}
+                                            style={{
+                                                padding: '2px 6px',
+                                                backgroundColor: 'var(--accent-color)',
+                                                color: '#000',
+                                                border: 'none',
+                                                borderRadius: '4px',
+                                                cursor: 'pointer',
+                                                fontSize: '11px',
+                                                fontWeight: 700,
+                                                marginLeft: '4px'
+                                            }}
+                                        >
+                                            {song.audio_status === 'separation_failed' ? '重試' : '分離'}
+                                        </button>
+                                    ) : null
+                                )}
+                            </>
+                        )
                     )}
                 </div>
 

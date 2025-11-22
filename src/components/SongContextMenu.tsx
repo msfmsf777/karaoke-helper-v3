@@ -257,7 +257,11 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                 <>
                     {(() => {
                         const isSeparated = song.audio_status === 'separated';
+                        const isSeparating = song.audio_status === 'separating' || song.audio_status === 'separation_pending';
                         const currentQuality = song.separation_quality;
+
+                        // If separating, hide the option entirely
+                        if (isSeparating) return null;
 
                         // Map quality to numeric value for comparison
                         const qualityValue = {
@@ -336,7 +340,6 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                             </div>
                         );
                     })()}
-                    <div style={separatorStyle} />
                 </>
             )}
 
@@ -369,7 +372,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
             >
                 刪除歌曲
             </div>
-        </div>
+        </div >
     );
 };
 
