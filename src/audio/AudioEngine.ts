@@ -1,12 +1,14 @@
+
 // Extend AudioContext to support setSinkId (experimental/Electron)
 interface AudioContextWithSinkId extends AudioContext {
   setSinkId(sinkId: string): Promise<void>;
 }
 
 export type OutputRole = 'stream' | 'headphone';
+export type TrackType = 'instrumental' | 'vocal';
 
 export interface AudioEngine {
-  loadFile(paths: string | { stream: string; headphone: string }): Promise<void>;
+  loadFile(paths: string | { instrumental: string; vocal: string | null }): Promise<void>;
   play(): Promise<void> | void;
   pause(): void;
   stop(): void;
@@ -19,6 +21,7 @@ export interface AudioEngine {
   enumerateOutputDevices(): Promise<MediaDeviceInfo[]>;
   setOutputDevice(role: OutputRole, deviceId: string | null): Promise<void>;
   setOutputVolume(role: OutputRole, volume: number): void;
+  setTrackVolume(track: TrackType, volume: number): void;
   setPlaybackRate(rate: number): void;
   getPlaybackRate(): number;
 }
@@ -26,25 +29,38 @@ export interface AudioEngine {
 type SinkableAudioElement = HTMLAudioElement & { setSinkId?: (sinkId: string) => Promise<void> };
 
 // --- Audio Worklet Processor Code ---
-// We define this as a string to avoid needing a separate file/loader config.
-// This processor mimics the Python _hp_callback: it pulls data from a buffer.
 const workletCode = `
 class PCMPlayerProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
-    this.leftBuffer = null;
-    this.rightBuffer = null;
+    // Buffers
+    this.instrLeft = null;
+    this.instrRight = null;
+    this.vocalLeft = null;
+    this.vocalRight = null;
+
     this.bufferLength = 0;
     this.cursor = 0;
     this.playing = false;
     this.playbackRate = 1.0;
-    
+
+    // Volumes
+    this.instrVolume = 1.0;
+    this.vocalVolume = 1.0;
+
     this.port.onmessage = (e) => {
       const { type, payload } = e.data;
       if (type === 'load') {
-        this.leftBuffer = payload.left;
-        this.rightBuffer = payload.right;
-        this.bufferLength = this.leftBuffer.length;
+        this.instrLeft = payload.instrLeft;
+        this.instrRight = payload.instrRight;
+        this.vocalLeft = payload.vocalLeft;
+        this.vocalRight = payload.vocalRight;
+
+        // Determine length from whatever is available
+        this.bufferLength = 0;
+        if (this.instrLeft) this.bufferLength = Math.max(this.bufferLength, this.instrLeft.length);
+        if (this.vocalLeft) this.bufferLength = Math.max(this.bufferLength, this.vocalLeft.length);
+
         this.cursor = 0;
         this.playing = false;
         this.port.postMessage({ type: 'loaded', duration: this.bufferLength / sampleRate });
@@ -57,13 +73,15 @@ class PCMPlayerProcessor extends AudioWorkletProcessor {
         this.cursor = 0;
         this.port.postMessage({ type: 'time', time: 0 });
       } else if (type === 'seek') {
-        // payload is time in seconds
         this.cursor = Math.floor(payload * sampleRate);
         if (this.cursor < 0) this.cursor = 0;
         if (this.cursor >= this.bufferLength) this.cursor = this.bufferLength - 1;
         this.port.postMessage({ type: 'time', time: this.cursor / sampleRate });
       } else if (type === 'rate') {
         this.playbackRate = payload;
+      } else if (type === 'volumes') {
+        this.instrVolume = payload.instr;
+        this.vocalVolume = payload.vocal;
       }
     };
   }
@@ -71,19 +89,13 @@ class PCMPlayerProcessor extends AudioWorkletProcessor {
   process(inputs, outputs, parameters) {
     const output = outputs[0];
     const channelCount = output.length;
-    
-    if (!this.leftBuffer || !this.playing) {
-      return true; // Keep processor alive
+
+    if (this.bufferLength === 0 || !this.playing) {
+      return true;
     }
 
     const outputLength = output[0].length;
-    
-    // Simple playback loop
-    // Note: For high-quality resampling with variable playbackRate, 
-    // we would need linear interpolation. For now, we'll use nearest-neighbor 
-    // (or simple index increment) which is "good enough" for 1.0x rate 
-    // and basic pitch shifting if rate != 1.0.
-    
+
     for (let i = 0; i < outputLength; i++) {
       if (this.cursor >= this.bufferLength) {
         this.playing = false;
@@ -91,23 +103,26 @@ class PCMPlayerProcessor extends AudioWorkletProcessor {
         break;
       }
 
-      // Read from buffer
-      // If we wanted to support rate != 1.0 smoothly, we'd use a float cursor and interpolate.
-      // For this implementation, we'll stick to integer steps for 1.0 stability, 
-      // but allow float increments for rate support.
       const idx = Math.floor(this.cursor);
-      
-      if (channelCount > 0) output[0][i] = this.leftBuffer[idx] || 0;
-      if (channelCount > 1) output[1][i] = this.rightBuffer[idx] || 0;
+
+      // Fetch samples (default to 0 if missing)
+      const iL = this.instrLeft ? (this.instrLeft[idx] || 0) : 0;
+      const iR = this.instrRight ? (this.instrRight[idx] || 0) : 0;
+      const vL = this.vocalLeft ? (this.vocalLeft[idx] || 0) : 0;
+      const vR = this.vocalRight ? (this.vocalRight[idx] || 0) : 0;
+
+      // Mix
+      const left = (iL * this.instrVolume) + (vL * this.vocalVolume);
+      const right = (iR * this.instrVolume) + (vR * this.vocalVolume);
+
+      if (channelCount > 0) output[0][i] = left;
+      if (channelCount > 1) output[1][i] = right;
 
       this.cursor += this.playbackRate;
     }
-    
-    // Report time every ~100ms (approx every 4-5 blocks at 44.1k/128)
-    // Actually, let's just report every block and let main thread throttle if needed, 
-    // or report every N blocks.
+
     if (currentTime % 0.1 < 0.01) {
-       this.port.postMessage({ type: 'time', time: this.cursor / sampleRate });
+      this.port.postMessage({ type: 'time', time: this.cursor / sampleRate });
     }
 
     return true;
@@ -144,7 +159,7 @@ class AudioPlayer {
     this.gainNode = this.audioContext.createGain();
     this.gainNode.connect(this.audioContext.destination);
 
-    console.log(`[${role}Player] Created. SampleRate: ${this.audioContext.sampleRate}`);
+    console.log(`[${role}Player]Created.SampleRate: ${this.audioContext.sampleRate} `);
     this.initWorklet();
   }
 
@@ -181,12 +196,12 @@ class AudioPlayer {
   }
 
   async setSinkId(deviceId: string | null) {
-    const sinkId = deviceId ?? '';
+    const sinkId = (deviceId === 'default' || !deviceId) ? '' : deviceId;
 
     if (typeof this.audioContext.setSinkId === 'function') {
       try {
         await this.audioContext.setSinkId(sinkId);
-        console.log(`[${this.role}Player] setSinkId success: ${sinkId || 'default'}`);
+        console.log(`[${this.role}Player] setSinkId success: ${sinkId || 'default'} `);
         return;
       } catch (err) {
         console.warn(`[${this.role}Player] setSinkId failed, trying fallback`, err);
@@ -212,26 +227,24 @@ class AudioPlayer {
     }
   }
 
-  async loadBuffer(arrayBuffer: ArrayBuffer) {
+  async loadBuffers(instrBuffer: AudioBuffer | null, vocalBuffer: AudioBuffer | null) {
     if (!this.isReady || !this.workletNode) await this.initWorklet();
-
-    // Decode
-    const bufferCopy = arrayBuffer.slice(0);
     if (this.audioContext.state === 'suspended') await this.audioContext.resume();
 
-    const audioBuffer = await this.audioContext.decodeAudioData(bufferCopy);
+    const payload: any = {};
 
-    // Extract channels
-    const left = audioBuffer.getChannelData(0);
-    const right = audioBuffer.numberOfChannels > 1 ? audioBuffer.getChannelData(1) : left;
+    if (instrBuffer) {
+      payload.instrLeft = instrBuffer.getChannelData(0);
+      payload.instrRight = instrBuffer.numberOfChannels > 1 ? instrBuffer.getChannelData(1) : payload.instrLeft;
+    }
+    if (vocalBuffer) {
+      payload.vocalLeft = vocalBuffer.getChannelData(0);
+      payload.vocalRight = vocalBuffer.numberOfChannels > 1 ? vocalBuffer.getChannelData(1) : payload.vocalLeft;
+    }
 
-    // Send to Worklet
-    this.workletNode?.port.postMessage({
-      type: 'load',
-      payload: { left, right }
-    });
+    this.workletNode?.port.postMessage({ type: 'load', payload });
 
-    this._duration = audioBuffer.duration;
+    // Duration is set by worklet response
     this._currentTime = 0;
     this._isPlaying = false;
   }
@@ -267,6 +280,10 @@ class AudioPlayer {
     this.gainNode.gain.value = vol;
   }
 
+  setTrackVolumes(instr: number, vocal: number) {
+    this.workletNode?.port.postMessage({ type: 'volumes', payload: { instr, vocal } });
+  }
+
   setRate(rate: number) {
     this.workletNode?.port.postMessage({ type: 'rate', payload: rate });
   }
@@ -286,8 +303,12 @@ class DualAudioEngine implements AudioEngine {
   private animationFrameId: number | null = null;
   private playbackRate = 1;
 
+  // Track volumes
+  private instrVolume = 1.0;
+  private vocalVolume = 1.0;
+
   constructor() {
-    console.log('[AudioEngine] Initializing Worklet-based Dual Engine...');
+    console.log('[AudioEngine] Initializing Worklet-based Dual Engine (Stem Support)...');
     this.streamPlayer = new AudioPlayer('stream');
     this.headphonePlayer = new AudioPlayer('headphone');
 
@@ -301,15 +322,12 @@ class DualAudioEngine implements AudioEngine {
     return `file:///${encodeURI(normalized.startsWith('/') ? normalized.slice(1) : normalized)}`;
   }
 
-  // --- Polling Loop for UI ---
-  // Even though Worklet posts messages, we use RAF for UI smoothness and to aggregate
   private startTimer() {
     if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
     const loop = () => {
       if (this.isPlaying()) {
         const time = this.headphonePlayer.currentTime;
         const duration = this.headphonePlayer.duration;
-
         this.timeUpdateSubscribers.forEach((cb) => cb(time));
 
         if (duration > 0 && (time >= duration || Math.abs(time - duration) < 0.1)) {
@@ -336,40 +354,74 @@ class DualAudioEngine implements AudioEngine {
 
   // --- Public API ---
 
-  async loadFile(paths: string | { stream: string; headphone: string }): Promise<void> {
+  async loadFile(paths: string | { instrumental: string; vocal: string | null }): Promise<void> {
     this.stop();
 
-    let streamPath: string;
-    let headphonePath: string;
+    let instrPath: string;
+    let vocalPath: string | null;
 
     if (typeof paths === 'string') {
-      streamPath = paths;
-      headphonePath = paths;
+      instrPath = paths;
+      vocalPath = paths; // Fallback: load same file for both if single path provided
     } else {
-      streamPath = paths.stream;
-      headphonePath = paths.headphone;
+      instrPath = paths.instrumental;
+      vocalPath = paths.vocal;
     }
 
-    console.log('[AudioEngine] Loading:', { streamPath, headphonePath });
+    console.log('[AudioEngine] Loading:', { instrPath, vocalPath });
 
-    const streamUrl = this.toFileUrl(streamPath);
-    const headphoneUrl = this.toFileUrl(headphonePath);
+    const instrUrl = this.toFileUrl(instrPath);
+    const vocalUrl = vocalPath ? this.toFileUrl(vocalPath) : null;
 
-    const [streamBuffer, headphoneBuffer] = await Promise.all([
-      fetch(streamUrl).then(r => r.arrayBuffer()),
-      fetch(headphoneUrl).then(r => r.arrayBuffer())
+    // Fetch buffers
+    const [instrBuf, vocalBuf] = await Promise.all([
+      fetch(instrUrl).then(r => r.arrayBuffer()),
+      vocalUrl ? fetch(vocalUrl).then(r => r.arrayBuffer()) : Promise.resolve(null)
     ]);
 
+    // Decode for Stream Player
+    // Stream only needs Instrumental, but we load both to keep logic simple or if we change mind.
+    // Actually, user said Stream = Instr Only.
+    // We can enforce this by setting volumes, OR by only loading Instr buffer.
+    // Setting volumes is more flexible (allows toggle later).
+
+    // We need to decode specifically for each context to match sample rates.
+    const decode = async (ctx: AudioContext, buf: ArrayBuffer | null) => {
+      // If buffer is empty (e.g., vocalPath was null/empty), return null
+      if (!buf || buf.byteLength === 0) return null;
+      return ctx.decodeAudioData(buf.slice(0));
+    };
+
+    // Parallel decode for both engines
     await Promise.all([
-      this.streamPlayer.loadBuffer(streamBuffer),
-      this.headphonePlayer.loadBuffer(headphoneBuffer)
+      (async () => {
+        const i = await decode(this.streamPlayer.audioContext, instrBuf);
+        const v = await decode(this.streamPlayer.audioContext, vocalBuf);
+        await this.streamPlayer.loadBuffers(i, v);
+      })(),
+      (async () => {
+        const i = await decode(this.headphonePlayer.audioContext, instrBuf);
+        const v = await decode(this.headphonePlayer.audioContext, vocalBuf);
+        await this.headphonePlayer.loadBuffers(i, v);
+      })()
     ]);
 
     this.setPlaybackRate(1.0);
+    this.applyTrackVolumes(); // Apply initial mixing rules
+  }
+
+  private applyTrackVolumes() {
+    // Stream: Instr Only (Vocal = 0)
+    // Headphone: Instr + Vocal
+
+    // Stream Player
+    this.streamPlayer.setTrackVolumes(this.instrVolume, 0);
+
+    // Headphone Player
+    this.headphonePlayer.setTrackVolumes(this.instrVolume, this.vocalVolume);
   }
 
   play(): void {
-    // Sync start
     this.streamPlayer.play();
     this.headphonePlayer.play();
     this.startTimer();
@@ -379,8 +431,6 @@ class DualAudioEngine implements AudioEngine {
     this.streamPlayer.pause();
     this.headphonePlayer.pause();
     this.stopTimer();
-
-    // Final sync
     const time = this.headphonePlayer.currentTime;
     this.timeUpdateSubscribers.forEach(cb => cb(time));
   }
@@ -444,6 +494,15 @@ class DualAudioEngine implements AudioEngine {
     } else {
       this.headphonePlayer.setVolume(volume);
     }
+  }
+
+  setTrackVolume(track: TrackType, volume: number): void {
+    if (track === 'instrumental') {
+      this.instrVolume = volume;
+    } else {
+      this.vocalVolume = volume;
+    }
+    this.applyTrackVolumes();
   }
 
   setPlaybackRate(rate: number): void {

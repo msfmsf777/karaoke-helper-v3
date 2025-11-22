@@ -62,12 +62,12 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   };
 
   useEffect(() => {
-    audioEngine.setOutputVolume('stream', backingVolume / 100);
+    audioEngine.setTrackVolume('instrumental', backingVolume / 100);
     saveVolumePreferences({ streamVolume: backingVolume / 100, headphoneVolume: vocalVolume / 100 });
   }, [backingVolume]);
 
   useEffect(() => {
-    audioEngine.setOutputVolume('headphone', vocalVolume / 100);
+    audioEngine.setTrackVolume('vocal', vocalVolume / 100);
     saveVolumePreferences({ streamVolume: backingVolume / 100, headphoneVolume: vocalVolume / 100 });
   }, [vocalVolume]);
 
