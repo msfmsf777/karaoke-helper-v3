@@ -1,0 +1,37 @@
+SoundTouch found
+Methods on prototype:
+ - constructor
+ - clear
+ - clone
+ - rate
+ - rateChange
+ - tempo
+ - tempoChange
+ - pitch
+ - pitchOctaves
+ - pitchSemitones
+ - inputBuffer
+ - outputBuffer
+ - calculateEffectiveRateAndTempo
+ - process
+Properties on instance:
+ - transposer
+ - stretch
+ - _inputBuffer
+ - _intermediateBuffer
+ - _outputBuffer
+ - _rate
+ - _tempo
+ - virtualPitch
+ - virtualRate
+ - virtualTempo
+SimpleFilter found
+Methods on SimpleFilter prototype:
+ - constructor
+ - position
+ - sourcePosition
+ - onEnd
+ - fillInputBuffer
+ - extract
+ - handleSampleData
+ - clear

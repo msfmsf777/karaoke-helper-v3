@@ -4,8 +4,17 @@ interface AudioContextWithSinkId extends AudioContext {
   setSinkId(sinkId: string): Promise<void>;
 }
 
+// Import SoundTouchJS and Processor code as raw strings
+import soundtouchLib from 'soundtouchjs/dist/soundtouch.js?raw';
+import processorCode from './SoundTouchProcessor.js?raw';
+
 export type OutputRole = 'stream' | 'headphone';
 export type TrackType = 'instrumental' | 'vocal';
+
+export interface PlaybackTransform {
+  speed: number;       // 0.5–2.0
+  transpose: number;   // -12–+12 semitones
+}
 
 export interface AudioEngine {
   loadFile(paths: string | { instrumental: string; vocal: string | null }): Promise<void>;
@@ -22,119 +31,16 @@ export interface AudioEngine {
   setOutputDevice(role: OutputRole, deviceId: string | null): Promise<void>;
   setOutputVolume(role: OutputRole, volume: number): void;
   setTrackVolume(track: TrackType, volume: number): void;
-  setPlaybackRate(rate: number): void;
-  getPlaybackRate(): number;
+
+  // New API
+  setPlaybackTransform(transform: PlaybackTransform): void;
+  getPlaybackTransform(): PlaybackTransform;
 }
 
 type SinkableAudioElement = HTMLAudioElement & { setSinkId?: (sinkId: string) => Promise<void> };
 
-// --- Audio Worklet Processor Code ---
-const workletCode = `
-class PCMPlayerProcessor extends AudioWorkletProcessor {
-  constructor() {
-    super();
-    // Buffers
-    this.instrLeft = null;
-    this.instrRight = null;
-    this.vocalLeft = null;
-    this.vocalRight = null;
-
-    this.bufferLength = 0;
-    this.cursor = 0;
-    this.playing = false;
-    this.playbackRate = 1.0;
-
-    // Volumes
-    this.instrVolume = 1.0;
-    this.vocalVolume = 1.0;
-
-    this.port.onmessage = (e) => {
-      const { type, payload } = e.data;
-      if (type === 'load') {
-        this.instrLeft = payload.instrLeft;
-        this.instrRight = payload.instrRight;
-        this.vocalLeft = payload.vocalLeft;
-        this.vocalRight = payload.vocalRight;
-
-        // Determine length from whatever is available
-        this.bufferLength = 0;
-        if (this.instrLeft) this.bufferLength = Math.max(this.bufferLength, this.instrLeft.length);
-        if (this.vocalLeft) this.bufferLength = Math.max(this.bufferLength, this.vocalLeft.length);
-
-        this.cursor = 0;
-        this.playing = false;
-        this.port.postMessage({ type: 'loaded', duration: this.bufferLength / sampleRate });
-      } else if (type === 'play') {
-        this.playing = true;
-      } else if (type === 'pause') {
-        this.playing = false;
-      } else if (type === 'stop') {
-        this.playing = false;
-        this.cursor = 0;
-        this.port.postMessage({ type: 'time', time: 0 });
-      } else if (type === 'seek') {
-        this.cursor = Math.floor(payload * sampleRate);
-        if (this.cursor < 0) this.cursor = 0;
-        if (this.cursor >= this.bufferLength) this.cursor = this.bufferLength - 1;
-        this.port.postMessage({ type: 'time', time: this.cursor / sampleRate });
-      } else if (type === 'rate') {
-        this.playbackRate = payload;
-      } else if (type === 'volumes') {
-        this.instrVolume = payload.instr;
-        this.vocalVolume = payload.vocal;
-      }
-    };
-  }
-
-  process(inputs, outputs, parameters) {
-    const output = outputs[0];
-    const channelCount = output.length;
-
-    if (this.bufferLength === 0 || !this.playing) {
-      return true;
-    }
-
-    const outputLength = output[0].length;
-
-    for (let i = 0; i < outputLength; i++) {
-      if (this.cursor >= this.bufferLength) {
-        this.playing = false;
-        this.port.postMessage({ type: 'ended' });
-        break;
-      }
-
-      const idx = Math.floor(this.cursor);
-
-      // Fetch samples (default to 0 if missing)
-      const iL = this.instrLeft ? (this.instrLeft[idx] || 0) : 0;
-      const iR = this.instrRight ? (this.instrRight[idx] || 0) : 0;
-      const vL = this.vocalLeft ? (this.vocalLeft[idx] || 0) : 0;
-      const vR = this.vocalRight ? (this.vocalRight[idx] || 0) : 0;
-
-      // Mix
-      const left = (iL * this.instrVolume) + (vL * this.vocalVolume);
-      const right = (iR * this.instrVolume) + (vR * this.vocalVolume);
-
-      if (channelCount > 0) output[0][i] = left;
-      if (channelCount > 1) output[1][i] = right;
-
-      this.cursor += this.playbackRate;
-    }
-
-    if (currentTime % 0.1 < 0.01) {
-      this.port.postMessage({ type: 'time', time: this.cursor / sampleRate });
-    }
-
-    return true;
-  }
-}
-
-registerProcessor('pcm-player', PCMPlayerProcessor);
-`;
-
 /**
  * Wraps the AudioWorkletNode and AudioContext.
- * Equivalent to the Python 'AudioPlayer' class but for a single output.
  */
 class AudioPlayer {
   public audioContext: AudioContextWithSinkId;
@@ -159,17 +65,31 @@ class AudioPlayer {
     this.gainNode = this.audioContext.createGain();
     this.gainNode.connect(this.audioContext.destination);
 
-    console.log(`[${role}Player]Created.SampleRate: ${this.audioContext.sampleRate} `);
+    console.log(`[${role}Player] Created. SampleRate: ${this.audioContext.sampleRate}`);
     this.initWorklet();
   }
 
   private async initWorklet() {
     try {
-      const blob = new Blob([workletCode], { type: 'application/javascript' });
+      // Shim for SoundTouchJS to ensure it attaches to global scope
+      // It likely checks for window/self/global. We force them all to globalThis.
+      // We also mock module/exports so it doesn't try to export as a module if it detects CommonJS,
+      // which might hide the global definition.
+      const shim = `
+        var global = globalThis;
+        var window = globalThis;
+        var self = globalThis;
+        var module = { exports: {} };
+        var exports = module.exports;
+        var define = undefined;
+      `;
+      const combinedCode = `${shim}\n${soundtouchLib}\n${processorCode}`;
+
+      const blob = new Blob([combinedCode], { type: 'application/javascript' });
       const url = URL.createObjectURL(blob);
       await this.audioContext.audioWorklet.addModule(url);
 
-      this.workletNode = new AudioWorkletNode(this.audioContext, 'pcm-player', {
+      this.workletNode = new AudioWorkletNode(this.audioContext, 'soundtouch-processor', {
         numberOfInputs: 0,
         numberOfOutputs: 1,
         outputChannelCount: [2]
@@ -284,8 +204,8 @@ class AudioPlayer {
     this.workletNode?.port.postMessage({ type: 'volumes', payload: { instr, vocal } });
   }
 
-  setRate(rate: number) {
-    this.workletNode?.port.postMessage({ type: 'rate', payload: rate });
+  setTransform(transform: PlaybackTransform) {
+    this.workletNode?.port.postMessage({ type: 'setPlaybackTransform', payload: transform });
   }
 
   // Getters
@@ -301,14 +221,15 @@ class DualAudioEngine implements AudioEngine {
   private timeUpdateSubscribers = new Set<(timeSeconds: number) => void>();
   private endedSubscribers = new Set<() => void>();
   private animationFrameId: number | null = null;
-  private playbackRate = 1;
+
+  private transform: PlaybackTransform = { speed: 1.0, transpose: 0 };
 
   // Track volumes
   private instrVolume = 1.0;
   private vocalVolume = 1.0;
 
   constructor() {
-    console.log('[AudioEngine] Initializing Worklet-based Dual Engine (Stem Support)...');
+    console.log('[AudioEngine] Initializing SoundTouch-based Dual Engine...');
     this.streamPlayer = new AudioPlayer('stream');
     this.headphonePlayer = new AudioPlayer('headphone');
 
@@ -379,15 +300,7 @@ class DualAudioEngine implements AudioEngine {
       vocalUrl ? fetch(vocalUrl).then(r => r.arrayBuffer()) : Promise.resolve(null)
     ]);
 
-    // Decode for Stream Player
-    // Stream only needs Instrumental, but we load both to keep logic simple or if we change mind.
-    // Actually, user said Stream = Instr Only.
-    // We can enforce this by setting volumes, OR by only loading Instr buffer.
-    // Setting volumes is more flexible (allows toggle later).
-
-    // We need to decode specifically for each context to match sample rates.
     const decode = async (ctx: AudioContext, buf: ArrayBuffer | null) => {
-      // If buffer is empty (e.g., vocalPath was null/empty), return null
       if (!buf || buf.byteLength === 0) return null;
       return ctx.decodeAudioData(buf.slice(0));
     };
@@ -406,8 +319,9 @@ class DualAudioEngine implements AudioEngine {
       })()
     ]);
 
-    this.setPlaybackRate(1.0);
-    this.applyTrackVolumes(); // Apply initial mixing rules
+    // Reset transform
+    this.setPlaybackTransform({ speed: 1.0, transpose: 0 });
+    this.applyTrackVolumes();
   }
 
   private applyTrackVolumes() {
@@ -505,15 +419,14 @@ class DualAudioEngine implements AudioEngine {
     this.applyTrackVolumes();
   }
 
-  setPlaybackRate(rate: number): void {
-    const clamped = Math.max(0.5, Math.min(rate, 2));
-    this.playbackRate = clamped;
-    this.streamPlayer.setRate(clamped);
-    this.headphonePlayer.setRate(clamped);
+  setPlaybackTransform(transform: PlaybackTransform): void {
+    this.transform = transform;
+    this.streamPlayer.setTransform(transform);
+    this.headphonePlayer.setTransform(transform);
   }
 
-  getPlaybackRate(): number {
-    return this.playbackRate;
+  getPlaybackTransform(): PlaybackTransform {
+    return this.transform;
   }
 }
 

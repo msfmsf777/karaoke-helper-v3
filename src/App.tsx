@@ -18,6 +18,7 @@ import FavoritesView from './components/FavoritesView';
 import HistoryView from './components/HistoryView';
 import PlaylistView from './components/PlaylistView';
 import DownloadManagerView from './components/DownloadManagerView';
+import DebugPlaybackPanel from './components/DebugPlaybackPanel';
 
 type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history' | 'download-manager' | string;
 
@@ -250,6 +251,7 @@ function AppContent() {
         onChangeDevice={handleDeviceChange}
       />
       <ProcessingListModal open={showProcessingList} onClose={() => setShowProcessingList(false)} />
+      <DebugPlaybackPanel />
     </div>
   );
 }
