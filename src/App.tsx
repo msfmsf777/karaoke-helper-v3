@@ -17,8 +17,9 @@ import { UserDataProvider } from './contexts/UserDataContext';
 import FavoritesView from './components/FavoritesView';
 import HistoryView from './components/HistoryView';
 import PlaylistView from './components/PlaylistView';
+import DownloadManagerView from './components/DownloadManagerView';
 
-type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history' | string;
+type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history' | 'download-manager' | string;
 
 function AppContent() {
   const [currentView, setCurrentView] = useState<View>('library');
@@ -167,6 +168,8 @@ function AppContent() {
             }}
           />
         );
+      case 'download-manager':
+        return <DownloadManagerView />;
       case 'lyrics':
         return (
           <LyricEditorView

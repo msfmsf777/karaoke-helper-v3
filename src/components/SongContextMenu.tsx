@@ -103,27 +103,26 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
     };
 
     const handleDeleteSong = async () => {
-        if (window.confirm(`此操作將刪除歌曲「${song.title}」與相關檔案（原曲、伴奏、人聲、歌詞），且無法復原。確定要刪除嗎？`)) {
-            try {
-                // 1. Remove from Queue
-                const index = queue.indexOf(song.id);
-                if (index !== -1) {
-                    removeFromQueue(index);
-                }
-
-                // 2. Remove from User Data (Favorites, History, Playlists)
-                cleanupSong(song.id);
-
-                // 3. Delete from Library (Filesystem)
-                await deleteSong(song.id);
-
-                onClose();
-            } catch (err) {
-                console.error('Failed to delete song', err);
-                alert('刪除失敗，請查看 Console 錯誤訊息');
+        try {
+            // Backend handles confirmation dialog
+            // 1. Remove from Queue
+            const index = queue.indexOf(song.id);
+            if (index !== -1) {
+                removeFromQueue(index);
             }
-        } else {
+
+            // 2. Remove from User Data (Favorites, History, Playlists)
+            cleanupSong(song.id);
+
+            // 3. Delete from Library (Filesystem) - This triggers the backend confirmation
+            await deleteSong(song.id);
+
             onClose();
+        } catch (err) {
+            console.error('Failed to delete song', err);
+            // alert('刪除失敗，請查看 Console 錯誤訊息'); // Backend might return false if cancelled, so maybe don't alert?
+            // Actually deleteSong returns void in context, but invoke returns boolean.
+            // If cancelled, it just doesn't delete.
         }
     };
 

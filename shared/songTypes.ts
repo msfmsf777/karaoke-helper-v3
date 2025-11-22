@@ -18,6 +18,12 @@ export interface SongSourceFile {
   originalPath: string;
 }
 
+export interface SongSourceYouTube {
+  kind: 'youtube';
+  youtubeId: string;
+  originalPath: string;
+}
+
 export interface SongMeta {
   id: string;
   title: string;
@@ -27,7 +33,7 @@ export interface SongMeta {
   lyrics_status?: LyricsStatus;
   lyrics_raw_path?: string;
   lyrics_lrc_path?: string;
-  source: SongSourceFile;
+  source: SongSourceFile | SongSourceYouTube;
   stored_filename: string;
   instrumental_path?: string;
   vocal_path?: string;
@@ -35,4 +41,18 @@ export interface SongMeta {
   separation_quality?: 'high' | 'normal' | 'fast';
   created_at: string;
   updated_at: string;
+}
+
+export interface DownloadJob {
+  id: string;
+  youtubeId: string;
+  title: string;
+  artist?: string;
+  quality: 'best' | 'high' | 'normal';
+  status: 'queued' | 'downloading' | 'processing' | 'completed' | 'failed';
+  progress: number;
+  error?: string;
+  createdAt: string;
+  updatedAt: string;
+  songId?: string;
 }

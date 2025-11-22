@@ -10,7 +10,10 @@ interface LibraryViewProps {
 }
 
 interface AddSongFormState {
-  sourcePath: string;
+  source: 'file' | 'youtube';
+  sourcePath: string; // For file
+  youtubeUrl: string; // For YouTube
+  youtubeQuality: 'best' | 'high' | 'normal';
   title: string;
   artist: string;
   type: SongType;
@@ -19,7 +22,10 @@ interface AddSongFormState {
 }
 
 const defaultForm: AddSongFormState = {
+  source: 'file',
   sourcePath: '',
+  youtubeUrl: '',
+  youtubeQuality: 'high',
   title: '',
   artist: '',
   type: '原曲',
@@ -35,6 +41,49 @@ const AddSongDialog: React.FC<{
   busy: boolean;
   error?: string | null;
 }> = ({ form, onChange, onConfirm, onClose, busy, error }) => {
+  const [validating, setValidating] = useState(false);
+
+  const handleUrlBlur = async () => {
+    if (form.source !== 'youtube' || !form.youtubeUrl.trim()) return;
+
+    // Basic regex check to avoid unnecessary IPC calls
+    if (!form.youtubeUrl.includes('youtube.com') && !form.youtubeUrl.includes('youtu.be')) return;
+
+    setValidating(true);
+    try {
+      const meta = await window.khelper?.downloads.validateUrl(form.youtubeUrl.trim());
+      if (meta) {
+        onChange({ title: meta.title }); // Auto-fill title
+      }
+    } catch (err) {
+      console.warn('Validation failed', err);
+    } finally {
+      setValidating(false);
+    }
+  };
+
+  const handlePasteUrl = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        onChange({ youtubeUrl: text });
+        // Trigger validation manually since blur might not happen
+        // We can just call the logic directly or let the user blur.
+        // Let's just set it. The user will likely click elsewhere or we can trigger validation.
+        // Actually, let's trigger validation immediately for better UX.
+        if (text.includes('youtube.com') || text.includes('youtu.be')) {
+          setValidating(true);
+          window.khelper?.downloads.validateUrl(text.trim()).then(meta => {
+            if (meta) onChange({ title: meta.title });
+            setValidating(false);
+          }).catch(() => setValidating(false));
+        }
+      }
+    } catch (err) {
+      console.error('Clipboard read failed', err);
+    }
+  };
+
   return (
     <div
       style={{
@@ -60,40 +109,125 @@ const AddSongDialog: React.FC<{
         onClick={(e) => e.stopPropagation()}
       >
         <h2 style={{ margin: 0, marginBottom: '12px', fontSize: '20px', color: '#fff' }}>＋ 新增歌曲</h2>
-        <p style={{ margin: '0 0 16px', color: '#b3b3b3', fontSize: '14px' }}>
-          選擇音訊檔（mp3/wav/flac…），填寫基本資訊，必要時可直接貼上歌詞文字。
-        </p>
+
+        {/* Source Selector */}
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+            <input
+              type="radio"
+              name="source"
+              checked={form.source === 'file'}
+              onChange={() => onChange({ source: 'file' })}
+            />
+            <span style={{ color: '#fff' }}>檔案 (File)</span>
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+            <input
+              type="radio"
+              name="source"
+              checked={form.source === 'youtube'}
+              onChange={() => onChange({ source: 'youtube' })}
+            />
+            <span style={{ color: '#fff' }}>YouTube</span>
+          </label>
+        </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <button
-              onClick={async () => {
-                try {
-                  const picked = await pickAudioFile();
-                  if (picked) {
-                    onChange({ sourcePath: picked });
+
+          {/* File Source UI */}
+          {form.source === 'file' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <button
+                onClick={async () => {
+                  try {
+                    const picked = await pickAudioFile();
+                    if (picked) {
+                      onChange({ sourcePath: picked });
+                    }
+                  } catch (err) {
+                    console.error('[Library] pick file failed', err);
                   }
-                } catch (err) {
-                  console.error('[Library] pick file failed', err);
-                }
-              }}
-              style={{
-                padding: '10px 14px',
-                backgroundColor: '#2d2d2d',
-                color: '#fff',
-                border: '1px solid #3a3a3a',
-                borderRadius: '8px',
-                cursor: busy ? 'not-allowed' : 'pointer',
-                opacity: busy ? 0.7 : 1,
-              }}
-              disabled={busy}
-            >
-              選擇音訊檔
-            </button>
-            <div style={{ color: form.sourcePath ? '#fff' : '#777', fontSize: '14px', flex: 1 }}>
-              {form.sourcePath || '尚未選擇檔案（支援 mp3 / wav / flac）'}
+                }}
+                style={{
+                  padding: '10px 14px',
+                  backgroundColor: '#2d2d2d',
+                  color: '#fff',
+                  border: '1px solid #3a3a3a',
+                  borderRadius: '8px',
+                  cursor: busy ? 'not-allowed' : 'pointer',
+                  opacity: busy ? 0.7 : 1,
+                }}
+                disabled={busy}
+              >
+                選擇音訊檔
+              </button>
+              <div style={{ color: form.sourcePath ? '#fff' : '#777', fontSize: '14px', flex: 1 }}>
+                {form.sourcePath || '尚未選擇檔案（支援 mp3 / wav / flac）'}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* YouTube Source UI */}
+          {form.source === 'youtube' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="text"
+                  value={form.youtubeUrl}
+                  onChange={(e) => onChange({ youtubeUrl: e.target.value })}
+                  onBlur={handleUrlBlur}
+                  placeholder="貼上 YouTube 連結..."
+                  style={{
+                    flex: 1,
+                    padding: '10px 12px',
+                    background: '#252525',
+                    color: '#fff',
+                    border: '1px solid #3a3a3a',
+                    borderRadius: '8px',
+                  }}
+                />
+                <button
+                  onClick={handlePasteUrl}
+                  style={{
+                    padding: '0 16px',
+                    background: '#333',
+                    color: '#fff',
+                    border: '1px solid #444',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  貼上
+                </button>
+              </div>
+              {validating && <div style={{ fontSize: '12px', color: '#aaa' }}>正在解析連結...</div>}
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '6px', color: '#b3b3b3', fontSize: '13px' }}>
+                  音訊品質
+                </label>
+                <select
+                  value={form.youtubeQuality}
+                  onChange={(e) => onChange({ youtubeQuality: e.target.value as any })}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    background: '#252525',
+                    color: '#fff',
+                    border: '1px solid #3a3a3a',
+                    borderRadius: '8px',
+                  }}
+                >
+                  <option value="normal">普通（節省空間）</option>
+                  <option value="high">高音質（標準）</option>
+                  <option value="best">最佳（檔案較大）</option>
+                </select>
+                <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                  實際佔用空間會依影片長度與品質而異
+                </div>
+              </div>
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: '12px' }}>
             <div style={{ flex: 1 }}>
@@ -274,10 +408,19 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics }) => {
 
   const handleAddConfirm = async () => {
     setFormError(null);
-    if (!formState.sourcePath) {
-      setFormError('請先選擇音訊檔');
-      return;
+
+    if (formState.source === 'file') {
+      if (!formState.sourcePath) {
+        setFormError('請先選擇音訊檔');
+        return;
+      }
+    } else {
+      if (!formState.youtubeUrl.trim()) {
+        setFormError('請輸入 YouTube 連結');
+        return;
+      }
     }
+
     if (!formState.title.trim()) {
       setFormError('請輸入歌曲名稱');
       return;
@@ -285,20 +428,44 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics }) => {
 
     setIsAdding(true);
     try {
-      await addLocalSong({
-        sourcePath: formState.sourcePath,
-        title: formState.title.trim(),
-        artist: formState.artist.trim(),
-        type: formState.type,
-        lyricsText: formState.lyricsMode === 'paste' ? formState.lyricsText : undefined,
-      });
-      await refreshSongs();
+      if (formState.source === 'file') {
+        await addLocalSong({
+          sourcePath: formState.sourcePath,
+          title: formState.title.trim(),
+          artist: formState.artist.trim(),
+          type: formState.type,
+          lyricsText: formState.lyricsMode === 'paste' ? formState.lyricsText : undefined,
+        });
+        await refreshSongs();
+      } else {
+        // YouTube
+        await window.khelper?.downloads.queueDownload(
+          formState.youtubeUrl.trim(),
+          formState.youtubeQuality,
+          formState.title.trim(),
+          formState.artist.trim()
+        );
+        // We don't refresh songs immediately because it's a background job.
+        // But we might want to notify user or switch view?
+        // For now, just close dialog.
+      }
+
       setShowAddDialog(false);
       setFormState(defaultForm);
       setFormError(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('[Library] Failed to add song', err);
-      setFormError('新增歌曲失敗，請確認檔案路徑與權限。');
+      let msg = err.message || '';
+      if (msg.includes('Invalid YouTube URL')) msg = '無效的 YouTube 連結';
+      else if (msg.includes('Video unavailable')) msg = '影片無法觀看 (可能被刪除或設為私人)';
+      else if (msg.includes('Private video')) msg = '這是私人影片';
+      else if (msg.includes('Sign in to confirm your age')) msg = '影片有年齡限制，無法下載';
+      else if (msg.includes('network')) msg = '網路連線錯誤';
+      else if (msg.includes('timeout')) msg = '連線逾時';
+      else if (msg.includes('already exists')) msg = '歌曲已存在於資料庫';
+      else msg = '新增歌曲失敗，請確認輸入資訊或稍後再試。';
+
+      setFormError(msg);
     } finally {
       setIsAdding(false);
     }

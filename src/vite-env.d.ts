@@ -1,7 +1,12 @@
 /// <reference types="vite/client" />
 
 interface Window {
-  ipcRenderer: import('electron').IpcRenderer;
+  ipcRenderer: {
+    on: (channel: string, listener: (event: any, ...args: any[]) => void) => () => void;
+    off: (channel: string, listener: (event: any, ...args: any[]) => void) => void;
+    send: (channel: string, ...args: any[]) => void;
+    invoke: (channel: string, ...args: any[]) => Promise<any>;
+  };
   api: {
     openAudioFileDialog: () => Promise<string | null>;
     openOverlayWindow: () => void;
@@ -33,6 +38,20 @@ interface Window {
       getAllJobs: () => Promise<import('../shared/separationTypes').SeparationJob[]>;
       subscribeJobUpdates: (
         callback: (jobs: import('../shared/separationTypes').SeparationJob[]) => void
+      ) => () => void;
+    };
+    ipcRenderer: {
+      on: (channel: string, listener: (event: any, ...args: any[]) => void) => () => void;
+      off: (channel: string, listener: (event: any, ...args: any[]) => void) => void;
+      send: (channel: string, ...args: any[]) => void;
+      invoke: (channel: string, ...args: any[]) => Promise<any>;
+    };
+    downloads: {
+      validateUrl: (url: string) => Promise<{ videoId: string; title: string; duration?: number } | null>;
+      queueDownload: (url: string, quality: 'best' | 'high' | 'normal', title?: string, artist?: string) => Promise<import('../shared/songTypes').DownloadJob>;
+      getAllJobs: () => Promise<import('../shared/songTypes').DownloadJob[]>;
+      subscribeUpdates: (
+        callback: (jobs: import('../shared/songTypes').DownloadJob[]) => void
       ) => () => void;
     };
     lyrics: {

@@ -9,6 +9,7 @@ import {
   getSongFilePath, getSongsBaseDir, loadAllSongs
 } from './songLibrary'
 import { getAllJobs, queueSeparationJob, subscribeJobUpdates } from './separationJobs'
+import { downloadManager } from './downloadJobs'
 import { readRawLyrics, readSyncedLyrics, writeRawLyrics, writeSyncedLyrics } from './lyrics'
 import { loadQueue, saveQueue } from './queue'
 import { loadFavorites, saveFavorites, loadHistory, saveHistory } from './userData'
@@ -32,6 +33,7 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 
 
 let win: BrowserWindow | null
 const jobSubscriptions = new Map<number, Map<string, () => void>>()
+const downloadSubscriptions = new Map<number, Map<string, () => void>>()
 
 function createWindow() {
   win = new BrowserWindow({
@@ -116,9 +118,24 @@ ipcMain.handle('library:get-base-path', async () => {
 })
 
 ipcMain.handle('library:delete-song', async (_event, id: string) => {
-  // Dynamic import to avoid circular dependencies if any, or just import from songLibrary
-  const { deleteSong } = await import('./songLibrary')
-  return deleteSong(id)
+  if (!win) return
+  const result = await dialog.showMessageBox(win, {
+    type: 'warning',
+    title: '刪除歌曲',
+    message: '確定要刪除這首歌曲嗎？此操作無法復原。',
+    buttons: ['取消', '刪除'],
+    defaultId: 0,
+    cancelId: 0,
+  })
+
+  if (result.response === 1) {
+    const { deleteSong } = await import('./songLibrary')
+    await deleteSong(id)
+    // Also remove from download history if exists
+    downloadManager.removeJobBySongId(id)
+    return true
+  }
+  return false
 })
 
 ipcMain.handle('library:update-song', async (_event, payload: { id: string; updates: any }) => {
@@ -232,6 +249,55 @@ ipcMain.on('jobs:unsubscribe', (event, subscriptionId: string) => {
     disposers.clear()
   }
 })
+
+ipcMain.handle('downloads:validate', async (_event, url: string) => {
+  return downloadManager.validateUrl(url)
+})
+
+ipcMain.handle('downloads:queue', async (_event, url: string, quality: 'best' | 'high' | 'normal', title?: string, artist?: string) => {
+  return downloadManager.queueJob(url, quality, title, artist)
+})
+
+ipcMain.handle('downloads:get-all', async () => {
+  return downloadManager.getAll()
+})
+
+ipcMain.on('downloads:subscribe', (event, subscriptionId: string) => {
+  const wc = event.sender
+  const disposer = downloadManager.subscribe((jobs) => wc.send('downloads:updated', jobs))
+
+  let disposers = downloadSubscriptions.get(wc.id)
+  if (!disposers) {
+    disposers = new Map()
+    downloadSubscriptions.set(wc.id, disposers)
+    wc.once('destroyed', () => {
+      disposers?.forEach((fn) => fn())
+      downloadSubscriptions.delete(wc.id)
+    })
+  }
+  disposers.set(subscriptionId, disposer)
+})
+
+ipcMain.on('downloads:unsubscribe', (event, subscriptionId: string) => {
+  const disposers = downloadSubscriptions.get(event.sender.id)
+  if (!disposers) return
+  if (subscriptionId) {
+    const fn = disposers.get(subscriptionId)
+    fn?.()
+    disposers.delete(subscriptionId)
+  } else {
+    disposers.forEach((fn) => fn())
+    disposers.clear()
+  }
+})
+
+// Hook into download manager to notify renderer of library changes
+downloadManager.onLibraryChanged = () => {
+  // Broadcast to all windows
+  BrowserWindow.getAllWindows().forEach(w => {
+    w.webContents.send('library:changed')
+  })
+}
 
 app.whenReady().then(() => {
   console.log('[App] userData path:', app.getPath('userData'))
