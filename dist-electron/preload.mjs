@@ -45,7 +45,7 @@ electron.contextBridge.exposeInMainWorld("khelper", {
     updateSong: (id, updates) => electron.ipcRenderer.invoke("library:update-song", { id, updates })
   },
   jobs: {
-    queueSeparationJob: (songId) => electron.ipcRenderer.invoke("jobs:queue-separation", songId),
+    queueSeparationJob: (songId, quality) => electron.ipcRenderer.invoke("jobs:queue-separation", songId, quality),
     getAllJobs: () => electron.ipcRenderer.invoke("jobs:get-all"),
     subscribeJobUpdates: (callback) => {
       const listener = (_event, jobs) => callback(jobs);

@@ -29,7 +29,7 @@ interface Window {
       updateSong: (id: string, updates: Partial<import('../shared/songTypes').SongMeta>) => Promise<import('../shared/songTypes').SongMeta | null>;
     };
     jobs: {
-      queueSeparationJob: (songId: string) => Promise<import('../shared/separationTypes').SeparationJob>;
+      queueSeparationJob: (songId: string, quality?: 'high' | 'normal' | 'fast') => Promise<import('../shared/separationTypes').SeparationJob>;
       getAllJobs: () => Promise<import('../shared/separationTypes').SeparationJob[]>;
       subscribeJobUpdates: (
         callback: (jobs: import('../shared/separationTypes').SeparationJob[]) => void

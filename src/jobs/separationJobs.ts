@@ -5,8 +5,8 @@ const getApi = () => {
   throw new Error('Jobs API is not available on window.khelper.jobs');
 };
 
-export async function queueSeparationJob(songId: string): Promise<SeparationJob> {
-  const job = await getApi().queueSeparationJob(songId);
+export async function queueSeparationJob(songId: string, quality?: 'high' | 'normal' | 'fast'): Promise<SeparationJob> {
+  const job = await getApi().queueSeparationJob(songId, quality);
   console.log('[Jobs] Queued separation job', job);
   return job;
 }

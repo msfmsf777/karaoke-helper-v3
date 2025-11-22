@@ -58,8 +58,8 @@ contextBridge.exposeInMainWorld('khelper', {
       ipcRenderer.invoke('library:update-song', { id, updates }),
   },
   jobs: {
-    queueSeparationJob: (songId: string): Promise<SeparationJob> =>
-      ipcRenderer.invoke('jobs:queue-separation', songId),
+    queueSeparationJob: (songId: string, quality?: 'high' | 'normal' | 'fast'): Promise<SeparationJob> =>
+      ipcRenderer.invoke('jobs:queue-separation', songId, quality),
     getAllJobs: (): Promise<SeparationJob[]> => ipcRenderer.invoke('jobs:get-all'),
     subscribeJobUpdates: (callback: (jobs: SeparationJob[]) => void) => {
       const listener = (_event: Electron.IpcRendererEvent, jobs: SeparationJob[]) => callback(jobs)

@@ -516,7 +516,7 @@ class SeparationJobManager {
     this.runningJobId = next.id;
     await this.executeJob(next);
   }
-  async queueJob(songId) {
+  async queueJob(songId, qualityOverride) {
     const meta = await getSongMeta(songId);
     if (!meta) {
       throw new Error(`Cannot queue separation: song ${songId} not found`);
@@ -536,8 +536,11 @@ class SeparationJobManager {
       audio_status: "separation_pending",
       last_separation_error: null
     }));
-    const settings = await loadSettings();
-    const quality = settings.separationQuality || "normal";
+    let quality = qualityOverride;
+    if (!quality) {
+      const settings = await loadSettings();
+      quality = settings.separationQuality || "normal";
+    }
     const now = (/* @__PURE__ */ new Date()).toISOString();
     const job = {
       id: generateJobId(),
@@ -563,8 +566,8 @@ class SeparationJobManager {
   }
 }
 const jobManager = new SeparationJobManager();
-function queueSeparationJob(songId) {
-  return jobManager.queueJob(songId);
+function queueSeparationJob(songId, quality) {
+  return jobManager.queueJob(songId, quality);
 }
 function getAllJobs() {
   return jobManager.getAllJobs();
@@ -745,8 +748,8 @@ ipcMain.handle("library:update-song", async (_event, payload) => {
   const { updateSong: updateSong2 } = await Promise.resolve().then(() => songLibrary);
   return updateSong2(payload.id, payload.updates);
 });
-ipcMain.handle("jobs:queue-separation", async (_event, songId) => {
-  return queueSeparationJob(songId);
+ipcMain.handle("jobs:queue-separation", async (_event, songId, quality) => {
+  return queueSeparationJob(songId, quality);
 });
 ipcMain.handle("jobs:get-all", async () => {
   return getAllJobs();

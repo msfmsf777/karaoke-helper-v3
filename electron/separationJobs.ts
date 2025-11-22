@@ -177,7 +177,7 @@ class SeparationJobManager {
     await this.executeJob(next);
   }
 
-  async queueJob(songId: string): Promise<SeparationJob> {
+  async queueJob(songId: string, qualityOverride?: 'high' | 'normal' | 'fast'): Promise<SeparationJob> {
     const meta = await getSongMeta(songId);
     if (!meta) {
       throw new Error(`Cannot queue separation: song ${songId} not found`);
@@ -200,9 +200,12 @@ class SeparationJobManager {
       last_separation_error: null,
     }));
 
-    // Load quality setting
-    const settings = await loadSettings();
-    const quality = settings.separationQuality || 'normal';
+    // Load quality setting or use override
+    let quality = qualityOverride;
+    if (!quality) {
+      const settings = await loadSettings();
+      quality = settings.separationQuality || 'normal';
+    }
 
     const now = new Date().toISOString();
     const job: SeparationJob = {
@@ -233,8 +236,8 @@ class SeparationJobManager {
 
 const jobManager = new SeparationJobManager();
 
-export function queueSeparationJob(songId: string): Promise<SeparationJob> {
-  return jobManager.queueJob(songId);
+export function queueSeparationJob(songId: string, quality?: 'high' | 'normal' | 'fast'): Promise<SeparationJob> {
+  return jobManager.queueJob(songId, quality);
 }
 
 export function getAllJobs(): Promise<SeparationJob[]> {

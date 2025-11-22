@@ -126,8 +126,8 @@ ipcMain.handle('library:update-song', async (_event, payload: { id: string; upda
   return updateSong(payload.id, payload.updates)
 })
 
-ipcMain.handle('jobs:queue-separation', async (_event, songId: string) => {
-  return queueSeparationJob(songId)
+ipcMain.handle('jobs:queue-separation', async (_event, songId: string, quality?: 'high' | 'normal' | 'fast') => {
+  return queueSeparationJob(songId, quality)
 })
 
 ipcMain.handle('jobs:get-all', async () => {
