@@ -108,6 +108,21 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             // Headphone: Original (Instr Vol) + Silence (Vocal Vol) -> Original
 
             await audioEngine.loadFile(paths);
+
+            // Apply saved playback transform or defaults
+            const transform = {
+                speed: Number(song.playback?.speed ?? 1.0),
+                transpose: Number(song.playback?.transpose ?? 0)
+            };
+            audioEngine.setPlaybackTransform(transform);
+
+            // Force seek to 0 to ensure SoundTouch filter is cleared/primed with new settings
+            // This fixes the desync issue on start
+            audioEngine.seek(0);
+
+            // Wait for seek/clear to propagate and stabilize
+            await new Promise(resolve => setTimeout(resolve, 100));
+
             await audioEngine.play();
         } catch (err) {
             console.error('[QueueContext] Failed to play song', songId, err);

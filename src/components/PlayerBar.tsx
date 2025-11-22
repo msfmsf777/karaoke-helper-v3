@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import audioEngine from '../audio/AudioEngine';
 import { loadVolumePreferences, saveVolumePreferences } from '../settings/volumePreferences';
 import { useQueue } from '../contexts/QueueContext';
+import { useLibrary } from '../contexts/LibraryContext';
+import PlaybackControlPopup from './PlaybackControlPopup';
 
 type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history' | string;
 
@@ -28,11 +30,68 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   currentTrackName,
   onToggleQueue,
 }) => {
-  const { playNext, playPrev } = useQueue();
+  const { playNext, playPrev, currentSongId } = useQueue();
+  const { getSongById, updateSong } = useLibrary();
   const initialVolumes = loadVolumePreferences() ?? { streamVolume: 0.8, headphoneVolume: 1 };
   const [isHovered, setIsHovered] = useState(false);
   const [backingVolume, setBackingVolume] = useState(() => Math.round(initialVolumes.streamVolume * 100));
   const [vocalVolume, setVocalVolume] = useState(() => Math.round(initialVolumes.headphoneVolume * 100));
+
+  // Playback Transform State
+  const [speed, setSpeed] = useState(1.0);
+  const [pitch, setPitch] = useState(0);
+  const [showSpeedPopup, setShowSpeedPopup] = useState(false);
+  const [showPitchPopup, setShowPitchPopup] = useState(false);
+
+  // Refs for debounced saving
+  const speedRef = useRef(1.0);
+  const pitchRef = useRef(0);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Sync refs
+  useEffect(() => {
+    speedRef.current = speed;
+    pitchRef.current = pitch;
+  }, [speed, pitch]);
+
+  // Sync with current song
+  useEffect(() => {
+    if (currentSongId) {
+      const song = getSongById(currentSongId);
+      if (song && song.playback) {
+        setSpeed(song.playback.speed);
+        setPitch(song.playback.transpose);
+        // AudioEngine is updated by QueueContext on play, 
+        // but if we just loaded the app or switched songs, we want UI to match.
+      } else {
+        setSpeed(1.0);
+        setPitch(0);
+      }
+    }
+  }, [currentSongId, getSongById]);
+
+  const savePlaybackSettings = () => {
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      if (currentSongId) {
+        updateSong(currentSongId, {
+          playback: { speed: speedRef.current, transpose: pitchRef.current }
+        });
+      }
+    }, 1000);
+  };
+
+  const handleSpeedChange = (newSpeed: number) => {
+    setSpeed(newSpeed);
+    audioEngine.setPlaybackTransform({ speed: newSpeed, transpose: pitch });
+    savePlaybackSettings();
+  };
+
+  const handlePitchChange = (newPitch: number) => {
+    setPitch(newPitch);
+    audioEngine.setPlaybackTransform({ speed: speed, transpose: newPitch });
+    savePlaybackSettings();
+  };
 
 
 
@@ -198,6 +257,83 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
 
       {/* Right: Volume & Queue */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', width: '30%', gap: '16px' }}>
+
+        {/* Speed Control */}
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => { setShowSpeedPopup(!showSpeedPopup); setShowPitchPopup(false); }}
+            style={{
+              background: '#333',
+              border: 'none',
+              borderRadius: '4px',
+              color: '#ccc',
+              cursor: 'pointer',
+              width: '40px',
+              height: '40px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '12px',
+            }}
+            title="變速 (Speed)"
+          >
+            <span style={{ fontSize: '14px', marginBottom: '2px' }}>⚡</span>
+            <span style={{ fontSize: '10px' }}>變速</span>
+          </button>
+          {showSpeedPopup && (
+            <PlaybackControlPopup
+              title="變速"
+              value={speed}
+              min={0.5}
+              max={2.0}
+              step={0.01}
+              formatLabel={(val) => `${Math.round(val * 100)}%`}
+              onChange={handleSpeedChange}
+              onReset={() => handleSpeedChange(1.0)}
+              onClose={() => setShowSpeedPopup(false)}
+            />
+          )}
+        </div>
+
+        {/* Pitch Control */}
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => { setShowPitchPopup(!showPitchPopup); setShowSpeedPopup(false); }}
+            style={{
+              background: '#333',
+              border: 'none',
+              borderRadius: '4px',
+              color: '#ccc',
+              cursor: 'pointer',
+              width: '40px',
+              height: '40px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '12px',
+            }}
+            title="變調 (Pitch)"
+          >
+            <span style={{ fontSize: '14px', marginBottom: '2px' }}>🎵</span>
+            <span style={{ fontSize: '10px' }}>變調</span>
+          </button>
+          {showPitchPopup && (
+            <PlaybackControlPopup
+              title="變調"
+              value={pitch}
+              min={-12}
+              max={12}
+              step={1}
+              formatLabel={(val) => (val > 0 ? `+${val}` : `${val}`)}
+              onChange={handlePitchChange}
+              onReset={() => handlePitchChange(0)}
+              onClose={() => setShowPitchPopup(false)}
+            />
+          )}
+        </div>
+
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '120px' }}>
           <label style={{ fontSize: '12px', color: '#b3b3b3', marginBottom: '4px' }}>伴奏音量</label>
           <input

@@ -41,6 +41,10 @@ export interface SongMeta {
   separation_quality?: 'high' | 'normal' | 'fast';
   created_at: string;
   updated_at: string;
+  playback?: {
+    speed: number;      // 0.5 - 2.0
+    transpose: number;  // -12 - +12
+  };
 }
 
 export interface DownloadJob {
