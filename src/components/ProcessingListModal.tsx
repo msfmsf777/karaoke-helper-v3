@@ -169,11 +169,25 @@ const ProcessingListModal: React.FC<ProcessingListModalProps> = ({ open, onClose
                     }}
                   >
                     <div>{name}</div>
-                    <div style={{ color: statusColor(job.status) }} title={job.errorMessage || undefined}>
-                      {jobStatusLabels[job.status]}
-                      {job.status === 'running' && <span style={{ marginLeft: 6 }}>⏳</span>}
-                      {job.status === 'failed' && job.errorMessage && (
-                        <span style={{ marginLeft: 6, color: '#ffb3b3', fontSize: '12px' }}>查看錯誤</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div style={{ color: statusColor(job.status) }} title={job.errorMessage || undefined}>
+                        {jobStatusLabels[job.status]}
+                        {job.status === 'running' && <span style={{ marginLeft: 6 }}>⏳</span>}
+                        {job.status === 'failed' && job.errorMessage && (
+                          <span style={{ marginLeft: 6, color: '#ffb3b3', fontSize: '12px' }}>查看錯誤</span>
+                        )}
+                      </div>
+                      {job.status === 'running' && typeof job.progress === 'number' && (
+                        <div style={{ width: '100%', height: '4px', backgroundColor: '#333', borderRadius: '2px', overflow: 'hidden' }}>
+                          <div
+                            style={{
+                              width: `${job.progress}%`,
+                              height: '100%',
+                              backgroundColor: '#e0a040',
+                              transition: 'width 0.2s ease'
+                            }}
+                          />
+                        </div>
                       )}
                     </div>
                     <div style={{ color: '#b3b3b3', fontSize: '13px' }}>{formatTime(job.createdAt)}</div>

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import audioEngine from '../audio/AudioEngine';
-import { getSongFilePath } from '../library/songLibrary';
+import { getSongFilePath, getOriginalSongFilePath } from '../library/songLibrary';
 import { useLibrary } from './LibraryContext';
 
 interface QueueContextType {
@@ -50,9 +50,10 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                         const song = getSongById(songId);
                         if (song) {
                             try {
-                                const filePath = await getSongFilePath(songId);
-                                if (filePath) {
-                                    await audioEngine.loadFile(filePath);
+                                const streamPath = await getSongFilePath(songId);
+                                const headphonePath = await getOriginalSongFilePath(songId);
+                                if (streamPath && headphonePath) {
+                                    await audioEngine.loadFile({ stream: streamPath, headphone: headphonePath });
                                 }
                             } catch (e) {
                                 console.warn('[QueueContext] Failed to preload song on startup', songId, e);
@@ -94,11 +95,13 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
 
         try {
-            const filePath = await getSongFilePath(songId);
-            if (!filePath) {
+            const streamPath = await getSongFilePath(songId);
+            const headphonePath = await getOriginalSongFilePath(songId);
+
+            if (!streamPath || !headphonePath) {
                 throw new Error('File path not found');
             }
-            await audioEngine.loadFile(filePath);
+            await audioEngine.loadFile({ stream: streamPath, headphone: headphonePath });
             await audioEngine.play();
         } catch (err) {
             console.error('[QueueContext] Failed to play song', songId, err);
