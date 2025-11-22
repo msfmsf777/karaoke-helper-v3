@@ -194,6 +194,16 @@ ipcMain.handle('userData:load-playlists', async () => {
   return loadPlaylists()
 })
 
+ipcMain.handle('userData:save-settings', async (_event, settings: any) => {
+  const { saveSettings } = await import('./userData')
+  return saveSettings(settings)
+})
+
+ipcMain.handle('userData:load-settings', async () => {
+  const { loadSettings } = await import('./userData')
+  return loadSettings()
+})
+
 ipcMain.on('jobs:subscribe', (event, subscriptionId: string) => {
   const wc = event.sender
   const disposer = subscribeJobUpdates((jobs) => wc.send('jobs:updated', jobs))

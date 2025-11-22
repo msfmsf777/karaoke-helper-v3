@@ -188,6 +188,22 @@ const SongRow: React.FC<SongRowProps> = ({
                     {showAudioStatus && (
                         <>
                             {audioStatusLabels[song.audio_status]}
+
+                            {/* Quality Badge */}
+                            {song.audio_status === 'separated' && song.separation_quality && (
+                                <span style={{
+                                    fontSize: '10px',
+                                    padding: '1px 4px',
+                                    borderRadius: '4px',
+                                    backgroundColor: song.separation_quality === 'high' ? '#4caf50' : song.separation_quality === 'fast' ? '#ff9800' : '#2196f3',
+                                    color: '#fff',
+                                    fontWeight: 'bold',
+                                    marginLeft: '4px'
+                                }}>
+                                    {song.separation_quality === 'high' ? 'HQ' : song.separation_quality === 'fast' ? '快速' : '標準'}
+                                </span>
+                            )}
+
                             {song.audio_status === 'separating' && <span style={{ fontSize: '12px' }}>⋯</span>}
 
                             {/* Separation Button for Original Songs */}

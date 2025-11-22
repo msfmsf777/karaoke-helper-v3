@@ -61,7 +61,8 @@ function normalizeMeta(meta) {
     lyrics_lrc_path: meta.lyrics_lrc_path ?? void 0,
     instrumental_path: meta.instrumental_path ?? void 0,
     vocal_path: meta.vocal_path ?? void 0,
-    last_separation_error: meta.last_separation_error ?? null
+    last_separation_error: meta.last_separation_error ?? null,
+    separation_quality: meta.separation_quality ?? void 0
   };
   return normalized;
 }
@@ -119,6 +120,7 @@ async function addLocalSong(params) {
     instrumental_path: void 0,
     vocal_path: void 0,
     last_separation_error: null,
+    separation_quality: void 0,
     created_at: now,
     updated_at: now
   };
@@ -271,11 +273,109 @@ const songLibrary = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineP
   updateSong,
   updateSongMeta
 }, Symbol.toStringTag, { value: "Module" }));
+const FAVORITES_FILE = "favorites.json";
+const HISTORY_FILE = "history.json";
+const SETTINGS_FILE = "settings.json";
+function getUserDataPath(filename) {
+  return path.join(app.getPath("userData"), filename);
+}
+async function saveFavorites(songIds) {
+  try {
+    const filePath = getUserDataPath(FAVORITES_FILE);
+    await fs.writeFile(filePath, JSON.stringify(songIds, null, 2), "utf-8");
+  } catch (err) {
+    console.error("[UserData] Failed to save favorites", err);
+  }
+}
+async function loadFavorites() {
+  try {
+    const filePath = getUserDataPath(FAVORITES_FILE);
+    const content = await fs.readFile(filePath, "utf-8");
+    return JSON.parse(content);
+  } catch (err) {
+    if (err.code !== "ENOENT") {
+      console.error("[UserData] Failed to load favorites", err);
+    }
+    return [];
+  }
+}
+async function saveHistory(songIds) {
+  try {
+    const filePath = getUserDataPath(HISTORY_FILE);
+    await fs.writeFile(filePath, JSON.stringify(songIds, null, 2), "utf-8");
+  } catch (err) {
+    console.error("[UserData] Failed to save history", err);
+  }
+}
+async function loadHistory() {
+  try {
+    const filePath = getUserDataPath(HISTORY_FILE);
+    const content = await fs.readFile(filePath, "utf-8");
+    return JSON.parse(content);
+  } catch (err) {
+    if (err.code !== "ENOENT") {
+      console.error("[UserData] Failed to load history", err);
+    }
+    return [];
+  }
+}
+async function saveSettings(settings) {
+  try {
+    const filePath = getUserDataPath(SETTINGS_FILE);
+    await fs.writeFile(filePath, JSON.stringify(settings, null, 2), "utf-8");
+  } catch (err) {
+    console.error("[UserData] Failed to save settings", err);
+  }
+}
+async function loadSettings() {
+  try {
+    const filePath = getUserDataPath(SETTINGS_FILE);
+    const content = await fs.readFile(filePath, "utf-8");
+    return JSON.parse(content);
+  } catch (err) {
+    if (err.code !== "ENOENT") {
+      console.error("[UserData] Failed to load settings", err);
+    }
+    return { separationQuality: "normal" };
+  }
+}
+const PLAYLISTS_FILE = "playlists.json";
+async function savePlaylists(playlists) {
+  try {
+    const filePath = getUserDataPath(PLAYLISTS_FILE);
+    await fs.writeFile(filePath, JSON.stringify(playlists, null, 2), "utf-8");
+  } catch (err) {
+    console.error("[UserData] Failed to save playlists", err);
+  }
+}
+async function loadPlaylists() {
+  try {
+    const filePath = getUserDataPath(PLAYLISTS_FILE);
+    const content = await fs.readFile(filePath, "utf-8");
+    return JSON.parse(content);
+  } catch (err) {
+    if (err.code !== "ENOENT") {
+      console.error("[UserData] Failed to load playlists", err);
+    }
+    return [];
+  }
+}
+const userData = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  loadFavorites,
+  loadHistory,
+  loadPlaylists,
+  loadSettings,
+  saveFavorites,
+  saveHistory,
+  savePlaylists,
+  saveSettings
+}, Symbol.toStringTag, { value: "Module" }));
 function generateJobId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 }
-async function runDemucsSeparation(originalPath, songFolder, onProgress) {
-  console.log("[Separation] Starting Demucs separation", { originalPath, songFolder });
+async function runDemucsSeparation(originalPath, songFolder, quality, onProgress) {
+  console.log("[Separation] Starting MDX separation", { originalPath, songFolder, quality });
   const scriptPath = path.join(process.cwd(), "resources", "separation", "separate.py");
   return new Promise((resolve, reject) => {
     const python = spawn("python", [
@@ -284,6 +384,8 @@ async function runDemucsSeparation(originalPath, songFolder, onProgress) {
       originalPath,
       "--output-dir",
       songFolder,
+      "--quality",
+      quality,
       "--cache-dir",
       path.join(process.env.APPDATA || "", "KHelperLive", "models")
     ]);
@@ -378,7 +480,8 @@ class SeparationJobManager {
       this.updateJob(job.id, { status: "running", errorMessage: void 0 });
       this.notify();
       const { songDir, originalPath } = await this.ensureOriginalPath(meta);
-      const { instrumentalPath, vocalPath } = await runDemucsSeparation(originalPath, songDir, (progress) => {
+      const quality = job.quality || "normal";
+      const { instrumentalPath, vocalPath } = await runDemucsSeparation(originalPath, songDir, quality, (progress) => {
         this.updateJob(job.id, { progress });
         this.notify();
       });
@@ -387,7 +490,8 @@ class SeparationJobManager {
         audio_status: "separated",
         instrumental_path: instrumentalPath,
         vocal_path: vocalPath,
-        last_separation_error: null
+        last_separation_error: null,
+        separation_quality: quality
       }));
       this.updateJob(job.id, { status: "succeeded", errorMessage: void 0 });
     } catch (err) {
@@ -432,10 +536,13 @@ class SeparationJobManager {
       audio_status: "separation_pending",
       last_separation_error: null
     }));
+    const settings = await loadSettings();
+    const quality = settings.separationQuality || "normal";
     const now = (/* @__PURE__ */ new Date()).toISOString();
     const job = {
       id: generateJobId(),
       songId,
+      quality,
       createdAt: now,
       updatedAt: now,
       status: "queued"
@@ -559,81 +666,6 @@ async function loadQueue() {
     return null;
   }
 }
-const FAVORITES_FILE = "favorites.json";
-const HISTORY_FILE = "history.json";
-function getUserDataPath(filename) {
-  return path.join(app.getPath("userData"), filename);
-}
-async function saveFavorites(songIds) {
-  try {
-    const filePath = getUserDataPath(FAVORITES_FILE);
-    await fs.writeFile(filePath, JSON.stringify(songIds, null, 2), "utf-8");
-  } catch (err) {
-    console.error("[UserData] Failed to save favorites", err);
-  }
-}
-async function loadFavorites() {
-  try {
-    const filePath = getUserDataPath(FAVORITES_FILE);
-    const content = await fs.readFile(filePath, "utf-8");
-    return JSON.parse(content);
-  } catch (err) {
-    if (err.code !== "ENOENT") {
-      console.error("[UserData] Failed to load favorites", err);
-    }
-    return [];
-  }
-}
-async function saveHistory(songIds) {
-  try {
-    const filePath = getUserDataPath(HISTORY_FILE);
-    await fs.writeFile(filePath, JSON.stringify(songIds, null, 2), "utf-8");
-  } catch (err) {
-    console.error("[UserData] Failed to save history", err);
-  }
-}
-async function loadHistory() {
-  try {
-    const filePath = getUserDataPath(HISTORY_FILE);
-    const content = await fs.readFile(filePath, "utf-8");
-    return JSON.parse(content);
-  } catch (err) {
-    if (err.code !== "ENOENT") {
-      console.error("[UserData] Failed to load history", err);
-    }
-    return [];
-  }
-}
-const PLAYLISTS_FILE = "playlists.json";
-async function savePlaylists(playlists) {
-  try {
-    const filePath = getUserDataPath(PLAYLISTS_FILE);
-    await fs.writeFile(filePath, JSON.stringify(playlists, null, 2), "utf-8");
-  } catch (err) {
-    console.error("[UserData] Failed to save playlists", err);
-  }
-}
-async function loadPlaylists() {
-  try {
-    const filePath = getUserDataPath(PLAYLISTS_FILE);
-    const content = await fs.readFile(filePath, "utf-8");
-    return JSON.parse(content);
-  } catch (err) {
-    if (err.code !== "ENOENT") {
-      console.error("[UserData] Failed to load playlists", err);
-    }
-    return [];
-  }
-}
-const userData = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-  __proto__: null,
-  loadFavorites,
-  loadHistory,
-  loadPlaylists,
-  saveFavorites,
-  saveHistory,
-  savePlaylists
-}, Symbol.toStringTag, { value: "Module" }));
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname$1, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
@@ -756,6 +788,14 @@ ipcMain.handle("userData:save-playlists", async (_event, playlists) => {
 ipcMain.handle("userData:load-playlists", async () => {
   const { loadPlaylists: loadPlaylists2 } = await Promise.resolve().then(() => userData);
   return loadPlaylists2();
+});
+ipcMain.handle("userData:save-settings", async (_event, settings) => {
+  const { saveSettings: saveSettings2 } = await Promise.resolve().then(() => userData);
+  return saveSettings2(settings);
+});
+ipcMain.handle("userData:load-settings", async () => {
+  const { loadSettings: loadSettings2 } = await Promise.resolve().then(() => userData);
+  return loadSettings2();
 });
 ipcMain.on("jobs:subscribe", (event, subscriptionId) => {
   const wc = event.sender;

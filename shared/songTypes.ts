@@ -31,7 +31,8 @@ export interface SongMeta {
   stored_filename: string;
   instrumental_path?: string;
   vocal_path?: string;
-  last_separation_error?: string | null;
+  last_separation_error: string | null;
+  separation_quality?: 'high' | 'normal' | 'fast';
   created_at: string;
   updated_at: string;
 }

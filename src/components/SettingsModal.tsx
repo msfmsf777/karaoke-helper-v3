@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import audioEngine, { OutputRole } from '../audio/AudioEngine';
+import { useUserData } from '../contexts/UserDataContext';
 
 interface SettingsModalProps {
   open: boolean;
@@ -19,6 +20,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { separationQuality, setSeparationQuality } = useUserData();
 
   const refreshDevices = async () => {
     setLoading(true);
@@ -143,6 +145,44 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 </option>
               ))}
             </select>
+          </div>
+
+          <div style={{ borderTop: '1px solid #3a3a3a', paddingTop: '16px', marginTop: '8px' }}>
+            <label style={{ display: 'block', marginBottom: '12px', color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>
+              分離品質 (Separation Quality)
+            </label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ddd', fontSize: '13px', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="separationQuality"
+                  value="fast"
+                  checked={separationQuality === 'fast'}
+                  onChange={() => setSeparationQuality('fast')}
+                />
+                快速（較省資源，音質略低）
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ddd', fontSize: '13px', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="separationQuality"
+                  value="normal"
+                  checked={separationQuality === 'normal'}
+                  onChange={() => setSeparationQuality('normal')}
+                />
+                標準（推薦）
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ddd', fontSize: '13px', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="separationQuality"
+                  value="high"
+                  checked={separationQuality === 'high'}
+                  onChange={() => setSeparationQuality('high')}
+                />
+                高品質（較慢，音質最佳）
+              </label>
+            </div>
           </div>
         </div>
 

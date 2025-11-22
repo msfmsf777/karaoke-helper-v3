@@ -136,7 +136,7 @@ const ProcessingListModal: React.FC<ProcessingListModalProps> = ({ open, onClose
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: '3fr 1fr 1.3fr 1.3fr',
+              gridTemplateColumns: '3fr 1fr 0.8fr 1.3fr 1.3fr',
               padding: '12px 16px',
               borderBottom: '1px solid #252525',
               color: '#b3b3b3',
@@ -145,6 +145,7 @@ const ProcessingListModal: React.FC<ProcessingListModalProps> = ({ open, onClose
           >
             <div>歌曲名稱</div>
             <div>狀態</div>
+            <div>品質</div>
             <div>建立時間</div>
             <div>更新時間</div>
           </div>
@@ -161,7 +162,7 @@ const ProcessingListModal: React.FC<ProcessingListModalProps> = ({ open, onClose
                     key={job.id}
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: '3fr 1fr 1.3fr 1.3fr',
+                      gridTemplateColumns: '3fr 1fr 0.8fr 1.3fr 1.3fr',
                       padding: '10px 16px',
                       borderBottom: '1px solid #252525',
                       color: '#e6e6e6',
@@ -189,6 +190,9 @@ const ProcessingListModal: React.FC<ProcessingListModalProps> = ({ open, onClose
                           />
                         </div>
                       )}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#aaa' }}>
+                      {job.quality === 'high' ? 'HQ' : job.quality === 'fast' ? '快速' : '標準'}
                     </div>
                     <div style={{ color: '#b3b3b3', fontSize: '13px' }}>{formatTime(job.createdAt)}</div>
                     <div style={{ color: '#b3b3b3', fontSize: '13px' }}>{formatTime(job.updatedAt)}</div>

@@ -85,11 +85,25 @@ def main():
     parser = argparse.ArgumentParser(description='Run MDX separation')
     parser.add_argument('--input', required=True, help='Input audio file path')
     parser.add_argument('--output-dir', required=True, help='Output directory for stems')
-    parser.add_argument('--model', default='UVR-MDX-NET-Inst_HQ_3.onnx', help='MDX model to use')
+    parser.add_argument('--quality', default='normal', choices=['high', 'normal', 'fast'], help='Separation quality preset')
+    parser.add_argument('--model-override', help='Override model filename directly')
     parser.add_argument('--cache-dir', help='Directory to cache models')
     
     args = parser.parse_args()
     
+    # Model Mapping
+    # HQ: MDX23C_D1581.ckpt (MDX23C-InstVocHQ)
+    # Normal: UVR-MDX-NET-Inst_HQ_3.onnx
+    # Fast: UVR-MDX-NET-Inst_1.onnx
+    
+    model_map = {
+        'high': 'MDX23C_D1581.ckpt',
+        'normal': 'UVR-MDX-NET-Inst_HQ_3.onnx',
+        'fast': 'UVR-MDX-NET-Inst_1.onnx'
+    }
+    
+    model_filename = args.model_override if args.model_override else model_map.get(args.quality, 'UVR-MDX-NET-Inst_HQ_3.onnx')
+
     input_path = Path(args.input)
     output_dir = Path(args.output_dir)
     
@@ -110,7 +124,7 @@ def main():
     original_stderr = sys.stderr
     sys.stderr = ProgressCapture(original_stderr, tracker)
 
-    print(json.dumps({"status": "starting", "message": f"Starting MDX separation for {input_path.name}"}))
+    print(json.dumps({"status": "starting", "message": f"Starting MDX separation ({args.quality}) for {input_path.name}"}))
     sys.stdout.flush()
 
     try:
@@ -130,19 +144,17 @@ def main():
             output_format="wav"
         )
 
-        print(json.dumps({"status": "loading_model", "model": args.model}))
+        print(json.dumps({"status": "loading_model", "model": model_filename}))
         sys.stdout.flush()
         
-        separator.load_model(model_filename=args.model)
+        separator.load_model(model_filename=model_filename)
 
         # Phase 2: Separation (10-95%)
-        # We assume separation is the bulk of the work.
         tracker.set_phase("separating", 10, 95)
         
         print(json.dumps({"status": "separating"}))
         sys.stdout.flush()
         
-        # This call will trigger tqdm output to stderr, which ProgressCapture will parse
         output_files = separator.separate(str(input_path))
         
         # Phase 3: Finalizing (95-100%)
@@ -168,18 +180,13 @@ def main():
                 shutil.move(str(fpath), str(dest_instrumental))
                 renamed_instr = True
             else:
-                # If we have other stems or unknown names, we might need smarter logic
-                # For now, just log it
                 pass
 
         if not renamed_vocal or not renamed_instr:
-             # Fallback: if we only got 2 files and couldn't identify by name, 
-             # maybe assume order? (Risky). 
-             # Let's fail for now to be safe.
              print(json.dumps({"error": "Failed to identify output stems", "files": output_files}))
              sys.exit(1)
 
-        tracker.update_from_tqdm(100) # Force 100%
+        tracker.update_from_tqdm(100) 
         
         print(json.dumps({
             "status": "success",
@@ -189,7 +196,6 @@ def main():
 
     except Exception as e:
         import traceback
-        # Restore stderr to print traceback cleanly if needed, or just send JSON
         sys.stderr = original_stderr 
         print(json.dumps({"error": "MDX separation failed", "details": str(e), "trace": traceback.format_exc()}))
         sys.exit(1)

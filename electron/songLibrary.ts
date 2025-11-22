@@ -70,6 +70,7 @@ function normalizeMeta(meta: SongMeta): SongMeta {
     instrumental_path: meta.instrumental_path ?? undefined,
     vocal_path: meta.vocal_path ?? undefined,
     last_separation_error: meta.last_separation_error ?? null,
+    separation_quality: meta.separation_quality ?? undefined,
   };
   return normalized;
 }
@@ -142,6 +143,7 @@ export async function addLocalSong(params: {
     instrumental_path: undefined,
     vocal_path: undefined,
     last_separation_error: null,
+    separation_quality: undefined,
     created_at: now,
     updated_at: now,
   };

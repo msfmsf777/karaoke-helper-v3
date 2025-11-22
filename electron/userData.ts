@@ -5,10 +5,12 @@ import fs from 'node:fs/promises';
 export interface UserData {
     favorites: string[];
     history: string[];
+    separationQuality: 'high' | 'normal' | 'fast';
 }
 
 const FAVORITES_FILE = 'favorites.json';
 const HISTORY_FILE = 'history.json';
+const SETTINGS_FILE = 'settings.json';
 
 function getUserDataPath(filename: string): string {
     return path.join(app.getPath('userData'), filename);
@@ -55,6 +57,28 @@ export async function loadHistory(): Promise<string[]> {
             console.error('[UserData] Failed to load history', err);
         }
         return [];
+    }
+}
+
+export async function saveSettings(settings: { separationQuality: 'high' | 'normal' | 'fast' }): Promise<void> {
+    try {
+        const filePath = getUserDataPath(SETTINGS_FILE);
+        await fs.writeFile(filePath, JSON.stringify(settings, null, 2), 'utf-8');
+    } catch (err) {
+        console.error('[UserData] Failed to save settings', err);
+    }
+}
+
+export async function loadSettings(): Promise<{ separationQuality: 'high' | 'normal' | 'fast' }> {
+    try {
+        const filePath = getUserDataPath(SETTINGS_FILE);
+        const content = await fs.readFile(filePath, 'utf-8');
+        return JSON.parse(content);
+    } catch (err: any) {
+        if (err.code !== 'ENOENT') {
+            console.error('[UserData] Failed to load settings', err);
+        }
+        return { separationQuality: 'normal' };
     }
 }
 

@@ -52,6 +52,8 @@ interface Window {
       loadHistory: () => Promise<string[]>;
       savePlaylists: (playlists: any[]) => Promise<void>;
       loadPlaylists: () => Promise<any[]>;
+      saveSettings: (settings: { separationQuality: 'high' | 'normal' | 'fast' }) => Promise<void>;
+      loadSettings: () => Promise<{ separationQuality: 'high' | 'normal' | 'fast' }>;
     };
   };
 }

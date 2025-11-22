@@ -8,4 +8,5 @@ export interface SeparationJob {
   status: SeparationJobStatus;
   errorMessage?: string;
   progress?: number;
+  quality?: 'high' | 'normal' | 'fast';
 }
