@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import audioEngine from '../audio/AudioEngine';
+
 import { getOriginalSongFilePath, getSongFilePath, loadAllSongs, SongMeta } from '../library/songLibrary';
 import {
   EditableLyricLine,
@@ -70,7 +70,6 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
   const [rawTextDraft, setRawTextDraft] = useState('');
   const [tapIndex, setTapIndex] = useState(0);
   const [tapMode, setTapMode] = useState(true);
-  const [playbackRate, setPlaybackRate] = useState(1);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [savingRaw, setSavingRaw] = useState(false);
@@ -170,8 +169,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
       setStatusMessage(null);
       setErrorMessage(null);
       setTapMode(true);
-      setPlaybackRate(1);
-      audioEngine.setPlaybackRate(1);
+      setTapMode(true);
 
       try {
         const originalPath = (await getOriginalSongFilePath(song.id)) ?? (await getSongFilePath(song.id));
@@ -810,23 +808,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
-            <span style={{ color: '#aaa', fontSize: '12px' }}>速度</span>
-            <input
-              type="range"
-              min={0.5}
-              max={1.25}
-              step={0.05}
-              value={playbackRate}
-              onChange={(e) => {
-                const rate = Number(e.target.value);
-                setPlaybackRate(rate);
-                audioEngine.setPlaybackRate(rate);
-              }}
-              style={{ width: '160px', accentColor: 'var(--accent-color)' }}
-            />
-            <span style={{ color: '#fff', width: '48px' }}>{playbackRate.toFixed(2)}x</span>
-          </div>
+
         </div>
 
         <div style={{ minHeight: '20px', color: '#a0d468', fontSize: '13px' }}>{statusMessage}</div>

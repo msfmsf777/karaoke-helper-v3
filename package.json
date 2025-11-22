@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "soundtouchjs": "^0.2.1"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
