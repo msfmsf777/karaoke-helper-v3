@@ -3,73 +3,78 @@ import os
 import json
 import argparse
 import shutil
-from pathlib import Path
+import logging
 import io
+import re
+import threading
+from pathlib import Path
 
-# 1. Patch torchaudio to use soundfile directly
-# This bypasses torchaudio.save's dependency on TorchCodec
-try:
-    import torchaudio
-    import soundfile
-    import torch
+# Configure logging
+# audio-separator uses logging.INFO for some updates, but tqdm prints to stderr.
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
-    def _custom_save(filepath, src, sample_rate, **kwargs):
-        # src is shape (channels, frames)
-        # soundfile expects (frames, channels)
-        if src.dim() == 2:
-            src = src.t()
-        
-        # Convert to numpy
-        src_np = src.detach().cpu().numpy()
-        
-        # soundfile.write(file, data, samplerate)
-        soundfile.write(filepath, src_np, sample_rate)
+class ProgressTracker:
+    def __init__(self):
+        self.current_progress = 0
+        self.phase_offset = 0
+        self.phase_scale = 1.0
+        self.lock = threading.Lock()
 
-    torchaudio.save = _custom_save
-    
-    # Also patch save_audio in demucs if possible, but patching torchaudio.save is usually enough
-    # as demucs calls torchaudio.save directly.
-except ImportError:
-    pass
+    def set_phase(self, name, start_percent, end_percent):
+        with self.lock:
+            # Ensure we don't go backwards even when switching phases
+            self.current_progress = max(self.current_progress, start_percent)
+            self.phase_offset = start_percent
+            self.phase_scale = (end_percent - start_percent) / 100.0
+            print(json.dumps({"status": "phase", "phase": name, "progress": self.current_progress}))
+            sys.stdout.flush()
 
-# 2. Import Demucs
-try:
-    from demucs import separate
-except ImportError:
-    print(json.dumps({"error": "Demucs not installed or not found"}))
-    sys.exit(1)
+    def update_from_tqdm(self, percent):
+        with self.lock:
+            # Calculate absolute progress based on current phase
+            abs_progress = self.phase_offset + (percent * self.phase_scale)
+            
+            # Monotonic check: never go backwards
+            if abs_progress > self.current_progress:
+                self.current_progress = abs_progress
+                # Report integer progress to Electron
+                print(json.dumps({"status": "progress", "progress": int(self.current_progress)}))
+                sys.stdout.flush()
 
 class ProgressCapture(io.TextIOBase):
-    def __init__(self, original_stderr):
+    def __init__(self, original_stderr, tracker):
         self.original_stderr = original_stderr
-        self.buffer = []
-        self.last_lines = []
-        import re
+        self.tracker = tracker
+        self.buffer = ""
+        # tqdm pattern: " 10%|" or "100%|"
         self.progress_pattern = re.compile(r'\s*(\d+)%\|')
 
     def write(self, data):
-        # Pass through to real stderr (so Electron can see it if needed)
+        # Pass through to real stderr
         self.original_stderr.write(data)
-        
-        # Keep last 20 lines for error reporting
-        if '\n' in data:
-            lines = data.split('\n')
-            for line in lines:
-                if line:
-                    self.last_lines.append(line)
-            if len(self.last_lines) > 20:
-                self.last_lines = self.last_lines[-20:]
-        else:
-            if data:
-                self.last_lines.append(data)
+        self.original_stderr.flush()
 
-        # Parse progress
-        match = self.progress_pattern.search(data)
+        # Buffer handling for split chunks
+        self.buffer += data
+        while '\n' in self.buffer or '\r' in self.buffer:
+            if '\n' in self.buffer:
+                line, self.buffer = self.buffer.split('\n', 1)
+            else:
+                line, self.buffer = self.buffer.split('\r', 1)
+            
+            self._parse_line(line)
+        
+        # Also try to parse current buffer if it looks like a progress bar update (often ends with \r)
+        if '%' in self.buffer:
+             self._parse_line(self.buffer)
+
+    def _parse_line(self, line):
+        match = self.progress_pattern.search(line)
         if match:
             try:
                 p = int(match.group(1))
-                print(json.dumps({"status": "progress", "progress": p}))
-                sys.stdout.flush()
+                self.tracker.update_from_tqdm(p)
             except:
                 pass
 
@@ -77,10 +82,10 @@ class ProgressCapture(io.TextIOBase):
         self.original_stderr.flush()
 
 def main():
-    parser = argparse.ArgumentParser(description='Run Demucs separation')
+    parser = argparse.ArgumentParser(description='Run MDX separation')
     parser.add_argument('--input', required=True, help='Input audio file path')
     parser.add_argument('--output-dir', required=True, help='Output directory for stems')
-    parser.add_argument('--model', default='htdemucs_ft', help='Demucs model to use')
+    parser.add_argument('--model', default='UVR-MDX-NET-Inst_HQ_3.onnx', help='MDX model to use')
     parser.add_argument('--cache-dir', help='Directory to cache models')
     
     args = parser.parse_args()
@@ -95,89 +100,99 @@ def main():
     if not output_dir.exists():
         os.makedirs(output_dir, exist_ok=True)
 
-    # Set TORCH_HOME for model caching
     if args.cache_dir:
-        os.environ['TORCH_HOME'] = args.cache_dir
-        os.environ['XDG_CACHE_HOME'] = args.cache_dir # Demucs might use this too
+        os.environ['AUDIO_SEPARATOR_CACHE_DIR'] = args.cache_dir
 
-    print(json.dumps({"status": "starting", "message": f"Starting separation for {input_path.name}"}))
-    sys.stdout.flush()
-
+    # Initialize Progress Tracker
+    tracker = ProgressTracker()
+    
     # Capture stderr
     original_stderr = sys.stderr
-    progress_capture = ProgressCapture(original_stderr)
-    sys.stderr = progress_capture
+    sys.stderr = ProgressCapture(original_stderr, tracker)
 
-    # Prepare arguments for Demucs
-    # Demucs uses argparse, so we mock sys.argv
-    # We use -n to specify model, -o to specify output base
-    # --two-stems=vocals forces 2 stems: vocals and no_vocals (instrumental)
-    sys.argv = [
-        "demucs",
-        "-n", args.model,
-        "--two-stems", "vocals",
-        "-o", str(output_dir),
-        str(input_path)
-    ]
+    print(json.dumps({"status": "starting", "message": f"Starting MDX separation for {input_path.name}"}))
+    sys.stdout.flush()
 
     try:
-        separate.main()
-    except SystemExit as e:
-        if e.code != 0:
-            error_details = "\n".join(progress_capture.last_lines)
-            print(json.dumps({"error": "Demucs failed", "code": e.code, "details": error_details}))
-            sys.exit(e.code)
+        from audio_separator.separator import Separator
+    except ImportError:
+        print(json.dumps({"error": "audio-separator not installed"}))
+        sys.exit(1)
+
+    try:
+        # Phase 1: Initialization & Model Loading (0-10%)
+        tracker.set_phase("loading_model", 0, 10)
+        
+        separator = Separator(
+            log_level=logging.WARNING,
+            model_file_dir=args.cache_dir if args.cache_dir else None,
+            output_dir=str(output_dir),
+            output_format="wav"
+        )
+
+        print(json.dumps({"status": "loading_model", "model": args.model}))
+        sys.stdout.flush()
+        
+        separator.load_model(model_filename=args.model)
+
+        # Phase 2: Separation (10-95%)
+        # We assume separation is the bulk of the work.
+        tracker.set_phase("separating", 10, 95)
+        
+        print(json.dumps({"status": "separating"}))
+        sys.stdout.flush()
+        
+        # This call will trigger tqdm output to stderr, which ProgressCapture will parse
+        output_files = separator.separate(str(input_path))
+        
+        # Phase 3: Finalizing (95-100%)
+        tracker.set_phase("finalizing", 95, 100)
+        
+        dest_vocals = output_dir / "Vocals.wav"
+        dest_instrumental = output_dir / "Instrumental.wav"
+        
+        if dest_vocals.exists(): dest_vocals.unlink()
+        if dest_instrumental.exists(): dest_instrumental.unlink()
+        
+        renamed_vocal = False
+        renamed_instr = False
+
+        for fname in output_files:
+            fpath = output_dir / fname
+            lower_name = fname.lower()
+            
+            if "vocals" in lower_name:
+                shutil.move(str(fpath), str(dest_vocals))
+                renamed_vocal = True
+            elif "instrumental" in lower_name:
+                shutil.move(str(fpath), str(dest_instrumental))
+                renamed_instr = True
+            else:
+                # If we have other stems or unknown names, we might need smarter logic
+                # For now, just log it
+                pass
+
+        if not renamed_vocal or not renamed_instr:
+             # Fallback: if we only got 2 files and couldn't identify by name, 
+             # maybe assume order? (Risky). 
+             # Let's fail for now to be safe.
+             print(json.dumps({"error": "Failed to identify output stems", "files": output_files}))
+             sys.exit(1)
+
+        tracker.update_from_tqdm(100) # Force 100%
+        
+        print(json.dumps({
+            "status": "success",
+            "instrumental": str(dest_instrumental),
+            "vocal": str(dest_vocals)
+        }))
+
     except Exception as e:
         import traceback
-        error_details = traceback.format_exc()
-        print(json.dumps({"error": "Demucs exception", "details": error_details}))
+        # Restore stderr to print traceback cleanly if needed, or just send JSON
+        sys.stderr = original_stderr 
+        print(json.dumps({"error": "MDX separation failed", "details": str(e), "trace": traceback.format_exc()}))
         sys.exit(1)
-    finally:
-        sys.stderr = original_stderr
-
-    # Post-processing: Move files
-    # Demucs output structure: <output_dir>/<model_name>/<song_name>/...
-    
-    model_dir = output_dir / args.model
-    song_dir = model_dir / input_path.stem
-    
-    if not song_dir.exists():
-        # Fallback search
-        subdirs = [d for d in model_dir.iterdir() if d.is_dir()]
-        if len(subdirs) == 1:
-            song_dir = subdirs[0]
-        else:
-            print(json.dumps({"error": "Could not locate Demucs output folder", "search_path": str(model_dir)}))
-            sys.exit(1)
-
-    src_vocals = song_dir / "vocals.wav"
-    src_instrumental = song_dir / "no_vocals.wav"
-    
-    if not src_vocals.exists() or not src_instrumental.exists():
-        print(json.dumps({"error": "Output stems missing", "path": str(song_dir)}))
-        sys.exit(1)
-        
-    dest_vocals = output_dir / "Vocals.wav"
-    dest_instrumental = output_dir / "Instrumental.wav"
-    
-    # Remove existing
-    if dest_vocals.exists(): dest_vocals.unlink()
-    if dest_instrumental.exists(): dest_instrumental.unlink()
-
-    shutil.move(str(src_vocals), str(dest_vocals))
-    shutil.move(str(src_instrumental), str(dest_instrumental))
-    
-    # Cleanup
-    try:
-        shutil.rmtree(str(model_dir))
-    except:
-        pass
-
-    print(json.dumps({
-        "status": "success",
-        "instrumental": str(dest_instrumental),
-        "vocal": str(dest_vocals)
-    }))
 
 if __name__ == "__main__":
     main()
