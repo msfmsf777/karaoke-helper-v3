@@ -39,6 +39,7 @@ electron.contextBridge.exposeInMainWorld("khelper", {
     loadAllSongs: () => electron.ipcRenderer.invoke("library:load-all"),
     getSongFilePath: (id) => electron.ipcRenderer.invoke("library:get-song-file-path", id),
     getOriginalSongFilePath: (id) => electron.ipcRenderer.invoke("library:get-original-song-file-path", id),
+    getSeparatedSongPaths: (id) => electron.ipcRenderer.invoke("library:get-separated-song-paths", id),
     getBasePath: () => electron.ipcRenderer.invoke("library:get-base-path"),
     deleteSong: (id) => electron.ipcRenderer.invoke("library:delete-song", id),
     updateSong: (id, updates) => electron.ipcRenderer.invoke("library:update-song", { id, updates })

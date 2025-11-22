@@ -1,8 +1,13 @@
+
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
-import { addLocalSong, getOriginalSongFilePath, getSongFilePath, getSongsBaseDir, loadAllSongs } from './songLibrary'
+import {
+  addLocalSong, getOriginalSongFilePath,
+  getSeparatedSongPaths,
+  getSongFilePath, getSongsBaseDir, loadAllSongs
+} from './songLibrary'
 import { getAllJobs, queueSeparationJob, subscribeJobUpdates } from './separationJobs'
 import { readRawLyrics, readSyncedLyrics, writeRawLyrics, writeSyncedLyrics } from './lyrics'
 import { loadQueue, saveQueue } from './queue'
@@ -100,6 +105,10 @@ ipcMain.handle('library:get-song-file-path', async (_event, id: string) => {
 
 ipcMain.handle('library:get-original-song-file-path', async (_event, id: string) => {
   return getOriginalSongFilePath(id)
+})
+
+ipcMain.handle('library:get-separated-song-paths', async (_event, id: string) => {
+  return getSeparatedSongPaths(id)
 })
 
 ipcMain.handle('library:get-base-path', async () => {

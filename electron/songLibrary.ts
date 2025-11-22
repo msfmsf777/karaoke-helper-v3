@@ -244,6 +244,49 @@ export async function getOriginalSongFilePath(id: string): Promise<string | null
   }
 }
 
+export async function getSeparatedSongPaths(id: string): Promise<{ instrumental: string; vocal: string | null }> {
+  if (!id) return { instrumental: '', vocal: null };
+  const songsDir = await ensureSongsDir();
+  const songDir = path.join(songsDir, id);
+  const meta = await readMeta(songDir);
+  if (!meta) return { instrumental: '', vocal: null };
+
+  const originalPath = getOriginalPath(meta, songDir);
+
+  // Logic:
+  // If type is '伴奏' (Accompaniment), ALWAYS use Original for both (effectively unseparated behavior).
+  // If Not Separated, use Original.
+  // If Separated, use Instr and Vocal stems.
+
+  const isAccompaniment = meta.type === '伴奏';
+  const isSeparated = meta.audio_status === 'separated' && meta.instrumental_path && meta.vocal_path;
+
+  if (!isAccompaniment && isSeparated) {
+    // Verify files exist
+    try {
+      await Promise.all([
+        fs.access(meta.instrumental_path!),
+        fs.access(meta.vocal_path!)
+      ]);
+      return {
+        instrumental: meta.instrumental_path!,
+        vocal: meta.vocal_path!
+      };
+    } catch (err) {
+      console.warn('[Library] Separated files missing, falling back to original', { id, err });
+    }
+  }
+
+  // Fallback to Original
+  try {
+    await fs.access(originalPath);
+    return { instrumental: originalPath, vocal: null };
+  } catch {
+    console.warn('[Library] Original audio file missing', { id, originalPath });
+    return { instrumental: '', vocal: null };
+  }
+}
+
 export async function deleteSong(id: string): Promise<void> {
   if (!id) return;
   const songsDir = await ensureSongsDir();

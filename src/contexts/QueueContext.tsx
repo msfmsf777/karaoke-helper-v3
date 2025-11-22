@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import audioEngine from '../audio/AudioEngine';
-import { getSongFilePath, getOriginalSongFilePath } from '../library/songLibrary';
+import { getSeparatedSongPaths } from '../library/songLibrary';
 import { useLibrary } from './LibraryContext';
 
 interface QueueContextType {
@@ -50,10 +50,9 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                         const song = getSongById(songId);
                         if (song) {
                             try {
-                                const streamPath = await getSongFilePath(songId);
-                                const headphonePath = await getOriginalSongFilePath(songId);
-                                if (streamPath && headphonePath) {
-                                    await audioEngine.loadFile({ stream: streamPath, headphone: headphonePath });
+                                const paths = await getSeparatedSongPaths(songId);
+                                if (paths.instrumental) {
+                                    await audioEngine.loadFile(paths);
                                 }
                             } catch (e) {
                                 console.warn('[QueueContext] Failed to preload song on startup', songId, e);
@@ -95,13 +94,20 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
 
         try {
-            const streamPath = await getSongFilePath(songId);
-            const headphonePath = await getOriginalSongFilePath(songId);
+            const paths = await getSeparatedSongPaths(songId);
 
-            if (!streamPath || !headphonePath) {
+            if (!paths.instrumental) {
                 throw new Error('File path not found');
             }
-            await audioEngine.loadFile({ stream: streamPath, headphone: headphonePath });
+            // paths.instrumental = Instrumental Stem (if sep) OR Original (if not)
+            // paths.vocal = Vocal Stem (if sep) OR null (if not)
+
+            // If vocal is null, AudioEngine will play silence for vocal channel.
+            // Since instrumental is Original in that case, we get:
+            // Stream: Original (Instr Vol)
+            // Headphone: Original (Instr Vol) + Silence (Vocal Vol) -> Original
+
+            await audioEngine.loadFile(paths);
             await audioEngine.play();
         } catch (err) {
             console.error('[QueueContext] Failed to play song', songId, err);

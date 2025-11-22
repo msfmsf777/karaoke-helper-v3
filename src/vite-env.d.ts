@@ -23,6 +23,7 @@ interface Window {
       loadAllSongs: () => Promise<import('../shared/songTypes').SongMeta[]>;
       getSongFilePath: (id: string) => Promise<string | null>;
       getOriginalSongFilePath: (id: string) => Promise<string | null>;
+      getSeparatedSongPaths: (id: string) => Promise<{ instrumental: string; vocal: string | null }>;
       getBasePath: () => Promise<string>;
       deleteSong: (id: string) => Promise<void>;
       updateSong: (id: string, updates: Partial<import('../shared/songTypes').SongMeta>) => Promise<import('../shared/songTypes').SongMeta | null>;

@@ -54,4 +54,17 @@ export async function getOriginalSongFilePath(id: string): Promise<string | null
   return filePath;
 }
 
+export async function getSeparatedSongPaths(id: string): Promise<{ instrumental: string; vocal: string | null }> {
+  const api = getApi();
+  // @ts-ignore - API might not be typed yet in window.khelper
+  if (api.getSeparatedSongPaths) {
+    const paths = await api.getSeparatedSongPaths(id);
+    console.log('[Library] Resolved separated paths', { id, paths });
+    return paths;
+  }
+  // Fallback for older backend? (Shouldn't happen in dev)
+  const original = await getOriginalSongFilePath(id);
+  return { instrumental: original || '', vocal: null };
+}
+
 export type { SongMeta, SongType };

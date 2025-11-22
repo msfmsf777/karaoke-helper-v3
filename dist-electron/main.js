@@ -204,6 +204,37 @@ async function getOriginalSongFilePath(id) {
     return null;
   }
 }
+async function getSeparatedSongPaths(id) {
+  if (!id) return { instrumental: "", vocal: null };
+  const songsDir = await ensureSongsDir();
+  const songDir = path.join(songsDir, id);
+  const meta = await readMeta(songDir);
+  if (!meta) return { instrumental: "", vocal: null };
+  const originalPath = getOriginalPath(meta, songDir);
+  const isAccompaniment = meta.type === "伴奏";
+  const isSeparated = meta.audio_status === "separated" && meta.instrumental_path && meta.vocal_path;
+  if (!isAccompaniment && isSeparated) {
+    try {
+      await Promise.all([
+        fs.access(meta.instrumental_path),
+        fs.access(meta.vocal_path)
+      ]);
+      return {
+        instrumental: meta.instrumental_path,
+        vocal: meta.vocal_path
+      };
+    } catch (err) {
+      console.warn("[Library] Separated files missing, falling back to original", { id, err });
+    }
+  }
+  try {
+    await fs.access(originalPath);
+    return { instrumental: originalPath, vocal: null };
+  } catch {
+    console.warn("[Library] Original audio file missing", { id, originalPath });
+    return { instrumental: "", vocal: null };
+  }
+}
 async function deleteSong(id) {
   if (!id) return;
   const songsDir = await ensureSongsDir();
@@ -232,6 +263,7 @@ const songLibrary = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineP
   addLocalSong,
   deleteSong,
   getOriginalSongFilePath,
+  getSeparatedSongPaths,
   getSongFilePath,
   getSongMeta,
   getSongsBaseDir,
@@ -666,6 +698,9 @@ ipcMain.handle("library:get-song-file-path", async (_event, id) => {
 });
 ipcMain.handle("library:get-original-song-file-path", async (_event, id) => {
   return getOriginalSongFilePath(id);
+});
+ipcMain.handle("library:get-separated-song-paths", async (_event, id) => {
+  return getSeparatedSongPaths(id);
 });
 ipcMain.handle("library:get-base-path", async () => {
   return getSongsBaseDir();

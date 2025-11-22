@@ -49,9 +49,9 @@ contextBridge.exposeInMainWorld('khelper', {
       lyricsText?: string
     }): Promise<SongMeta> => ipcRenderer.invoke('library:add-local-song', payload),
     loadAllSongs: (): Promise<SongMeta[]> => ipcRenderer.invoke('library:load-all'),
-    getSongFilePath: (id: string): Promise<string | null> => ipcRenderer.invoke('library:get-song-file-path', id),
-    getOriginalSongFilePath: (id: string): Promise<string | null> =>
-      ipcRenderer.invoke('library:get-original-song-file-path', id),
+    getSongFilePath: (id: string) => ipcRenderer.invoke('library:get-song-file-path', id),
+    getOriginalSongFilePath: (id: string) => ipcRenderer.invoke('library:get-original-song-file-path', id),
+    getSeparatedSongPaths: (id: string) => ipcRenderer.invoke('library:get-separated-song-paths', id),
     getBasePath: (): Promise<string> => ipcRenderer.invoke('library:get-base-path'),
     deleteSong: (id: string): Promise<void> => ipcRenderer.invoke('library:delete-song', id),
     updateSong: (id: string, updates: Partial<SongMeta>): Promise<SongMeta | null> =>
