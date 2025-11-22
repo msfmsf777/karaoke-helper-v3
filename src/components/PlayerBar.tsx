@@ -4,6 +4,7 @@ import { loadVolumePreferences, saveVolumePreferences } from '../settings/volume
 import { useQueue } from '../contexts/QueueContext';
 import { useLibrary } from '../contexts/LibraryContext';
 import PlaybackControlPopup from './PlaybackControlPopup';
+import VolumeControlPopup from './VolumeControlPopup';
 
 type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history' | string;
 
@@ -334,26 +335,16 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
           )}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '120px' }}>
-          <label style={{ fontSize: '12px', color: '#b3b3b3', marginBottom: '4px' }}>伴奏音量</label>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={backingVolume}
-            onChange={(e) => setBackingVolume(Number(e.target.value))}
-            style={{ width: '100%', accentColor: 'var(--accent-color)' }}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <VolumeControlPopup
+            label="伴奏"
+            volume={backingVolume}
+            onChange={(val) => setBackingVolume(val)}
           />
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '120px' }}>
-          <label style={{ fontSize: '12px', color: '#b3b3b3', marginBottom: '4px' }}>人聲音量</label>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={vocalVolume}
-            onChange={(e) => setVocalVolume(Number(e.target.value))}
-            style={{ width: '100%', accentColor: 'var(--accent-color)' }}
+          <VolumeControlPopup
+            label="人聲"
+            volume={vocalVolume}
+            onChange={(val) => setVocalVolume(val)}
           />
         </div>
 
