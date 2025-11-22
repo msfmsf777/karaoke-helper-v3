@@ -7,4 +7,5 @@ export interface SeparationJob {
   updatedAt: string;
   status: SeparationJobStatus;
   errorMessage?: string;
+  progress?: number;
 }

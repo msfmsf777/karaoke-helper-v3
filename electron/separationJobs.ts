@@ -10,22 +10,68 @@ function generateJobId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 }
 
-async function runStubSeparation(
+import { spawn } from 'node:child_process';
+
+async function runDemucsSeparation(
   originalPath: string,
   songFolder: string,
+  onProgress?: (percent: number) => void
 ): Promise<{ instrumentalPath: string; vocalPath: string }> {
-  console.log('[Separation] Stub separation start', { originalPath, songFolder });
+  console.log('[Separation] Starting Demucs separation', { originalPath, songFolder });
 
-  const ext = path.extname(originalPath) || '.wav';
-  const instrumentalPath = path.join(songFolder, `Instrumental${ext}`);
-  const vocalPath = path.join(songFolder, `Vocals${ext}`);
+  const scriptPath = path.join(process.cwd(), 'resources', 'separation', 'separate.py');
 
-  // TODO: Replace this stub with a real Demucs/demucs.cpp pipeline (spawn process, await outputs).
-  await fs.copyFile(originalPath, instrumentalPath);
-  await fs.copyFile(originalPath, vocalPath);
+  return new Promise((resolve, reject) => {
+    const python = spawn('python', [
+      scriptPath,
+      '--input', originalPath,
+      '--output-dir', songFolder,
+      '--cache-dir', path.join(process.env.APPDATA || '', 'KHelperLive', 'models')
+    ]);
 
-  console.log('[Separation] Stub separation finished', { instrumentalPath, vocalPath });
-  return { instrumentalPath, vocalPath };
+    let result: { instrumental?: string; vocal?: string; error?: string } | null = null;
+    let errorOutput = '';
+
+    python.stdout.on('data', (data) => {
+      const lines = data.toString().split('\n');
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const msg = JSON.parse(line);
+          // console.log('[Separation] Python:', msg); // Too noisy for progress
+          if (msg.status === 'success') {
+            result = msg;
+          } else if (msg.status === 'progress' && typeof msg.progress === 'number') {
+            onProgress?.(msg.progress);
+          } else if (msg.error) {
+            // If we get an explicit error JSON, use it
+            reject(new Error(`${msg.error} ${msg.details || ''}`));
+          }
+        } catch (e) {
+          // Ignore non-json output
+        }
+      }
+    });
+
+    python.stderr.on('data', (data) => {
+      const str = data.toString();
+      // console.error('[Separation] Python stderr:', str); // Optional: log stderr
+      errorOutput += str;
+    });
+
+    python.on('close', (code) => {
+      if (code === 0 && result && result.instrumental && result.vocal) {
+        resolve({
+          instrumentalPath: result.instrumental,
+          vocalPath: result.vocal
+        });
+      } else {
+        // Combine captured stderr with any JSON error we might have missed
+        const msg = result?.error || 'Separation process failed';
+        reject(new Error(`${msg} (Exit code ${code}). Details: ${errorOutput.slice(-500)}`));
+      }
+    });
+  });
 }
 
 class SeparationJobManager {
@@ -66,10 +112,10 @@ class SeparationJobManager {
     this.jobs = this.jobs.map((job) =>
       job.id === id
         ? {
-            ...job,
-            ...patch,
-            updatedAt: new Date().toISOString(),
-          }
+          ...job,
+          ...patch,
+          updatedAt: new Date().toISOString(),
+        }
         : job,
     );
   }
@@ -90,7 +136,10 @@ class SeparationJobManager {
       this.notify();
 
       const { songDir, originalPath } = await this.ensureOriginalPath(meta);
-      const { instrumentalPath, vocalPath } = await runStubSeparation(originalPath, songDir);
+      const { instrumentalPath, vocalPath } = await runDemucsSeparation(originalPath, songDir, (progress) => {
+        this.updateJob(job.id, { progress });
+        this.notify();
+      });
 
       await updateSongMeta(job.songId, (current) => ({
         ...current,

@@ -6,7 +6,7 @@ interface AudioContextWithSinkId extends AudioContext {
 export type OutputRole = 'stream' | 'headphone';
 
 export interface AudioEngine {
-  loadFile(path: string): Promise<void>;
+  loadFile(paths: string | { stream: string; headphone: string }): Promise<void>;
   play(): Promise<void> | void;
   pause(): void;
   stop(): void;
@@ -336,18 +336,33 @@ class DualAudioEngine implements AudioEngine {
 
   // --- Public API ---
 
-  async loadFile(path: string): Promise<void> {
-    if (!path) throw new Error('No path');
+  async loadFile(paths: string | { stream: string; headphone: string }): Promise<void> {
     this.stop();
-    console.log('[AudioEngine] Loading:', path);
 
-    const url = this.toFileUrl(path);
-    const response = await fetch(url);
-    const arrayBuffer = await response.arrayBuffer();
+    let streamPath: string;
+    let headphonePath: string;
+
+    if (typeof paths === 'string') {
+      streamPath = paths;
+      headphonePath = paths;
+    } else {
+      streamPath = paths.stream;
+      headphonePath = paths.headphone;
+    }
+
+    console.log('[AudioEngine] Loading:', { streamPath, headphonePath });
+
+    const streamUrl = this.toFileUrl(streamPath);
+    const headphoneUrl = this.toFileUrl(headphonePath);
+
+    const [streamBuffer, headphoneBuffer] = await Promise.all([
+      fetch(streamUrl).then(r => r.arrayBuffer()),
+      fetch(headphoneUrl).then(r => r.arrayBuffer())
+    ]);
 
     await Promise.all([
-      this.streamPlayer.loadBuffer(arrayBuffer),
-      this.headphonePlayer.loadBuffer(arrayBuffer)
+      this.streamPlayer.loadBuffer(streamBuffer),
+      this.headphonePlayer.loadBuffer(headphoneBuffer)
     ]);
 
     this.setPlaybackRate(1.0);

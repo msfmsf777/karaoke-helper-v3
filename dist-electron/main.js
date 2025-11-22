@@ -5,6 +5,7 @@ import { app, BrowserWindow, ipcMain, dialog } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import fs from "node:fs/promises";
+import { spawn } from "node:child_process";
 import http from "node:http";
 import fs$1 from "node:fs";
 const APP_FOLDER_NAME = "KHelperLive";
@@ -241,15 +242,54 @@ const songLibrary = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineP
 function generateJobId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 }
-async function runStubSeparation(originalPath, songFolder) {
-  console.log("[Separation] Stub separation start", { originalPath, songFolder });
-  const ext = path.extname(originalPath) || ".wav";
-  const instrumentalPath = path.join(songFolder, `Instrumental${ext}`);
-  const vocalPath = path.join(songFolder, `Vocals${ext}`);
-  await fs.copyFile(originalPath, instrumentalPath);
-  await fs.copyFile(originalPath, vocalPath);
-  console.log("[Separation] Stub separation finished", { instrumentalPath, vocalPath });
-  return { instrumentalPath, vocalPath };
+async function runDemucsSeparation(originalPath, songFolder, onProgress) {
+  console.log("[Separation] Starting Demucs separation", { originalPath, songFolder });
+  const scriptPath = path.join(process.cwd(), "resources", "separation", "separate.py");
+  return new Promise((resolve, reject) => {
+    const python = spawn("python", [
+      scriptPath,
+      "--input",
+      originalPath,
+      "--output-dir",
+      songFolder,
+      "--cache-dir",
+      path.join(process.env.APPDATA || "", "KHelperLive", "models")
+    ]);
+    let result = null;
+    let errorOutput = "";
+    python.stdout.on("data", (data) => {
+      const lines = data.toString().split("\n");
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const msg = JSON.parse(line);
+          if (msg.status === "success") {
+            result = msg;
+          } else if (msg.status === "progress" && typeof msg.progress === "number") {
+            onProgress == null ? void 0 : onProgress(msg.progress);
+          } else if (msg.error) {
+            reject(new Error(`${msg.error} ${msg.details || ""}`));
+          }
+        } catch (e) {
+        }
+      }
+    });
+    python.stderr.on("data", (data) => {
+      const str = data.toString();
+      errorOutput += str;
+    });
+    python.on("close", (code) => {
+      if (code === 0 && result && result.instrumental && result.vocal) {
+        resolve({
+          instrumentalPath: result.instrumental,
+          vocalPath: result.vocal
+        });
+      } else {
+        const msg = (result == null ? void 0 : result.error) || "Separation process failed";
+        reject(new Error(`${msg} (Exit code ${code}). Details: ${errorOutput.slice(-500)}`));
+      }
+    });
+  });
 }
 class SeparationJobManager {
   constructor() {
@@ -306,7 +346,10 @@ class SeparationJobManager {
       this.updateJob(job.id, { status: "running", errorMessage: void 0 });
       this.notify();
       const { songDir, originalPath } = await this.ensureOriginalPath(meta);
-      const { instrumentalPath, vocalPath } = await runStubSeparation(originalPath, songDir);
+      const { instrumentalPath, vocalPath } = await runDemucsSeparation(originalPath, songDir, (progress) => {
+        this.updateJob(job.id, { progress });
+        this.notify();
+      });
       await updateSongMeta(job.songId, (current) => ({
         ...current,
         audio_status: "separated",
