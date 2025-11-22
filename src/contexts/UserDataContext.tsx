@@ -13,6 +13,8 @@ interface UserDataContextType {
     favorites: string[];
     history: string[];
     playlists: Playlist[];
+    separationQuality: 'high' | 'normal' | 'fast';
+    setSeparationQuality: (quality: 'high' | 'normal' | 'fast') => void;
     toggleFavorite: (songId: string) => void;
     isFavorite: (songId: string) => boolean;
     addToHistory: (songId: string) => void;
@@ -31,6 +33,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [favorites, setFavorites] = useState<string[]>([]);
     const [history, setHistory] = useState<string[]>([]);
     const [playlists, setPlaylists] = useState<Playlist[]>([]);
+    const [separationQuality, setSeparationQuality] = useState<'high' | 'normal' | 'fast'>('normal');
     const { currentSongId } = useQueue();
     // const { getSongById } = useLibrary();
     const isInitialized = useRef(false);
@@ -41,15 +44,17 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
         const load = async () => {
             try {
-                const [favs, hist, pl] = await Promise.all([
+                const [favs, hist, pl, settings] = await Promise.all([
                     window.khelper?.userData.loadFavorites() || [],
                     window.khelper?.userData.loadHistory() || [],
-                    window.khelper?.userData.loadPlaylists() || []
+                    window.khelper?.userData.loadPlaylists() || [],
+                    window.khelper?.userData.loadSettings() || { separationQuality: 'normal' }
                 ]);
                 setFavorites(Array.from(new Set(favs)));
                 setHistory(Array.from(new Set(hist)));
                 setPlaylists(pl);
-                console.log('[UserData] Loaded', favs.length, 'favorites,', hist.length, 'history items, and', pl.length, 'playlists');
+                setSeparationQuality((settings.separationQuality as 'high' | 'normal' | 'fast') || 'normal');
+                console.log('[UserData] Loaded', favs.length, 'favorites,', hist.length, 'history items,', pl.length, 'playlists, quality:', settings.separationQuality);
             } catch (err) {
                 console.error('[UserData] Failed to load user data', err);
             } finally {
@@ -82,6 +87,14 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             console.error('[UserData] Failed to save playlists', err)
         );
     }, [playlists]);
+
+    // Save settings on change
+    useEffect(() => {
+        if (!isInitialized.current) return;
+        window.khelper?.userData.saveSettings({ separationQuality }).catch(err =>
+            console.error('[UserData] Failed to save settings', err)
+        );
+    }, [separationQuality]);
 
     // Listen to currentSongId changes to update history
     useEffect(() => {
@@ -166,6 +179,8 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             favorites,
             history,
             playlists,
+            separationQuality,
+            setSeparationQuality,
             toggleFavorite,
             isFavorite,
             addToHistory,

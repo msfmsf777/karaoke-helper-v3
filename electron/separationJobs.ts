@@ -12,12 +12,15 @@ function generateJobId() {
 
 import { spawn } from 'node:child_process';
 
+import { loadSettings } from './userData';
+
 async function runDemucsSeparation(
   originalPath: string,
   songFolder: string,
+  quality: 'high' | 'normal' | 'fast',
   onProgress?: (percent: number) => void
 ): Promise<{ instrumentalPath: string; vocalPath: string }> {
-  console.log('[Separation] Starting Demucs separation', { originalPath, songFolder });
+  console.log('[Separation] Starting MDX separation', { originalPath, songFolder, quality });
 
   const scriptPath = path.join(process.cwd(), 'resources', 'separation', 'separate.py');
 
@@ -26,6 +29,7 @@ async function runDemucsSeparation(
       scriptPath,
       '--input', originalPath,
       '--output-dir', songFolder,
+      '--quality', quality,
       '--cache-dir', path.join(process.env.APPDATA || '', 'KHelperLive', 'models')
     ]);
 
@@ -38,24 +42,20 @@ async function runDemucsSeparation(
         if (!line.trim()) continue;
         try {
           const msg = JSON.parse(line);
-          // console.log('[Separation] Python:', msg); // Too noisy for progress
           if (msg.status === 'success') {
             result = msg;
           } else if (msg.status === 'progress' && typeof msg.progress === 'number') {
             onProgress?.(msg.progress);
           } else if (msg.error) {
-            // If we get an explicit error JSON, use it
             reject(new Error(`${msg.error} ${msg.details || ''}`));
           }
         } catch (e) {
-          // Ignore non-json output
         }
       }
     });
 
     python.stderr.on('data', (data) => {
       const str = data.toString();
-      // console.error('[Separation] Python stderr:', str); // Optional: log stderr
       errorOutput += str;
     });
 
@@ -66,7 +66,6 @@ async function runDemucsSeparation(
           vocalPath: result.vocal
         });
       } else {
-        // Combine captured stderr with any JSON error we might have missed
         const msg = result?.error || 'Separation process failed';
         reject(new Error(`${msg} (Exit code ${code}). Details: ${errorOutput.slice(-500)}`));
       }
@@ -136,7 +135,11 @@ class SeparationJobManager {
       this.notify();
 
       const { songDir, originalPath } = await this.ensureOriginalPath(meta);
-      const { instrumentalPath, vocalPath } = await runDemucsSeparation(originalPath, songDir, (progress) => {
+
+      // Use job quality or default to normal
+      const quality = job.quality || 'normal';
+
+      const { instrumentalPath, vocalPath } = await runDemucsSeparation(originalPath, songDir, quality, (progress) => {
         this.updateJob(job.id, { progress });
         this.notify();
       });
@@ -147,6 +150,7 @@ class SeparationJobManager {
         instrumental_path: instrumentalPath,
         vocal_path: vocalPath,
         last_separation_error: null,
+        separation_quality: quality,
       }));
       this.updateJob(job.id, { status: 'succeeded', errorMessage: undefined });
     } catch (err) {
@@ -196,10 +200,15 @@ class SeparationJobManager {
       last_separation_error: null,
     }));
 
+    // Load quality setting
+    const settings = await loadSettings();
+    const quality = settings.separationQuality || 'normal';
+
     const now = new Date().toISOString();
     const job: SeparationJob = {
       id: generateJobId(),
       songId,
+      quality,
       createdAt: now,
       updatedAt: now,
       status: 'queued',
