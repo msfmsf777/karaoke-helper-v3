@@ -1,16 +1,18 @@
-import { ipcRenderer, contextBridge } from 'electron'
-import type { SongMeta, SongType } from '../shared/songTypes'
+import { ipcRenderer, contextBridge, type IpcRendererEvent } from 'electron'
+import type { SongMeta, SongType, DownloadJob } from '../shared/songTypes'
 import type { SeparationJob } from '../shared/separationTypes'
 
 // --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld('ipcRenderer', {
-  on(...args: Parameters<typeof ipcRenderer.on>) {
-    const [channel, listener] = args
-    return ipcRenderer.on(channel, (event, ...args) => listener(event, ...args))
+  on(channel: string, listener: (event: IpcRendererEvent, ...args: any[]) => void) {
+    const subscription = (event: IpcRendererEvent, ...args: any[]) => listener(event, ...args)
+    ipcRenderer.on(channel, subscription)
+    return () => {
+      ipcRenderer.off(channel, subscription)
+    }
   },
-  off(...args: Parameters<typeof ipcRenderer.off>) {
-    const [channel, ...omit] = args
-    return ipcRenderer.off(channel, ...omit)
+  off(channel: string, listener: (event: IpcRendererEvent, ...args: any[]) => void) {
+    ipcRenderer.off(channel, listener)
   },
   send(...args: Parameters<typeof ipcRenderer.send>) {
     const [channel, ...omit] = args
@@ -69,6 +71,23 @@ contextBridge.exposeInMainWorld('khelper', {
       return () => {
         ipcRenderer.send('jobs:unsubscribe', subscriptionId)
         ipcRenderer.off('jobs:updated', listener)
+      }
+    },
+  },
+  downloads: {
+    validateUrl: (url: string): Promise<{ videoId: string; title: string; duration?: number } | null> =>
+      ipcRenderer.invoke('downloads:validate', url),
+    queueDownload: (url: string, quality: 'best' | 'high' | 'normal', title?: string, artist?: string): Promise<DownloadJob> =>
+      ipcRenderer.invoke('downloads:queue', url, quality, title, artist),
+    getAllJobs: (): Promise<DownloadJob[]> => ipcRenderer.invoke('downloads:get-all'),
+    subscribeUpdates: (callback: (jobs: DownloadJob[]) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, jobs: DownloadJob[]) => callback(jobs)
+      const subscriptionId = `dl-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`
+      ipcRenderer.send('downloads:subscribe', subscriptionId)
+      ipcRenderer.on('downloads:updated', listener)
+      return () => {
+        ipcRenderer.send('downloads:unsubscribe', subscriptionId)
+        ipcRenderer.off('downloads:updated', listener)
       }
     },
   },

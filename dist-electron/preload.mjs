@@ -1,13 +1,15 @@
 "use strict";
 const electron = require("electron");
 electron.contextBridge.exposeInMainWorld("ipcRenderer", {
-  on(...args) {
-    const [channel, listener] = args;
-    return electron.ipcRenderer.on(channel, (event, ...args2) => listener(event, ...args2));
+  on(channel, listener) {
+    const subscription = (event, ...args) => listener(event, ...args);
+    electron.ipcRenderer.on(channel, subscription);
+    return () => {
+      electron.ipcRenderer.off(channel, subscription);
+    };
   },
-  off(...args) {
-    const [channel, ...omit] = args;
-    return electron.ipcRenderer.off(channel, ...omit);
+  off(channel, listener) {
+    electron.ipcRenderer.off(channel, listener);
   },
   send(...args) {
     const [channel, ...omit] = args;
@@ -55,6 +57,21 @@ electron.contextBridge.exposeInMainWorld("khelper", {
       return () => {
         electron.ipcRenderer.send("jobs:unsubscribe", subscriptionId);
         electron.ipcRenderer.off("jobs:updated", listener);
+      };
+    }
+  },
+  downloads: {
+    validateUrl: (url) => electron.ipcRenderer.invoke("downloads:validate", url),
+    queueDownload: (url, quality, title, artist) => electron.ipcRenderer.invoke("downloads:queue", url, quality, title, artist),
+    getAllJobs: () => electron.ipcRenderer.invoke("downloads:get-all"),
+    subscribeUpdates: (callback) => {
+      const listener = (_event, jobs) => callback(jobs);
+      const subscriptionId = `dl-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`;
+      electron.ipcRenderer.send("downloads:subscribe", subscriptionId);
+      electron.ipcRenderer.on("downloads:updated", listener);
+      return () => {
+        electron.ipcRenderer.send("downloads:unsubscribe", subscriptionId);
+        electron.ipcRenderer.off("downloads:updated", listener);
       };
     }
   },

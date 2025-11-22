@@ -38,7 +38,17 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const unsubscribe = subscribeJobUpdates(() => {
             fetchSongs();
         });
-        return () => unsubscribe();
+
+        // Listen for library:changed event from main process
+        const removeListener = window.ipcRenderer?.on('library:changed', () => {
+            console.log('[LibraryContext] Received library:changed event, refreshing...');
+            fetchSongs();
+        });
+
+        return () => {
+            unsubscribe();
+            removeListener?.();
+        };
     }, [fetchSongs]);
 
     const getSongById = useCallback((id: string) => {

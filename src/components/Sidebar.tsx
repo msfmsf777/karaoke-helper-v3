@@ -79,6 +79,9 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
         <div style={navItemStyle(currentView === 'library')} onClick={() => onViewChange('library')}>
           歌曲庫
         </div>
+        <div style={navItemStyle(currentView === 'download-manager')} onClick={() => onViewChange('download-manager')}>
+          下載管理
+        </div>
         <div style={navItemStyle(currentView === 'lyrics')} onClick={() => onViewChange('lyrics')}>
           歌詞編輯
         </div>
@@ -141,11 +144,6 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
             {playlist.name}
           </div>
         ))}
-
-        <div style={{ height: '1px', backgroundColor: '#282828', margin: '16px 8px' }}></div>
-
-        <div style={sectionTitleStyle}>快速存取</div>
-        <div style={navItemStyle(false)}>下載管理</div>
       </div>
     </div>
   );

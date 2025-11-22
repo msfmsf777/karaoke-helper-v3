@@ -575,6 +575,239 @@ function getAllJobs() {
 function subscribeJobUpdates(callback) {
   return jobManager.subscribe(callback);
 }
+const YTDLP_FILENAME = process.platform === "win32" ? "yt-dlp.exe" : "yt-dlp";
+process.platform === "win32" ? "ffmpeg.exe" : "ffmpeg";
+function getBinDir() {
+  return path.join(app.getPath("userData"), "bin");
+}
+function getYtDlpPath() {
+  return path.join(getBinDir(), YTDLP_FILENAME);
+}
+async function ensureBinaries() {
+  const binDir = getBinDir();
+  await fs.mkdir(binDir, { recursive: true });
+  const ytDlpPath = getYtDlpPath();
+  try {
+    await fs.access(ytDlpPath);
+  } catch {
+    console.log("[DownloadJobs] yt-dlp not found, downloading...");
+    await downloadYtDlp();
+  }
+}
+async function downloadYtDlp() {
+  const url = process.platform === "win32" ? "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" : "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp";
+  const dest = getYtDlpPath();
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Failed to download yt-dlp: ${response.statusText}`);
+  const buffer = await response.arrayBuffer();
+  await fs.writeFile(dest, Buffer.from(buffer));
+  if (process.platform !== "win32") {
+    await fs.chmod(dest, 493);
+  }
+  console.log("[DownloadJobs] yt-dlp downloaded to", dest);
+}
+class DownloadJobManager {
+  constructor() {
+    __publicField(this, "jobs", []);
+    __publicField(this, "subscribers", /* @__PURE__ */ new Set());
+    __publicField(this, "activeJobId", null);
+    __publicField(this, "onLibraryChanged");
+    ensureBinaries().catch((err) => console.error("[DownloadJobs] Failed to ensure binaries on startup:", err));
+    this.loadJobs();
+  }
+  getJobsFilePath() {
+    return path.join(app.getPath("userData"), "downloadJobs.json");
+  }
+  async saveJobs() {
+    try {
+      await fs.writeFile(this.getJobsFilePath(), JSON.stringify(this.jobs, null, 2));
+    } catch (err) {
+      console.error("[DownloadJobs] Failed to save jobs", err);
+    }
+  }
+  async loadJobs() {
+    try {
+      const data = await fs.readFile(this.getJobsFilePath(), "utf-8");
+      this.jobs = JSON.parse(data);
+      let changed = false;
+      this.jobs = this.jobs.map((j) => {
+        if (j.status === "downloading" || j.status === "processing") {
+          changed = true;
+          return { ...j, status: "failed", error: "Interrupted by app restart" };
+        }
+        return j;
+      });
+      if (changed) this.saveJobs();
+    } catch (err) {
+      if (err.code !== "ENOENT") {
+        console.error("[DownloadJobs] Failed to load jobs", err);
+      }
+    }
+  }
+  notify() {
+    const snapshot = [...this.jobs];
+    this.subscribers.forEach((sub) => sub(snapshot));
+    this.saveJobs();
+  }
+  subscribe(callback) {
+    this.subscribers.add(callback);
+    callback([...this.jobs]);
+    return () => this.subscribers.delete(callback);
+  }
+  getAll() {
+    return [...this.jobs];
+  }
+  removeJobBySongId(songId) {
+    const initialLength = this.jobs.length;
+    this.jobs = this.jobs.filter((j) => j.songId !== songId);
+    if (this.jobs.length !== initialLength) {
+      this.notify();
+    }
+  }
+  async validateUrl(url) {
+    await ensureBinaries();
+    const ytDlp = getYtDlpPath();
+    return new Promise((resolve, reject) => {
+      const proc = spawn(ytDlp, [
+        "--dump-json",
+        "--no-playlist",
+        url
+      ]);
+      let stdout = "";
+      proc.stdout.on("data", (d) => stdout += d.toString());
+      proc.on("close", (code) => {
+        if (code !== 0) {
+          resolve(null);
+          return;
+        }
+        try {
+          const data = JSON.parse(stdout);
+          resolve({
+            videoId: data.id,
+            title: data.title,
+            duration: data.duration
+          });
+        } catch (e) {
+          resolve(null);
+        }
+      });
+    });
+  }
+  async queueJob(url, quality, titleOverride, artistOverride) {
+    const meta = await this.validateUrl(url);
+    if (!meta) throw new Error("Invalid YouTube URL");
+    const existing = this.jobs.find((j) => j.youtubeId === meta.videoId);
+    if (existing) throw new Error("Download already exists for this video");
+    const { loadAllSongs: loadAllSongs2 } = await Promise.resolve().then(() => songLibrary);
+    const allSongs = await loadAllSongs2();
+    const existingSong = allSongs.find(
+      (s) => s.source.kind === "youtube" && s.source.youtubeId === meta.videoId
+    );
+    if (existingSong) {
+      throw new Error(`Song already exists in library: "${existingSong.title}"`);
+    }
+    const job = {
+      id: Date.now().toString(),
+      youtubeId: meta.videoId,
+      title: titleOverride || meta.title,
+      artist: artistOverride,
+      quality,
+      status: "queued",
+      progress: 0,
+      createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    this.jobs.unshift(job);
+    this.notify();
+    this.processQueue();
+    return job;
+  }
+  async processQueue() {
+    if (this.activeJobId) return;
+    const next = this.jobs.find((j) => j.status === "queued");
+    if (!next) return;
+    this.activeJobId = next.id;
+    await this.runJob(next);
+    this.activeJobId = null;
+    this.processQueue();
+  }
+  updateJob(id, updates) {
+    this.jobs = this.jobs.map((j) => j.id === id ? { ...j, ...updates, updatedAt: (/* @__PURE__ */ new Date()).toISOString() } : j);
+    this.notify();
+  }
+  async runJob(job) {
+    var _a;
+    this.updateJob(job.id, { status: "downloading", progress: 0 });
+    try {
+      await ensureBinaries();
+      const ytDlp = getYtDlpPath();
+      const songId = Date.now().toString();
+      const songsDir = getSongsBaseDir();
+      const songDir = path.join(songsDir, songId);
+      await fs.mkdir(songDir, { recursive: true });
+      const outputTemplate = path.join(songDir, "Original.%(ext)s");
+      let formatSelector = "bestaudio/best";
+      if (job.quality === "normal") formatSelector = "bestaudio[abr<=128]/bestaudio";
+      if (job.quality === "high") formatSelector = "bestaudio[abr<=192]/bestaudio";
+      const args = [
+        "-f",
+        formatSelector,
+        "-x",
+        "--audio-format",
+        "wav",
+        "-o",
+        outputTemplate,
+        "--no-playlist",
+        "--newline",
+        // For progress parsing
+        `https://www.youtube.com/watch?v=${job.youtubeId}`
+      ];
+      await new Promise((resolve, reject) => {
+        const proc = spawn(ytDlp, args);
+        proc.stdout.on("data", (data) => {
+          const line = data.toString();
+          const match = line.match(/\[download\]\s+(\d+\.\d+)%/);
+          if (match) {
+            const percent = parseFloat(match[1]);
+            this.updateJob(job.id, { progress: percent });
+          }
+        });
+        let errOut = "";
+        proc.stderr.on("data", (d) => errOut += d.toString());
+        proc.on("close", (code) => {
+          if (code === 0) resolve();
+          else reject(new Error(`yt-dlp exited with code ${code}: ${errOut}`));
+        });
+      });
+      const finalPath = path.join(songDir, "Original.wav");
+      const now = (/* @__PURE__ */ new Date()).toISOString();
+      const meta = {
+        id: songId,
+        title: job.title,
+        artist: job.artist,
+        type: "原曲",
+        audio_status: "original_only",
+        lyrics_status: "none",
+        source: {
+          kind: "youtube",
+          youtubeId: job.youtubeId,
+          originalPath: finalPath
+        },
+        stored_filename: "Original.wav",
+        created_at: now,
+        updated_at: now,
+        last_separation_error: null
+      };
+      await fs.writeFile(path.join(songDir, "meta.json"), JSON.stringify(meta, null, 2));
+      this.updateJob(job.id, { status: "completed", progress: 100, songId });
+      (_a = this.onLibraryChanged) == null ? void 0 : _a.call(this);
+    } catch (err) {
+      console.error("Download failed", err);
+      this.updateJob(job.id, { status: "failed", error: err.message });
+    }
+  }
+}
+const downloadManager = new DownloadJobManager();
 async function ensureSongFolder(songId) {
   const base = getSongsBaseDir();
   const songDir = path.join(base, songId);
@@ -677,6 +910,7 @@ const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
 let win;
 const jobSubscriptions = /* @__PURE__ */ new Map();
+const downloadSubscriptions = /* @__PURE__ */ new Map();
 function createWindow() {
   win = new BrowserWindow({
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
@@ -741,8 +975,22 @@ ipcMain.handle("library:get-base-path", async () => {
   return getSongsBaseDir();
 });
 ipcMain.handle("library:delete-song", async (_event, id) => {
-  const { deleteSong: deleteSong2 } = await Promise.resolve().then(() => songLibrary);
-  return deleteSong2(id);
+  if (!win) return;
+  const result = await dialog.showMessageBox(win, {
+    type: "warning",
+    title: "刪除歌曲",
+    message: "確定要刪除這首歌曲嗎？此操作無法復原。",
+    buttons: ["取消", "刪除"],
+    defaultId: 0,
+    cancelId: 0
+  });
+  if (result.response === 1) {
+    const { deleteSong: deleteSong2 } = await Promise.resolve().then(() => songLibrary);
+    await deleteSong2(id);
+    downloadManager.removeJobBySongId(id);
+    return true;
+  }
+  return false;
 });
 ipcMain.handle("library:update-song", async (_event, payload) => {
   const { updateSong: updateSong2 } = await Promise.resolve().then(() => songLibrary);
@@ -826,6 +1074,46 @@ ipcMain.on("jobs:unsubscribe", (event, subscriptionId) => {
     disposers.clear();
   }
 });
+ipcMain.handle("downloads:validate", async (_event, url) => {
+  return downloadManager.validateUrl(url);
+});
+ipcMain.handle("downloads:queue", async (_event, url, quality, title, artist) => {
+  return downloadManager.queueJob(url, quality, title, artist);
+});
+ipcMain.handle("downloads:get-all", async () => {
+  return downloadManager.getAll();
+});
+ipcMain.on("downloads:subscribe", (event, subscriptionId) => {
+  const wc = event.sender;
+  const disposer = downloadManager.subscribe((jobs) => wc.send("downloads:updated", jobs));
+  let disposers = downloadSubscriptions.get(wc.id);
+  if (!disposers) {
+    disposers = /* @__PURE__ */ new Map();
+    downloadSubscriptions.set(wc.id, disposers);
+    wc.once("destroyed", () => {
+      disposers == null ? void 0 : disposers.forEach((fn) => fn());
+      downloadSubscriptions.delete(wc.id);
+    });
+  }
+  disposers.set(subscriptionId, disposer);
+});
+ipcMain.on("downloads:unsubscribe", (event, subscriptionId) => {
+  const disposers = downloadSubscriptions.get(event.sender.id);
+  if (!disposers) return;
+  if (subscriptionId) {
+    const fn = disposers.get(subscriptionId);
+    fn == null ? void 0 : fn();
+    disposers.delete(subscriptionId);
+  } else {
+    disposers.forEach((fn) => fn());
+    disposers.clear();
+  }
+});
+downloadManager.onLibraryChanged = () => {
+  BrowserWindow.getAllWindows().forEach((w) => {
+    w.webContents.send("library:changed");
+  });
+};
 app.whenReady().then(() => {
   console.log("[App] userData path:", app.getPath("userData"));
   console.log("[Library] base songs dir:", getSongsBaseDir());
