@@ -37,28 +37,17 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 const saved = await window.khelper?.queue.load();
                 if (saved) {
                     setQueue(saved.songIds);
-                    setCurrentIndex(saved.currentIndex);
+                    // Startup change: Do not load the last played song into the player.
+                    // Just restore the queue list, but set current index to -1 so nothing is active.
+                    setCurrentIndex(-1);
 
                     // Prevent autoplay on startup by syncing lastPlayedIndex with saved index
-                    lastPlayedIndex.current = saved.currentIndex;
+                    // actually, we want to sync it with -1 so if user clicks the same song it plays?
+                    // If we set currentIndex to -1, the effect won't fire.
+                    // If user clicks index 0, it changes to 0, effect fires.
+                    // So we don't need to preload anything.
 
-                    // Load the current song into audio engine so it's ready to play
-                    if (saved.currentIndex >= 0 && saved.currentIndex < saved.songIds.length) {
-                        const songId = saved.songIds[saved.currentIndex];
-                        lastPlayedSongId.current = songId; // Sync song ID too
-
-                        const song = getSongById(songId);
-                        if (song) {
-                            try {
-                                const paths = await getSeparatedSongPaths(songId);
-                                if (paths.instrumental) {
-                                    await audioEngine.loadFile(paths);
-                                }
-                            } catch (e) {
-                                console.warn('[QueueContext] Failed to preload song on startup', songId, e);
-                            }
-                        }
-                    }
+                    console.log('[QueueContext] Restored queue', saved.songIds.length, 'Current index reset to -1');
 
                     console.log('[QueueContext] Restored queue', saved.songIds.length, saved.currentIndex);
                 }
