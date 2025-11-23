@@ -680,7 +680,6 @@ function subscribeJobUpdates(callback) {
   return jobManager.subscribe(callback);
 }
 const YTDLP_FILENAME = process.platform === "win32" ? "yt-dlp.exe" : "yt-dlp";
-process.platform === "win32" ? "ffmpeg.exe" : "ffmpeg";
 function getBinDir() {
   return path.join(app.getPath("userData"), "bin");
 }
@@ -771,7 +770,7 @@ class DownloadJobManager {
   async validateUrl(url) {
     await ensureBinaries();
     const ytDlp = getYtDlpPath();
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const proc = spawn(ytDlp, [
         "--dump-json",
         "--no-playlist",

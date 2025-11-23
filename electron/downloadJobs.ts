@@ -2,8 +2,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { app } from 'electron';
 import { spawn } from 'node:child_process';
-import { getSongsBaseDir, updateSongMeta, getSongMeta } from './songLibrary';
-import type { SongMeta, SongType } from '../shared/songTypes';
+import { getSongsBaseDir } from './songLibrary';
+import type { SongMeta } from '../shared/songTypes';
 
 // --- Types ---
 
@@ -24,7 +24,7 @@ export interface DownloadJob {
 // --- Constants & Config ---
 
 const YTDLP_FILENAME = process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp';
-const FFMPEG_FILENAME = process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg';
+
 
 function getBinDir() {
     return path.join(app.getPath('userData'), 'bin');
@@ -146,7 +146,7 @@ class DownloadJobManager {
         await ensureBinaries();
         const ytDlp = getYtDlpPath();
 
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             const proc = spawn(ytDlp, [
                 '--dump-json',
                 '--no-playlist',
