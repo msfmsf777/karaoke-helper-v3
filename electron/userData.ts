@@ -60,7 +60,21 @@ export async function loadHistory(): Promise<string[]> {
     }
 }
 
-export async function saveSettings(settings: { separationQuality: 'high' | 'normal' | 'fast' }): Promise<void> {
+export interface LyricStyleConfig {
+    fontSize: number;
+    inactiveColor: string;
+    activeColor: string;
+    activeGlowColor: string;
+    strokeColor: string;
+    strokeWidth: number;
+}
+
+export interface UserSettings {
+    separationQuality: 'high' | 'normal' | 'fast';
+    lyricStyles?: LyricStyleConfig;
+}
+
+export async function saveSettings(settings: UserSettings): Promise<void> {
     try {
         const filePath = getUserDataPath(SETTINGS_FILE);
         await fs.writeFile(filePath, JSON.stringify(settings, null, 2), 'utf-8');
@@ -69,7 +83,7 @@ export async function saveSettings(settings: { separationQuality: 'high' | 'norm
     }
 }
 
-export async function loadSettings(): Promise<{ separationQuality: 'high' | 'normal' | 'fast' }> {
+export async function loadSettings(): Promise<UserSettings> {
     try {
         const filePath = getUserDataPath(SETTINGS_FILE);
         const content = await fs.readFile(filePath, 'utf-8');

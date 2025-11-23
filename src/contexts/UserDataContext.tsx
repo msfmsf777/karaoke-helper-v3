@@ -9,6 +9,24 @@ export interface Playlist {
     songIds: string[];
 }
 
+export interface LyricStyleConfig {
+    fontSize: number;
+    inactiveColor: string;
+    activeColor: string;
+    activeGlowColor: string;
+    strokeColor: string;
+    strokeWidth: number;
+}
+
+export const DEFAULT_LYRIC_STYLES: LyricStyleConfig = {
+    fontSize: 32,
+    inactiveColor: '#888888',
+    activeColor: '#ff4444',
+    activeGlowColor: 'rgba(255, 68, 68, 0.4)',
+    strokeColor: '#000000',
+    strokeWidth: 0,
+};
+
 interface UserDataContextType {
     favorites: string[];
     history: string[];
@@ -28,6 +46,8 @@ interface UserDataContextType {
     recentSearches: string[];
     addRecentSearch: (term: string) => void;
     clearRecentSearches: () => void;
+    lyricStyles: LyricStyleConfig;
+    setLyricStyles: (styles: LyricStyleConfig) => void;
 }
 
 const UserDataContext = createContext<UserDataContextType | null>(null);
@@ -38,10 +58,11 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [playlists, setPlaylists] = useState<Playlist[]>([]);
     const [separationQuality, setSeparationQuality] = useState<'high' | 'normal' | 'fast'>('normal');
     const { currentSongId } = useQueue();
-    // const { getSongById } = useLibrary();
     const isInitialized = useRef(false);
+    const styleUpdateTimeout = useRef<NodeJS.Timeout | null>(null);
 
     const [recentSearches, setRecentSearches] = useState<string[]>([]);
+    const [lyricStyles, setLyricStyles] = useState<LyricStyleConfig>(DEFAULT_LYRIC_STYLES);
 
     // Load data on startup
     useEffect(() => {
@@ -53,12 +74,16 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                     window.khelper?.userData.loadFavorites() || [],
                     window.khelper?.userData.loadHistory() || [],
                     window.khelper?.userData.loadPlaylists() || [],
-                    window.khelper?.userData.loadSettings() || { separationQuality: 'normal' }
+                    (window.khelper?.userData.loadSettings() || Promise.resolve({ separationQuality: 'normal' })) as Promise<{ separationQuality: 'high' | 'normal' | 'fast'; lyricStyles?: LyricStyleConfig }>
                 ]);
                 setFavorites(Array.from(new Set(favs)));
                 setHistory(Array.from(new Set(hist)));
                 setPlaylists(pl);
                 setSeparationQuality((settings.separationQuality as 'high' | 'normal' | 'fast') || 'normal');
+                const settingsWithStyles = settings as { separationQuality: string; lyricStyles?: LyricStyleConfig };
+                if (settingsWithStyles.lyricStyles) {
+                    setLyricStyles({ ...DEFAULT_LYRIC_STYLES, ...settingsWithStyles.lyricStyles });
+                }
 
                 // Load recent searches from localStorage
                 const savedRecent = localStorage.getItem('khelper_recent_searches');
@@ -105,12 +130,22 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }, [playlists]);
 
     // Save settings on change
+    // Save settings (quality + styles) on change
     useEffect(() => {
         if (!isInitialized.current) return;
-        window.khelper?.userData.saveSettings({ separationQuality }).catch(err =>
+        window.khelper?.userData.saveSettings({ separationQuality, lyricStyles }).catch(err =>
             console.error('[UserData] Failed to save settings', err)
         );
-    }, [separationQuality]);
+
+        // Sync styles to overlay with throttling (500ms)
+        if (styleUpdateTimeout.current) {
+            clearTimeout(styleUpdateTimeout.current);
+        }
+        styleUpdateTimeout.current = setTimeout(() => {
+            window.api?.sendOverlayStyleUpdate(lyricStyles);
+        }, 500);
+
+    }, [separationQuality, lyricStyles]);
 
     // Save recent searches on change
     useEffect(() => {
@@ -226,7 +261,9 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             cleanupSong,
             recentSearches,
             addRecentSearch,
-            clearRecentSearches
+            clearRecentSearches,
+            lyricStyles,
+            setLyricStyles
         }}>
             {children}
         </UserDataContext.Provider>

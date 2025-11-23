@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import LyricsOverlay from './LyricsOverlay';
+import LyricStylePopup from './LyricStylePopup';
 import { SongMeta } from '../../shared/songTypes';
 import { EditableLyricLine, linesFromRawText, parseLrc, readRawLyrics, readSyncedLyrics } from '../library/lyrics';
 import audioEngine from '../audio/AudioEngine';
 import { useQueue } from '../contexts/QueueContext';
 import { useLibrary } from '../contexts/LibraryContext';
+import { useUserData } from '../contexts/UserDataContext';
 
 interface StreamModeViewProps {
   currentTrack: { id: string; title: string; artist?: string } | null;
@@ -20,9 +22,11 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
 }) => {
   const { queue, currentIndex, playQueueIndex } = useQueue();
   const { getSongById } = useLibrary();
+  const { lyricStyles, setLyricStyles } = useUserData();
 
   const [lines, setLines] = useState<EditableLyricLine[]>([]);
   const [lyricsStatus, setLyricsStatus] = useState<SongMeta['lyrics_status']>('none');
+  const [showStylePopup, setShowStylePopup] = useState(false);
 
   const currentSongId = queue[currentIndex];
   const currentSong = currentSongId ? getSongById(currentSongId) : null;
@@ -226,6 +230,30 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
               </svg>
             </button>
             <button
+              onClick={() => setShowStylePopup(!showStylePopup)}
+              title="歌詞樣式設定"
+              style={{
+                width: '32px',
+                height: '32px',
+                backgroundColor: showStylePopup ? 'var(--accent-color)' : 'rgba(0,0,0,0.5)',
+                color: '#fff',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backdropFilter: 'blur(4px)',
+              }}
+            >
+              {/* Text Icon */}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M4 7V4h16v3" />
+                <path d="M9 20h6" />
+                <path d="M12 4v16" />
+              </svg>
+            </button>
+            <button
               onClick={onExit}
               title="退出直播模式"
               style={{
@@ -248,6 +276,14 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
               </svg>
             </button>
           </div>
+
+          {showStylePopup && (
+            <LyricStylePopup
+              styles={lyricStyles}
+              onChange={setLyricStyles}
+              onClose={() => setShowStylePopup(false)}
+            />
+          )}
 
           {/* Plain Text Tag */}
           {lyricsStatus === 'text_only' && (
@@ -277,7 +313,9 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
             onLineClick={(time) => {
               audioEngine.seek(time);
             }}
+            styleConfig={lyricStyles}
           />
+
         </div>
       </div>
     </div>

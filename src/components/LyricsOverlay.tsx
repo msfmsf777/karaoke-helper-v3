@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { EditableLyricLine } from '../library/lyrics';
 import { SongMeta } from '../../shared/songTypes';
+import { LyricStyleConfig, DEFAULT_LYRIC_STYLES } from '../contexts/UserDataContext';
 
 interface LyricsOverlayProps {
     status: SongMeta['lyrics_status'];
@@ -8,9 +9,17 @@ interface LyricsOverlayProps {
     currentTime: number;
     className?: string;
     onLineClick?: (time: number) => void;
+    styleConfig?: LyricStyleConfig;
 }
 
-const LyricsOverlay: React.FC<LyricsOverlayProps> = ({ status, lines, currentTime, className, onLineClick }) => {
+const LyricsOverlay: React.FC<LyricsOverlayProps> = ({
+    status,
+    lines,
+    currentTime,
+    className,
+    onLineClick,
+    styleConfig = DEFAULT_LYRIC_STYLES
+}) => {
     const activeLineRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const isUserScrolling = useRef(false);
@@ -93,13 +102,18 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({ status, lines, currentTim
                     overflowY: 'auto',
                     padding: '0 32px',
                     textAlign: 'center',
-                    fontSize: '28px',
+                    fontSize: `${styleConfig.fontSize}px`,
                     lineHeight: 1.8,
-                    color: '#ddd',
+                    color: styleConfig.inactiveColor,
                     whiteSpace: 'pre-wrap',
                     scrollbarWidth: 'none',
                     display: 'flex',
                     flexDirection: 'column',
+                    textShadow: styleConfig.strokeWidth > 0 ?
+                        `-${styleConfig.strokeWidth}px -${styleConfig.strokeWidth}px 0 ${styleConfig.strokeColor}, 
+                         ${styleConfig.strokeWidth}px -${styleConfig.strokeWidth}px 0 ${styleConfig.strokeColor}, 
+                         -${styleConfig.strokeWidth}px ${styleConfig.strokeWidth}px 0 ${styleConfig.strokeColor}, 
+                         ${styleConfig.strokeWidth}px ${styleConfig.strokeWidth}px 0 ${styleConfig.strokeColor}` : 'none',
                 }}>
                     <div style={{ height: '50vh', flexShrink: 0 }} />
                     {lines.map((line) => (
@@ -151,15 +165,23 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({ status, lines, currentTim
                                 }
                             }}
                             style={{
-                                fontSize: isActive ? `${32 * 1.25}px` : '32px',
+                                fontSize: isActive ? `${styleConfig.fontSize * 1.25}px` : `${styleConfig.fontSize}px`,
                                 fontWeight: isActive ? 800 : 500,
-                                color: isActive ? 'var(--accent-color, #ff4444)' : isPast ? '#444' : '#888',
+                                color: isActive ? styleConfig.activeColor : isPast ? '#444' : styleConfig.inactiveColor,
                                 textAlign: 'center',
                                 marginBottom: '24px',
                                 transition: 'all 0.3s ease-out',
                                 transform: isActive ? 'scale(1.05)' : 'scale(1)',
                                 opacity: isActive ? 1 : isPast ? 0.4 : 0.6,
-                                textShadow: isActive ? '0 0 20px rgba(255, 68, 68, 0.4)' : 'none',
+                                textShadow: isActive
+                                    ? `0 0 20px ${styleConfig.activeGlowColor}`
+                                    : styleConfig.strokeWidth > 0
+                                        ? `-${styleConfig.strokeWidth}px -${styleConfig.strokeWidth}px 0 ${styleConfig.strokeColor}, 
+                                           ${styleConfig.strokeWidth}px -${styleConfig.strokeWidth}px 0 ${styleConfig.strokeColor}, 
+                                           -${styleConfig.strokeWidth}px ${styleConfig.strokeWidth}px 0 ${styleConfig.strokeColor}, 
+                                           ${styleConfig.strokeWidth}px ${styleConfig.strokeWidth}px 0 ${styleConfig.strokeColor}`
+                                        : 'none',
+                                WebkitTextStroke: isActive && styleConfig.strokeWidth > 0 ? `${styleConfig.strokeWidth}px ${styleConfig.strokeColor}` : 'none',
                                 cursor: onLineClick ? 'pointer' : 'default',
                                 flexShrink: 0,
                             }}
