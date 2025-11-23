@@ -1,18 +1,21 @@
 
+
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
-import {
-  addLocalSong, getOriginalSongFilePath,
-  getSeparatedSongPaths,
-  getSongFilePath, getSongsBaseDir, loadAllSongs
-} from './songLibrary'
-import { getAllJobs, queueSeparationJob, subscribeJobUpdates } from './separationJobs'
-import { downloadManager } from './downloadJobs'
-import { readRawLyrics, readSyncedLyrics, writeRawLyrics, writeSyncedLyrics } from './lyrics'
-import { loadQueue, saveQueue } from './queue'
-import { loadFavorites, saveFavorites, loadHistory, saveHistory } from './userData'
+
+// Lazy load these modules
+// import {
+//   addLocalSong, getOriginalSongFilePath,
+//   getSeparatedSongPaths,
+//   getSongFilePath, getSongsBaseDir, loadAllSongs
+// } from './songLibrary'
+// import { getAllJobs, queueSeparationJob, subscribeJobUpdates } from './separationJobs'
+// import { downloadManager } from './downloadJobs'
+// import { readRawLyrics, readSyncedLyrics, writeRawLyrics, writeSyncedLyrics } from './lyrics'
+// import { loadQueue, saveQueue } from './queue'
+// import { loadFavorites, saveFavorites, loadHistory, saveHistory } from './userData'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -93,27 +96,33 @@ ipcMain.handle('dialog:open-audio-file', async () => {
 })
 
 ipcMain.handle('library:add-local-song', async (_event, payload) => {
+  const { addLocalSong } = await import('./songLibrary')
   return addLocalSong(payload)
 })
 
 ipcMain.handle('library:load-all', async () => {
+  const { loadAllSongs } = await import('./songLibrary')
   const songs = await loadAllSongs()
   return songs
 })
 
 ipcMain.handle('library:get-song-file-path', async (_event, id: string) => {
+  const { getSongFilePath } = await import('./songLibrary')
   return getSongFilePath(id)
 })
 
 ipcMain.handle('library:get-original-song-file-path', async (_event, id: string) => {
+  const { getOriginalSongFilePath } = await import('./songLibrary')
   return getOriginalSongFilePath(id)
 })
 
 ipcMain.handle('library:get-separated-song-paths', async (_event, id: string) => {
+  const { getSeparatedSongPaths } = await import('./songLibrary')
   return getSeparatedSongPaths(id)
 })
 
 ipcMain.handle('library:get-base-path', async () => {
+  const { getSongsBaseDir } = await import('./songLibrary')
   return getSongsBaseDir()
 })
 
@@ -132,6 +141,7 @@ ipcMain.handle('library:delete-song', async (_event, id: string) => {
     const { deleteSong } = await import('./songLibrary')
     await deleteSong(id)
     // Also remove from download history if exists
+    const { downloadManager } = await import('./downloadJobs')
     downloadManager.removeJobBySongId(id)
     return true
   }
@@ -144,64 +154,66 @@ ipcMain.handle('library:update-song', async (_event, payload: { id: string; upda
 })
 
 ipcMain.handle('jobs:queue-separation', async (_event, songId: string, quality?: 'high' | 'normal' | 'fast') => {
+  const { queueSeparationJob } = await import('./separationJobs')
   return queueSeparationJob(songId, quality)
 })
 
 ipcMain.handle('jobs:get-all', async () => {
+  const { getAllJobs } = await import('./separationJobs')
   return getAllJobs()
 })
 
 ipcMain.handle('lyrics:read-raw', async (_event, songId: string) => {
+  const { readRawLyrics } = await import('./lyrics')
   return readRawLyrics(songId)
 })
 
 ipcMain.handle('lyrics:read-synced', async (_event, songId: string) => {
+  const { readSyncedLyrics } = await import('./lyrics')
   return readSyncedLyrics(songId)
 })
 
 ipcMain.handle('lyrics:write-raw', async (_event, payload: { songId: string; content: string }) => {
+  const { writeRawLyrics } = await import('./lyrics')
   return writeRawLyrics(payload.songId, payload.content)
 })
 
 ipcMain.handle('lyrics:write-synced', async (_event, payload: { songId: string; content: string }) => {
+  const { writeSyncedLyrics } = await import('./lyrics')
   return writeSyncedLyrics(payload.songId, payload.content)
 })
 
 ipcMain.handle('queue:save', async (_event, payload: { songIds: string[]; currentIndex: number }) => {
+  const { saveQueue } = await import('./queue')
   return saveQueue(payload)
 })
 
 ipcMain.handle('queue:load', async () => {
+  const { loadQueue } = await import('./queue')
   return loadQueue()
 })
 
 ipcMain.handle('userData:save-favorites', async (_event, songIds: string[]) => {
+  const { saveFavorites } = await import('./userData')
   return saveFavorites(songIds)
 })
 
 ipcMain.handle('userData:load-favorites', async () => {
+  const { loadFavorites } = await import('./userData')
   return loadFavorites()
 })
 
 ipcMain.handle('userData:save-history', async (_event, songIds: string[]) => {
+  const { saveHistory } = await import('./userData')
   return saveHistory(songIds)
 })
 
 ipcMain.handle('userData:load-history', async () => {
+  const { loadHistory } = await import('./userData')
   return loadHistory()
 })
 
 ipcMain.handle('userData:save-playlists', async (_event, playlists: any[]) => {
-  // Dynamic import or just use the function if it's exported. 
-  // Note: We need to import savePlaylists/loadPlaylists from userData.ts
-  // Since we are in main.ts and it imports from userData, we need to update the import statement first.
-  // But here we are just adding the handlers.
-  // Wait, I need to update the import at the top of the file first.
-  // I will do that in a separate edit or assume I can do it here if I use the imported names.
-  // I'll use the imported names and update the import in a separate step or use a multi-replace if possible.
-  // Actually, I can't use them if they are not imported.
-  // I will assume I will update the import in the next step.
-  // For now, let's just add the handlers and then update the import.
   const { savePlaylists } = await import('./userData')
   return savePlaylists(playlists)
 })
@@ -221,7 +233,8 @@ ipcMain.handle('userData:load-settings', async () => {
   return loadSettings()
 })
 
-ipcMain.on('jobs:subscribe', (event, subscriptionId: string) => {
+ipcMain.on('jobs:subscribe', async (event, subscriptionId: string) => {
+  const { subscribeJobUpdates } = await import('./separationJobs')
   const wc = event.sender
   const disposer = subscribeJobUpdates((jobs) => wc.send('jobs:updated', jobs))
 
@@ -250,21 +263,37 @@ ipcMain.on('jobs:unsubscribe', (event, subscriptionId: string) => {
   }
 })
 
+// Helper to ensure download manager is initialized and hooked
+async function getDownloadManager() {
+  const { downloadManager } = await import('./downloadJobs')
+  // Ensure hook is set (idempotent assignment)
+  downloadManager.onLibraryChanged = () => {
+    BrowserWindow.getAllWindows().forEach(w => {
+      w.webContents.send('library:changed')
+    })
+  }
+  return downloadManager
+}
+
 ipcMain.handle('downloads:validate', async (_event, url: string) => {
-  return downloadManager.validateUrl(url)
+  const dm = await getDownloadManager()
+  return dm.validateUrl(url)
 })
 
 ipcMain.handle('downloads:queue', async (_event, url: string, quality: 'best' | 'high' | 'normal', title?: string, artist?: string) => {
-  return downloadManager.queueJob(url, quality, title, artist)
+  const dm = await getDownloadManager()
+  return dm.queueJob(url, quality, title, artist)
 })
 
 ipcMain.handle('downloads:get-all', async () => {
-  return downloadManager.getAll()
+  const dm = await getDownloadManager()
+  return dm.getAll()
 })
 
-ipcMain.on('downloads:subscribe', (event, subscriptionId: string) => {
+ipcMain.on('downloads:subscribe', async (event, subscriptionId: string) => {
+  const dm = await getDownloadManager()
   const wc = event.sender
-  const disposer = downloadManager.subscribe((jobs) => wc.send('downloads:updated', jobs))
+  const disposer = dm.subscribe((jobs) => wc.send('downloads:updated', jobs))
 
   let disposers = downloadSubscriptions.get(wc.id)
   if (!disposers) {
@@ -291,17 +320,10 @@ ipcMain.on('downloads:unsubscribe', (event, subscriptionId: string) => {
   }
 })
 
-// Hook into download manager to notify renderer of library changes
-downloadManager.onLibraryChanged = () => {
-  // Broadcast to all windows
-  BrowserWindow.getAllWindows().forEach(w => {
-    w.webContents.send('library:changed')
-  })
-}
-
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   console.log('[App] userData path:', app.getPath('userData'))
-  console.log('[Library] base songs dir:', getSongsBaseDir())
+  // Lazy load this too if needed, or just remove if not critical
+  // console.log('[Library] base songs dir:', getSongsBaseDir()) 
   createWindow()
 })
 
@@ -362,20 +384,24 @@ const server = http.createServer((req, res) => {
       return
     }
 
-    Promise.all([
-      readSyncedLyrics(songId),
-      readRawLyrics(songId)
-    ]).then(([synced, raw]) => {
-      res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({
-        synced: synced?.content || null,
-        raw: raw?.content || null
-      }))
-    }).catch(err => {
-      console.error('[OverlayServer] Failed to read lyrics', err)
-      res.writeHead(500)
-      res.end('Internal Server Error')
+    // Lazy load lyrics module here too
+    import('./lyrics').then(({ readSyncedLyrics, readRawLyrics }) => {
+      Promise.all([
+        readSyncedLyrics(songId),
+        readRawLyrics(songId)
+      ]).then(([synced, raw]) => {
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({
+          synced: synced?.content || null,
+          raw: raw?.content || null
+        }))
+      }).catch(err => {
+        console.error('[OverlayServer] Failed to read lyrics', err)
+        res.writeHead(500)
+        res.end('Internal Server Error')
+      })
     })
+
     return
   }
 
@@ -462,3 +488,4 @@ ipcMain.on('overlay:update', (_event, payload) => {
     client.write(`data: ${data}\n\n`)
   }
 })
+

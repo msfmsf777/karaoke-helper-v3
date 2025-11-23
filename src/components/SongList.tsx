@@ -1,4 +1,5 @@
 import React from 'react';
+import { Virtuoso } from 'react-virtuoso';
 import { SongMeta } from '../../shared/songTypes';
 import { useQueue } from '../contexts/QueueContext';
 import SongRow from './SongRow';
@@ -49,8 +50,6 @@ const SongList: React.FC<SongListProps> = ({
                     fontSize: '12px',
                     fontWeight: 600,
                     backgroundColor: '#1a1a1a',
-                    position: 'sticky',
-                    top: 0,
                     zIndex: 1,
                 }}
             >
@@ -64,23 +63,30 @@ const SongList: React.FC<SongListProps> = ({
                 <div style={{ textAlign: 'right', paddingRight: '16px' }}>{showDuration ? '時長' : ''}</div>
             </div>
 
-            {/* List */}
-            <div style={{ flex: 1, overflowY: 'auto' }}>
-                {songs.map((song, index) => (
-                    <SongRow
-                        key={song.id}
-                        song={song}
-                        index={index}
-                        isActive={song.id === currentSongId}
-                        context={context}
-                        onEditLyrics={onEditLyrics}
-                        showType={showType}
-                        showAudioStatus={showAudioStatus}
-                        showLyricStatus={showLyricStatus}
-                        showDuration={showDuration}
-                        customActions={renderCustomActions ? renderCustomActions(song) : undefined}
-                    />
-                ))}
+            {/* Virtualized List */}
+            <div style={{ flex: 1 }}>
+                <Virtuoso
+                    style={{ height: '100%' }}
+                    totalCount={songs.length}
+                    itemContent={(index) => {
+                        const song = songs[index];
+                        return (
+                            <SongRow
+                                key={song.id}
+                                song={song}
+                                index={index}
+                                isActive={song.id === currentSongId}
+                                context={context}
+                                onEditLyrics={onEditLyrics}
+                                showType={showType}
+                                showAudioStatus={showAudioStatus}
+                                showLyricStatus={showLyricStatus}
+                                showDuration={showDuration}
+                                customActions={renderCustomActions ? renderCustomActions(song) : undefined}
+                            />
+                        );
+                    }}
+                />
             </div>
         </div>
     );

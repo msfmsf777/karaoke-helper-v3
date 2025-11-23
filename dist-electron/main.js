@@ -1,1010 +1,8 @@
-var __defProp = Object.defineProperty;
-var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 import { app, BrowserWindow, ipcMain, dialog } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import fs from "node:fs/promises";
-import fs$1, { createWriteStream } from "node:fs";
-import { spawn } from "node:child_process";
 import http from "node:http";
-const APP_FOLDER_NAME = "KHelperLive";
-const SONGS_FOLDER_NAME = "songs";
-const AUDIO_STATUS_VALUES = ["original_only", "separation_pending", "separating", "separation_failed", "separated"];
-const DEFAULT_AUDIO_STATUS = "original_only";
-const LYRICS_STATUS_VALUES = ["none", "text_only", "synced"];
-const DEFAULT_LYRICS_STATUS = "none";
-const RAW_LYRICS_FILENAME = "lyrics_raw.txt";
-const SYNCED_LYRICS_FILENAME = "lyrics_synced.lrc";
-function getAppDataRoot() {
-  const userData2 = app.getPath("userData");
-  return path.join(userData2, APP_FOLDER_NAME);
-}
-function getSongsDir() {
-  return path.join(getAppDataRoot(), SONGS_FOLDER_NAME);
-}
-async function ensureSongsDir() {
-  const base = getSongsDir();
-  await fs.mkdir(base, { recursive: true });
-  return base;
-}
-function normalizeAudioStatus(status) {
-  if (status && AUDIO_STATUS_VALUES.includes(status)) {
-    return status;
-  }
-  if (status === "ready" || status === "missing" || status === "error") {
-    return DEFAULT_AUDIO_STATUS;
-  }
-  return DEFAULT_AUDIO_STATUS;
-}
-function normalizeLyricsStatus(status) {
-  if (status && LYRICS_STATUS_VALUES.includes(status)) {
-    return status;
-  }
-  if (status === "ready") return "synced";
-  if (status === "missing") return "none";
-  return DEFAULT_LYRICS_STATUS;
-}
-function getOriginalFilename(meta) {
-  return meta.stored_filename || `Original${path.extname(meta.source.originalPath) || ".mp3"}`;
-}
-function getOriginalPath(meta, songDir) {
-  return path.join(songDir, getOriginalFilename(meta));
-}
-function normalizeMeta(meta) {
-  const normalized = {
-    ...meta,
-    audio_status: normalizeAudioStatus(meta.audio_status),
-    lyrics_status: normalizeLyricsStatus(meta.lyrics_status),
-    stored_filename: getOriginalFilename(meta),
-    lyrics_raw_path: meta.lyrics_raw_path ?? void 0,
-    lyrics_lrc_path: meta.lyrics_lrc_path ?? void 0,
-    instrumental_path: meta.instrumental_path ?? void 0,
-    vocal_path: meta.vocal_path ?? void 0,
-    last_separation_error: meta.last_separation_error ?? null,
-    separation_quality: meta.separation_quality ?? void 0
-  };
-  return normalized;
-}
-async function writeMeta(songDir, meta) {
-  await fs.writeFile(path.join(songDir, "meta.json"), JSON.stringify(meta, null, 2), "utf-8");
-}
-async function readMeta(songDir) {
-  try {
-    const metaRaw = await fs.readFile(path.join(songDir, "meta.json"), "utf-8");
-    const parsed = JSON.parse(metaRaw);
-    return normalizeMeta(parsed);
-  } catch (err) {
-    console.warn("[Library] Failed to read meta.json from", songDir, err);
-    return null;
-  }
-}
-function generateSongId() {
-  return `${Date.now()}`;
-}
-async function addLocalSong(params) {
-  const { sourcePath, title, artist, type, lyricsText } = params;
-  if (!sourcePath || !title) {
-    throw new Error("sourcePath and title are required");
-  }
-  const songsDir = await ensureSongsDir();
-  const id = generateSongId();
-  const songDir = path.join(songsDir, id);
-  await fs.mkdir(songDir, { recursive: true });
-  const ext = path.extname(sourcePath) || ".mp3";
-  const storedFilename = `Original${ext}`;
-  const targetPath = path.join(songDir, storedFilename);
-  console.log("[Library] Adding song", { sourcePath, songDir, id });
-  await fs.copyFile(sourcePath, targetPath);
-  const rawLyrics = (lyricsText ?? "").replace(/\r\n/g, "\n");
-  const hasLyrics = rawLyrics.trim().length > 0;
-  const lyricsRawPath = hasLyrics ? path.join(songDir, RAW_LYRICS_FILENAME) : void 0;
-  if (hasLyrics && lyricsRawPath) {
-    await fs.writeFile(lyricsRawPath, rawLyrics, "utf-8");
-  }
-  const now = (/* @__PURE__ */ new Date()).toISOString();
-  const meta = {
-    id,
-    title,
-    artist: (artist == null ? void 0 : artist.trim()) || void 0,
-    type,
-    audio_status: DEFAULT_AUDIO_STATUS,
-    lyrics_status: hasLyrics ? "text_only" : DEFAULT_LYRICS_STATUS,
-    lyrics_raw_path: lyricsRawPath,
-    lyrics_lrc_path: void 0,
-    source: {
-      kind: "file",
-      originalPath: sourcePath
-    },
-    stored_filename: storedFilename,
-    instrumental_path: void 0,
-    vocal_path: void 0,
-    last_separation_error: null,
-    separation_quality: void 0,
-    created_at: now,
-    updated_at: now
-  };
-  await writeMeta(songDir, meta);
-  console.log("[Library] Saved meta.json", { id, path: path.join(songDir, "meta.json") });
-  return meta;
-}
-async function loadAllSongs() {
-  const songsDir = await ensureSongsDir();
-  const entries = await fs.readdir(songsDir, { withFileTypes: true });
-  const metas = [];
-  for (const entry of entries) {
-    if (!entry.isDirectory()) continue;
-    const songDir = path.join(songsDir, entry.name);
-    const meta = await readMeta(songDir);
-    if (meta) {
-      metas.push(meta);
-    }
-  }
-  console.log("[Library] Loaded songs", { count: metas.length, songsDir });
-  return metas.sort((a, b) => Number(b.id) - Number(a.id));
-}
-async function getSongMeta(id) {
-  if (!id) return null;
-  const songsDir = await ensureSongsDir();
-  const songDir = path.join(songsDir, id);
-  return readMeta(songDir);
-}
-async function updateSongMeta(id, mutate) {
-  if (!id) return null;
-  const songsDir = await ensureSongsDir();
-  const songDir = path.join(songsDir, id);
-  const current = await readMeta(songDir);
-  if (!current) return null;
-  const nextRaw = mutate(current);
-  const next = normalizeMeta({
-    ...current,
-    ...nextRaw,
-    id: current.id,
-    created_at: current.created_at,
-    updated_at: (/* @__PURE__ */ new Date()).toISOString()
-  });
-  await writeMeta(songDir, next);
-  return next;
-}
-async function getSongFilePath(id) {
-  if (!id) return null;
-  const songsDir = await ensureSongsDir();
-  const songDir = path.join(songsDir, id);
-  const meta = await readMeta(songDir);
-  if (!meta) return null;
-  const candidates = [];
-  if (meta.audio_status === "separated" && meta.instrumental_path) {
-    candidates.push(meta.instrumental_path);
-  }
-  candidates.push(getOriginalPath(meta, songDir));
-  for (const candidate of candidates) {
-    try {
-      await fs.access(candidate);
-      if (candidate !== candidates[candidates.length - 1]) {
-        console.log("[Library] Using separated instrumental for playback", { id, candidate });
-      }
-      return candidate;
-    } catch (err) {
-      continue;
-    }
-  }
-  console.warn("[Library] Stored audio file missing", { id, candidates });
-  return null;
-}
-async function getOriginalSongFilePath(id) {
-  if (!id) return null;
-  const songsDir = await ensureSongsDir();
-  const songDir = path.join(songsDir, id);
-  const meta = await readMeta(songDir);
-  if (!meta) return null;
-  const originalPath = getOriginalPath(meta, songDir);
-  try {
-    await fs.access(originalPath);
-    return originalPath;
-  } catch {
-    console.warn("[Library] Original audio file missing", { id, originalPath });
-    return null;
-  }
-}
-async function getSeparatedSongPaths(id) {
-  if (!id) return { instrumental: "", vocal: null };
-  const songsDir = await ensureSongsDir();
-  const songDir = path.join(songsDir, id);
-  const meta = await readMeta(songDir);
-  if (!meta) return { instrumental: "", vocal: null };
-  const originalPath = getOriginalPath(meta, songDir);
-  const isAccompaniment = meta.type === "伴奏";
-  const isSeparated = meta.audio_status === "separated" && meta.instrumental_path && meta.vocal_path;
-  if (!isAccompaniment && isSeparated) {
-    try {
-      await Promise.all([
-        fs.access(meta.instrumental_path),
-        fs.access(meta.vocal_path)
-      ]);
-      return {
-        instrumental: meta.instrumental_path,
-        vocal: meta.vocal_path
-      };
-    } catch (err) {
-      console.warn("[Library] Separated files missing, falling back to original", { id, err });
-    }
-  }
-  try {
-    await fs.access(originalPath);
-    return { instrumental: originalPath, vocal: null };
-  } catch {
-    console.warn("[Library] Original audio file missing", { id, originalPath });
-    return { instrumental: "", vocal: null };
-  }
-}
-async function deleteSong(id) {
-  if (!id) return;
-  const songsDir = await ensureSongsDir();
-  const songDir = path.join(songsDir, id);
-  try {
-    await fs.rm(songDir, { recursive: true, force: true });
-    console.log("[Library] Deleted song folder", { id, songDir });
-  } catch (err) {
-    console.error("[Library] Failed to delete song folder", { id, songDir }, err);
-    throw err;
-  }
-}
-async function updateSong(id, updates) {
-  return updateSongMeta(id, (current) => ({
-    ...current,
-    ...updates
-  }));
-}
-function getSongsBaseDir() {
-  return getSongsDir();
-}
-const songLibrary = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-  __proto__: null,
-  RAW_LYRICS_FILENAME,
-  SYNCED_LYRICS_FILENAME,
-  addLocalSong,
-  deleteSong,
-  getOriginalSongFilePath,
-  getSeparatedSongPaths,
-  getSongFilePath,
-  getSongMeta,
-  getSongsBaseDir,
-  loadAllSongs,
-  updateSong,
-  updateSongMeta
-}, Symbol.toStringTag, { value: "Module" }));
-async function getPythonPath() {
-  if (process.env.KHELPER_PYTHON_RUNTIME_PATH) {
-    return process.env.KHELPER_PYTHON_RUNTIME_PATH;
-  }
-  let runtimeBase;
-  if (app.isPackaged) {
-    runtimeBase = path.join(process.resourcesPath, "python-runtime");
-  } else {
-    runtimeBase = path.join(process.cwd(), "resources", "python-runtime");
-  }
-  const pythonPath = path.join(runtimeBase, "python.exe");
-  try {
-    await fs.access(pythonPath);
-    return pythonPath;
-  } catch {
-    console.warn(`[PythonRuntime] Bundled Python not found at ${pythonPath}`);
-    return pythonPath;
-  }
-}
-const MODEL_PRESETS = {
-  high: {
-    filename: "MDX23C-8KFFT-InstVoc_HQ.ckpt",
-    url: "https://huggingface.co/Blane187/all_public_uvr_models/resolve/main/MDX23C-8KFFT-InstVoc_HQ.ckpt",
-    name: "MDX23C-InstVocHQ"
-  },
-  normal: {
-    filename: "UVR-MDX-NET-Inst_HQ_3.onnx",
-    url: "https://huggingface.co/seanghay/uvr_models/resolve/main/UVR-MDX-NET-Inst_HQ_3.onnx",
-    name: "UVR-MDX-NET-Inst_HQ_3"
-  },
-  fast: {
-    filename: "UVR-MDX-NET-Inst_1.onnx",
-    url: "https://huggingface.co/Blane187/all_public_uvr_models/resolve/main/UVR-MDX-NET-Inst_1.onnx",
-    name: "UVR-MDX-NET-Inst_1"
-  }
-};
-function getModelCacheDir() {
-  return path.join(app.getPath("userData"), "models", "mdx");
-}
-async function getModelPath(quality) {
-  const cacheDir = getModelCacheDir();
-  return path.join(cacheDir, MODEL_PRESETS[quality].filename);
-}
-async function isModelAvailable(quality) {
-  const modelPath = await getModelPath(quality);
-  try {
-    await fs.access(modelPath);
-    return true;
-  } catch {
-    return false;
-  }
-}
-async function downloadModel(quality, onProgress) {
-  const preset = MODEL_PRESETS[quality];
-  const cacheDir = getModelCacheDir();
-  const finalPath = path.join(cacheDir, preset.filename);
-  const tempPath = path.join(cacheDir, `${preset.filename}.tmp`);
-  await fs.mkdir(cacheDir, { recursive: true });
-  console.log(`[ModelManager] Downloading ${preset.name} from ${preset.url}`);
-  try {
-    const response = await fetch(preset.url);
-    if (!response.ok) {
-      throw new Error(`Failed to download model: ${response.statusText}`);
-    }
-    const totalLength = Number(response.headers.get("content-length"));
-    let downloaded = 0;
-    if (!response.body) throw new Error("No response body");
-    const fileStream = createWriteStream(tempPath);
-    const reader = response.body.getReader();
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      downloaded += value.length;
-      fileStream.write(value);
-      if (totalLength && onProgress) {
-        onProgress(downloaded / totalLength * 100);
-      }
-    }
-    fileStream.end();
-    await new Promise((resolve, reject) => {
-      fileStream.on("finish", resolve);
-      fileStream.on("error", reject);
-    });
-    await fs.rename(tempPath, finalPath);
-    console.log(`[ModelManager] Download complete: ${finalPath}`);
-    return finalPath;
-  } catch (err) {
-    console.error(`[ModelManager] Download failed`, err);
-    try {
-      await fs.unlink(tempPath);
-    } catch {
-    }
-    throw err;
-  }
-}
-const FAVORITES_FILE = "favorites.json";
-const HISTORY_FILE = "history.json";
-const SETTINGS_FILE = "settings.json";
-function getUserDataPath(filename) {
-  return path.join(app.getPath("userData"), filename);
-}
-async function saveFavorites(songIds) {
-  try {
-    const filePath = getUserDataPath(FAVORITES_FILE);
-    await fs.writeFile(filePath, JSON.stringify(songIds, null, 2), "utf-8");
-  } catch (err) {
-    console.error("[UserData] Failed to save favorites", err);
-  }
-}
-async function loadFavorites() {
-  try {
-    const filePath = getUserDataPath(FAVORITES_FILE);
-    const content = await fs.readFile(filePath, "utf-8");
-    return JSON.parse(content);
-  } catch (err) {
-    if (err.code !== "ENOENT") {
-      console.error("[UserData] Failed to load favorites", err);
-    }
-    return [];
-  }
-}
-async function saveHistory(songIds) {
-  try {
-    const filePath = getUserDataPath(HISTORY_FILE);
-    await fs.writeFile(filePath, JSON.stringify(songIds, null, 2), "utf-8");
-  } catch (err) {
-    console.error("[UserData] Failed to save history", err);
-  }
-}
-async function loadHistory() {
-  try {
-    const filePath = getUserDataPath(HISTORY_FILE);
-    const content = await fs.readFile(filePath, "utf-8");
-    return JSON.parse(content);
-  } catch (err) {
-    if (err.code !== "ENOENT") {
-      console.error("[UserData] Failed to load history", err);
-    }
-    return [];
-  }
-}
-async function saveSettings(settings) {
-  try {
-    const filePath = getUserDataPath(SETTINGS_FILE);
-    await fs.writeFile(filePath, JSON.stringify(settings, null, 2), "utf-8");
-  } catch (err) {
-    console.error("[UserData] Failed to save settings", err);
-  }
-}
-async function loadSettings() {
-  try {
-    const filePath = getUserDataPath(SETTINGS_FILE);
-    const content = await fs.readFile(filePath, "utf-8");
-    return JSON.parse(content);
-  } catch (err) {
-    if (err.code !== "ENOENT") {
-      console.error("[UserData] Failed to load settings", err);
-    }
-    return { separationQuality: "normal" };
-  }
-}
-const PLAYLISTS_FILE = "playlists.json";
-async function savePlaylists(playlists) {
-  try {
-    const filePath = getUserDataPath(PLAYLISTS_FILE);
-    await fs.writeFile(filePath, JSON.stringify(playlists, null, 2), "utf-8");
-  } catch (err) {
-    console.error("[UserData] Failed to save playlists", err);
-  }
-}
-async function loadPlaylists() {
-  try {
-    const filePath = getUserDataPath(PLAYLISTS_FILE);
-    const content = await fs.readFile(filePath, "utf-8");
-    return JSON.parse(content);
-  } catch (err) {
-    if (err.code !== "ENOENT") {
-      console.error("[UserData] Failed to load playlists", err);
-    }
-    return [];
-  }
-}
-const userData = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-  __proto__: null,
-  loadFavorites,
-  loadHistory,
-  loadPlaylists,
-  loadSettings,
-  saveFavorites,
-  saveHistory,
-  savePlaylists,
-  saveSettings
-}, Symbol.toStringTag, { value: "Module" }));
-function generateJobId() {
-  return `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
-}
-async function runDemucsSeparation(originalPath, songFolder, quality, modelDir, onProgress) {
-  const pythonPath = await getPythonPath();
-  console.log("[Separation] Starting MDX separation", { originalPath, songFolder, quality, pythonPath, modelDir });
-  const scriptPath = path.join(process.cwd(), "resources", "separation", "separate.py");
-  return new Promise((resolve, reject) => {
-    const python = spawn(pythonPath, [
-      scriptPath,
-      "--input",
-      originalPath,
-      "--output-dir",
-      songFolder,
-      "--quality",
-      quality,
-      "--model-dir",
-      modelDir
-    ]);
-    let result = null;
-    let errorOutput = "";
-    python.stdout.on("data", (data) => {
-      const lines = data.toString().split("\n");
-      for (const line of lines) {
-        if (!line.trim()) continue;
-        try {
-          const msg = JSON.parse(line);
-          if (msg.status === "success") {
-            result = msg;
-          } else if (msg.status === "progress" && typeof msg.progress === "number") {
-            onProgress == null ? void 0 : onProgress(msg.progress);
-          } else if (msg.error) {
-            reject(new Error(`${msg.error} ${msg.details || ""}`));
-          }
-        } catch (e) {
-        }
-      }
-    });
-    python.stderr.on("data", (data) => {
-      const str = data.toString();
-      errorOutput += str;
-    });
-    python.on("close", (code) => {
-      if (code === 0 && result && result.instrumental && result.vocal) {
-        resolve({
-          instrumentalPath: result.instrumental,
-          vocalPath: result.vocal
-        });
-      } else {
-        const msg = (result == null ? void 0 : result.error) || "Separation process failed";
-        reject(new Error(`${msg} (Exit code ${code}). Details: ${errorOutput.slice(-500)}`));
-      }
-    });
-  });
-}
-class SeparationJobManager {
-  constructor() {
-    __publicField(this, "jobs", []);
-    __publicField(this, "runningJobId", null);
-    __publicField(this, "subscribers", /* @__PURE__ */ new Set());
-  }
-  snapshot() {
-    return [...this.jobs].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-  }
-  notify() {
-    const current = this.snapshot();
-    this.subscribers.forEach((fn) => {
-      try {
-        fn(current);
-      } catch (err) {
-        console.warn("[Separation] subscriber threw", err);
-      }
-    });
-  }
-  async ensureOriginalPath(meta) {
-    const songDir = path.join(getSongsBaseDir(), meta.id);
-    await fs.mkdir(songDir, { recursive: true });
-    const originalPath = path.join(songDir, meta.stored_filename || `Original${path.extname(meta.source.originalPath) || ".mp3"}`);
-    try {
-      await fs.access(originalPath);
-    } catch {
-      throw new Error(`Original audio missing at ${originalPath}`);
-    }
-    return { songDir, originalPath };
-  }
-  updateJob(id, patch) {
-    this.jobs = this.jobs.map(
-      (job) => job.id === id ? {
-        ...job,
-        ...patch,
-        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
-      } : job
-    );
-  }
-  async executeJob(job) {
-    try {
-      const meta = await getSongMeta(job.songId);
-      if (!meta) {
-        throw new Error(`Song ${job.songId} not found for separation`);
-      }
-      await updateSongMeta(job.songId, (current) => ({
-        ...current,
-        audio_status: "separating",
-        last_separation_error: null
-      }));
-      this.updateJob(job.id, { status: "running", errorMessage: void 0 });
-      this.notify();
-      const { songDir, originalPath } = await this.ensureOriginalPath(meta);
-      const quality = job.quality || "normal";
-      if (!await isModelAvailable(quality)) {
-        console.log(`[Separation] Model for ${quality} missing, downloading...`);
-        this.updateJob(job.id, { progress: 0 });
-        await downloadModel(quality, (percent) => {
-          console.log(`[Separation] Downloading model: ${percent.toFixed(1)}%`);
-        });
-      }
-      const modelDir = getModelCacheDir();
-      const { instrumentalPath, vocalPath } = await runDemucsSeparation(originalPath, songDir, quality, modelDir, (progress) => {
-        this.updateJob(job.id, { progress });
-        this.notify();
-      });
-      await updateSongMeta(job.songId, (current) => ({
-        ...current,
-        audio_status: "separated",
-        instrumental_path: instrumentalPath,
-        vocal_path: vocalPath,
-        last_separation_error: null,
-        separation_quality: quality
-      }));
-      this.updateJob(job.id, { status: "succeeded", errorMessage: void 0 });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error("[Separation] Job failed", { jobId: job.id, songId: job.songId, message, err });
-      await updateSongMeta(job.songId, (current) => ({
-        ...current,
-        audio_status: "separation_failed",
-        last_separation_error: message
-      }));
-      this.updateJob(job.id, { status: "failed", errorMessage: message });
-    } finally {
-      this.runningJobId = null;
-      this.notify();
-      void this.processQueue();
-    }
-  }
-  async processQueue() {
-    if (this.runningJobId) return;
-    const next = this.jobs.find((job) => job.status === "queued");
-    if (!next) return;
-    this.runningJobId = next.id;
-    await this.executeJob(next);
-  }
-  async queueJob(songId, qualityOverride) {
-    const meta = await getSongMeta(songId);
-    if (!meta) {
-      throw new Error(`Cannot queue separation: song ${songId} not found`);
-    }
-    if (meta.type !== "原曲") {
-      throw new Error("Only 原曲 songs support separation");
-    }
-    const existing = this.jobs.find(
-      (job2) => job2.songId === songId && (job2.status === "queued" || job2.status === "running")
-    );
-    if (existing) {
-      console.log("[Separation] Job already queued/running for song", songId, existing.id);
-      return existing;
-    }
-    await updateSongMeta(songId, (current) => ({
-      ...current,
-      audio_status: "separation_pending",
-      last_separation_error: null
-    }));
-    let quality = qualityOverride;
-    if (!quality) {
-      const settings = await loadSettings();
-      quality = settings.separationQuality || "normal";
-    }
-    const now = (/* @__PURE__ */ new Date()).toISOString();
-    const job = {
-      id: generateJobId(),
-      songId,
-      quality,
-      createdAt: now,
-      updatedAt: now,
-      status: "queued"
-    };
-    this.jobs = [job, ...this.jobs];
-    this.notify();
-    void this.processQueue();
-    console.log("[Separation] Queued job", job);
-    return job;
-  }
-  async getAllJobs() {
-    return this.snapshot();
-  }
-  subscribe(subscriber) {
-    this.subscribers.add(subscriber);
-    subscriber(this.snapshot());
-    return () => this.subscribers.delete(subscriber);
-  }
-}
-const jobManager = new SeparationJobManager();
-function queueSeparationJob(songId, quality) {
-  return jobManager.queueJob(songId, quality);
-}
-function getAllJobs() {
-  return jobManager.getAllJobs();
-}
-function subscribeJobUpdates(callback) {
-  return jobManager.subscribe(callback);
-}
-const YTDLP_FILENAME = process.platform === "win32" ? "yt-dlp.exe" : "yt-dlp";
-function getBinDir() {
-  return path.join(app.getPath("userData"), "bin");
-}
-function getYtDlpPath() {
-  return path.join(getBinDir(), YTDLP_FILENAME);
-}
-async function ensureBinaries() {
-  const binDir = getBinDir();
-  await fs.mkdir(binDir, { recursive: true });
-  const ytDlpPath = getYtDlpPath();
-  try {
-    await fs.access(ytDlpPath);
-  } catch {
-    console.log("[DownloadJobs] yt-dlp not found, downloading...");
-    await downloadYtDlp();
-  }
-}
-async function downloadYtDlp() {
-  const url = process.platform === "win32" ? "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" : "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp";
-  const dest = getYtDlpPath();
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Failed to download yt-dlp: ${response.statusText}`);
-  const buffer = await response.arrayBuffer();
-  await fs.writeFile(dest, Buffer.from(buffer));
-  if (process.platform !== "win32") {
-    await fs.chmod(dest, 493);
-  }
-  console.log("[DownloadJobs] yt-dlp downloaded to", dest);
-}
-class DownloadJobManager {
-  constructor() {
-    __publicField(this, "jobs", []);
-    __publicField(this, "subscribers", /* @__PURE__ */ new Set());
-    __publicField(this, "activeJobId", null);
-    __publicField(this, "onLibraryChanged");
-    ensureBinaries().catch((err) => console.error("[DownloadJobs] Failed to ensure binaries on startup:", err));
-    this.loadJobs();
-  }
-  getJobsFilePath() {
-    return path.join(app.getPath("userData"), "downloadJobs.json");
-  }
-  async saveJobs() {
-    try {
-      await fs.writeFile(this.getJobsFilePath(), JSON.stringify(this.jobs, null, 2));
-    } catch (err) {
-      console.error("[DownloadJobs] Failed to save jobs", err);
-    }
-  }
-  async loadJobs() {
-    try {
-      const data = await fs.readFile(this.getJobsFilePath(), "utf-8");
-      this.jobs = JSON.parse(data);
-      let changed = false;
-      this.jobs = this.jobs.map((j) => {
-        if (j.status === "downloading" || j.status === "processing") {
-          changed = true;
-          return { ...j, status: "failed", error: "Interrupted by app restart" };
-        }
-        return j;
-      });
-      if (changed) this.saveJobs();
-    } catch (err) {
-      if (err.code !== "ENOENT") {
-        console.error("[DownloadJobs] Failed to load jobs", err);
-      }
-    }
-  }
-  notify() {
-    const snapshot = [...this.jobs];
-    this.subscribers.forEach((sub) => sub(snapshot));
-    this.saveJobs();
-  }
-  subscribe(callback) {
-    this.subscribers.add(callback);
-    callback([...this.jobs]);
-    return () => this.subscribers.delete(callback);
-  }
-  getAll() {
-    return [...this.jobs];
-  }
-  removeJobBySongId(songId) {
-    const initialLength = this.jobs.length;
-    this.jobs = this.jobs.filter((j) => j.songId !== songId);
-    if (this.jobs.length !== initialLength) {
-      this.notify();
-    }
-  }
-  async validateUrl(url) {
-    await ensureBinaries();
-    const ytDlp = getYtDlpPath();
-    return new Promise((resolve) => {
-      const proc = spawn(ytDlp, [
-        "--dump-json",
-        "--no-playlist",
-        url
-      ]);
-      let stdout = "";
-      proc.stdout.on("data", (d) => stdout += d.toString());
-      proc.on("close", (code) => {
-        if (code !== 0) {
-          resolve(null);
-          return;
-        }
-        try {
-          const data = JSON.parse(stdout);
-          resolve({
-            videoId: data.id,
-            title: data.title,
-            duration: data.duration
-          });
-        } catch (e) {
-          resolve(null);
-        }
-      });
-    });
-  }
-  async queueJob(url, quality, titleOverride, artistOverride) {
-    const meta = await this.validateUrl(url);
-    if (!meta) throw new Error("Invalid YouTube URL");
-    const existing = this.jobs.find((j) => j.youtubeId === meta.videoId);
-    if (existing) throw new Error("Download already exists for this video");
-    const { loadAllSongs: loadAllSongs2 } = await Promise.resolve().then(() => songLibrary);
-    const allSongs = await loadAllSongs2();
-    const existingSong = allSongs.find(
-      (s) => s.source.kind === "youtube" && s.source.youtubeId === meta.videoId
-    );
-    if (existingSong) {
-      throw new Error(`Song already exists in library: "${existingSong.title}"`);
-    }
-    const job = {
-      id: Date.now().toString(),
-      youtubeId: meta.videoId,
-      title: titleOverride || meta.title,
-      artist: artistOverride,
-      quality,
-      status: "queued",
-      progress: 0,
-      createdAt: (/* @__PURE__ */ new Date()).toISOString(),
-      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
-    };
-    this.jobs.unshift(job);
-    this.notify();
-    this.processQueue();
-    return job;
-  }
-  async processQueue() {
-    if (this.activeJobId) return;
-    const next = this.jobs.find((j) => j.status === "queued");
-    if (!next) return;
-    this.activeJobId = next.id;
-    await this.runJob(next);
-    this.activeJobId = null;
-    this.processQueue();
-  }
-  updateJob(id, updates) {
-    this.jobs = this.jobs.map((j) => j.id === id ? { ...j, ...updates, updatedAt: (/* @__PURE__ */ new Date()).toISOString() } : j);
-    this.notify();
-  }
-  async runJob(job) {
-    var _a;
-    this.updateJob(job.id, { status: "downloading", progress: 0 });
-    try {
-      await ensureBinaries();
-      const ytDlp = getYtDlpPath();
-      const songId = Date.now().toString();
-      const songsDir = getSongsBaseDir();
-      const songDir = path.join(songsDir, songId);
-      await fs.mkdir(songDir, { recursive: true });
-      const outputTemplate = path.join(songDir, "Original.%(ext)s");
-      let formatSelector = "bestaudio/best";
-      if (job.quality === "normal") formatSelector = "bestaudio[abr<=128]/bestaudio";
-      if (job.quality === "high") formatSelector = "bestaudio[abr<=192]/bestaudio";
-      const args = [
-        "-f",
-        formatSelector,
-        "-x",
-        "--audio-format",
-        "wav",
-        "-o",
-        outputTemplate,
-        "--no-playlist",
-        "--newline",
-        // For progress parsing
-        `https://www.youtube.com/watch?v=${job.youtubeId}`
-      ];
-      await new Promise((resolve, reject) => {
-        const proc = spawn(ytDlp, args);
-        proc.stdout.on("data", (data) => {
-          const line = data.toString();
-          const match = line.match(/\[download\]\s+(\d+\.\d+)%/);
-          if (match) {
-            const percent = parseFloat(match[1]);
-            this.updateJob(job.id, { progress: percent });
-          }
-        });
-        let errOut = "";
-        proc.stderr.on("data", (d) => errOut += d.toString());
-        proc.on("close", (code) => {
-          if (code === 0) resolve();
-          else reject(new Error(`yt-dlp exited with code ${code}: ${errOut}`));
-        });
-      });
-      const finalPath = path.join(songDir, "Original.wav");
-      const now = (/* @__PURE__ */ new Date()).toISOString();
-      const meta = {
-        id: songId,
-        title: job.title,
-        artist: job.artist,
-        type: "原曲",
-        audio_status: "original_only",
-        lyrics_status: "none",
-        source: {
-          kind: "youtube",
-          youtubeId: job.youtubeId,
-          originalPath: finalPath
-        },
-        stored_filename: "Original.wav",
-        created_at: now,
-        updated_at: now,
-        last_separation_error: null
-      };
-      await fs.writeFile(path.join(songDir, "meta.json"), JSON.stringify(meta, null, 2));
-      this.updateJob(job.id, { status: "completed", progress: 100, songId });
-      (_a = this.onLibraryChanged) == null ? void 0 : _a.call(this);
-    } catch (err) {
-      console.error("Download failed", err);
-      this.updateJob(job.id, { status: "failed", error: err.message });
-    }
-  }
-}
-const downloadManager = new DownloadJobManager();
-async function ensureSongFolder(songId) {
-  const base = getSongsBaseDir();
-  const songDir = path.join(base, songId);
-  const meta = await getSongMeta(songId);
-  if (!meta) {
-    throw new Error(`Song ${songId} not found for lyrics operation`);
-  }
-  await fs.mkdir(songDir, { recursive: true });
-  return { songDir, meta };
-}
-async function readRawLyrics(songId) {
-  const { songDir, meta } = await ensureSongFolder(songId);
-  const filePath = meta.lyrics_raw_path || path.join(songDir, RAW_LYRICS_FILENAME);
-  try {
-    const content = await fs.readFile(filePath, "utf-8");
-    console.log("[Lyrics] Loaded raw lyrics", { songId, filePath });
-    return { path: filePath, content };
-  } catch (err) {
-    console.warn("[Lyrics] No raw lyrics found", { songId, filePath, err });
-    return null;
-  }
-}
-async function readSyncedLyrics(songId) {
-  const { songDir, meta } = await ensureSongFolder(songId);
-  const filePath = meta.lyrics_lrc_path || path.join(songDir, SYNCED_LYRICS_FILENAME);
-  try {
-    const content = await fs.readFile(filePath, "utf-8");
-    console.log("[Lyrics] Loaded synced lyrics", { songId, filePath });
-    return { path: filePath, content };
-  } catch (err) {
-    console.warn("[Lyrics] No synced lyrics found", { songId, filePath, err });
-    return null;
-  }
-}
-async function writeRawLyrics(songId, content) {
-  const { songDir } = await ensureSongFolder(songId);
-  const normalized = content.replace(/\r\n/g, "\n");
-  const filePath = path.join(songDir, RAW_LYRICS_FILENAME);
-  await fs.writeFile(filePath, normalized, "utf-8");
-  console.log("[Lyrics] Saved raw lyrics", { songId, filePath });
-  const updated = await updateSongMeta(songId, (current) => ({
-    ...current,
-    lyrics_status: normalized.trim().length > 0 ? "text_only" : "none",
-    lyrics_raw_path: filePath
-  }));
-  if (!updated) {
-    throw new Error(`Failed to update meta after saving lyrics for ${songId}`);
-  }
-  return { path: filePath, meta: updated };
-}
-async function writeSyncedLyrics(songId, content) {
-  const { songDir } = await ensureSongFolder(songId);
-  const normalized = content.replace(/\r\n/g, "\n");
-  const filePath = path.join(songDir, SYNCED_LYRICS_FILENAME);
-  await fs.writeFile(filePath, normalized, "utf-8");
-  console.log("[Lyrics] Saved synced lyrics", { songId, filePath });
-  const updated = await updateSongMeta(songId, (current) => ({
-    ...current,
-    lyrics_status: "synced",
-    lyrics_lrc_path: filePath,
-    lyrics_raw_path: current.lyrics_raw_path ?? path.join(songDir, RAW_LYRICS_FILENAME)
-  }));
-  if (!updated) {
-    throw new Error(`Failed to update meta after saving synced lyrics for ${songId}`);
-  }
-  return { path: filePath, meta: updated };
-}
-const QUEUE_FILE = "playback_queue.json";
-function getQueueFilePath() {
-  return path.join(app.getPath("userData"), QUEUE_FILE);
-}
-async function saveQueue(data) {
-  try {
-    const filePath = getQueueFilePath();
-    await fs.writeFile(filePath, JSON.stringify(data, null, 2), "utf-8");
-    console.log("[Queue] Saved queue to", filePath);
-  } catch (err) {
-    console.error("[Queue] Failed to save queue", err);
-  }
-}
-async function loadQueue() {
-  try {
-    const filePath = getQueueFilePath();
-    const content = await fs.readFile(filePath, "utf-8");
-    const data = JSON.parse(content);
-    console.log("[Queue] Loaded queue from", filePath);
-    return data;
-  } catch (err) {
-    if (err.code !== "ENOENT") {
-      console.error("[Queue] Failed to load queue", err);
-    }
-    return null;
-  }
-}
+import fs from "node:fs";
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname$1, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
@@ -1059,22 +57,28 @@ ipcMain.handle("dialog:open-audio-file", async () => {
   return filePaths[0];
 });
 ipcMain.handle("library:add-local-song", async (_event, payload) => {
+  const { addLocalSong } = await import("./songLibrary-IuL3IOY5.js");
   return addLocalSong(payload);
 });
 ipcMain.handle("library:load-all", async () => {
+  const { loadAllSongs } = await import("./songLibrary-IuL3IOY5.js");
   const songs = await loadAllSongs();
   return songs;
 });
 ipcMain.handle("library:get-song-file-path", async (_event, id) => {
+  const { getSongFilePath } = await import("./songLibrary-IuL3IOY5.js");
   return getSongFilePath(id);
 });
 ipcMain.handle("library:get-original-song-file-path", async (_event, id) => {
+  const { getOriginalSongFilePath } = await import("./songLibrary-IuL3IOY5.js");
   return getOriginalSongFilePath(id);
 });
 ipcMain.handle("library:get-separated-song-paths", async (_event, id) => {
+  const { getSeparatedSongPaths } = await import("./songLibrary-IuL3IOY5.js");
   return getSeparatedSongPaths(id);
 });
 ipcMain.handle("library:get-base-path", async () => {
+  const { getSongsBaseDir } = await import("./songLibrary-IuL3IOY5.js");
   return getSongsBaseDir();
 });
 ipcMain.handle("library:delete-song", async (_event, id) => {
@@ -1088,70 +92,84 @@ ipcMain.handle("library:delete-song", async (_event, id) => {
     cancelId: 0
   });
   if (result.response === 1) {
-    const { deleteSong: deleteSong2 } = await Promise.resolve().then(() => songLibrary);
-    await deleteSong2(id);
+    const { deleteSong } = await import("./songLibrary-IuL3IOY5.js");
+    await deleteSong(id);
+    const { downloadManager } = await import("./downloadJobs-BUxKSFWC.js");
     downloadManager.removeJobBySongId(id);
     return true;
   }
   return false;
 });
 ipcMain.handle("library:update-song", async (_event, payload) => {
-  const { updateSong: updateSong2 } = await Promise.resolve().then(() => songLibrary);
-  return updateSong2(payload.id, payload.updates);
+  const { updateSong } = await import("./songLibrary-IuL3IOY5.js");
+  return updateSong(payload.id, payload.updates);
 });
 ipcMain.handle("jobs:queue-separation", async (_event, songId, quality) => {
+  const { queueSeparationJob } = await import("./separationJobs-vnrkmBQP.js");
   return queueSeparationJob(songId, quality);
 });
 ipcMain.handle("jobs:get-all", async () => {
+  const { getAllJobs } = await import("./separationJobs-vnrkmBQP.js");
   return getAllJobs();
 });
 ipcMain.handle("lyrics:read-raw", async (_event, songId) => {
+  const { readRawLyrics } = await import("./lyrics-CS0DrMxd.js");
   return readRawLyrics(songId);
 });
 ipcMain.handle("lyrics:read-synced", async (_event, songId) => {
+  const { readSyncedLyrics } = await import("./lyrics-CS0DrMxd.js");
   return readSyncedLyrics(songId);
 });
 ipcMain.handle("lyrics:write-raw", async (_event, payload) => {
+  const { writeRawLyrics } = await import("./lyrics-CS0DrMxd.js");
   return writeRawLyrics(payload.songId, payload.content);
 });
 ipcMain.handle("lyrics:write-synced", async (_event, payload) => {
+  const { writeSyncedLyrics } = await import("./lyrics-CS0DrMxd.js");
   return writeSyncedLyrics(payload.songId, payload.content);
 });
 ipcMain.handle("queue:save", async (_event, payload) => {
+  const { saveQueue } = await import("./queue-Cm6GAPWY.js");
   return saveQueue(payload);
 });
 ipcMain.handle("queue:load", async () => {
+  const { loadQueue } = await import("./queue-Cm6GAPWY.js");
   return loadQueue();
 });
 ipcMain.handle("userData:save-favorites", async (_event, songIds) => {
+  const { saveFavorites } = await import("./userData-D7f6Pjef.js");
   return saveFavorites(songIds);
 });
 ipcMain.handle("userData:load-favorites", async () => {
+  const { loadFavorites } = await import("./userData-D7f6Pjef.js");
   return loadFavorites();
 });
 ipcMain.handle("userData:save-history", async (_event, songIds) => {
+  const { saveHistory } = await import("./userData-D7f6Pjef.js");
   return saveHistory(songIds);
 });
 ipcMain.handle("userData:load-history", async () => {
+  const { loadHistory } = await import("./userData-D7f6Pjef.js");
   return loadHistory();
 });
 ipcMain.handle("userData:save-playlists", async (_event, playlists) => {
-  const { savePlaylists: savePlaylists2 } = await Promise.resolve().then(() => userData);
-  return savePlaylists2(playlists);
+  const { savePlaylists } = await import("./userData-D7f6Pjef.js");
+  return savePlaylists(playlists);
 });
 ipcMain.handle("userData:load-playlists", async () => {
-  const { loadPlaylists: loadPlaylists2 } = await Promise.resolve().then(() => userData);
-  return loadPlaylists2();
+  const { loadPlaylists } = await import("./userData-D7f6Pjef.js");
+  return loadPlaylists();
 });
 ipcMain.handle("userData:save-settings", async (_event, settings) => {
-  const { saveSettings: saveSettings2 } = await Promise.resolve().then(() => userData);
-  return saveSettings2(settings);
+  const { saveSettings } = await import("./userData-D7f6Pjef.js");
+  return saveSettings(settings);
 });
 ipcMain.handle("userData:load-settings", async () => {
-  const { loadSettings: loadSettings2 } = await Promise.resolve().then(() => userData);
-  return loadSettings2();
+  const { loadSettings } = await import("./userData-D7f6Pjef.js");
+  return loadSettings();
 });
-ipcMain.on("jobs:subscribe", (event, subscriptionId) => {
+ipcMain.on("jobs:subscribe", async (event, subscriptionId) => {
+  const { subscribeJobUpdates } = await import("./separationJobs-vnrkmBQP.js");
   const wc = event.sender;
   const disposer = subscribeJobUpdates((jobs) => wc.send("jobs:updated", jobs));
   let disposers = jobSubscriptions.get(wc.id);
@@ -1177,18 +195,31 @@ ipcMain.on("jobs:unsubscribe", (event, subscriptionId) => {
     disposers.clear();
   }
 });
+async function getDownloadManager() {
+  const { downloadManager } = await import("./downloadJobs-BUxKSFWC.js");
+  downloadManager.onLibraryChanged = () => {
+    BrowserWindow.getAllWindows().forEach((w) => {
+      w.webContents.send("library:changed");
+    });
+  };
+  return downloadManager;
+}
 ipcMain.handle("downloads:validate", async (_event, url) => {
-  return downloadManager.validateUrl(url);
+  const dm = await getDownloadManager();
+  return dm.validateUrl(url);
 });
 ipcMain.handle("downloads:queue", async (_event, url, quality, title, artist) => {
-  return downloadManager.queueJob(url, quality, title, artist);
+  const dm = await getDownloadManager();
+  return dm.queueJob(url, quality, title, artist);
 });
 ipcMain.handle("downloads:get-all", async () => {
-  return downloadManager.getAll();
+  const dm = await getDownloadManager();
+  return dm.getAll();
 });
-ipcMain.on("downloads:subscribe", (event, subscriptionId) => {
+ipcMain.on("downloads:subscribe", async (event, subscriptionId) => {
+  const dm = await getDownloadManager();
   const wc = event.sender;
-  const disposer = downloadManager.subscribe((jobs) => wc.send("downloads:updated", jobs));
+  const disposer = dm.subscribe((jobs) => wc.send("downloads:updated", jobs));
   let disposers = downloadSubscriptions.get(wc.id);
   if (!disposers) {
     disposers = /* @__PURE__ */ new Map();
@@ -1212,14 +243,8 @@ ipcMain.on("downloads:unsubscribe", (event, subscriptionId) => {
     disposers.clear();
   }
 });
-downloadManager.onLibraryChanged = () => {
-  BrowserWindow.getAllWindows().forEach((w) => {
-    w.webContents.send("library:changed");
-  });
-};
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   console.log("[App] userData path:", app.getPath("userData"));
-  console.log("[Library] base songs dir:", getSongsBaseDir());
   createWindow();
 });
 const clients = /* @__PURE__ */ new Set();
@@ -1260,19 +285,21 @@ const server = http.createServer((req, res) => {
       res.end("Missing songId");
       return;
     }
-    Promise.all([
-      readSyncedLyrics(songId),
-      readRawLyrics(songId)
-    ]).then(([synced, raw]) => {
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({
-        synced: (synced == null ? void 0 : synced.content) || null,
-        raw: (raw == null ? void 0 : raw.content) || null
-      }));
-    }).catch((err) => {
-      console.error("[OverlayServer] Failed to read lyrics", err);
-      res.writeHead(500);
-      res.end("Internal Server Error");
+    import("./lyrics-CS0DrMxd.js").then(({ readSyncedLyrics, readRawLyrics }) => {
+      Promise.all([
+        readSyncedLyrics(songId),
+        readRawLyrics(songId)
+      ]).then(([synced, raw]) => {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({
+          synced: (synced == null ? void 0 : synced.content) || null,
+          raw: (raw == null ? void 0 : raw.content) || null
+        }));
+      }).catch((err) => {
+        console.error("[OverlayServer] Failed to read lyrics", err);
+        res.writeHead(500);
+        res.end("Internal Server Error");
+      });
     });
     return;
   }
@@ -1309,10 +336,10 @@ const server = http.createServer((req, res) => {
       contentType = "image/svg+xml";
       break;
   }
-  fs$1.readFile(filePath, (err, content) => {
+  fs.readFile(filePath, (err, content) => {
     if (err) {
       if (err.code === "ENOENT") {
-        fs$1.readFile(path.join(RENDERER_DIST, "index.html"), (err2, content2) => {
+        fs.readFile(path.join(RENDERER_DIST, "index.html"), (err2, content2) => {
           if (err2) {
             res.writeHead(500);
             res.end("Error loading index.html");
