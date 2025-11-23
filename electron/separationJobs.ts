@@ -3,6 +3,8 @@ import path from 'node:path';
 import { getSongMeta, getSongsBaseDir, updateSongMeta } from './songLibrary';
 import type { SongMeta } from '../shared/songTypes';
 import type { SeparationJob } from '../shared/separationTypes';
+import { getPythonPath } from './pythonRuntime';
+import { isModelAvailable, downloadModel, getModelCacheDir, QualityPreset } from './modelManager';
 
 type JobSubscriber = (jobs: SeparationJob[]) => void;
 
@@ -17,20 +19,22 @@ import { loadSettings } from './userData';
 async function runDemucsSeparation(
   originalPath: string,
   songFolder: string,
-  quality: 'high' | 'normal' | 'fast',
+  quality: QualityPreset,
+  modelDir: string,
   onProgress?: (percent: number) => void
 ): Promise<{ instrumentalPath: string; vocalPath: string }> {
-  console.log('[Separation] Starting MDX separation', { originalPath, songFolder, quality });
+  const pythonPath = await getPythonPath();
+  console.log('[Separation] Starting MDX separation', { originalPath, songFolder, quality, pythonPath, modelDir });
 
   const scriptPath = path.join(process.cwd(), 'resources', 'separation', 'separate.py');
 
   return new Promise((resolve, reject) => {
-    const python = spawn('python', [
+    const python = spawn(pythonPath, [
       scriptPath,
       '--input', originalPath,
       '--output-dir', songFolder,
       '--quality', quality,
-      '--cache-dir', path.join(process.env.APPDATA || '', 'KHelperLive', 'models')
+      '--model-dir', modelDir
     ]);
 
     let result: { instrumental?: string; vocal?: string; error?: string } | null = null;
@@ -50,6 +54,7 @@ async function runDemucsSeparation(
             reject(new Error(`${msg.error} ${msg.details || ''}`));
           }
         } catch (e) {
+          // Ignore non-JSON output (e.g. from libraries)
         }
       }
     });
@@ -57,6 +62,7 @@ async function runDemucsSeparation(
     python.stderr.on('data', (data) => {
       const str = data.toString();
       errorOutput += str;
+      // console.error('[Separation Script Stderr]', str); // Optional: log stderr for debugging
     });
 
     python.on('close', (code) => {
@@ -137,9 +143,26 @@ class SeparationJobManager {
       const { songDir, originalPath } = await this.ensureOriginalPath(meta);
 
       // Use job quality or default to normal
-      const quality = job.quality || 'normal';
+      const quality = (job.quality || 'normal') as QualityPreset;
 
-      const { instrumentalPath, vocalPath } = await runDemucsSeparation(originalPath, songDir, quality, (progress) => {
+      // Check and download model if needed
+      if (!(await isModelAvailable(quality))) {
+        console.log(`[Separation] Model for ${quality} missing, downloading...`);
+        // We could update status to indicate downloading, but 'running' is fine with logging
+        // Or we could use progress to show downloading?
+        // For now, let's just log and maybe update progress to 0
+        this.updateJob(job.id, { progress: 0 });
+
+        await downloadModel(quality, (percent) => {
+          // Maybe map download progress to 0-10% of total job? 
+          // Or just ignore visual progress for download to keep it simple
+          console.log(`[Separation] Downloading model: ${percent.toFixed(1)}%`);
+        });
+      }
+
+      const modelDir = getModelCacheDir();
+
+      const { instrumentalPath, vocalPath } = await runDemucsSeparation(originalPath, songDir, quality, modelDir, (progress) => {
         this.updateJob(job.id, { progress });
         this.notify();
       });

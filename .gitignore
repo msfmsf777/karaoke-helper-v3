@@ -24,6 +24,6 @@ dist-ssr
 *.sln
 *.sw?
 
-#reference files
+# Python private runtime (Phase 11)
+resources/python-runtime/
 
-docs/

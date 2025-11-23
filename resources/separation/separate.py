@@ -87,17 +87,14 @@ def main():
     parser.add_argument('--output-dir', required=True, help='Output directory for stems')
     parser.add_argument('--quality', default='normal', choices=['high', 'normal', 'fast'], help='Separation quality preset')
     parser.add_argument('--model-override', help='Override model filename directly')
-    parser.add_argument('--cache-dir', help='Directory to cache models')
+    parser.add_argument('--model-dir', help='Directory containing model files')
     
     args = parser.parse_args()
     
     # Model Mapping
-    # HQ: MDX23C_D1581.ckpt (MDX23C-InstVocHQ)
-    # Normal: UVR-MDX-NET-Inst_HQ_3.onnx
-    # Fast: UVR-MDX-NET-Inst_1.onnx
-    
+    # Must match MODEL_PRESETS in modelManager.ts
     model_map = {
-        'high': 'MDX23C_D1581.ckpt',
+        'high': 'MDX23C-8KFFT-InstVoc_HQ.ckpt',
         'normal': 'UVR-MDX-NET-Inst_HQ_3.onnx',
         'fast': 'UVR-MDX-NET-Inst_1.onnx'
     }
@@ -113,9 +110,6 @@ def main():
         
     if not output_dir.exists():
         os.makedirs(output_dir, exist_ok=True)
-
-    if args.cache_dir:
-        os.environ['AUDIO_SEPARATOR_CACHE_DIR'] = args.cache_dir
 
     # Initialize Progress Tracker
     tracker = ProgressTracker()
@@ -139,7 +133,7 @@ def main():
         
         separator = Separator(
             log_level=logging.WARNING,
-            model_file_dir=args.cache_dir if args.cache_dir else None,
+            model_file_dir=args.model_dir,
             output_dir=str(output_dir),
             output_format="wav"
         )
