@@ -36,6 +36,12 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.on('overlay:update', listener)
     return () => ipcRenderer.off('overlay:update', listener)
   },
+  sendOverlayStyleUpdate: (style: any) => ipcRenderer.send('overlay:style-update', style),
+  subscribeOverlayStyleUpdates: (callback: (style: any) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, style: any) => callback(style)
+    ipcRenderer.on('overlay:style-update', listener)
+    return () => ipcRenderer.off('overlay:style-update', listener)
+  },
 })
 
 contextBridge.exposeInMainWorld('khelper', {

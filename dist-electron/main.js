@@ -372,6 +372,14 @@ ipcMain.on("overlay:update", (_event, payload) => {
 `);
   }
 });
+ipcMain.on("overlay:style-update", (_event, style) => {
+  const data = JSON.stringify({ type: "style", style });
+  for (const client of clients) {
+    client.write(`data: ${data}
+
+`);
+  }
+});
 export {
   MAIN_DIST,
   RENDERER_DIST,

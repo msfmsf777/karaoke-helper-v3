@@ -12,6 +12,8 @@ interface Window {
     openOverlayWindow: () => void;
     sendOverlayUpdate: (payload: { songId: string; currentTime: number; isPlaying: boolean }) => void;
     subscribeOverlayUpdates: (callback: (payload: { songId: string; currentTime: number; isPlaying: boolean }) => void) => () => void;
+    sendOverlayStyleUpdate: (style: any) => void;
+    subscribeOverlayStyleUpdates: (callback: (style: any) => void) => () => void;
   };
   khelper?: {
     dialogs: {
@@ -71,8 +73,8 @@ interface Window {
       loadHistory: () => Promise<string[]>;
       savePlaylists: (playlists: any[]) => Promise<void>;
       loadPlaylists: () => Promise<any[]>;
-      saveSettings: (settings: { separationQuality: 'high' | 'normal' | 'fast' }) => Promise<void>;
-      loadSettings: () => Promise<{ separationQuality: 'high' | 'normal' | 'fast' }>;
+      saveSettings: (settings: { separationQuality: 'high' | 'normal' | 'fast'; lyricStyles?: import('./contexts/UserDataContext').LyricStyleConfig }) => Promise<void>;
+      loadSettings: () => Promise<{ separationQuality: 'high' | 'normal' | 'fast'; lyricStyles?: import('./contexts/UserDataContext').LyricStyleConfig }>;
     };
   };
 }

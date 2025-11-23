@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import LyricsOverlay from './LyricsOverlay';
 import { SongMeta } from '../../shared/songTypes';
 import { EditableLyricLine, linesFromRawText, parseLrc, readRawLyrics, readSyncedLyrics } from '../library/lyrics';
+import { LyricStyleConfig, DEFAULT_LYRIC_STYLES } from '../contexts/UserDataContext';
 
 const OverlayWindow: React.FC = () => {
     const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
     const [currentTime, setCurrentTime] = useState(0);
     const [lines, setLines] = useState<EditableLyricLine[]>([]);
     const [lyricsStatus, setLyricsStatus] = useState<SongMeta['lyrics_status']>('none');
+    const [styleConfig, setStyleConfig] = useState<LyricStyleConfig>(DEFAULT_LYRIC_STYLES);
 
     useEffect(() => {
         // Check if we are in Electron or Browser
@@ -24,8 +26,20 @@ const OverlayWindow: React.FC = () => {
                 }
             });
 
+            const removeStyleListener = window.api.subscribeOverlayStyleUpdates((style) => {
+                setStyleConfig(style);
+            });
+
+            // Load initial styles
+            window.khelper?.userData.loadSettings().then(settings => {
+                if (settings.lyricStyles) {
+                    setStyleConfig({ ...DEFAULT_LYRIC_STYLES, ...settings.lyricStyles });
+                }
+            });
+
             return () => {
                 removeListener();
+                removeStyleListener();
             };
         } else {
             // Browser / OBS Mode: Use SSE
@@ -38,6 +52,11 @@ const OverlayWindow: React.FC = () => {
                     const payload = JSON.parse(event.data);
                     if (payload.type === 'connected') return;
 
+                    if (payload.type === 'style') {
+                        setStyleConfig(payload.style);
+                        return;
+                    }
+
                     const { songId, currentTime: time } = payload;
                     setCurrentTime(time);
                     if (songId !== currentTrackId) {
@@ -47,6 +66,14 @@ const OverlayWindow: React.FC = () => {
                     console.error('Failed to parse SSE message', e);
                 }
             };
+
+            // Fetch initial styles
+            fetch(`${baseUrl}/styles`)
+                .then(res => res.json())
+                .then(styles => {
+                    setStyleConfig({ ...DEFAULT_LYRIC_STYLES, ...styles });
+                })
+                .catch(err => console.error('Failed to fetch styles', err));
 
             return () => {
                 eventSource.close();
@@ -143,6 +170,7 @@ const OverlayWindow: React.FC = () => {
                 lines={lines}
                 currentTime={currentTime}
                 className="overlay-lyrics-container"
+                styleConfig={styleConfig}
             />
         </div>
     );

@@ -489,3 +489,13 @@ ipcMain.on('overlay:update', (_event, payload) => {
   }
 })
 
+ipcMain.on('overlay:style-update', (_event, style) => {
+  // Broadcast to all SSE clients
+  const data = JSON.stringify({ type: 'style', style })
+  // @ts-ignore
+  for (const client of clients) {
+    // @ts-ignore
+    client.write(`data: ${data}\n\n`)
+  }
+})
+

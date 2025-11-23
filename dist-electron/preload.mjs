@@ -30,6 +30,12 @@ electron.contextBridge.exposeInMainWorld("api", {
     const listener = (_event, payload) => callback(payload);
     electron.ipcRenderer.on("overlay:update", listener);
     return () => electron.ipcRenderer.off("overlay:update", listener);
+  },
+  sendOverlayStyleUpdate: (style) => electron.ipcRenderer.send("overlay:style-update", style),
+  subscribeOverlayStyleUpdates: (callback) => {
+    const listener = (_event, style) => callback(style);
+    electron.ipcRenderer.on("overlay:style-update", listener);
+    return () => electron.ipcRenderer.off("overlay:style-update", listener);
   }
 });
 electron.contextBridge.exposeInMainWorld("khelper", {
