@@ -78,71 +78,9 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
         backgroundColor: '#000',
         padding: '24px',
         position: 'relative',
+        boxSizing: 'border-box',
       }}
     >
-      {/* Header / Controls */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '24px',
-          zIndex: 10,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div
-            style={{
-              padding: '4px 12px',
-              backgroundColor: '#ff0000',
-              color: '#fff',
-              borderRadius: '4px',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              boxShadow: '0 0 10px rgba(255,0,0,0.5)',
-            }}
-          >
-            LIVE
-          </div>
-          <h1 style={{ fontSize: '20px', fontWeight: 'bold', color: '#fff', margin: 0 }}>直播模式</h1>
-        </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button
-            onClick={() => {
-              const url = 'http://localhost:10001/#/overlay';
-              navigator.clipboard.writeText(url);
-              alert('已複製 OBS 網址: ' + url);
-            }}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#222',
-              color: '#ccc',
-              border: '1px solid #444',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px',
-            }}
-          >
-            複製 OBS 網址
-          </button>
-          <button
-            onClick={onExit}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#333',
-              color: '#fff',
-              border: '1px solid #555',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 'bold',
-            }}
-          >
-            退出直播模式
-          </button>
-        </div>
-      </div>
-
       <div style={{ display: 'flex', flex: 1, gap: '24px', overflow: 'hidden' }}>
         {/* Left: Setlist / Now Playing */}
         <div
@@ -249,6 +187,88 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
             border: '1px solid #222',
           }}
         >
+          {/* Controls Overlay */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '16px',
+              right: '16px',
+              display: 'flex',
+              gap: '12px',
+              zIndex: 20,
+            }}
+          >
+            <button
+              onClick={() => {
+                const url = 'http://localhost:10001/#/overlay';
+                navigator.clipboard.writeText(url);
+                alert('已複製 OBS 網址: ' + url);
+              }}
+              title="複製 OBS 網址"
+              style={{
+                width: '32px',
+                height: '32px',
+                backgroundColor: 'rgba(0,0,0,0.5)',
+                color: '#fff',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backdropFilter: 'blur(4px)',
+              }}
+            >
+              {/* OBS Icon (Circle with dot) */}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="3" fill="currentColor" />
+              </svg>
+            </button>
+            <button
+              onClick={onExit}
+              title="退出直播模式"
+              style={{
+                width: '32px',
+                height: '32px',
+                backgroundColor: 'rgba(0,0,0,0.5)',
+                color: '#fff',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backdropFilter: 'blur(4px)',
+              }}
+            >
+              {/* Chevron Down Icon */}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Plain Text Tag */}
+          {lyricsStatus === 'text_only' && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '16px',
+                left: '16px',
+                padding: '4px 8px',
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                color: '#aaa',
+                fontSize: '12px',
+                borderRadius: '4px',
+                zIndex: 20,
+                pointerEvents: 'none',
+              }}
+            >
+              純文字
+            </div>
+          )}
+
           <LyricsOverlay
             status={lyricsStatus}
             lines={lines}
