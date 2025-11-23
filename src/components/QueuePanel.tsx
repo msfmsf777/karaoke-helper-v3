@@ -12,6 +12,21 @@ const QueuePanel: React.FC<QueuePanelProps> = ({ isOpen, onClose }) => {
     const { getSongById } = useLibrary();
     const [confirmClear, setConfirmClear] = useState(false);
 
+    const panelRef = React.useRef<HTMLDivElement>(null);
+
+    React.useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (isOpen && panelRef.current && !panelRef.current.contains(event.target as Node)) {
+                onClose();
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
 
     const handleClear = () => {
@@ -26,6 +41,7 @@ const QueuePanel: React.FC<QueuePanelProps> = ({ isOpen, onClose }) => {
 
     return (
         <div
+            ref={panelRef}
             style={{
                 position: 'absolute',
                 top: 0,
@@ -36,7 +52,7 @@ const QueuePanel: React.FC<QueuePanelProps> = ({ isOpen, onClose }) => {
                 borderLeft: '1px solid #333',
                 display: 'flex',
                 flexDirection: 'column',
-                zIndex: 50,
+                zIndex: 200, // Higher than TopBar (100)
                 boxShadow: '-5px 0 20px rgba(0,0,0,0.5)',
             }}
         >
@@ -170,6 +186,7 @@ const QueuePanel: React.FC<QueuePanelProps> = ({ isOpen, onClose }) => {
                                                 fontSize: '16px',
                                                 padding: '0 4px',
                                                 marginLeft: '4px',
+                                                marginTop: '2px'
                                             }}
                                             title="從隊列移除"
                                         >

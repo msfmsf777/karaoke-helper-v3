@@ -18,7 +18,7 @@ import FavoritesView from './components/FavoritesView';
 import HistoryView from './components/HistoryView';
 import PlaylistView from './components/PlaylistView';
 import DownloadManagerView from './components/DownloadManagerView';
-
+import SearchResultsView from './components/SearchResultsView';
 
 type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history' | 'download-manager' | string;
 
@@ -159,6 +159,11 @@ function AppContent() {
       return <PlaylistView playlistId={playlistId} />;
     }
 
+    if (currentView.startsWith('search-results:')) {
+      const term = currentView.split(':')[1];
+      return <SearchResultsView searchTerm={decodeURIComponent(term)} />;
+    }
+
     switch (currentView) {
       case 'library':
         return (
@@ -209,7 +214,11 @@ function AppContent() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
       {/* 1. Top Header (Hidden in Stream Mode) */}
       {currentView !== 'stream' && (
-        <TopBar onOpenSettings={() => setShowSettings(true)} onOpenProcessing={() => setShowProcessingList(true)} />
+        <TopBar
+          onOpenSettings={() => setShowSettings(true)}
+          onOpenProcessing={() => setShowProcessingList(true)}
+          onSearch={(term) => setCurrentView(`search-results:${encodeURIComponent(term)}`)}
+        />
       )}
 
       {/* 2. Middle Region (Sidebar + Content) */}

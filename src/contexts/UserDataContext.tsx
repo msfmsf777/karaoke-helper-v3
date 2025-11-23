@@ -25,6 +25,9 @@ interface UserDataContextType {
     addSongToPlaylist: (playlistId: string, songId: string) => void;
     removeSongFromPlaylist: (playlistId: string, songId: string) => void;
     cleanupSong: (songId: string) => void;
+    recentSearches: string[];
+    addRecentSearch: (term: string) => void;
+    clearRecentSearches: () => void;
 }
 
 const UserDataContext = createContext<UserDataContextType | null>(null);
@@ -37,6 +40,8 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const { currentSongId } = useQueue();
     // const { getSongById } = useLibrary();
     const isInitialized = useRef(false);
+
+    const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
     // Load data on startup
     useEffect(() => {
@@ -54,6 +59,17 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 setHistory(Array.from(new Set(hist)));
                 setPlaylists(pl);
                 setSeparationQuality((settings.separationQuality as 'high' | 'normal' | 'fast') || 'normal');
+
+                // Load recent searches from localStorage
+                const savedRecent = localStorage.getItem('khelper_recent_searches');
+                if (savedRecent) {
+                    try {
+                        setRecentSearches(JSON.parse(savedRecent));
+                    } catch (e) {
+                        console.warn('Failed to parse recent searches', e);
+                    }
+                }
+
                 console.log('[UserData] Loaded', favs.length, 'favorites,', hist.length, 'history items,', pl.length, 'playlists, quality:', settings.separationQuality);
             } catch (err) {
                 console.error('[UserData] Failed to load user data', err);
@@ -95,6 +111,12 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             console.error('[UserData] Failed to save settings', err)
         );
     }, [separationQuality]);
+
+    // Save recent searches on change
+    useEffect(() => {
+        if (!isInitialized.current) return;
+        localStorage.setItem('khelper_recent_searches', JSON.stringify(recentSearches));
+    }, [recentSearches]);
 
     // Listen to currentSongId changes to update history
     useEffect(() => {
@@ -174,6 +196,17 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         })));
     }, []);
 
+    const addRecentSearch = useCallback((term: string) => {
+        setRecentSearches(prev => {
+            const filtered = prev.filter(t => t !== term);
+            return [term, ...filtered].slice(0, 10);
+        });
+    }, []);
+
+    const clearRecentSearches = useCallback(() => {
+        setRecentSearches([]);
+    }, []);
+
     return (
         <UserDataContext.Provider value={{
             favorites,
@@ -190,7 +223,10 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             renamePlaylist,
             addSongToPlaylist,
             removeSongFromPlaylist,
-            cleanupSong
+            cleanupSong,
+            recentSearches,
+            addRecentSearch,
+            clearRecentSearches
         }}>
             {children}
         </UserDataContext.Provider>
