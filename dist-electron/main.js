@@ -5,9 +5,9 @@ import { app, BrowserWindow, ipcMain, dialog } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import fs from "node:fs/promises";
+import fs$1, { createWriteStream } from "node:fs";
 import { spawn } from "node:child_process";
 import http from "node:http";
-import fs$1 from "node:fs";
 const APP_FOLDER_NAME = "KHelperLive";
 const SONGS_FOLDER_NAME = "songs";
 const AUDIO_STATUS_VALUES = ["original_only", "separation_pending", "separating", "separation_failed", "separated"];
@@ -273,6 +273,101 @@ const songLibrary = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineP
   updateSong,
   updateSongMeta
 }, Symbol.toStringTag, { value: "Module" }));
+async function getPythonPath() {
+  if (process.env.KHELPER_PYTHON_RUNTIME_PATH) {
+    return process.env.KHELPER_PYTHON_RUNTIME_PATH;
+  }
+  let runtimeBase;
+  if (app.isPackaged) {
+    runtimeBase = path.join(process.resourcesPath, "python-runtime");
+  } else {
+    runtimeBase = path.join(process.cwd(), "resources", "python-runtime");
+  }
+  const pythonPath = path.join(runtimeBase, "python.exe");
+  try {
+    await fs.access(pythonPath);
+    return pythonPath;
+  } catch {
+    console.warn(`[PythonRuntime] Bundled Python not found at ${pythonPath}`);
+    return pythonPath;
+  }
+}
+const MODEL_PRESETS = {
+  high: {
+    filename: "MDX23C-8KFFT-InstVoc_HQ.ckpt",
+    url: "https://huggingface.co/Blane187/all_public_uvr_models/resolve/main/MDX23C-8KFFT-InstVoc_HQ.ckpt",
+    name: "MDX23C-InstVocHQ"
+  },
+  normal: {
+    filename: "UVR-MDX-NET-Inst_HQ_3.onnx",
+    url: "https://huggingface.co/seanghay/uvr_models/resolve/main/UVR-MDX-NET-Inst_HQ_3.onnx",
+    name: "UVR-MDX-NET-Inst_HQ_3"
+  },
+  fast: {
+    filename: "UVR-MDX-NET-Inst_1.onnx",
+    url: "https://huggingface.co/Blane187/all_public_uvr_models/resolve/main/UVR-MDX-NET-Inst_1.onnx",
+    name: "UVR-MDX-NET-Inst_1"
+  }
+};
+function getModelCacheDir() {
+  return path.join(app.getPath("userData"), "models", "mdx");
+}
+async function getModelPath(quality) {
+  const cacheDir = getModelCacheDir();
+  return path.join(cacheDir, MODEL_PRESETS[quality].filename);
+}
+async function isModelAvailable(quality) {
+  const modelPath = await getModelPath(quality);
+  try {
+    await fs.access(modelPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+async function downloadModel(quality, onProgress) {
+  const preset = MODEL_PRESETS[quality];
+  const cacheDir = getModelCacheDir();
+  const finalPath = path.join(cacheDir, preset.filename);
+  const tempPath = path.join(cacheDir, `${preset.filename}.tmp`);
+  await fs.mkdir(cacheDir, { recursive: true });
+  console.log(`[ModelManager] Downloading ${preset.name} from ${preset.url}`);
+  try {
+    const response = await fetch(preset.url);
+    if (!response.ok) {
+      throw new Error(`Failed to download model: ${response.statusText}`);
+    }
+    const totalLength = Number(response.headers.get("content-length"));
+    let downloaded = 0;
+    if (!response.body) throw new Error("No response body");
+    const fileStream = createWriteStream(tempPath);
+    const reader = response.body.getReader();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      downloaded += value.length;
+      fileStream.write(value);
+      if (totalLength && onProgress) {
+        onProgress(downloaded / totalLength * 100);
+      }
+    }
+    fileStream.end();
+    await new Promise((resolve, reject) => {
+      fileStream.on("finish", resolve);
+      fileStream.on("error", reject);
+    });
+    await fs.rename(tempPath, finalPath);
+    console.log(`[ModelManager] Download complete: ${finalPath}`);
+    return finalPath;
+  } catch (err) {
+    console.error(`[ModelManager] Download failed`, err);
+    try {
+      await fs.unlink(tempPath);
+    } catch {
+    }
+    throw err;
+  }
+}
 const FAVORITES_FILE = "favorites.json";
 const HISTORY_FILE = "history.json";
 const SETTINGS_FILE = "settings.json";
@@ -374,11 +469,12 @@ const userData = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProp
 function generateJobId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 }
-async function runDemucsSeparation(originalPath, songFolder, quality, onProgress) {
-  console.log("[Separation] Starting MDX separation", { originalPath, songFolder, quality });
+async function runDemucsSeparation(originalPath, songFolder, quality, modelDir, onProgress) {
+  const pythonPath = await getPythonPath();
+  console.log("[Separation] Starting MDX separation", { originalPath, songFolder, quality, pythonPath, modelDir });
   const scriptPath = path.join(process.cwd(), "resources", "separation", "separate.py");
   return new Promise((resolve, reject) => {
-    const python = spawn("python", [
+    const python = spawn(pythonPath, [
       scriptPath,
       "--input",
       originalPath,
@@ -386,8 +482,8 @@ async function runDemucsSeparation(originalPath, songFolder, quality, onProgress
       songFolder,
       "--quality",
       quality,
-      "--cache-dir",
-      path.join(process.env.APPDATA || "", "KHelperLive", "models")
+      "--model-dir",
+      modelDir
     ]);
     let result = null;
     let errorOutput = "";
@@ -481,7 +577,15 @@ class SeparationJobManager {
       this.notify();
       const { songDir, originalPath } = await this.ensureOriginalPath(meta);
       const quality = job.quality || "normal";
-      const { instrumentalPath, vocalPath } = await runDemucsSeparation(originalPath, songDir, quality, (progress) => {
+      if (!await isModelAvailable(quality)) {
+        console.log(`[Separation] Model for ${quality} missing, downloading...`);
+        this.updateJob(job.id, { progress: 0 });
+        await downloadModel(quality, (percent) => {
+          console.log(`[Separation] Downloading model: ${percent.toFixed(1)}%`);
+        });
+      }
+      const modelDir = getModelCacheDir();
+      const { instrumentalPath, vocalPath } = await runDemucsSeparation(originalPath, songDir, quality, modelDir, (progress) => {
         this.updateJob(job.id, { progress });
         this.notify();
       });
