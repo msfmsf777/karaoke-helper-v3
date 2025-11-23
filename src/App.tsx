@@ -1,12 +1,8 @@
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef, useMemo, lazy, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
 import PlayerBar from './components/PlayerBar';
 import LibraryView from './components/LibraryView';
-import LyricEditorView from './components/LyricEditorView';
-import StreamModeView from './components/StreamModeView';
 import TopBar from './components/TopBar';
-import SettingsModal from './components/SettingsModal';
-import ProcessingListModal from './components/ProcessingListModal';
 import QueuePanel from './components/QueuePanel';
 import audioEngine, { OutputRole } from './audio/AudioEngine';
 import { loadOutputDevicePreferences, saveOutputDevicePreferences } from './settings/devicePreferences';
@@ -14,11 +10,18 @@ import './App.css';
 import { LibraryProvider, useLibrary } from './contexts/LibraryContext';
 import { QueueProvider, useQueue } from './contexts/QueueContext';
 import { UserDataProvider } from './contexts/UserDataContext';
-import FavoritesView from './components/FavoritesView';
-import HistoryView from './components/HistoryView';
-import PlaylistView from './components/PlaylistView';
-import DownloadManagerView from './components/DownloadManagerView';
-import SearchResultsView from './components/SearchResultsView';
+import SkeletonSongList from './components/skeletons/SkeletonSongList';
+
+// Lazy load heavy components
+const LyricEditorView = lazy(() => import('./components/LyricEditorView'));
+const StreamModeView = lazy(() => import('./components/StreamModeView'));
+const SettingsModal = lazy(() => import('./components/SettingsModal'));
+const ProcessingListModal = lazy(() => import('./components/ProcessingListModal'));
+const FavoritesView = lazy(() => import('./components/FavoritesView'));
+const HistoryView = lazy(() => import('./components/HistoryView'));
+const PlaylistView = lazy(() => import('./components/PlaylistView'));
+const DownloadManagerView = lazy(() => import('./components/DownloadManagerView'));
+const SearchResultsView = lazy(() => import('./components/SearchResultsView'));
 
 type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history' | 'download-manager' | string;
 
@@ -69,12 +72,6 @@ function AppContent() {
 
     // Sync initial state
     setIsPlaying(audioEngine.isPlaying());
-
-    // Poll for play state changes that might happen outside of React (e.g. audio engine internals)
-    // Or better, add a listener to AudioEngine if it supported it. 
-    // For now, we hook into play/pause methods or rely on timeupdate.
-    // Actually, let's just rely on the fact that we control play/pause via the UI mostly.
-    // But to be safe, we can update isPlaying on timeupdate too.
 
     return () => {
       unsubscribeTime();
@@ -154,60 +151,70 @@ function AppContent() {
   };
 
   const renderContent = () => {
-    if (currentView.startsWith('playlist:')) {
-      const playlistId = currentView.split(':')[1];
-      return <PlaylistView playlistId={playlistId} />;
-    }
+    return (
+      <Suspense fallback={
+        <div style={{ padding: '0 32px', marginTop: '32px' }}>
+          <SkeletonSongList count={8} />
+        </div>
+      }>
+        {(() => {
+          if (currentView.startsWith('playlist:')) {
+            const playlistId = currentView.split(':')[1];
+            return <PlaylistView playlistId={playlistId} />;
+          }
 
-    if (currentView.startsWith('search-results:')) {
-      const term = currentView.split(':')[1];
-      return <SearchResultsView searchTerm={decodeURIComponent(term)} />;
-    }
+          if (currentView.startsWith('search-results:')) {
+            const term = currentView.split(':')[1];
+            return <SearchResultsView searchTerm={decodeURIComponent(term)} />;
+          }
 
-    switch (currentView) {
-      case 'library':
-        return (
-          <LibraryView
-            onOpenLyrics={(song) => {
-              setLyricsEditorSongId(song.id);
-              setCurrentView('lyrics');
-            }}
-          />
-        );
-      case 'download-manager':
-        return <DownloadManagerView />;
-      case 'lyrics':
-        return (
-          <LyricEditorView
-            onSongLoad={async () => { /* No-op, handled by queue now */ }}
-            activeSongId={currentTrack?.id}
-            initialSongId={lyricsEditorSongId}
-            onSongSelectedChange={(songId) => setLyricsEditorSongId(songId)}
-            isPlaying={isPlaying}
-            currentTime={currentTime}
-            duration={duration}
-            onPlayPause={handlePlayPause}
-            onSeek={handleSeek}
-          />
-        );
-      case 'stream':
-        return (
-          <StreamModeView
-            currentTrack={currentTrack}
-            currentTime={currentTime}
-            isPlaying={isPlaying}
-            onExit={() => setCurrentView('library')}
-            onOpenOverlayWindow={() => window.api.openOverlayWindow()}
-          />
-        );
+          switch (currentView) {
+            case 'library':
+              return (
+                <LibraryView
+                  onOpenLyrics={(song) => {
+                    setLyricsEditorSongId(song.id);
+                    setCurrentView('lyrics');
+                  }}
+                />
+              );
+            case 'download-manager':
+              return <DownloadManagerView />;
+            case 'lyrics':
+              return (
+                <LyricEditorView
+                  onSongLoad={async () => { /* No-op, handled by queue now */ }}
+                  activeSongId={currentTrack?.id}
+                  initialSongId={lyricsEditorSongId}
+                  onSongSelectedChange={(songId) => setLyricsEditorSongId(songId)}
+                  isPlaying={isPlaying}
+                  currentTime={currentTime}
+                  duration={duration}
+                  onPlayPause={handlePlayPause}
+                  onSeek={handleSeek}
+                />
+              );
+            case 'stream':
+              return (
+                <StreamModeView
+                  currentTrack={currentTrack}
+                  currentTime={currentTime}
+                  isPlaying={isPlaying}
+                  onExit={() => setCurrentView('library')}
+                  onOpenOverlayWindow={() => window.api.openOverlayWindow()}
+                />
+              );
 
-      case 'favorites':
-        return <FavoritesView />;
-      case 'history':
-        return <HistoryView />;
-      default:
-        return <LibraryView />;
-    }
+            case 'favorites':
+              return <FavoritesView />;
+            case 'history':
+              return <HistoryView />;
+            default:
+              return <LibraryView />;
+          }
+        })()}
+      </Suspense>
+    );
   };
 
   return (
@@ -252,14 +259,20 @@ function AppContent() {
         onToggleQueue={() => setShowQueuePanel((prev) => !prev)}
       />
       <QueuePanel isOpen={showQueuePanel} onClose={() => setShowQueuePanel(false)} />
-      <SettingsModal
-        open={showSettings}
-        onClose={() => setShowSettings(false)}
-        streamDeviceId={outputDevices.streamDeviceId}
-        headphoneDeviceId={outputDevices.headphoneDeviceId}
-        onChangeDevice={handleDeviceChange}
-      />
-      <ProcessingListModal open={showProcessingList} onClose={() => setShowProcessingList(false)} />
+      <Suspense fallback={null}>
+        {showSettings && (
+          <SettingsModal
+            open={showSettings}
+            onClose={() => setShowSettings(false)}
+            streamDeviceId={outputDevices.streamDeviceId}
+            headphoneDeviceId={outputDevices.headphoneDeviceId}
+            onChangeDevice={handleDeviceChange}
+          />
+        )}
+        {showProcessingList && (
+          <ProcessingListModal open={showProcessingList} onClose={() => setShowProcessingList(false)} />
+        )}
+      </Suspense>
 
     </div>
   );

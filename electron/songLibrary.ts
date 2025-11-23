@@ -94,6 +94,16 @@ function generateSongId(): string {
   return `${Date.now()}`;
 }
 
+// Cache for loaded songs
+let cachedSongs: SongMeta[] | null = null;
+let loadPromise: Promise<SongMeta[]> | null = null;
+
+function invalidateCache() {
+  cachedSongs = null;
+  loadPromise = null;
+  console.log('[Library] Cache invalidated');
+}
+
 export async function addLocalSong(params: {
   sourcePath: string;
   title: string;
@@ -151,29 +161,68 @@ export async function addLocalSong(params: {
   await writeMeta(songDir, meta);
   console.log('[Library] Saved meta.json', { id, path: path.join(songDir, 'meta.json') });
 
+  invalidateCache();
   return meta;
 }
 
-export async function loadAllSongs(): Promise<SongMeta[]> {
-  const songsDir = await ensureSongsDir();
-  const entries = await fs.readdir(songsDir, { withFileTypes: true });
-  const metas: SongMeta[] = [];
-
-  for (const entry of entries) {
-    if (!entry.isDirectory()) continue;
-    const songDir = path.join(songsDir, entry.name);
-    const meta = await readMeta(songDir);
-    if (meta) {
-      metas.push(meta);
-    }
+export function loadAllSongs(): Promise<SongMeta[]> {
+  if (cachedSongs) {
+    console.log('[Library] Returning cached songs', cachedSongs.length);
+    return Promise.resolve(cachedSongs);
   }
 
-  console.log('[Library] Loaded songs', { count: metas.length, songsDir });
-  return metas.sort((a, b) => Number(b.id) - Number(a.id));
+  if (loadPromise) {
+    console.log('[Library] Joining existing load request');
+    return loadPromise;
+  }
+
+  console.log('[Library] Starting fresh load from disk');
+  loadPromise = (async () => {
+    try {
+      const songsDir = await ensureSongsDir();
+      const entries = await fs.readdir(songsDir, { withFileTypes: true });
+
+      // Filter for directories first
+      const songDirs = entries
+        .filter(entry => entry.isDirectory())
+        .map(entry => path.join(songsDir, entry.name));
+
+      // Simple concurrency limiter
+      const CONCURRENCY_LIMIT = 50;
+      const metas: SongMeta[] = [];
+
+      // Process in chunks to limit concurrency
+      for (let i = 0; i < songDirs.length; i += CONCURRENCY_LIMIT) {
+        const chunk = songDirs.slice(i, i + CONCURRENCY_LIMIT);
+        const results = await Promise.all(chunk.map(dir => readMeta(dir)));
+
+        for (const meta of results) {
+          if (meta) {
+            metas.push(meta);
+          }
+        }
+      }
+
+      console.log('[Library] Loaded songs from disk', { count: metas.length, songsDir });
+      const sorted = metas.sort((a, b) => Number(b.id) - Number(a.id));
+      cachedSongs = sorted;
+      return sorted;
+    } finally {
+      loadPromise = null;
+    }
+  })();
+
+  return loadPromise;
 }
 
 export async function getSongMeta(id: string): Promise<SongMeta | null> {
   if (!id) return null;
+  // Try cache first
+  if (cachedSongs) {
+    const found = cachedSongs.find(s => s.id === id);
+    if (found) return found;
+  }
+
   const songsDir = await ensureSongsDir();
   const songDir = path.join(songsDir, id);
   return readMeta(songDir);
@@ -196,6 +245,7 @@ export async function updateSongMeta(id: string, mutate: (meta: SongMeta) => Son
   } as SongMeta);
 
   await writeMeta(songDir, next);
+  invalidateCache();
   return next;
 }
 
@@ -297,6 +347,7 @@ export async function deleteSong(id: string): Promise<void> {
   try {
     await fs.rm(songDir, { recursive: true, force: true });
     console.log('[Library] Deleted song folder', { id, songDir });
+    invalidateCache();
   } catch (err) {
     console.error('[Library] Failed to delete song folder', { id, songDir }, err);
     throw err;

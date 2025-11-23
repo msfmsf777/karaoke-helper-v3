@@ -4,6 +4,7 @@ import { useLibrary } from '../contexts/LibraryContext';
 import { useQueue } from '../contexts/QueueContext';
 import { useUserData } from '../contexts/UserDataContext';
 import SongList from './SongList';
+import SkeletonSongList from './skeletons/SkeletonSongList';
 
 interface LibraryViewProps {
   onOpenLyrics?: (song: SongMeta) => void;
@@ -504,7 +505,9 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics }) => {
 
       <div style={{ flex: 1, overflow: 'hidden' }}>
         {loading ? (
-          <div style={{ padding: '20px', color: '#b3b3b3' }}>載入中...</div>
+          <div style={{ padding: '0' }}>
+            <SkeletonSongList count={12} />
+          </div>
         ) : (
           <SongList
             songs={currentSongs}

@@ -115,6 +115,9 @@ class DownloadJobManager {
             if (err.code !== 'ENOENT') {
                 console.error('[DownloadJobs] Failed to load jobs', err);
             }
+        } finally {
+            // Notify subscribers that initial load is complete
+            this.notify();
         }
     }
 

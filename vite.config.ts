@@ -26,4 +26,9 @@ export default defineConfig({
         : {},
     }),
   ],
+  server: {
+    watch: {
+      ignored: ['**/resources/**'],
+    },
+  },
 })
