@@ -80,37 +80,34 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({ status, lines, currentTim
         );
     }
 
+    const maskStyle = {
+        maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 75%, transparent 100%)',
+        WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 75%, transparent 100%)',
+    };
+
     if (status === 'text_only') {
         return (
-            <div className={className} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <div
-                    style={{
-                        flex: 1,
-                        overflowY: 'auto',
-                        padding: '32px',
-                        textAlign: 'center',
-                        fontSize: '28px',
-                        lineHeight: 1.8,
-                        color: '#ddd',
-                        whiteSpace: 'pre-wrap',
-                    }}
-                >
+            <div className={className} style={{ height: '100%', position: 'relative', ...maskStyle }}>
+                <div style={{
+                    height: '100%',
+                    overflowY: 'auto',
+                    padding: '0 32px',
+                    textAlign: 'center',
+                    fontSize: '28px',
+                    lineHeight: 1.8,
+                    color: '#ddd',
+                    whiteSpace: 'pre-wrap',
+                    scrollbarWidth: 'none',
+                    display: 'flex',
+                    flexDirection: 'column',
+                }}>
+                    <div style={{ height: '50vh', flexShrink: 0 }} />
                     {lines.map((line) => (
-                        <div key={line.id} style={{ marginBottom: '16px' }}>
+                        <div key={line.id} style={{ marginBottom: '16px', flexShrink: 0 }}>
                             {line.text}
                         </div>
                     ))}
-                </div>
-                <div
-                    style={{
-                        padding: '8px',
-                        textAlign: 'center',
-                        fontSize: '14px',
-                        color: '#666',
-                        backgroundColor: 'rgba(0,0,0,0.3)',
-                    }}
-                >
-                    此歌曲目前只有純文字歌詞，未對齊時間
+                    <div style={{ height: '50vh', flexShrink: 0 }} />
                 </div>
             </div>
         );
@@ -118,62 +115,61 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({ status, lines, currentTim
 
     // Synced Lyrics
     return (
-        <div
-            className={className}
-            ref={containerRef}
-            onWheel={handleUserScroll}
-            onTouchMove={handleUserScroll}
-            style={{
-                height: '100%',
-                overflowY: 'auto', // Enable manual scrolling
-                padding: '0 32px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                position: 'relative', // Ensure offsetTop is relative to this container
-                boxSizing: 'border-box', // Ensure padding is included in height calculations
-                // We use a large padding top/bottom so the first/last lines can be centered
-                paddingTop: '40vh',
-                paddingBottom: '40vh',
-                scrollbarWidth: 'none', // Firefox
-                msOverflowStyle: 'none', // IE/Edge
-            }}
-        >
-            <style>{`
+        <div className={className} style={{ height: '100%', position: 'relative', ...maskStyle }}>
+            <div
+                ref={containerRef}
+                onWheel={handleUserScroll}
+                onTouchMove={handleUserScroll}
+                style={{
+                    height: '100%',
+                    overflowY: 'auto', // Enable manual scrolling
+                    padding: '0 32px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    scrollbarWidth: 'none', // Firefox
+                    msOverflowStyle: 'none', // IE/Edge
+                }}
+            >
+                <style>{`
                 .${className}::-webkit-scrollbar {
                     display: none; /* Chrome/Safari/Opera */
                 }
             `}</style>
-            {lines.map((line, idx) => {
-                const isActive = idx === currentIdx;
-                const isPast = idx < currentIdx;
+                <div style={{ height: '50vh', flexShrink: 0 }} />
+                {lines.map((line, idx) => {
+                    const isActive = idx === currentIdx;
+                    const isPast = idx < currentIdx;
 
-                return (
-                    <div
-                        key={line.id}
-                        ref={isActive ? activeLineRef : null}
-                        onClick={() => {
-                            if (line.timeSeconds !== null && onLineClick) {
-                                onLineClick(line.timeSeconds);
-                            }
-                        }}
-                        style={{
-                            fontSize: isActive ? '48px' : '32px',
-                            fontWeight: isActive ? 800 : 500,
-                            color: isActive ? 'var(--accent-color, #ff4444)' : isPast ? '#444' : '#888',
-                            textAlign: 'center',
-                            marginBottom: '24px',
-                            transition: 'all 0.3s ease-out',
-                            transform: isActive ? 'scale(1.05)' : 'scale(1)',
-                            opacity: isActive ? 1 : isPast ? 0.4 : 0.6,
-                            textShadow: isActive ? '0 0 20px rgba(255, 68, 68, 0.4)' : 'none',
-                            cursor: onLineClick ? 'pointer' : 'default',
-                        }}
-                    >
-                        {line.text}
-                    </div>
-                );
-            })}
+                    return (
+                        <div
+                            key={line.id}
+                            ref={isActive ? activeLineRef : null}
+                            onClick={() => {
+                                if (line.timeSeconds !== null && onLineClick) {
+                                    onLineClick(line.timeSeconds);
+                                }
+                            }}
+                            style={{
+                                fontSize: isActive ? `${32 * 1.25}px` : '32px',
+                                fontWeight: isActive ? 800 : 500,
+                                color: isActive ? 'var(--accent-color, #ff4444)' : isPast ? '#444' : '#888',
+                                textAlign: 'center',
+                                marginBottom: '24px',
+                                transition: 'all 0.3s ease-out',
+                                transform: isActive ? 'scale(1.05)' : 'scale(1)',
+                                opacity: isActive ? 1 : isPast ? 0.4 : 0.6,
+                                textShadow: isActive ? '0 0 20px rgba(255, 68, 68, 0.4)' : 'none',
+                                cursor: onLineClick ? 'pointer' : 'default',
+                                flexShrink: 0,
+                            }}
+                        >
+                            {line.text}
+                        </div>
+                    );
+                })}
+                <div style={{ height: '50vh', flexShrink: 0 }} />
+            </div>
         </div>
     );
 };

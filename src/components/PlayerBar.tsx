@@ -170,15 +170,35 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           onClick={handleLiveToggle}
+          title={currentView === 'stream' ? '關閉直播模式' : '進入直播模式'}
         >
           {currentView === 'stream' ? (
-            <span>LIVE</span>
+            isHovered ? (
+              // Back Icon
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 14L4 9l5-5" />
+                <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11" />
+              </svg>
+            ) : (
+              <span>LIVE</span>
+            )
           ) : isHovered ? (
-            <div>
-              Stream<br />Mode
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              {/* Red Live Icon */}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff4444" strokeWidth="2" style={{ marginBottom: '2px' }}>
+                <path d="M2 12h20" />
+                <path d="M12 2v20" />
+                <circle cx="12" cy="12" r="10" />
+              </svg>
+              <span style={{ fontSize: '10px', color: '#ff4444', lineHeight: 1 }}>直播模式</span>
             </div>
           ) : (
-            <span>音樂</span>
+            // Music Icon
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 18V5l12-2v13" />
+              <circle cx="6" cy="18" r="3" />
+              <circle cx="18" cy="16" r="3" />
+            </svg>
           )}
         </div>
         <div>
