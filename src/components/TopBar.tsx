@@ -2,6 +2,9 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useUserData } from '../contexts/UserDataContext';
 import { useLibrary } from '../contexts/LibraryContext';
 import { useQueue } from '../contexts/QueueContext';
+import LogoImage from '../assets/images/logo.png';
+import TasksIcon from '../assets/icons/tasks.svg';
+import SettingsIcon from '../assets/icons/settings.svg';
 
 interface TopBarProps {
   onOpenSettings?: () => void;
@@ -17,16 +20,7 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onSea
   const { playSongList } = useQueue();
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  const buttonStyle = {
-    backgroundColor: '#282828',
-    color: '#fff',
-    border: '1px solid #3e3e3e',
-    borderRadius: '6px',
-    padding: '8px 12px',
-    fontSize: '13px',
-    cursor: 'pointer',
-    marginLeft: '8px',
-  };
+
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -89,18 +83,19 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onSea
           fontWeight: 'bold',
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
+          gap: '12px',
         }}
       >
-        <div
+        <img
+          src={LogoImage}
+          alt="Logo"
           style={{
-            width: '24px',
-            height: '24px',
-            background: 'linear-gradient(135deg, #1db954, #1ed760)',
-            borderRadius: '50%',
+            width: '32px',
+            height: '32px',
+            objectFit: 'contain',
           }}
-        ></div>
-        KHelperLive
+        />
+        KHelper V3
       </div>
 
       {/* Center: Search Bar */}
@@ -271,12 +266,44 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onSea
       </div>
 
       {/* Right: Actions */}
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <button style={buttonStyle} onClick={onOpenProcessing}>
-          處理中任務
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <button
+          onClick={onOpenProcessing}
+          title="處理中任務"
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: 0.8,
+            transition: 'opacity 0.2s',
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+          onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
+        >
+          <img src={TasksIcon} alt="Tasks" style={{ width: '24px', height: '24px', display: 'block' }} />
         </button>
-        <button style={buttonStyle} onClick={onOpenSettings}>
-          設定
+        <button
+          onClick={onOpenSettings}
+          title="設定"
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: 0.8,
+            transition: 'opacity 0.2s',
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+          onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
+        >
+          <img src={SettingsIcon} alt="Settings" style={{ width: '24px', height: '24px', display: 'block' }} />
         </button>
       </div>
     </div>
