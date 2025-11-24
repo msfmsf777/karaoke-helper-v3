@@ -1,8 +1,8 @@
 import { app, BrowserWindow, ipcMain, dialog } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import http from "node:http";
 import fs from "node:fs";
+import http from "node:http";
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname$1, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
@@ -12,13 +12,80 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 
 let win;
 const jobSubscriptions = /* @__PURE__ */ new Map();
 const downloadSubscriptions = /* @__PURE__ */ new Map();
+const WINDOW_STATE_FILE = "window-state.json";
+function loadWindowState() {
+  try {
+    const statePath = path.join(app.getPath("userData"), WINDOW_STATE_FILE);
+    if (fs.existsSync(statePath)) {
+      const data = fs.readFileSync(statePath, "utf-8");
+      return JSON.parse(data);
+    }
+  } catch (e) {
+    console.error("Failed to load window state", e);
+  }
+  return { width: 1130, height: 660, isMaximized: false };
+}
+function saveWindowState(state) {
+  try {
+    const statePath = path.join(app.getPath("userData"), WINDOW_STATE_FILE);
+    fs.writeFileSync(statePath, JSON.stringify(state));
+  } catch (e) {
+    console.error("Failed to save window state", e);
+  }
+}
 function createWindow() {
+  const state = loadWindowState();
   win = new BrowserWindow({
+    width: state.width,
+    height: state.height,
+    x: state.x,
+    y: state.y,
+    minWidth: 1130,
+    minHeight: 660,
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {
       preload: path.join(__dirname$1, "preload.mjs"),
       // Allow loading local file:// resources from the renderer (needed for direct audio file playback in dev/HTTP origin).
       webSecurity: false
+    },
+    show: false
+    // Don't show immediately to avoid flickering if maximizing
+  });
+  if (state.isMaximized) {
+    win.maximize();
+  }
+  win.show();
+  let saveTimeout = null;
+  const handleSave = () => {
+    if (!win) return;
+    if (saveTimeout) clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+      if (!win || win.isDestroyed()) return;
+      if (win.isMinimized()) return;
+      const isMaximized = win.isMaximized();
+      const bounds = win.getBounds();
+      saveWindowState({
+        width: bounds.width,
+        height: bounds.height,
+        x: bounds.x,
+        y: bounds.y,
+        isMaximized
+      });
+    }, 1e3);
+  };
+  win.on("resize", handleSave);
+  win.on("move", handleSave);
+  win.on("close", () => {
+    if (win && !win.isDestroyed() && !win.isMinimized()) {
+      const isMaximized = win.isMaximized();
+      const bounds = win.getBounds();
+      saveWindowState({
+        width: bounds.width,
+        height: bounds.height,
+        x: bounds.x,
+        y: bounds.y,
+        isMaximized
+      });
     }
   });
   win.webContents.on("did-finish-load", () => {

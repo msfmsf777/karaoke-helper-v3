@@ -33,7 +33,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({ onOpenLyrics }) => {
     return (
         <div style={{ height: '100%', display: 'flex', flexDirection: 'column', color: '#fff', padding: '32px' }}>
             <div style={{ marginBottom: '20px', flexShrink: 0 }}>
-                <h1 style={{ margin: '0 0 10px 0', fontSize: '32px', fontWeight: 'bold' }}>最近播放</h1>
+                <h1 style={{ margin: '0 0 10px 0', fontSize: '28px', fontWeight: 'bold' }}>最近播放</h1>
                 <div style={{ fontSize: '14px', color: '#888', marginBottom: '16px' }}>
                     顯示最近 {historySongs.length} 首播放的歌曲
                 </div>
