@@ -1,9 +1,22 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { SongMeta } from '../../shared/songTypes';
 import { useQueue } from '../contexts/QueueContext';
 import { useUserData } from '../contexts/UserDataContext';
 import { useLibrary } from '../contexts/LibraryContext';
 import EditSongDialog from './EditSongDialog';
+
+// Icons
+import PlayMenuIcon from '../assets/icons/play_menu.svg';
+import QueueAddIcon from '../assets/icons/queue_add.svg';
+import FavoritesIcon from '../assets/icons/favorites.svg';
+import FavoritesFilledIcon from '../assets/icons/favorites_filled.svg';
+import PlaylistItemIcon from '../assets/icons/playlist_item.svg'; // Using this for submenu parent
+import PlaylistAddIcon from '../assets/icons/playlist_add.svg'; // Or maybe use this for submenu parent? User said "use the songlist svg used in left sidebar" which is PlaylistItemIcon. But for "Add to playlist" generic icon? Let's use PlaylistAddIcon for the menu item.
+import LyricsIcon from '../assets/icons/lyrics.svg';
+import EditIcon from '../assets/icons/edit.svg';
+import DeleteIcon from '../assets/icons/delete.svg';
+import SeparateIcon from '../assets/icons/separate.svg';
+import CheckIcon from '../assets/icons/check.svg';
 
 interface SongContextMenuProps {
     song: SongMeta;
@@ -18,17 +31,45 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
     const { isFavorite, toggleFavorite, playlists, createPlaylist, addSongToPlaylist, cleanupSong } = useUserData();
     const { deleteSong } = useLibrary();
 
-    const [showPlaylistSubmenu, setShowPlaylistSubmenu] = useState(false);
-    const [showSeparationSubmenu, setShowSeparationSubmenu] = useState(false);
+    const [activeSubmenu, setActiveSubmenu] = useState<'playlist' | 'separation' | null>(null);
     const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
     const [newPlaylistName, setNewPlaylistName] = useState('');
     const [showEditDialog, setShowEditDialog] = useState(false);
+    const [adjustedPosition, setAdjustedPosition] = useState(position);
+
+    const openTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Smart Positioning
+    useLayoutEffect(() => {
+        if (menuRef.current) {
+            const rect = menuRef.current.getBoundingClientRect();
+            const { innerHeight, innerWidth } = window;
+            let { x, y } = position;
+
+            // Vertical adjustment
+            if (y + rect.height > innerHeight) {
+                // If not enough space below, try to position it above the click
+                // But we need to know the height. We have rect.height.
+                // Let's shift it up so the bottom is at the click Y (or slightly above)
+                y = y - rect.height;
+                // Ensure it doesn't go off top
+                if (y < 0) y = 10;
+            }
+
+            // Horizontal adjustment
+            if (x + rect.width > innerWidth) {
+                x = innerWidth - rect.width - 10;
+            }
+
+            setAdjustedPosition({ x, y });
+        }
+    }, [position, activeSubmenu, isCreatingPlaylist]); // Re-calc when submenu opens/closes or playlist input shows
 
     // Close on click outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                // Only close if not interacting with the edit dialog
                 if (!showEditDialog) {
                     onClose();
                 }
@@ -37,31 +78,59 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
         document.addEventListener('mousedown', handleClickOutside);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
+            if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
+            if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
         };
     }, [onClose, showEditDialog]);
 
-    // Adjust position if it goes off screen (basic)
+    const handleSubmenuEnter = (menu: 'playlist' | 'separation') => {
+        if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+        if (activeSubmenu === menu) return;
+
+        if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
+        openTimeoutRef.current = setTimeout(() => {
+            setActiveSubmenu(menu);
+        }, 250); // 250ms delay to open
+    };
+
+    const handleSubmenuLeave = () => {
+        if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
+
+        if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+        closeTimeoutRef.current = setTimeout(() => {
+            setActiveSubmenu(null);
+        }, 300); // 300ms delay to close
+    };
+
     const style: React.CSSProperties = {
         position: 'fixed',
-        left: position.x,
-        top: position.y,
+        left: adjustedPosition.x,
+        top: adjustedPosition.y,
         backgroundColor: '#2d2d2d',
         border: '1px solid #3a3a3a',
         borderRadius: '8px',
         padding: '6px 0',
         zIndex: 1000,
         boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-        minWidth: '180px',
+        minWidth: '200px', // Slightly wider for icons
         color: '#fff',
         fontSize: '14px',
     };
 
     const itemStyle: React.CSSProperties = {
-        padding: '8px 16px',
+        padding: '8px 12px',
         cursor: 'pointer',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        alignItems: 'center', // Align icon and text
+        gap: '12px', // Space between icon and text
+        position: 'relative', // For submenu positioning
+    };
+
+    const iconStyle: React.CSSProperties = {
+        width: '20px',
+        height: '20px',
+        opacity: 0.8,
+        display: 'block'
     };
 
     const separatorStyle: React.CSSProperties = {
@@ -104,25 +173,15 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
 
     const handleDeleteSong = async () => {
         try {
-            // Backend handles confirmation dialog
-            // 1. Remove from Queue
             const index = queue.indexOf(song.id);
             if (index !== -1) {
                 removeFromQueue(index);
             }
-
-            // 2. Remove from User Data (Favorites, History, Playlists)
             cleanupSong(song.id);
-
-            // 3. Delete from Library (Filesystem) - This triggers the backend confirmation
             await deleteSong(song.id);
-
             onClose();
         } catch (err) {
             console.error('Failed to delete song', err);
-            // alert('刪除失敗，請查看 Console 錯誤訊息'); // Backend might return false if cancelled, so maybe don't alert?
-            // Actually deleteSong returns void in context, but invoke returns boolean.
-            // If cancelled, it just doesn't delete.
         }
     };
 
@@ -146,7 +205,8 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
-                播放
+                <img src={PlayMenuIcon} alt="" style={iconStyle} />
+                <span>播放</span>
             </div>
             <div
                 style={itemStyle}
@@ -154,7 +214,8 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
-                加入播放隊列
+                <img src={QueueAddIcon} alt="" style={iconStyle} />
+                <span>加入播放隊列</span>
             </div>
 
             <div style={separatorStyle} />
@@ -165,31 +226,34 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
-                {isFavorite(song.id) ? '取消最愛' : '加入最愛'}
+                <img src={isFavorite(song.id) ? FavoritesFilledIcon : FavoritesIcon} alt="" style={{ ...iconStyle, color: isFavorite(song.id) ? 'var(--primary-color)' : undefined }} />
+                <span>{isFavorite(song.id) ? '取消最愛' : '加入最愛'}</span>
             </div>
 
             <div
-                style={{ ...itemStyle, position: 'relative' }}
-                onMouseEnter={() => setShowPlaylistSubmenu(true)}
-                onMouseLeave={() => setShowPlaylistSubmenu(false)}
+                style={itemStyle}
+                onMouseEnter={() => handleSubmenuEnter('playlist')}
+                onMouseLeave={handleSubmenuLeave}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
-                <span>加入歌單...</span>
-                <span>▶</span>
+                <img src={PlaylistItemIcon} alt="" style={iconStyle} />
+                <span style={{ flex: 1 }}>加入歌單...</span>
+                <span style={{ fontSize: '10px', opacity: 0.5 }}>▶</span>
 
-                {showPlaylistSubmenu && (
+                {activeSubmenu === 'playlist' && (
                     <div style={{
                         position: 'absolute',
                         left: '100%',
-                        top: 0,
+                        top: -4, // Align slightly higher
                         backgroundColor: '#2d2d2d',
                         border: '1px solid #3a3a3a',
                         borderRadius: '8px',
                         padding: '6px 0',
                         boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                        minWidth: '160px',
+                        minWidth: '180px',
                         marginLeft: '4px',
+                        zIndex: 1001
                     }}>
                         {playlists.length === 0 && !isCreatingPlaylist && (
                             <div style={{ padding: '8px 16px', color: '#888', fontSize: '12px' }}>無歌單</div>
@@ -201,16 +265,17 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                                     e.stopPropagation();
                                     handleAddToPlaylist(p.id);
                                 }}
-                                style={{ ...itemStyle }}
+                                style={itemStyle}
                                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
                                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                             >
-                                {p.name}
+                                <img src={PlaylistItemIcon} alt="" style={{ ...iconStyle, width: '16px', height: '16px' }} />
+                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
                             </div>
                         ))}
                         <div style={separatorStyle} />
                         {isCreatingPlaylist ? (
-                            <div style={{ padding: '4px 8px' }}>
+                            <div style={{ padding: '4px 8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <input
                                     autoFocus
                                     type="text"
@@ -222,16 +287,36 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                                     }}
                                     placeholder="新歌單名稱"
                                     style={{
-                                        width: '100%',
+                                        flex: 1,
                                         padding: '4px',
                                         backgroundColor: '#1f1f1f',
                                         border: '1px solid #3a3a3a',
                                         color: '#fff',
                                         borderRadius: '4px',
-                                        fontSize: '12px'
+                                        fontSize: '12px',
+                                        minWidth: 0
                                     }}
                                     onClick={(e) => e.stopPropagation()}
                                 />
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleCreatePlaylist();
+                                    }}
+                                    style={{
+                                        background: 'var(--accent-color)',
+                                        border: 'none',
+                                        borderRadius: '4px',
+                                        padding: '4px',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}
+                                    title="確認"
+                                >
+                                    <img src={CheckIcon} alt="OK" style={{ width: '14px', height: '14px', filter: 'brightness(0)' }} />
+                                </button>
                             </div>
                         ) : (
                             <div
@@ -243,6 +328,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
                                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                             >
+                                <img src={PlaylistAddIcon} alt="" style={{ ...iconStyle, width: '18px', height: '18px' }} />
                                 ＋ 新建歌單
                             </div>
                         )}
@@ -259,39 +345,32 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                         const isSeparating = song.audio_status === 'separating' || song.audio_status === 'separation_pending';
                         const currentQuality = song.separation_quality;
 
-                        // If separating, hide the option entirely
                         if (isSeparating) return null;
 
-                        // Map quality to numeric value for comparison
-                        const qualityValue = {
-                            'fast': 1,
-                            'normal': 2,
-                            'high': 3
-                        };
-
+                        const qualityValue = { 'fast': 1, 'normal': 2, 'high': 3 };
                         const currentVal = currentQuality ? qualityValue[currentQuality] : 0;
 
-                        // If already HQ (3), hide the option entirely as per request
                         if (isSeparated && currentVal === 3) return null;
 
                         const label = isSeparated ? '重新分離' : '開始分離';
 
                         return (
                             <div
-                                style={{ ...itemStyle, position: 'relative' }}
-                                onMouseEnter={() => setShowSeparationSubmenu(true)}
-                                onMouseLeave={() => setShowSeparationSubmenu(false)}
+                                style={itemStyle}
+                                onMouseEnter={() => handleSubmenuEnter('separation')}
+                                onMouseLeave={handleSubmenuLeave}
                                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
                                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                             >
-                                <span>{label}</span>
-                                <span>▶</span>
+                                <img src={SeparateIcon} alt="" style={iconStyle} />
+                                <span style={{ flex: 1 }}>{label}</span>
+                                <span style={{ fontSize: '10px', opacity: 0.5 }}>▶</span>
 
-                                {showSeparationSubmenu && (
+                                {activeSubmenu === 'separation' && (
                                     <div style={{
                                         position: 'absolute',
                                         left: '100%',
-                                        top: 0,
+                                        top: -4,
                                         backgroundColor: '#2d2d2d',
                                         border: '1px solid #3a3a3a',
                                         borderRadius: '8px',
@@ -307,7 +386,6 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                                             { id: 'high', label: '高品質 (High)', val: 3 }
                                         ].map((option) => {
                                             const isDisabled = isSeparated && option.val <= currentVal;
-
                                             return (
                                                 <div
                                                     key={option.id}
@@ -353,7 +431,8 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
-                編輯歌詞
+                <img src={LyricsIcon} alt="" style={iconStyle} />
+                <span>編輯歌詞</span>
             </div>
             <div
                 style={itemStyle}
@@ -361,7 +440,8 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
-                編輯詳情
+                <img src={EditIcon} alt="" style={iconStyle} />
+                <span>編輯詳情</span>
             </div>
             <div
                 style={{ ...itemStyle, color: '#ff8080' }}
@@ -369,7 +449,9 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
-                刪除歌曲
+                <img src={DeleteIcon} alt="" style={{ ...iconStyle, filter: 'sepia(1) saturate(5) hue-rotate(-50deg)' }} />
+                {/* Simple filter to tint red, or just let it inherit color if SVG uses currentColor */}
+                <span>刪除歌曲</span>
             </div>
         </div >
     );
