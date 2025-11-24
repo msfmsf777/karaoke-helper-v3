@@ -84,7 +84,7 @@ const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId, onOpenLyrics })
                         />
                     ) : (
                         <h1
-                            style={{ margin: 0, fontSize: '32px', fontWeight: 'bold', cursor: 'pointer' }}
+                            style={{ margin: 0, fontSize: '28px', fontWeight: 'bold', cursor: 'pointer' }}
                             onClick={startRename}
                             title="點擊重新命名"
                         >

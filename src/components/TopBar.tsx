@@ -77,7 +77,7 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onSea
       {/* Left: Logo (Fixed Width to match Sidebar) */}
       <div
         style={{
-          width: '240px',
+          width: '218px',
           flexShrink: 0,
           fontSize: '18px',
           fontWeight: 'bold',

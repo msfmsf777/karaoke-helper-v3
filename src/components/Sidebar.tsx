@@ -90,8 +90,9 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
 
   return (
     <div
+      className="sidebar-container"
       style={{
-        width: '240px',
+        width: '218px',
         height: '100%',
         backgroundColor: 'var(--bg-sidebar)',
         display: 'flex',
@@ -99,18 +100,38 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
         borderRight: '1px solid var(--border-color)',
       }}
     >
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0 10px' }}>
+      <style>
+        {`
+          .sidebar-content::-webkit-scrollbar {
+            width: 6px;
+          }
+          .sidebar-content::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          .sidebar-content::-webkit-scrollbar-thumb {
+            background: transparent;
+            border-radius: 3px;
+          }
+          .sidebar-container:hover .sidebar-content::-webkit-scrollbar-thumb {
+            background: #555;
+          }
+          .sidebar-container:hover .sidebar-content::-webkit-scrollbar-thumb:hover {
+            background: #777;
+          }
+        `}
+      </style>
+      <div className="sidebar-content" style={{ flex: 1, overflowY: 'auto', padding: '0 10px' }}>
         <div style={sectionTitleStyle}>瀏覽</div>
         <NavItem isActive={currentView === 'library'} onClick={() => onViewChange('library')}>
-          <img src={LibraryIcon} alt="Library" style={{ width: '20px', height: '20px', marginRight: '12px' }} />
+          <img src={LibraryIcon} alt="Library" style={{ width: '20px', height: '20px', marginRight: '12px', flexShrink: 0 }} />
           歌曲庫
         </NavItem>
         <NavItem isActive={currentView === 'download-manager'} onClick={() => onViewChange('download-manager')}>
-          <img src={DownloadIcon} alt="Download" style={{ width: '20px', height: '20px', marginRight: '12px' }} />
+          <img src={DownloadIcon} alt="Download" style={{ width: '20px', height: '20px', marginRight: '12px', flexShrink: 0 }} />
           下載管理
         </NavItem>
         <NavItem isActive={currentView === 'lyrics'} onClick={() => onViewChange('lyrics')}>
-          <img src={LyricsIcon} alt="Lyrics" style={{ width: '24px', height: '24px', marginRight: '12px' }} />
+          <img src={LyricsIcon} alt="Lyrics" style={{ width: '24px', height: '24px', marginRight: '12px', flexShrink: 0 }} />
           歌詞編輯
         </NavItem>
 
@@ -118,11 +139,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
 
         <div style={sectionTitleStyle}>我的音樂</div>
         <NavItem isActive={currentView === 'favorites'} onClick={() => onViewChange('favorites')}>
-          <img src={FavoritesIcon} alt="Favorites" style={{ width: '20px', height: '20px', marginRight: '12px' }} />
+          <img src={FavoritesIcon} alt="Favorites" style={{ width: '20px', height: '20px', marginRight: '12px', flexShrink: 0 }} />
           我的最愛
         </NavItem>
         <NavItem isActive={currentView === 'history'} onClick={() => onViewChange('history')}>
-          <img src={HistoryIcon} alt="History" style={{ width: '20px', height: '20px', marginRight: '12px' }} />
+          <img src={HistoryIcon} alt="History" style={{ width: '20px', height: '20px', marginRight: '12px', flexShrink: 0 }} />
           最近播放
         </NavItem>
 
@@ -171,8 +192,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
             isActive={currentView === `playlist:${playlist.id}`}
             onClick={() => onViewChange(`playlist:${playlist.id}`)}
           >
-            <img src={PlaylistItemIcon} alt="Playlist" style={{ width: '20px', height: '20px', marginRight: '12px' }} />
-            {playlist.name}
+            <img src={PlaylistItemIcon} alt="Playlist" style={{ width: '20px', height: '20px', marginRight: '12px', flexShrink: 0 }} />
+            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={playlist.name}>
+              {playlist.name}
+            </span>
           </NavItem>
         ))}
       </div>

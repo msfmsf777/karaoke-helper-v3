@@ -97,7 +97,7 @@ const SongRow: React.FC<SongRowProps> = ({
             <div
                 style={{
                     display: 'grid',
-                    gridTemplateColumns: '40px minmax(200px, 1fr) 60px 160px 100px 220px 120px 80px', // Adjusted columns
+                    gridTemplateColumns: '40px minmax(200px, 1fr) 60px 120px 100px 150px 75px 80px', // Adjusted columns
                     padding: '10px 16px',
                     borderBottom: '1px solid #252525',
                     color: '#fff',
@@ -116,11 +116,30 @@ const SongRow: React.FC<SongRowProps> = ({
                 <div style={{ color: '#b3b3b3', fontSize: '13px' }}>{index + 1}</div>
 
                 {/* Title + Artist */}
-                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingRight: '10px' }}>
-                    <div style={{ fontWeight: isActive ? 700 : 500, color: isActive ? 'var(--accent-color)' : '#fff', marginBottom: '2px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingRight: '10px', overflow: 'hidden' }}>
+                    <div
+                        title={song.title}
+                        style={{
+                            fontWeight: isActive ? 700 : 500,
+                            color: isActive ? 'var(--accent-color)' : '#fff',
+                            marginBottom: '2px',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                        }}
+                    >
                         {song.title}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#888' }}>
+                    <div
+                        title={song.artist || 'Unknown Artist'}
+                        style={{
+                            fontSize: '12px',
+                            color: '#888',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                        }}
+                    >
                         {song.artist || 'Unknown Artist'}
                     </div>
                 </div>
@@ -145,7 +164,7 @@ const SongRow: React.FC<SongRowProps> = ({
                 </div>
 
                 {/* Hover Actions */}
-                <div style={{ display: 'flex', gap: '24px', paddingLeft: '12px', opacity: isHovered ? 1 : 0, transition: 'opacity 0.1s', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '24px', paddingLeft: '6px', opacity: isHovered ? 1 : 0, transition: 'opacity 0.1s', alignItems: 'center' }}>
                     <button
                         onClick={handleAddToPlaylistClick}
                         title="加入歌單/播放隊列"
@@ -189,12 +208,12 @@ const SongRow: React.FC<SongRowProps> = ({
                 </div>
 
                 {/* Type */}
-                <div style={{ color: '#b3b3b3', fontSize: '13px' }}>
+                <div style={{ color: '#b3b3b3', fontSize: '13px', textAlign: 'center' }}>
                     {showType && song.type}
                 </div>
 
                 {/* Audio Status */}
-                <div style={{ color: audioColor, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }} title={song.last_separation_error || undefined}>
+                <div style={{ color: audioColor, fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} title={song.last_separation_error || undefined}>
                     {showAudioStatus && (
                         song.type === '伴奏' ? (
                             <span>-</span>
@@ -256,13 +275,14 @@ const SongRow: React.FC<SongRowProps> = ({
                 {/* Lyric Status */}
                 <div style={{
                     color: song.lyrics_status === 'synced' ? '#4caf50' : '#b3b3b3',
-                    fontSize: '13px'
+                    fontSize: '13px',
+                    textAlign: 'center'
                 }}>
                     {showLyricStatus && lyricsLabel(song.lyrics_status)}
                 </div>
 
                 {/* Duration */}
-                <div style={{ color: '#b3b3b3', fontSize: '13px', textAlign: 'right', paddingRight: '32px' }}>
+                <div style={{ color: '#b3b3b3', fontSize: '13px', textAlign: 'center' }}>
                     {showDuration && (song.duration ? formatDuration(song.duration) : '--:--')}
                 </div>
             </div>

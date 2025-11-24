@@ -4,6 +4,7 @@ import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import fs from 'node:fs'
 
 // Lazy load these modules
 // import {
@@ -38,14 +39,103 @@ let win: BrowserWindow | null
 const jobSubscriptions = new Map<number, Map<string, () => void>>()
 const downloadSubscriptions = new Map<number, Map<string, () => void>>()
 
+const WINDOW_STATE_FILE = 'window-state.json'
+
+interface WindowState {
+  width: number
+  height: number
+  x?: number
+  y?: number
+  isMaximized: boolean
+}
+
+function loadWindowState(): WindowState {
+  try {
+    const statePath = path.join(app.getPath('userData'), WINDOW_STATE_FILE)
+    if (fs.existsSync(statePath)) {
+      const data = fs.readFileSync(statePath, 'utf-8')
+      return JSON.parse(data)
+    }
+  } catch (e) {
+    console.error('Failed to load window state', e)
+  }
+  // Default state
+  return { width: 1130, height: 660, isMaximized: false }
+}
+
+function saveWindowState(state: WindowState) {
+  try {
+    const statePath = path.join(app.getPath('userData'), WINDOW_STATE_FILE)
+    fs.writeFileSync(statePath, JSON.stringify(state))
+  } catch (e) {
+    console.error('Failed to save window state', e)
+  }
+}
+
 function createWindow() {
+  const state = loadWindowState()
+
   win = new BrowserWindow({
+    width: state.width,
+    height: state.height,
+    x: state.x,
+    y: state.y,
+    minWidth: 1130,
+    minHeight: 660,
     icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
       // Allow loading local file:// resources from the renderer (needed for direct audio file playback in dev/HTTP origin).
       webSecurity: false,
     },
+    show: false // Don't show immediately to avoid flickering if maximizing
+  })
+
+  if (state.isMaximized) {
+    win.maximize()
+  }
+
+  win.show()
+
+  // Save state on close
+  let saveTimeout: NodeJS.Timeout | null = null
+  const handleSave = () => {
+    if (!win) return
+    if (saveTimeout) clearTimeout(saveTimeout)
+    saveTimeout = setTimeout(() => {
+      if (!win || win.isDestroyed()) return
+
+      // Don't save if minimized
+      if (win.isMinimized()) return
+
+      const isMaximized = win.isMaximized()
+      const bounds = win.getBounds()
+
+      saveWindowState({
+        width: bounds.width,
+        height: bounds.height,
+        x: bounds.x,
+        y: bounds.y,
+        isMaximized
+      })
+    }, 1000) // Debounce 1s
+  }
+
+  win.on('resize', handleSave)
+  win.on('move', handleSave)
+  win.on('close', () => {
+    // Force save on close without debounce
+    if (win && !win.isDestroyed() && !win.isMinimized()) {
+      const isMaximized = win.isMaximized()
+      const bounds = win.getBounds()
+      saveWindowState({
+        width: bounds.width,
+        height: bounds.height,
+        x: bounds.x,
+        y: bounds.y,
+        isMaximized
+      })
+    }
   })
 
   win.webContents.on('did-finish-load', () => {
@@ -336,7 +426,6 @@ const clients: Set<Response> = new Set()
 
 // Create a simple HTTP server to serve the overlay and SSE
 import http from 'node:http'
-import fs from 'node:fs'
 
 const OVERLAY_PORT = 10001
 

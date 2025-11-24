@@ -65,7 +65,7 @@ const DownloadManagerView: React.FC = () => {
     return (
         <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ padding: '32px 32px 0' }}>
-                <h1 style={{ fontSize: '32px', fontWeight: 'bold', margin: '0 0 24px' }}>下載管理</h1>
+                <h1 style={{ fontSize: '28px', fontWeight: 'bold', margin: '0 0 24px' }}>下載管理</h1>
 
                 {/* Active Downloads Section */}
                 <section style={{ marginBottom: '24px' }}>

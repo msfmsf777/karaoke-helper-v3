@@ -43,8 +43,8 @@ const SongList: React.FC<SongListProps> = ({
             <div
                 style={{
                     display: 'grid',
-                    gridTemplateColumns: '40px minmax(200px, 1fr) 60px 160px 100px 220px 120px 80px', // Must match SongRow
-                    padding: '8px 16px',
+                    gridTemplateColumns: '40px minmax(200px, 1fr) 60px 120px 100px 150px 75px 80px', // Must match SongRow
+                    padding: '8px 24px 8px 16px', // Added right padding for scrollbar alignment
                     borderBottom: '1px solid #333',
                     color: '#888',
                     fontSize: '12px',
@@ -57,10 +57,10 @@ const SongList: React.FC<SongListProps> = ({
                 <div>標題 / 歌手</div>
                 <div style={{ textAlign: 'center' }}>最愛</div>
                 <div></div>
-                <div>{showType ? '類型' : ''}</div>
-                <div>{showAudioStatus ? '音訊狀態' : ''}</div>
-                <div>{showLyricStatus ? '歌詞' : ''}</div>
-                <div style={{ textAlign: 'right', paddingRight: '32px' }}>{showDuration ? '時長' : ''}</div>
+                <div style={{ textAlign: 'center' }}>{showType ? '類型' : ''}</div>
+                <div style={{ textAlign: 'center' }}>{showAudioStatus ? '音訊狀態' : ''}</div>
+                <div style={{ textAlign: 'center' }}>{showLyricStatus ? '歌詞' : ''}</div>
+                <div style={{ textAlign: 'center' }}>{showDuration ? '時長' : ''}</div>
             </div>
 
             {/* Virtualized List */}
