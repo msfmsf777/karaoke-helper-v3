@@ -1,5 +1,10 @@
 /// <reference types="vite/client" />
 
+declare module '*.svg' {
+  const content: string;
+  export default content;
+}
+
 interface Window {
   ipcRenderer: {
     on: (channel: string, listener: (event: any, ...args: any[]) => void) => () => void;
