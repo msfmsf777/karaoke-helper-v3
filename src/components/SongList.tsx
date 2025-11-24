@@ -43,7 +43,7 @@ const SongList: React.FC<SongListProps> = ({
             <div
                 style={{
                     display: 'grid',
-                    gridTemplateColumns: '40px 3fr 40px 80px 1fr 1.2fr 1fr 1fr', // Must match SongRow
+                    gridTemplateColumns: '40px minmax(200px, 1fr) 60px 160px 100px 220px 120px 80px', // Must match SongRow
                     padding: '8px 16px',
                     borderBottom: '1px solid #333',
                     color: '#888',
@@ -56,11 +56,11 @@ const SongList: React.FC<SongListProps> = ({
                 <div>#</div>
                 <div>標題 / 歌手</div>
                 <div style={{ textAlign: 'center' }}>最愛</div>
-                <div>操作</div>
+                <div></div>
                 <div>{showType ? '類型' : ''}</div>
                 <div>{showAudioStatus ? '音訊狀態' : ''}</div>
                 <div>{showLyricStatus ? '歌詞' : ''}</div>
-                <div style={{ textAlign: 'right', paddingRight: '16px' }}>{showDuration ? '時長' : ''}</div>
+                <div style={{ textAlign: 'right', paddingRight: '32px' }}>{showDuration ? '時長' : ''}</div>
             </div>
 
             {/* Virtualized List */}
@@ -68,6 +68,9 @@ const SongList: React.FC<SongListProps> = ({
                 <Virtuoso
                     style={{ height: '100%' }}
                     totalCount={songs.length}
+                    components={{
+                        Footer: () => <div style={{ height: '120px' }} />
+                    }}
                     itemContent={(index) => {
                         const song = songs[index];
                         return (

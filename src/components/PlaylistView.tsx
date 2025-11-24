@@ -3,6 +3,7 @@ import { useLibrary } from '../contexts/LibraryContext';
 import { useUserData } from '../contexts/UserDataContext';
 import { useQueue } from '../contexts/QueueContext';
 import SongList from './SongList';
+import RemoveIcon from '../assets/icons/remove.svg';
 
 interface PlaylistViewProps {
     playlistId: string;
@@ -157,17 +158,17 @@ const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId, onOpenLyrics })
                             style={{
                                 background: 'transparent',
                                 border: 'none',
-                                color: '#d32f2f',
                                 cursor: 'pointer',
-                                fontSize: '16px',
-                                padding: '4px',
+                                padding: '0',
                                 display: 'flex',
                                 alignItems: 'center',
+                                opacity: 0.7,
+                                transition: 'opacity 0.2s'
                             }}
-                            onMouseOver={(e) => e.currentTarget.style.color = '#ff5555'}
-                            onMouseOut={(e) => e.currentTarget.style.color = '#d32f2f'}
+                            onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                            onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
                         >
-                            ✕
+                            <img src={RemoveIcon} alt="Remove" style={{ width: '20px', height: '20px', display: 'block' }} />
                         </button>
                     )}
                 />

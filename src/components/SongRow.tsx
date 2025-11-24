@@ -3,6 +3,10 @@ import { SongMeta } from '../../shared/songTypes';
 import { useQueue } from '../contexts/QueueContext';
 import { useUserData } from '../contexts/UserDataContext';
 import SongContextMenu from './SongContextMenu';
+import FavoritesIcon from '../assets/icons/favorites.svg';
+import FavoritesFilledIcon from '../assets/icons/favorites_filled.svg';
+import AddIcon from '../assets/icons/add.svg';
+import MoreIcon from '../assets/icons/more.svg';
 
 interface SongRowProps {
     song: SongMeta;
@@ -38,6 +42,12 @@ const lyricsLabel = (status?: SongMeta['lyrics_status']) => {
         default:
             return '無';
     }
+};
+
+const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
 const SongRow: React.FC<SongRowProps> = ({
@@ -87,7 +97,7 @@ const SongRow: React.FC<SongRowProps> = ({
             <div
                 style={{
                     display: 'grid',
-                    gridTemplateColumns: '40px 3fr 40px 80px 1fr 1.2fr 1fr 1fr', // Adjusted columns
+                    gridTemplateColumns: '40px minmax(200px, 1fr) 60px 160px 100px 220px 120px 80px', // Adjusted columns
                     padding: '10px 16px',
                     borderBottom: '1px solid #252525',
                     color: '#fff',
@@ -116,43 +126,43 @@ const SongRow: React.FC<SongRowProps> = ({
                 </div>
 
                 {/* Heart Icon */}
-                <div style={{ textAlign: 'center' }}>
-                    <span
+                <div style={{ textAlign: 'center', display: 'flex', justifyContent: 'center' }}>
+                    <img
+                        src={isFavorite(song.id) ? FavoritesFilledIcon : FavoritesIcon}
+                        alt="Favorite"
                         onClick={(e) => {
                             e.stopPropagation();
                             toggleFavorite(song.id);
                         }}
                         style={{
-                            color: isFavorite(song.id) ? 'var(--primary-color)' : '#444',
+                            width: '20px',
+                            height: '20px',
                             cursor: 'pointer',
-                            fontSize: '18px',
-                            lineHeight: 1,
+                            display: 'block'
                         }}
                         title={isFavorite(song.id) ? '取消最愛' : '加入最愛'}
-                    >
-                        {isFavorite(song.id) ? '♥' : '♡'}
-                    </span>
+                    />
                 </div>
 
                 {/* Hover Actions */}
-                <div style={{ display: 'flex', gap: '8px', opacity: isHovered ? 1 : 0, transition: 'opacity 0.1s' }}>
+                <div style={{ display: 'flex', gap: '24px', paddingLeft: '12px', opacity: isHovered ? 1 : 0, transition: 'opacity 0.1s', alignItems: 'center' }}>
                     <button
                         onClick={handleAddToPlaylistClick}
                         title="加入歌單/播放隊列"
                         style={{
                             background: 'transparent',
                             border: 'none',
-                            color: '#b3b3b3',
                             cursor: 'pointer',
-                            fontSize: '16px',
-                            padding: '4px',
+                            padding: '0',
                             display: 'flex',
                             alignItems: 'center',
+                            opacity: 0.7,
+                            transition: 'opacity 0.2s'
                         }}
-                        onMouseOver={(e) => e.currentTarget.style.color = '#fff'}
-                        onMouseOut={(e) => e.currentTarget.style.color = '#b3b3b3'}
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                        onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
                     >
-                        ＋
+                        <img src={AddIcon} alt="Add" style={{ width: '20px', height: '20px', display: 'block' }} />
                     </button>
                     <button
                         onClick={(e) => {
@@ -163,17 +173,17 @@ const SongRow: React.FC<SongRowProps> = ({
                         style={{
                             background: 'transparent',
                             border: 'none',
-                            color: '#b3b3b3',
                             cursor: 'pointer',
-                            fontSize: '16px',
-                            padding: '4px',
+                            padding: '0',
                             display: 'flex',
                             alignItems: 'center',
+                            opacity: 0.7,
+                            transition: 'opacity 0.2s'
                         }}
-                        onMouseOver={(e) => e.currentTarget.style.color = '#fff'}
-                        onMouseOut={(e) => e.currentTarget.style.color = '#b3b3b3'}
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                        onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
                     >
-                        ⋯
+                        <img src={MoreIcon} alt="More" style={{ width: '20px', height: '20px', display: 'block' }} />
                     </button>
                     {customActions}
                 </div>
@@ -244,14 +254,16 @@ const SongRow: React.FC<SongRowProps> = ({
                 </div>
 
                 {/* Lyric Status */}
-                <div style={{ color: '#b3b3b3', fontSize: '13px' }}>
+                <div style={{
+                    color: song.lyrics_status === 'synced' ? '#4caf50' : '#b3b3b3',
+                    fontSize: '13px'
+                }}>
                     {showLyricStatus && lyricsLabel(song.lyrics_status)}
                 </div>
 
-                {/* Duration (Placeholder for now as metadata might not have it yet, prompt says "using existing metadata") */}
-                {/* If metadata doesn't have duration, we might skip or show --:-- */}
-                <div style={{ color: '#b3b3b3', fontSize: '13px', textAlign: 'right', paddingRight: '16px' }}>
-                    {showDuration && '--:--'}
+                {/* Duration */}
+                <div style={{ color: '#b3b3b3', fontSize: '13px', textAlign: 'right', paddingRight: '32px' }}>
+                    {showDuration && (song.duration ? formatDuration(song.duration) : '--:--')}
                 </div>
             </div>
 

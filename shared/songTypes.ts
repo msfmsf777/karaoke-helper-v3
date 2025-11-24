@@ -45,6 +45,7 @@ export interface SongMeta {
     speed: number;      // 0.5 - 2.0
     transpose: number;  // -12 - +12
   };
+  duration?: number;
 }
 
 export interface DownloadJob {

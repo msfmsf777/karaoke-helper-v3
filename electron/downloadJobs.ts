@@ -288,6 +288,16 @@ class DownloadJobManager {
             // Download complete. Now register song in library.
             const finalPath = path.join(songDir, 'Original.wav');
 
+            // Calculate duration
+            let duration: number | undefined;
+            try {
+                const { parseFile } = await import('music-metadata');
+                const metadata = await parseFile(finalPath);
+                duration = metadata.format.duration;
+            } catch (e) {
+                console.warn('Failed to parse duration for downloaded song', e);
+            }
+
             // Create Meta
             const now = new Date().toISOString();
             const meta: SongMeta = {
@@ -305,7 +315,8 @@ class DownloadJobManager {
                 stored_filename: 'Original.wav',
                 created_at: now,
                 updated_at: now,
-                last_separation_error: null
+                last_separation_error: null,
+                duration
             };
 
             await fs.writeFile(path.join(songDir, 'meta.json'), JSON.stringify(meta, null, 2));

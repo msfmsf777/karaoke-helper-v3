@@ -1,6 +1,7 @@
 import { app } from 'electron';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { parseFile } from 'music-metadata';
 import type { AudioStatus, LyricsStatus, SongMeta, SongType } from '../shared/songTypes';
 
 const APP_FOLDER_NAME = 'KHelperLive';
@@ -29,6 +30,16 @@ async function ensureSongsDir() {
   const base = getSongsDir();
   await fs.mkdir(base, { recursive: true });
   return base;
+}
+
+async function getAudioDuration(filePath: string): Promise<number | undefined> {
+  try {
+    const metadata = await parseFile(filePath);
+    return metadata.format.duration;
+  } catch (error) {
+    console.warn('[Library] Failed to parse audio duration:', filePath, error);
+    return undefined;
+  }
 }
 
 function normalizeAudioStatus(status: AudioStatus | undefined): AudioStatus {
@@ -71,6 +82,7 @@ function normalizeMeta(meta: SongMeta): SongMeta {
     vocal_path: meta.vocal_path ?? undefined,
     last_separation_error: meta.last_separation_error ?? null,
     separation_quality: meta.separation_quality ?? undefined,
+    duration: meta.duration ?? undefined,
   };
   return normalized;
 }
@@ -128,6 +140,9 @@ export async function addLocalSong(params: {
   console.log('[Library] Adding song', { sourcePath, songDir, id });
   await fs.copyFile(sourcePath, targetPath);
 
+  // Calculate duration
+  const duration = await getAudioDuration(targetPath);
+
   const rawLyrics = (lyricsText ?? '').replace(/\r\n/g, '\n');
   const hasLyrics = rawLyrics.trim().length > 0;
   const lyricsRawPath = hasLyrics ? path.join(songDir, RAW_LYRICS_FILENAME) : undefined;
@@ -154,6 +169,7 @@ export async function addLocalSong(params: {
     vocal_path: undefined,
     last_separation_error: null,
     separation_quality: undefined,
+    duration,
     created_at: now,
     updated_at: now,
   };
@@ -194,7 +210,56 @@ export function loadAllSongs(): Promise<SongMeta[]> {
       // Process in chunks to limit concurrency
       for (let i = 0; i < songDirs.length; i += CONCURRENCY_LIMIT) {
         const chunk = songDirs.slice(i, i + CONCURRENCY_LIMIT);
-        const results = await Promise.all(chunk.map(dir => readMeta(dir)));
+        const results = await Promise.all(chunk.map(async (dir) => {
+          const meta = await readMeta(dir);
+          if (!meta) return null;
+
+          let changed = false;
+
+          // 1. Check Lyrics Status
+          const lrcPath = path.join(dir, SYNCED_LYRICS_FILENAME);
+          const txtPath = path.join(dir, RAW_LYRICS_FILENAME);
+          let newLyricsStatus: LyricsStatus = 'none';
+
+          try {
+            await fs.access(lrcPath);
+            newLyricsStatus = 'synced';
+          } catch {
+            try {
+              await fs.access(txtPath);
+              newLyricsStatus = 'text_only';
+            } catch {
+              newLyricsStatus = 'none';
+            }
+          }
+
+          if (meta.lyrics_status !== newLyricsStatus) {
+            meta.lyrics_status = newLyricsStatus;
+            changed = true;
+          }
+
+          // 2. Check Duration
+          if (meta.duration === undefined) {
+            const originalPath = getOriginalPath(meta, dir);
+            try {
+              // Only check if file exists
+              await fs.access(originalPath);
+              const duration = await getAudioDuration(originalPath);
+              if (duration !== undefined) {
+                meta.duration = duration;
+                changed = true;
+              }
+            } catch {
+              // Original file missing, can't measure
+            }
+          }
+
+          if (changed) {
+            await writeMeta(dir, meta);
+          }
+
+          return meta;
+        }));
 
         for (const meta of results) {
           if (meta) {
