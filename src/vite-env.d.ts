@@ -14,6 +14,10 @@ interface Window {
     subscribeOverlayUpdates: (callback: (payload: { songId: string; currentTime: number; isPlaying: boolean }) => void) => () => void;
     sendOverlayStyleUpdate: (style: any) => void;
     subscribeOverlayStyleUpdates: (callback: (style: any) => void) => () => void;
+    sendOverlayPreferenceUpdate: (prefs: { furiganaEnabled: boolean; romajiEnabled: boolean }) => void;
+    subscribeOverlayPreferenceUpdates: (callback: (prefs: { furiganaEnabled: boolean; romajiEnabled: boolean }) => void) => () => void;
+    sendOverlayScrollUpdate: (scrollY: number) => void;
+    subscribeOverlayScrollUpdates: (callback: (scrollY: number) => void) => () => void;
   };
   khelper?: {
     dialogs: {
@@ -61,6 +65,7 @@ interface Window {
       readSyncedLyrics: (songId: string) => Promise<{ path: string; content: string } | null>;
       writeRawLyrics: (payload: { songId: string; content: string }) => Promise<{ path: string; meta: import('../shared/songTypes').SongMeta }>;
       writeSyncedLyrics: (payload: { songId: string; content: string }) => Promise<{ path: string; meta: import('../shared/songTypes').SongMeta }>;
+      enrichLyrics: (lines: string[]) => Promise<import('../shared/songTypes').EnrichedLyricLine[]>;
     };
     queue: {
       save: (payload: { songIds: string[]; currentIndex: number }) => Promise<void>;
@@ -73,8 +78,8 @@ interface Window {
       loadHistory: () => Promise<string[]>;
       savePlaylists: (playlists: any[]) => Promise<void>;
       loadPlaylists: () => Promise<any[]>;
-      saveSettings: (settings: { separationQuality: 'high' | 'normal' | 'fast'; lyricStyles?: import('./contexts/UserDataContext').LyricStyleConfig }) => Promise<void>;
-      loadSettings: () => Promise<{ separationQuality: 'high' | 'normal' | 'fast'; lyricStyles?: import('./contexts/UserDataContext').LyricStyleConfig }>;
+      saveSettings: (settings: { separationQuality: 'high' | 'normal' | 'fast'; lyricStyles?: import('./contexts/UserDataContext').LyricStyleConfig; songPreferences?: Record<string, { furigana?: boolean; romaji?: boolean }> }) => Promise<void>;
+      loadSettings: () => Promise<{ separationQuality: 'high' | 'normal' | 'fast'; lyricStyles?: import('./contexts/UserDataContext').LyricStyleConfig; songPreferences?: Record<string, { furigana?: boolean; romaji?: boolean }> }>;
     };
   };
 }

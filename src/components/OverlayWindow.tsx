@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import LyricsOverlay from './LyricsOverlay';
-import { SongMeta } from '../../shared/songTypes';
+import { SongMeta, EnrichedLyricLine } from '../../shared/songTypes';
 import { EditableLyricLine, linesFromRawText, parseLrc, readRawLyrics, readSyncedLyrics } from '../library/lyrics';
 import { LyricStyleConfig, DEFAULT_LYRIC_STYLES } from '../contexts/UserDataContext';
 
@@ -10,6 +10,12 @@ const OverlayWindow: React.FC = () => {
     const [lines, setLines] = useState<EditableLyricLine[]>([]);
     const [lyricsStatus, setLyricsStatus] = useState<SongMeta['lyrics_status']>('none');
     const [styleConfig, setStyleConfig] = useState<LyricStyleConfig>(DEFAULT_LYRIC_STYLES);
+
+    // Japanese Enrichment
+    const [enrichedLines, setEnrichedLines] = useState<EnrichedLyricLine[] | null>(null);
+    const [furiganaEnabled, setFuriganaEnabled] = useState(false);
+    const [romajiEnabled, setRomajiEnabled] = useState(false);
+    const [externalScrollTop, setExternalScrollTop] = useState<number | null>(null);
 
     useEffect(() => {
         // Check if we are in Electron or Browser
@@ -30,6 +36,15 @@ const OverlayWindow: React.FC = () => {
                 setStyleConfig(style);
             });
 
+            const removePrefListener = window.api.subscribeOverlayPreferenceUpdates((prefs) => {
+                setFuriganaEnabled(prefs.furiganaEnabled);
+                setRomajiEnabled(prefs.romajiEnabled);
+            });
+
+            const removeScrollListener = window.api.subscribeOverlayScrollUpdates((scrollTop) => {
+                setExternalScrollTop(scrollTop);
+            });
+
             // Load initial styles
             window.khelper?.userData.loadSettings().then(settings => {
                 if (settings.lyricStyles) {
@@ -40,6 +55,8 @@ const OverlayWindow: React.FC = () => {
             return () => {
                 removeListener();
                 removeStyleListener();
+                removePrefListener();
+                removeScrollListener();
             };
         } else {
             // Browser / OBS Mode: Use SSE
@@ -57,6 +74,17 @@ const OverlayWindow: React.FC = () => {
                         return;
                     }
 
+                    if (payload.type === 'preference') {
+                        setFuriganaEnabled(payload.prefs.furiganaEnabled);
+                        setRomajiEnabled(payload.prefs.romajiEnabled);
+                        return;
+                    }
+
+                    if (payload.type === 'scroll') {
+                        setExternalScrollTop(payload.scrollTop);
+                        return;
+                    }
+
                     const { songId, currentTime: time } = payload;
                     setCurrentTime(time);
                     if (songId !== currentTrackId) {
@@ -69,9 +97,12 @@ const OverlayWindow: React.FC = () => {
 
             // Fetch initial styles
             fetch(`${baseUrl}/styles`)
-                .then(res => res.json())
+                .then(res => {
+                    if (res.ok) return res.json();
+                    return null;
+                })
                 .then(styles => {
-                    setStyleConfig({ ...DEFAULT_LYRIC_STYLES, ...styles });
+                    if (styles) setStyleConfig({ ...DEFAULT_LYRIC_STYLES, ...styles });
                 })
                 .catch(err => console.error('Failed to fetch styles', err));
 
@@ -85,6 +116,7 @@ const OverlayWindow: React.FC = () => {
         if (!currentTrackId) {
             setLines([]);
             setLyricsStatus('none');
+            setEnrichedLines(null);
             return;
         }
 
@@ -100,16 +132,40 @@ const OverlayWindow: React.FC = () => {
 
                     if (!active) return;
 
+                    let parsedLines: EditableLyricLine[] = [];
+                    let status: SongMeta['lyrics_status'] = 'none';
+                    let rawText = '';
+
                     if (synced?.content) {
-                        setLines(parseLrc(synced.content));
-                        setLyricsStatus('synced');
+                        parsedLines = parseLrc(synced.content);
+                        status = 'synced';
+                        rawText = parsedLines.map(l => l.text).join('\n');
                     } else if (raw?.content && raw.content.trim().length > 0) {
-                        setLines(linesFromRawText(raw.content));
-                        setLyricsStatus('text_only');
-                    } else {
-                        setLines([]);
-                        setLyricsStatus('none');
+                        parsedLines = linesFromRawText(raw.content);
+                        status = 'text_only';
+                        rawText = raw.content;
                     }
+
+                    setLines(parsedLines);
+                    setLyricsStatus(status);
+
+                    // Enrich if Japanese (Electron Mode)
+                    // We import isJapanese dynamically or use a simple check?
+                    // Since we are in renderer, we can use the util if imported.
+                    // But OverlayWindow imports might be limited.
+                    // Let's use a simple regex check here to avoid dependencies if possible,
+                    // OR rely on the fact that StreamModeView likely cached it.
+                    const hasJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(rawText);
+                    if (hasJapanese && window.khelper.lyrics.enrichLyrics) {
+                        window.khelper.lyrics.enrichLyrics(parsedLines.map(l => l.text))
+                            .then(enriched => {
+                                if (active) setEnrichedLines(enriched);
+                            })
+                            .catch(e => console.error('[Overlay] Enrichment failed', e));
+                    } else {
+                        setEnrichedLines(null);
+                    }
+
                 } else {
                     // Browser Mode
                     const baseUrl = window.location.port === '5173' ? 'http://localhost:10001' : '';
@@ -129,12 +185,19 @@ const OverlayWindow: React.FC = () => {
                         setLines([]);
                         setLyricsStatus('none');
                     }
+
+                    if (data.enriched) {
+                        setEnrichedLines(data.enriched);
+                    } else {
+                        setEnrichedLines(null);
+                    }
                 }
             } catch (err) {
                 console.error('[Overlay] Failed to load lyrics', err);
                 if (active) {
                     setLines([]);
                     setLyricsStatus('none');
+                    setEnrichedLines(null);
                 }
             }
         };
@@ -171,6 +234,10 @@ const OverlayWindow: React.FC = () => {
                 currentTime={currentTime}
                 className="overlay-lyrics-container"
                 styleConfig={styleConfig}
+                enrichedLines={enrichedLines}
+                furiganaEnabled={furiganaEnabled}
+                romajiEnabled={romajiEnabled}
+                externalScrollTop={externalScrollTop}
             />
         </div>
     );

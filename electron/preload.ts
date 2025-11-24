@@ -42,6 +42,18 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.on('overlay:style-update', listener)
     return () => ipcRenderer.off('overlay:style-update', listener)
   },
+  sendOverlayPreferenceUpdate: (prefs: any) => ipcRenderer.send('overlay:preference-update', prefs),
+  subscribeOverlayPreferenceUpdates: (callback: (prefs: any) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, prefs: any) => callback(prefs)
+    ipcRenderer.on('overlay:preference-update', listener)
+    return () => ipcRenderer.off('overlay:preference-update', listener)
+  },
+  sendOverlayScrollUpdate: (scrollY: number) => ipcRenderer.send('overlay:scroll-update', scrollY),
+  subscribeOverlayScrollUpdates: (callback: (scrollY: number) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, scrollY: number) => callback(scrollY)
+    ipcRenderer.on('overlay:scroll-update', listener)
+    return () => ipcRenderer.off('overlay:scroll-update', listener)
+  },
 })
 
 contextBridge.exposeInMainWorld('khelper', {
@@ -106,6 +118,8 @@ contextBridge.exposeInMainWorld('khelper', {
       ipcRenderer.invoke('lyrics:write-raw', payload),
     writeSyncedLyrics: (payload: { songId: string; content: string }): Promise<{ path: string; meta: SongMeta }> =>
       ipcRenderer.invoke('lyrics:write-synced', payload),
+    enrichLyrics: (lines: string[]): Promise<import('../shared/songTypes').EnrichedLyricLine[]> =>
+      ipcRenderer.invoke('lyrics:enrich', lines),
   },
   queue: {
     save: (payload: { songIds: string[]; currentIndex: number }): Promise<void> =>

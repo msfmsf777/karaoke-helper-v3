@@ -183,6 +183,11 @@ ipcMain.handle('lyrics:write-synced', async (_event, payload: { songId: string; 
   return writeSyncedLyrics(payload.songId, payload.content)
 })
 
+ipcMain.handle('lyrics:enrich', async (_event, lines: string[]) => {
+  const { enrichLyrics } = await import('./lyricEnrichment')
+  return enrichLyrics(lines)
+})
+
 ipcMain.handle('queue:save', async (_event, payload: { songIds: string[]; currentIndex: number }) => {
   const { saveQueue } = await import('./queue')
   return saveQueue(payload)
@@ -361,6 +366,17 @@ const server = http.createServer((req, res) => {
       res.write(': keep-alive\n\n')
     }, 15000)
 
+    // Send cached state if available
+    if (lastStyle) {
+      res.write(`data: ${JSON.stringify({ type: 'style', style: lastStyle })}\n\n`);
+    }
+    if (lastPreferences) {
+      res.write(`data: ${JSON.stringify({ type: 'preference', prefs: lastPreferences })}\n\n`);
+    }
+    if (lastSongInfo) {
+      res.write(`data: ${JSON.stringify(lastSongInfo)}\n\n`);
+    }
+
     // Add to clients
     const client = res as unknown as Response // Type casting for simplicity in this context
     // @ts-ignore
@@ -389,11 +405,40 @@ const server = http.createServer((req, res) => {
       Promise.all([
         readSyncedLyrics(songId),
         readRawLyrics(songId)
-      ]).then(([synced, raw]) => {
+      ]).then(async ([synced, raw]) => {
+        let enriched = null;
+        const content = synced?.content || raw?.content || '';
+
+        // Simple Japanese detection (Hiragana, Katakana, Kanji)
+        const hasJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(content);
+
+        if (hasJapanese) {
+          try {
+            const { enrichLyrics } = await import('./lyricEnrichment');
+            // Parse lines for enrichment
+            let lines: string[] = [];
+            if (synced?.content) {
+              // Simple parse to get text
+              lines = synced.content.split('\n')
+                .map(l => l.replace(/^\[.*?\]/, '').trim())
+                .filter(l => l.length > 0);
+            } else if (raw?.content) {
+              lines = raw.content.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            }
+
+            if (lines.length > 0) {
+              enriched = await enrichLyrics(lines);
+            }
+          } catch (e) {
+            console.error('[OverlayServer] Enrichment failed', e);
+          }
+        }
+
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({
           synced: synced?.content || null,
-          raw: raw?.content || null
+          raw: raw?.content || null,
+          enriched
         }))
       }).catch(err => {
         console.error('[OverlayServer] Failed to read lyrics', err)
@@ -479,7 +524,13 @@ ipcMain.on('window:open-overlay', () => {
   console.log('[Main] window:open-overlay called but deprecated in favor of OBS URL')
 })
 
+// State cache for new clients
+let lastSongInfo: any = null;
+let lastStyle: any = null;
+let lastPreferences: any = null;
+
 ipcMain.on('overlay:update', (_event, payload) => {
+  lastSongInfo = payload;
   // Broadcast to all SSE clients
   const data = JSON.stringify(payload)
   // @ts-ignore
@@ -490,6 +541,7 @@ ipcMain.on('overlay:update', (_event, payload) => {
 })
 
 ipcMain.on('overlay:style-update', (_event, style) => {
+  lastStyle = style;
   // Broadcast to all SSE clients
   const data = JSON.stringify({ type: 'style', style })
   // @ts-ignore
@@ -498,4 +550,28 @@ ipcMain.on('overlay:style-update', (_event, style) => {
     client.write(`data: ${data}\n\n`)
   }
 })
+
+ipcMain.on('overlay:preference-update', (_event, prefs) => {
+  lastPreferences = prefs;
+  // Broadcast to all SSE clients
+  const data = JSON.stringify({ type: 'preference', prefs })
+  // @ts-ignore
+  for (const client of clients) {
+    // @ts-ignore
+    client.write(`data: ${data}\n\n`)
+  }
+})
+
+ipcMain.on('overlay:scroll-update', (_event, scrollY: number) => {
+  // Broadcast scroll update (no need to cache strictly, but good for immediate sync if we wanted)
+  // For scrolling, we just broadcast.
+  const data = JSON.stringify({ type: 'scroll', scrollTop: scrollY })
+  // @ts-ignore
+  for (const client of clients) {
+    // @ts-ignore
+    client.write(`data: ${data}\n\n`)
+  }
+})
+
+
 
