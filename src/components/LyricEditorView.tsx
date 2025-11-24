@@ -392,41 +392,42 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
     <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
       <div
         style={{
-          width: '220px',
+          width: '180px',
           borderRight: '1px solid #242424',
           background: '#131313',
           overflowY: 'auto',
-          padding: '16px',
+          padding: '12px',
           display: 'flex',
           flexDirection: 'column',
           gap: '12px',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ margin: 0, color: '#fff', fontSize: '18px' }}>歌曲列表</h2>
-          <span style={{ color: '#888', fontSize: '12px' }}>{loadingSongs ? '載入中...' : `${songs.length} 首`}</span>
+          <h2 style={{ margin: 0, color: '#fff', fontSize: '16px' }}>歌曲列表</h2>
+          <span style={{ color: '#888', fontSize: '11px' }}>{loadingSongs ? '...' : `${songs.length}`}</span>
         </div>
 
         <input
           type="text"
-          placeholder="搜尋歌詞編輯中的歌曲…"
+          placeholder="搜尋..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           style={{
             width: '100%',
-            padding: '8px 12px',
-            borderRadius: '8px',
+            padding: '6px 10px',
+            borderRadius: '6px',
             border: '1px solid #333',
             background: '#1a1a1a',
             color: '#fff',
-            fontSize: '13px',
+            fontSize: '12px',
+            boxSizing: 'border-box',
           }}
         />
 
         {songs.length === 0 ? (
-          <div style={{ color: '#777', fontSize: '14px' }}>尚未有歌曲，請先到歌曲庫新增。</div>
+          <div style={{ color: '#777', fontSize: '12px' }}>無歌曲</div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {songs
               .filter(
                 (s) =>
@@ -442,20 +443,44 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                     key={song.id}
                     onClick={() => handleSelectSong(song)}
                     style={{
-                      padding: '12px',
-                      borderRadius: '10px',
+                      padding: '8px',
+                      borderRadius: '8px',
                       background: active ? '#1f1f1f' : '#161616',
                       border: active ? '1px solid var(--accent-color)' : '1px solid #222',
                       cursor: 'pointer',
+                      overflow: 'hidden'
                     }}
                   >
-                    <div style={{ color: '#fff', fontWeight: 700, marginBottom: '4px' }}>{song.title}</div>
-                    <div style={{ color: '#aaa', fontSize: '12px', marginBottom: '6px' }}>
-                      {song.artist || '未知歌手'} ・ {song.type}
+                    <div
+                      title={song.title}
+                      style={{
+                        color: '#fff',
+                        fontWeight: 700,
+                        marginBottom: '2px',
+                        fontSize: '13px',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}
+                    >
+                      {song.title}
                     </div>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '12px', color: '#888' }}>
-                      <span>音訊：{audioStatusLabels[song.audio_status] ?? song.audio_status}</span>
-                      <span>歌詞：{lyricLabel}</span>
+                    <div
+                      title={`${song.artist || '未知'} ・ ${song.type}`}
+                      style={{
+                        color: '#aaa',
+                        fontSize: '11px',
+                        marginBottom: '4px',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}
+                    >
+                      {song.artist || '未知'} ・ {song.type}
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', fontSize: '11px', color: '#888', whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                      <span>{audioStatusLabels[song.audio_status] ?? song.audio_status}</span>
+                      <span>| {lyricLabel}</span>
                     </div>
                   </div>
                 );

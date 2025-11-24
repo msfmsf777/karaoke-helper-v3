@@ -66,7 +66,7 @@ const SongList: React.FC<SongListProps> = ({
             {/* Virtualized List */}
             <div style={{ flex: 1 }}>
                 <Virtuoso
-                    style={{ height: '100%' }}
+                    style={{ height: '100%', overflowY: 'scroll' }}
                     totalCount={songs.length}
                     components={{
                         Footer: () => <div style={{ height: '120px' }} />
