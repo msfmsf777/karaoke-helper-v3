@@ -5,6 +5,14 @@ import { useQueue } from '../contexts/QueueContext';
 import { useLibrary } from '../contexts/LibraryContext';
 import PlaybackControlPopup from './PlaybackControlPopup';
 import VolumeControlPopup from './VolumeControlPopup';
+import PrevIcon from '../assets/icons/prev.svg';
+import NextIcon from '../assets/icons/next.svg';
+import LiveModeIcon from '../assets/icons/live_mode.svg';
+import PlayIcon from '../assets/icons/play.svg';
+import PauseIcon from '../assets/icons/pause.svg';
+import PlaylistIcon from '../assets/icons/playlist.svg';
+import SpeedIcon from '../assets/icons/speed.svg';
+import PitchIcon from '../assets/icons/pitch.svg';
 
 type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history' | string;
 
@@ -185,11 +193,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
           ) : isHovered ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
               {/* Red Live Icon */}
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff4444" strokeWidth="2" style={{ marginBottom: '2px' }}>
-                <path d="M2 12h20" />
-                <path d="M12 2v20" />
-                <circle cx="12" cy="12" r="10" />
-              </svg>
+              <img src={LiveModeIcon} alt="Live Mode" style={{ width: '20px', height: '20px', marginBottom: '2px', display: 'block' }} />
               <span style={{ fontSize: '10px', color: '#ff4444', lineHeight: 1 }}>直播模式</span>
             </div>
           ) : (
@@ -213,48 +217,85 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
 
       {/* Center Controls */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: '600px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '4px' }}>
           <button
             onClick={playPrev}
+            title="上一首"
             style={{
               background: 'none',
               border: 'none',
-              color: '#b3b3b3',
               cursor: 'pointer',
-              fontSize: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '8px',
+              opacity: 0.8,
+              transition: 'opacity 0.2s, transform 0.1s',
             }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = '1';
+              e.currentTarget.style.transform = 'scale(1.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = '0.8';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+            onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
           >
-            ⏮
+            <img src={PrevIcon} alt="Previous" style={{ width: '24px', height: '24px', display: 'block' }} />
           </button>
           <button
             onClick={onPlayPause}
             style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
+              width: '36px',
+              height: '36px',
+              borderRadius: '18px', // Circle
               backgroundColor: '#fff',
               border: 'none',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              fontSize: '18px',
-              color: '#000',
+              color: '#1e1e1e', // Soft black (matches app bg)
+              transition: 'transform 0.1s',
             }}
+            onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+            onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
-            {isPlaying ? '⏸' : '▶'}
+            {isPlaying ? (
+              <img src={PauseIcon} alt="Pause" style={{ width: '16px', height: '16px', display: 'block' }} />
+            ) : (
+              <img src={PlayIcon} alt="Play" style={{ width: '16px', height: '16px', display: 'block', marginLeft: '1px' }} />
+            )}
           </button>
           <button
             onClick={playNext}
+            title="下一首"
             style={{
               background: 'none',
               border: 'none',
-              color: '#b3b3b3',
               cursor: 'pointer',
-              fontSize: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '8px',
+              opacity: 0.8,
+              transition: 'opacity 0.2s, transform 0.1s',
             }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = '1';
+              e.currentTarget.style.transform = 'scale(1.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = '0.8';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+            onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
           >
-            ⏭
+            <img src={NextIcon} alt="Next" style={{ width: '24px', height: '24px', display: 'block' }} />
           </button>
         </div>
         <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -277,30 +318,33 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
       </div>
 
       {/* Right: Volume & Queue */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', width: '30%', gap: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', width: '30%', gap: '8px' }}>
 
         {/* Speed Control */}
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative', top: '-4px' }}>
           <button
             onClick={() => { setShowSpeedPopup(!showSpeedPopup); setShowPitchPopup(false); }}
             style={{
-              background: '#333',
+              background: showSpeedPopup ? '#333' : 'transparent',
               border: 'none',
               borderRadius: '4px',
               color: '#ccc',
               cursor: 'pointer',
-              width: '40px',
-              height: '40px',
+              width: '48px', // Slightly wider for comfort
+              height: '48px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '12px',
+              transition: 'background-color 0.2s',
             }}
+            onMouseEnter={(e) => { if (!showSpeedPopup) e.currentTarget.style.backgroundColor = '#333'; }}
+            onMouseLeave={(e) => { if (!showSpeedPopup) e.currentTarget.style.backgroundColor = 'transparent'; }}
             title="變速 (Speed)"
           >
-            <span style={{ fontSize: '14px', marginBottom: '2px' }}>⚡</span>
-            <span style={{ fontSize: '10px' }}>變速</span>
+            <img src={SpeedIcon} alt="Speed" style={{ width: '24px', height: '24px', marginBottom: '2px', display: 'block' }} />
+            <span style={{ fontSize: '10px', lineHeight: 1 }}>變速</span>
           </button>
           {showSpeedPopup && (
             <PlaybackControlPopup
@@ -318,27 +362,30 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
         </div>
 
         {/* Pitch Control */}
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative', top: '-4px' }}>
           <button
             onClick={() => { setShowPitchPopup(!showPitchPopup); setShowSpeedPopup(false); }}
             style={{
-              background: '#333',
+              background: showPitchPopup ? '#333' : 'transparent',
               border: 'none',
               borderRadius: '4px',
               color: '#ccc',
               cursor: 'pointer',
-              width: '40px',
-              height: '40px',
+              width: '48px',
+              height: '48px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '12px',
+              transition: 'background-color 0.2s',
             }}
+            onMouseEnter={(e) => { if (!showPitchPopup) e.currentTarget.style.backgroundColor = '#333'; }}
+            onMouseLeave={(e) => { if (!showPitchPopup) e.currentTarget.style.backgroundColor = 'transparent'; }}
             title="變調 (Pitch)"
           >
-            <span style={{ fontSize: '14px', marginBottom: '2px' }}>🎵</span>
-            <span style={{ fontSize: '10px' }}>變調</span>
+            <img src={PitchIcon} alt="Pitch" style={{ width: '24px', height: '24px', marginBottom: '2px', display: 'block' }} />
+            <span style={{ fontSize: '10px', lineHeight: 1 }}>變調</span>
           </button>
           {showPitchPopup && (
             <PlaybackControlPopup
@@ -385,14 +432,17 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
             border: 'none',
             color: '#b3b3b3',
             cursor: 'pointer',
-            fontSize: '18px',
             padding: '8px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            opacity: 0.8,
+            transition: 'opacity 0.2s',
           }}
+          onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+          onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
         >
-          ☰
+          <img src={PlaylistIcon} alt="Queue" style={{ width: '28px', height: '28px', display: 'block' }} />
         </button>
       </div>
     </div>

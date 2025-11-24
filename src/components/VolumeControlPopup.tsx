@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import VolumeLowIcon from '../assets/icons/volume_low.svg';
+import VolumeHighIcon from '../assets/icons/volume_high.svg';
+import VolumeMuteIcon from '../assets/icons/volume_mute.svg';
 
 interface VolumeControlPopupProps {
     label: string;
@@ -34,9 +37,9 @@ const VolumeControlPopup: React.FC<VolumeControlPopupProps> = ({
     };
 
     const getIcon = () => {
-        if (volume === 0) return '🔇';
-        if (volume > 50) return '🔊';
-        return '🔉';
+        if (volume === 0) return <img src={VolumeMuteIcon} alt="Mute" style={{ width: '24px', height: '24px' }} />;
+        if (volume > 50) return <img src={VolumeHighIcon} alt="High" style={{ width: '24px', height: '24px' }} />;
+        return <img src={VolumeLowIcon} alt="Low" style={{ width: '24px', height: '24px' }} />;
     };
 
     const handleStartEdit = () => {
@@ -75,7 +78,7 @@ const VolumeControlPopup: React.FC<VolumeControlPopupProps> = ({
             onMouseLeave={() => setIsHovered(false)}
             style={{
                 position: 'relative',
-                width: '40px',
+                width: '48px',
                 height: '40px', // Fixed height for layout reservation
                 display: 'flex',
                 alignItems: 'center',
@@ -185,14 +188,15 @@ const VolumeControlPopup: React.FC<VolumeControlPopupProps> = ({
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        padding: '4px 0',
-                        width: '100%',
+                        padding: '0',
+                        width: '48px', // Match PlayerBar buttons
+                        height: '48px',
                         transition: 'color 0.2s',
                     }}
                     title={`${label}: ${volume}%`}
                 >
-                    <span style={{ fontSize: '20px', marginBottom: '2px' }}>{getIcon()}</span>
-                    <span style={{ fontSize: '10px' }}>{label}</span>
+                    <span style={{ marginBottom: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '24px' }}>{getIcon()}</span>
+                    <span style={{ fontSize: '10px', lineHeight: 1 }}>{label}</span>
                 </button>
             </div>
         </div>
