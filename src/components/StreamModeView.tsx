@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import LyricsOverlay from './LyricsOverlay';
 import LyricStylePopup from './LyricStylePopup';
-import { SongMeta } from '../../shared/songTypes';
+import { SongMeta, EnrichedLyricLine } from '../../shared/songTypes';
 import { EditableLyricLine, linesFromRawText, parseLrc, readRawLyrics, readSyncedLyrics } from '../library/lyrics';
 import audioEngine from '../audio/AudioEngine';
 import { useQueue } from '../contexts/QueueContext';
 import { useLibrary } from '../contexts/LibraryContext';
 import { useUserData } from '../contexts/UserDataContext';
+import { isJapanese } from '../utils/japaneseDetection';
 
 interface StreamModeViewProps {
   currentTrack: { id: string; title: string; artist?: string } | null;
@@ -22,19 +23,63 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
 }) => {
   const { queue, currentIndex, playQueueIndex } = useQueue();
   const { getSongById } = useLibrary();
-  const { lyricStyles, setLyricStyles } = useUserData();
+  const { lyricStyles, setLyricStyles, songPreferences, setSongPreference } = useUserData();
 
   const [lines, setLines] = useState<EditableLyricLine[]>([]);
   const [lyricsStatus, setLyricsStatus] = useState<SongMeta['lyrics_status']>('none');
   const [showStylePopup, setShowStylePopup] = useState(false);
 
+  // Japanese Enrichment State
+  const [isJp, setIsJp] = useState(false);
+  const [enrichedLines, setEnrichedLines] = useState<EnrichedLyricLine[] | null>(null);
+
   const currentSongId = queue[currentIndex];
   const currentSong = currentSongId ? getSongById(currentSongId) : null;
+
+  // Derive enabled states from preferences or default to false
+  const furiganaEnabled = currentSongId ? (songPreferences?.[currentSongId]?.furigana ?? false) : false;
+  const romajiEnabled = currentSongId ? (songPreferences?.[currentSongId]?.romaji ?? false) : false;
+
+  const toggleFurigana = () => {
+    if (currentSongId) {
+      setSongPreference(currentSongId, { furigana: !furiganaEnabled });
+    }
+  };
+
+  const toggleRomaji = () => {
+    if (currentSongId) {
+      setSongPreference(currentSongId, { romaji: !romajiEnabled });
+    }
+  };
+
+  // Sync preferences to Overlay
+  useEffect(() => {
+    if (window.api) {
+      window.api.sendOverlayPreferenceUpdate({
+        furiganaEnabled,
+        romajiEnabled
+      });
+    }
+  }, [furiganaEnabled, romajiEnabled]);
+
+  // Scroll Sync (Text Only)
+  const lastScrollTime = React.useRef(0);
+  const handleScrollChange = (scrollTop: number) => {
+    const now = Date.now();
+    if (now - lastScrollTime.current > 50) { // Throttle to ~20fps
+      if (window.api) {
+        window.api.sendOverlayScrollUpdate(scrollTop);
+      }
+      lastScrollTime.current = now;
+    }
+  };
 
   useEffect(() => {
     if (!currentSongId) {
       setLines([]);
       setLyricsStatus('none');
+      setIsJp(false);
+      setEnrichedLines(null);
       return;
     }
 
@@ -48,21 +93,48 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
 
         if (!active) return;
 
+        let parsedLines: EditableLyricLine[] = [];
+        let status: SongMeta['lyrics_status'] = 'none';
+        let rawText = '';
+
         if (synced?.content) {
-          setLines(parseLrc(synced.content));
-          setLyricsStatus('synced');
+          parsedLines = parseLrc(synced.content);
+          status = 'synced';
+          rawText = parsedLines.map(l => l.text).join('\n');
         } else if (raw?.content && raw.content.trim().length > 0) {
-          setLines(linesFromRawText(raw.content));
-          setLyricsStatus('text_only');
-        } else {
-          setLines([]);
-          setLyricsStatus('none');
+          parsedLines = linesFromRawText(raw.content);
+          status = 'text_only';
+          rawText = raw.content;
         }
+
+        setLines(parsedLines);
+        setLyricsStatus(status);
+
+        if (status !== 'none') {
+          const detectedJp = isJapanese(rawText);
+          setIsJp(detectedJp);
+
+          if (detectedJp && window.khelper?.lyrics?.enrichLyrics) {
+            window.khelper.lyrics.enrichLyrics(parsedLines.map(l => l.text))
+              .then(enriched => {
+                if (active) setEnrichedLines(enriched);
+              })
+              .catch(e => console.error('[StreamMode] Enrichment failed', e));
+          } else {
+            setEnrichedLines(null);
+          }
+        } else {
+          setIsJp(false);
+          setEnrichedLines(null);
+        }
+
       } catch (err) {
         console.error('[StreamMode] Failed to load lyrics', err);
         if (active) {
           setLines([]);
           setLyricsStatus('none');
+          setIsJp(false);
+          setEnrichedLines(null);
         }
       }
     };
@@ -74,17 +146,15 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
   }, [currentSongId]);
 
   return (
-    <div
-      style={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: '#000',
-        padding: '24px',
-        position: 'relative',
-        boxSizing: 'border-box',
-      }}
-    >
+    <div style={{
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      backgroundColor: '#000',
+      padding: '24px',
+      position: 'relative',
+      boxSizing: 'border-box',
+    }}>
       <div style={{ display: 'flex', flex: 1, gap: '24px', overflow: 'hidden' }}>
         {/* Left: Setlist / Now Playing */}
         <div
@@ -305,15 +375,77 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
             </div>
           )}
 
+          {/* Japanese Enrichment Controls */}
+          {isJp && (
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '16px',
+                right: '16px',
+                display: 'flex',
+                gap: '12px',
+                zIndex: 20,
+              }}
+            >
+              <button
+                onClick={toggleFurigana}
+                title="顯示假名 (Furigana)"
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  backgroundColor: furiganaEnabled ? 'var(--accent-color)' : 'rgba(0,0,0,0.5)',
+                  color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backdropFilter: 'blur(4px)',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                }}
+              >
+                あ
+              </button>
+              <button
+                onClick={toggleRomaji}
+                title="顯示羅馬音 (Romaji)"
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  backgroundColor: romajiEnabled ? 'var(--accent-color)' : 'rgba(0,0,0,0.5)',
+                  color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backdropFilter: 'blur(4px)',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  lineHeight: 1,
+                }}
+              >
+                a
+              </button>
+            </div>
+          )}
+
           <LyricsOverlay
             status={lyricsStatus}
             lines={lines}
+            enrichedLines={enrichedLines}
+            furiganaEnabled={furiganaEnabled}
+            romajiEnabled={romajiEnabled}
             currentTime={currentTime}
             className="stream-lyrics-container"
             onLineClick={(time) => {
               audioEngine.seek(time);
             }}
             styleConfig={lyricStyles}
+            onScrollChange={handleScrollChange}
           />
 
         </div>

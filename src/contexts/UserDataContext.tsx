@@ -48,6 +48,8 @@ interface UserDataContextType {
     clearRecentSearches: () => void;
     lyricStyles: LyricStyleConfig;
     setLyricStyles: (styles: LyricStyleConfig) => void;
+    songPreferences: Record<string, { furigana?: boolean; romaji?: boolean }>;
+    setSongPreference: (songId: string, prefs: { furigana?: boolean; romaji?: boolean }) => void;
 }
 
 const UserDataContext = createContext<UserDataContextType | null>(null);
@@ -63,6 +65,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     const [recentSearches, setRecentSearches] = useState<string[]>([]);
     const [lyricStyles, setLyricStyles] = useState<LyricStyleConfig>(DEFAULT_LYRIC_STYLES);
+    const [songPreferences, setSongPreferences] = useState<Record<string, { furigana?: boolean; romaji?: boolean }>>({});
 
     // Load data on startup
     useEffect(() => {
@@ -74,15 +77,22 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                     window.khelper?.userData.loadFavorites() || [],
                     window.khelper?.userData.loadHistory() || [],
                     window.khelper?.userData.loadPlaylists() || [],
-                    (window.khelper?.userData.loadSettings() || Promise.resolve({ separationQuality: 'normal' })) as Promise<{ separationQuality: 'high' | 'normal' | 'fast'; lyricStyles?: LyricStyleConfig }>
+                    (window.khelper?.userData.loadSettings() || Promise.resolve({ separationQuality: 'normal' })) as Promise<{
+                        separationQuality: 'high' | 'normal' | 'fast';
+                        lyricStyles?: LyricStyleConfig;
+                        songPreferences?: Record<string, { furigana?: boolean; romaji?: boolean }>;
+                    }>
                 ]);
                 setFavorites(Array.from(new Set(favs)));
                 setHistory(Array.from(new Set(hist)));
                 setPlaylists(pl);
                 setSeparationQuality((settings.separationQuality as 'high' | 'normal' | 'fast') || 'normal');
-                const settingsWithStyles = settings as { separationQuality: string; lyricStyles?: LyricStyleConfig };
+                const settingsWithStyles = settings as { separationQuality: string; lyricStyles?: LyricStyleConfig; songPreferences?: Record<string, { furigana?: boolean; romaji?: boolean }> };
                 if (settingsWithStyles.lyricStyles) {
                     setLyricStyles({ ...DEFAULT_LYRIC_STYLES, ...settingsWithStyles.lyricStyles });
+                }
+                if (settingsWithStyles.songPreferences) {
+                    setSongPreferences(settingsWithStyles.songPreferences);
                 }
 
                 // Load recent searches from localStorage
@@ -129,11 +139,10 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         );
     }, [playlists]);
 
-    // Save settings on change
-    // Save settings (quality + styles) on change
+    // Save settings (quality + styles + songPrefs) on change
     useEffect(() => {
         if (!isInitialized.current) return;
-        window.khelper?.userData.saveSettings({ separationQuality, lyricStyles }).catch(err =>
+        window.khelper?.userData.saveSettings({ separationQuality, lyricStyles, songPreferences }).catch(err =>
             console.error('[UserData] Failed to save settings', err)
         );
 
@@ -145,7 +154,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             window.api?.sendOverlayStyleUpdate(lyricStyles);
         }, 500);
 
-    }, [separationQuality, lyricStyles]);
+    }, [separationQuality, lyricStyles, songPreferences]);
 
     // Save recent searches on change
     useEffect(() => {
@@ -242,6 +251,13 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setRecentSearches([]);
     }, []);
 
+    const setSongPreference = useCallback((songId: string, prefs: { furigana?: boolean; romaji?: boolean }) => {
+        setSongPreferences(prev => ({
+            ...prev,
+            [songId]: { ...prev[songId], ...prefs }
+        }));
+    }, []);
+
     return (
         <UserDataContext.Provider value={{
             favorites,
@@ -263,7 +279,9 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             addRecentSearch,
             clearRecentSearches,
             lyricStyles,
-            setLyricStyles
+            setLyricStyles,
+            songPreferences,
+            setSongPreference
         }}>
             {children}
         </UserDataContext.Provider>

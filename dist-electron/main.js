@@ -105,11 +105,11 @@ ipcMain.handle("library:update-song", async (_event, payload) => {
   return updateSong(payload.id, payload.updates);
 });
 ipcMain.handle("jobs:queue-separation", async (_event, songId, quality) => {
-  const { queueSeparationJob } = await import("./separationJobs-vnrkmBQP.js");
+  const { queueSeparationJob } = await import("./separationJobs-oL__MHdi.js");
   return queueSeparationJob(songId, quality);
 });
 ipcMain.handle("jobs:get-all", async () => {
-  const { getAllJobs } = await import("./separationJobs-vnrkmBQP.js");
+  const { getAllJobs } = await import("./separationJobs-oL__MHdi.js");
   return getAllJobs();
 });
 ipcMain.handle("lyrics:read-raw", async (_event, songId) => {
@@ -127,6 +127,10 @@ ipcMain.handle("lyrics:write-raw", async (_event, payload) => {
 ipcMain.handle("lyrics:write-synced", async (_event, payload) => {
   const { writeSyncedLyrics } = await import("./lyrics-CS0DrMxd.js");
   return writeSyncedLyrics(payload.songId, payload.content);
+});
+ipcMain.handle("lyrics:enrich", async (_event, lines) => {
+  const { enrichLyrics } = await import("./lyricEnrichment-CESRcBv4.js");
+  return enrichLyrics(lines);
 });
 ipcMain.handle("queue:save", async (_event, payload) => {
   const { saveQueue } = await import("./queue-Cm6GAPWY.js");
@@ -169,7 +173,7 @@ ipcMain.handle("userData:load-settings", async () => {
   return loadSettings();
 });
 ipcMain.on("jobs:subscribe", async (event, subscriptionId) => {
-  const { subscribeJobUpdates } = await import("./separationJobs-vnrkmBQP.js");
+  const { subscribeJobUpdates } = await import("./separationJobs-oL__MHdi.js");
   const wc = event.sender;
   const disposer = subscribeJobUpdates((jobs) => wc.send("jobs:updated", jobs));
   let disposers = jobSubscriptions.get(wc.id);
@@ -269,6 +273,21 @@ const server = http.createServer((req, res) => {
     const keepAlive = setInterval(() => {
       res.write(": keep-alive\n\n");
     }, 15e3);
+    if (lastStyle) {
+      res.write(`data: ${JSON.stringify({ type: "style", style: lastStyle })}
+
+`);
+    }
+    if (lastPreferences) {
+      res.write(`data: ${JSON.stringify({ type: "preference", prefs: lastPreferences })}
+
+`);
+    }
+    if (lastSongInfo) {
+      res.write(`data: ${JSON.stringify(lastSongInfo)}
+
+`);
+    }
     const client = res;
     clients.add(client);
     req.on("close", () => {
@@ -289,11 +308,31 @@ const server = http.createServer((req, res) => {
       Promise.all([
         readSyncedLyrics(songId),
         readRawLyrics(songId)
-      ]).then(([synced, raw]) => {
+      ]).then(async ([synced, raw]) => {
+        let enriched = null;
+        const content = (synced == null ? void 0 : synced.content) || (raw == null ? void 0 : raw.content) || "";
+        const hasJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(content);
+        if (hasJapanese) {
+          try {
+            const { enrichLyrics } = await import("./lyricEnrichment-CESRcBv4.js");
+            let lines = [];
+            if (synced == null ? void 0 : synced.content) {
+              lines = synced.content.split("\n").map((l) => l.replace(/^\[.*?\]/, "").trim()).filter((l) => l.length > 0);
+            } else if (raw == null ? void 0 : raw.content) {
+              lines = raw.content.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+            }
+            if (lines.length > 0) {
+              enriched = await enrichLyrics(lines);
+            }
+          } catch (e) {
+            console.error("[OverlayServer] Enrichment failed", e);
+          }
+        }
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({
           synced: (synced == null ? void 0 : synced.content) || null,
-          raw: (raw == null ? void 0 : raw.content) || null
+          raw: (raw == null ? void 0 : raw.content) || null,
+          enriched
         }));
       }).catch((err) => {
         console.error("[OverlayServer] Failed to read lyrics", err);
@@ -364,7 +403,11 @@ server.listen(OVERLAY_PORT, () => {
 ipcMain.on("window:open-overlay", () => {
   console.log("[Main] window:open-overlay called but deprecated in favor of OBS URL");
 });
+let lastSongInfo = null;
+let lastStyle = null;
+let lastPreferences = null;
 ipcMain.on("overlay:update", (_event, payload) => {
+  lastSongInfo = payload;
   const data = JSON.stringify(payload);
   for (const client of clients) {
     client.write(`data: ${data}
@@ -373,7 +416,25 @@ ipcMain.on("overlay:update", (_event, payload) => {
   }
 });
 ipcMain.on("overlay:style-update", (_event, style) => {
+  lastStyle = style;
   const data = JSON.stringify({ type: "style", style });
+  for (const client of clients) {
+    client.write(`data: ${data}
+
+`);
+  }
+});
+ipcMain.on("overlay:preference-update", (_event, prefs) => {
+  lastPreferences = prefs;
+  const data = JSON.stringify({ type: "preference", prefs });
+  for (const client of clients) {
+    client.write(`data: ${data}
+
+`);
+  }
+});
+ipcMain.on("overlay:scroll-update", (_event, scrollY) => {
+  const data = JSON.stringify({ type: "scroll", scrollTop: scrollY });
   for (const client of clients) {
     client.write(`data: ${data}
 

@@ -60,3 +60,14 @@ export interface DownloadJob {
   updatedAt: string;
   songId?: string;
 }
+
+export interface RubySegment {
+  surface: string;
+  furigana: string | null;
+}
+
+export interface EnrichedLyricLine {
+  original: string;
+  romaji: string;
+  ruby: RubySegment[];
+}

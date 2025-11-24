@@ -36,6 +36,18 @@ electron.contextBridge.exposeInMainWorld("api", {
     const listener = (_event, style) => callback(style);
     electron.ipcRenderer.on("overlay:style-update", listener);
     return () => electron.ipcRenderer.off("overlay:style-update", listener);
+  },
+  sendOverlayPreferenceUpdate: (prefs) => electron.ipcRenderer.send("overlay:preference-update", prefs),
+  subscribeOverlayPreferenceUpdates: (callback) => {
+    const listener = (_event, prefs) => callback(prefs);
+    electron.ipcRenderer.on("overlay:preference-update", listener);
+    return () => electron.ipcRenderer.off("overlay:preference-update", listener);
+  },
+  sendOverlayScrollUpdate: (scrollY) => electron.ipcRenderer.send("overlay:scroll-update", scrollY),
+  subscribeOverlayScrollUpdates: (callback) => {
+    const listener = (_event, scrollY) => callback(scrollY);
+    electron.ipcRenderer.on("overlay:scroll-update", listener);
+    return () => electron.ipcRenderer.off("overlay:scroll-update", listener);
   }
 });
 electron.contextBridge.exposeInMainWorld("khelper", {
@@ -85,7 +97,8 @@ electron.contextBridge.exposeInMainWorld("khelper", {
     readRawLyrics: (songId) => electron.ipcRenderer.invoke("lyrics:read-raw", songId),
     readSyncedLyrics: (songId) => electron.ipcRenderer.invoke("lyrics:read-synced", songId),
     writeRawLyrics: (payload) => electron.ipcRenderer.invoke("lyrics:write-raw", payload),
-    writeSyncedLyrics: (payload) => electron.ipcRenderer.invoke("lyrics:write-synced", payload)
+    writeSyncedLyrics: (payload) => electron.ipcRenderer.invoke("lyrics:write-synced", payload),
+    enrichLyrics: (lines) => electron.ipcRenderer.invoke("lyrics:enrich", lines)
   },
   queue: {
     save: (payload) => electron.ipcRenderer.invoke("queue:save", payload),
