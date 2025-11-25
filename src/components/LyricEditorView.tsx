@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useQueue } from '../contexts/QueueContext';
 
-import { getOriginalSongFilePath, getSongFilePath, loadAllSongs, SongMeta } from '../library/songLibrary';
+import { loadAllSongs, SongMeta } from '../library/songLibrary';
 import {
     EditableLyricLine,
     formatLrc,
@@ -16,7 +17,6 @@ import TapModeIcon from '../assets/icons/tap_mode.svg';
 import SaveLrcIcon from '../assets/icons/save_lrc.svg';
 
 interface LyricEditorViewProps {
-    onSongLoad: (song: SongMeta, filePath: string) => Promise<void>;
     activeSongId?: string;
     initialSongId?: string | null;
     onSongSelectedChange?: (songId: string) => void;
@@ -54,7 +54,6 @@ const audioStatusLabels: Record<SongMeta['audio_status'], string> = {
 };
 
 const LyricEditorView: React.FC<LyricEditorViewProps> = ({
-    onSongLoad,
     activeSongId,
     initialSongId,
     onSongSelectedChange,
@@ -67,7 +66,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
     const [songs, setSongs] = useState<SongMeta[]>([]);
     const [loadingSongs, setLoadingSongs] = useState(false);
     const [loadingLyrics, setLoadingLyrics] = useState(false);
-    const [selectedSongId, setSelectedSongId] = useState<string | null>(initialSongId ?? null);
+    const [selectedSongId, setSelectedSongId] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [lines, setLines] = useState<EditableLyricLine[]>([]);
     const [rawTextDraft, setRawTextDraft] = useState('');
@@ -83,6 +82,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
     const [savingLrc, setSavingLrc] = useState(false);
     const initialSelectDone = useRef(false);
     const lineRefs = useRef<Record<string, HTMLDivElement | null>>({});
+    const queue = useQueue();
 
     const selectedSong = useMemo(() => songs.find((s) => s.id === selectedSongId) ?? null, [songs, selectedSongId]);
 
@@ -121,7 +121,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
         if (activeSongId && !selectedSongId) {
             setSelectedSongId(activeSongId);
         }
-    }, [activeSongId, selectedSongId]);
+    }, [activeSongId]); // Only run when activeSongId changes, don't depend on selectedSongId to avoid loops or overriding user selection
 
     useEffect(() => {
         const idx = lines.findIndex((line) => line.timeSeconds === null);
@@ -183,31 +183,38 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
             setTapMode(true);
 
             try {
-                const originalPath = (await getOriginalSongFilePath(song.id)) ?? (await getSongFilePath(song.id));
-                if (originalPath) {
-                    await onSongLoad(song, originalPath);
-                } else {
-                    console.warn('[Lyrics] No audio path found for song', song.id);
-                }
+                // Use queue.loadImmediate to load but NOT play
+                await queue.loadImmediate(song.id);
+
                 await loadLyricsForSong(song);
             } catch (err) {
                 console.error('[Lyrics] Failed to load song for lyrics', song.id, err);
                 setErrorMessage('載入錯誤');
             }
         },
-        [loadLyricsForSong, onSongLoad, onSongSelectedChange],
+        [loadLyricsForSong, onSongSelectedChange, queue],
     );
 
+    // Initial selection logic: Select active song if available, otherwise do nothing (show placeholder)
     useEffect(() => {
         if (initialSelectDone.current) return;
         if (!songs.length) return;
-        const targetId = selectedSongId ?? initialSongId ?? songs[0]?.id;
-        const target = targetId ? songs.find((s) => s.id === targetId) : null;
-        if (target) {
+
+        // If there is an active song (playing or paused), select it.
+        // If not, we leave selectedSongId as null.
+        if (activeSongId) {
+            const target = songs.find((s) => s.id === activeSongId);
+            if (target) {
+                initialSelectDone.current = true;
+                // Just set ID and load lyrics, don't trigger audio load since it's already active
+                setSelectedSongId(target.id);
+                void loadLyricsForSong(target);
+            }
+        } else {
+            // Mark as done so we don't keep trying
             initialSelectDone.current = true;
-            void handleSelectSong(target);
         }
-    }, [handleSelectSong, initialSongId, selectedSongId, songs]);
+    }, [activeSongId, songs, loadLyricsForSong]);
 
     const applyDraftToLines = useCallback(
         (resetTimes = false) => {

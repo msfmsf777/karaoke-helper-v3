@@ -183,7 +183,6 @@ function AppContent() {
             case 'lyrics':
               return (
                 <LyricEditorView
-                  onSongLoad={async () => { /* No-op, handled by queue now */ }}
                   activeSongId={currentTrack?.id}
                   initialSongId={lyricsEditorSongId}
                   onSongSelectedChange={(songId) => setLyricsEditorSongId(songId)}

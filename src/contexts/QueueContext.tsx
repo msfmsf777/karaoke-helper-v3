@@ -16,6 +16,7 @@ interface QueueContextType {
     moveQueueItem: (fromIndex: number, toIndex: number) => void;
     playSongList: (songIds: string[]) => void;
     playImmediate: (songId: string) => void;
+    loadImmediate: (songId: string) => void;
     clearQueue: () => void;
     replaceQueue: (songIds: string[]) => void;
 }
@@ -27,6 +28,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [currentIndex, setCurrentIndex] = useState<number>(-1);
     const { getSongById, loading: libraryLoading } = useLibrary();
     const isInitialized = useRef(false);
+    const shouldAutoPlay = useRef(true);
 
     // Load queue from disk on startup
     useEffect(() => {
@@ -74,7 +76,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         save();
     }, [queue, currentIndex]);
 
-    const playSongInternal = async (songId: string) => {
+    const playSongInternal = async (songId: string, autoPlay = true) => {
         console.debug('[QueueContext] playSongInternal', songId);
         const song = getSongById(songId);
         if (!song) {
@@ -112,7 +114,9 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             // Wait for seek/clear to propagate and stabilize
             await new Promise(resolve => setTimeout(resolve, 100));
 
-            await audioEngine.play();
+            if (autoPlay) {
+                await audioEngine.play();
+            }
         } catch (err) {
             console.error('[QueueContext] Failed to play song', songId, err);
         }
@@ -142,9 +146,11 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             const songId = queue[currentIndex];
             // Play if index changed OR song ID changed (e.g. replaced song at same index)
             if (currentIndex !== lastPlayedIndex.current || songId !== lastPlayedSongId.current) {
-                playSongInternal(songId);
+                playSongInternal(songId, shouldAutoPlay.current);
                 lastPlayedIndex.current = currentIndex;
                 lastPlayedSongId.current = songId;
+                // Reset auto-play to true for subsequent normal interactions
+                shouldAutoPlay.current = true;
             }
         }
     }, [currentIndex, queue, getSongById]);
@@ -275,6 +281,42 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
     }, [queue, currentIndex]);
 
+    const loadImmediate = useCallback(async (songId: string) => {
+        // Stop any currently playing song first
+        await audioEngine.stop();
+
+        // Set flag to skip auto-play in the effect
+        shouldAutoPlay.current = false;
+
+        // Reuse playImmediate logic to handle queue updates
+        // We can't call playImmediate directly because it's a dependency of this callback
+        // So we duplicate the queue logic here.
+
+        // Note: We need to access the current state to make decisions.
+        // Since we are inside a callback, we can't easily get the fresh state without adding it to deps.
+        // But adding 'queue' to deps is fine.
+
+        const existingIndex = queue.indexOf(songId);
+
+        if (existingIndex !== -1) {
+            if (existingIndex === currentIndex) {
+                // If it's the same song, force load manually because state won't change
+                playSongInternal(songId, false);
+                // Ensure we don't double play if state somehow updates later
+                lastPlayedIndex.current = existingIndex;
+                lastPlayedSongId.current = songId;
+                shouldAutoPlay.current = true; // Reset
+            } else {
+                // Different song in queue, jump to it. Effect will handle loading (and skip play).
+                setCurrentIndex(existingIndex);
+            }
+        } else {
+            // New song, insert at front and load. Effect will handle loading (and skip play).
+            setQueue((prev) => [songId, ...prev]);
+            setCurrentIndex(0);
+        }
+    }, [queue, currentIndex]);
+
     const clearQueue = useCallback(() => {
         setQueue([]);
         setCurrentIndex(-1);
@@ -305,6 +347,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 moveQueueItem,
                 playSongList,
                 playImmediate,
+                loadImmediate,
                 clearQueue,
                 replaceQueue,
             }}
