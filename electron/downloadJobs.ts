@@ -323,6 +323,10 @@ class DownloadJobManager {
 
             this.updateJob(job.id, { status: 'completed', progress: 100, songId });
 
+            // Invalidate library cache so the new song is picked up
+            const { invalidateCache } = await import('./songLibrary');
+            invalidateCache();
+
             // Notify library change
             this.onLibraryChanged?.();
 
