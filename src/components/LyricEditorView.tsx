@@ -510,69 +510,96 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                 )}
             </div>
 
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '15px', gap: '10px' }}>
+            {/* Main Content Area */}
+            {!selectedSong ? (
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555', fontSize: '14px' }}>
+                    請從左側選擇歌曲
+                </div>
+            ) : (
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '15px', gap: '10px' }}>
 
-                {/* Main Content Grid with 2 Columns */}
-                <div
-                    style={{
-                        display: 'grid',
-                        gridTemplateColumns: '260px 1fr',
-                        gap: '16px',
-                        height: '230px', // Fixed height restored to ensure gap
-                        flexShrink: 0,
-                    }}
-                >
-                    {/* Left Column: Header Info + Alignment Control */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', height: '100%' }}>
-                        {/* Header Info */}
-                        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: '50px' }}>
-                            <div style={{ fontSize: '12px', transition: 'color 0.2s', color: headerTitle === '歌詞編輯' ? '#999' : 'var(--accent-color)' }}>
-                                {headerTitle}
-                            </div>
-                            <div style={{ color: '#fff', fontSize: '18px', fontWeight: 800 }}>
-                                {selectedSong ? selectedSong.title : '請選擇歌曲'}
-                            </div>
-                            <div style={{ color: '#aaa', fontSize: '12px', marginTop: '2px' }}>
-                                {selectedSong?.artist || '未知歌手'} ・ {selectedSong?.type || '—'}
-                            </div>
-                        </div>
-
-                        {/* Alignment Control */}
-                        <div style={{ background: '#141414', borderRadius: '12px', border: '1px solid #222', padding: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1 }}>
-                            <div>
-                                <div style={{ color: '#fff', fontWeight: 700, marginBottom: '4px' }}>對齊控制</div>
-                                <div style={{ color: '#888', fontSize: '12px', lineHeight: 1.4 }}>
-                                    開啟敲擊模式後，按下 J 鍵可將當前播放時間套用到下一行歌詞。
+                    {/* Main Content Grid with 2 Columns */}
+                    <div
+                        style={{
+                            display: 'grid',
+                            gridTemplateColumns: '260px 1fr',
+                            gap: '16px',
+                            height: '230px', // Fixed height restored to ensure gap
+                            flexShrink: 0,
+                        }}
+                    >
+                        {/* Left Column: Header Info + Alignment Control */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', height: '100%' }}>
+                            {/* Header Info */}
+                            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: '50px' }}>
+                                <div style={{ fontSize: '12px', transition: 'color 0.2s', color: headerTitle === '歌詞編輯' ? '#999' : 'var(--accent-color)' }}>
+                                    {headerTitle}
+                                </div>
+                                <div
+                                    title={selectedSong.title}
+                                    style={{
+                                        color: '#fff',
+                                        fontSize: '18px',
+                                        fontWeight: 800,
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis'
+                                    }}
+                                >
+                                    {selectedSong.title}
+                                </div>
+                                <div
+                                    title={`${selectedSong.artist || '未知歌手'} ・ ${selectedSong.type || '—'}`}
+                                    style={{
+                                        color: '#aaa',
+                                        fontSize: '12px',
+                                        marginTop: '2px',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis'
+                                    }}
+                                >
+                                    {selectedSong.artist || '未知歌手'} ・ {selectedSong.type || '—'}
+                                </div>
+                                <div style={{ color: '#aaa', fontSize: '12px', marginTop: '2px' }}>
+                                    {selectedSong.lyrics_status === 'synced' ? '已對齊' : selectedSong.lyrics_status === 'text_only' ? '純文字' : '無'}
                                 </div>
                             </div>
 
-                            <button
-                                onClick={handleResetAlignment}
-                                disabled={!selectedSong}
-                                style={{
-                                    width: '100%',
-                                    padding: '4px 0',
-                                    background: '#3a1a1a',
-                                    color: '#ff6b6b',
-                                    border: '1px solid #5a2a2a',
-                                    borderRadius: '6px',
-                                    cursor: selectedSong ? 'pointer' : 'not-allowed',
-                                    fontSize: '12px',
-                                    marginTop: '8px'
-                                }}
-                            >
-                                重設所有時間
-                            </button>
-                        </div>
-                    </div>
+                            {/* Alignment Control */}
+                            <div style={{ background: '#141414', borderRadius: '12px', border: '1px solid #222', padding: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1 }}>
+                                <div>
+                                    <div style={{ color: '#fff', fontWeight: 700, marginBottom: '4px' }}>對齊控制</div>
+                                    <div style={{ color: '#888', fontSize: '12px', lineHeight: 1.4 }}>
+                                        開啟敲擊模式後，按下 J 鍵可將當前播放時間套用到下一行歌詞。
+                                    </div>
+                                </div>
 
-                    {/* Right Column: Raw Text Block (Full Height) */}
-                    <div style={{ background: '#141414', borderRadius: '12px', border: '1px solid #222', padding: '12px', display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <div style={{ color: '#fff', fontWeight: 700 }}>歌詞文字</div>
-                                {/* Auto-save Badge */}
-                                {selectedSong && (
+                                <button
+                                    onClick={handleResetAlignment}
+                                    style={{
+                                        width: '100%',
+                                        padding: '4px 0',
+                                        background: '#3a1a1a',
+                                        color: '#ff6b6b',
+                                        border: '1px solid #5a2a2a',
+                                        borderRadius: '6px',
+                                        cursor: 'pointer',
+                                        fontSize: '12px',
+                                        marginTop: '8px'
+                                    }}
+                                >
+                                    重設所有時間
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Right Column: Raw Text Block (Full Height) */}
+                        <div style={{ background: '#141414', borderRadius: '12px', border: '1px solid #222', padding: '12px', display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <div style={{ color: '#fff', fontWeight: 700 }}>歌詞文字</div>
+                                    {/* Auto-save Badge */}
                                     <div style={{
                                         fontSize: '10px',
                                         padding: '2px 6px',
@@ -583,323 +610,326 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                     }}>
                                         {(savingRaw || isRawChanged) ? '正在儲存...' : '已儲存'}
                                     </div>
-                                )}
-                            </div>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                <button
-                                    onClick={handleClearEmptyLines}
-                                    disabled={!selectedSong}
-                                    style={{
-                                        padding: '4px 8px',
-                                        background: '#2a2a2a',
-                                        color: '#aaa',
-                                        border: '1px solid #333',
-                                        borderRadius: '6px',
-                                        cursor: selectedSong ? 'pointer' : 'not-allowed',
-                                        fontSize: '12px',
-                                    }}
-                                >
-                                    清除空白
-                                </button>
-                                <button
-                                    onClick={() => applyDraftToLines(false)}
-                                    disabled={!selectedSong}
-                                    style={{
-                                        padding: '4px 10px',
-                                        background: '#2a2a2a',
-                                        color: '#fff',
-                                        border: '1px solid #333',
-                                        borderRadius: '6px',
-                                        cursor: selectedSong ? 'pointer' : 'not-allowed',
-                                        fontSize: '12px',
-                                    }}
-                                >
-                                    套用
-                                </button>
-                            </div>
-                        </div>
-                        <textarea
-                            value={rawTextDraft}
-                            onChange={(e) => setRawTextDraft(e.target.value)}
-                            placeholder="輸入歌詞..."
-                            style={{
-                                flex: 1,
-                                width: '100%',
-                                background: '#0f0f0f',
-                                border: '1px solid #222',
-                                color: '#fff',
-                                borderRadius: '8px',
-                                padding: '8px',
-                                resize: 'none',
-                                fontSize: '13px',
-                                lineHeight: 1.5,
-                                boxSizing: 'border-box',
-                            }}
-                        />
-                    </div>
-                </div>
-
-                {/* Lyric Lines List */}
-                <div
-                    style={{
-                        flex: 1,
-                        background: '#0f0f0f',
-                        borderRadius: '12px',
-                        border: '1px solid #1f1f1f',
-                        padding: '12px',
-                        overflowY: 'auto',
-                    }}
-                >
-                    {loadingLyrics ? (
-                        <div style={{ color: '#b3b3b3' }}>載入歌詞中...</div>
-                    ) : lines.length === 0 ? (
-                        <div style={{ color: '#777' }}>尚未有歌詞，請先貼上並儲存歌詞文字。</div>
-                    ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {lines.map((line, idx) => {
-                                const isCurrent = idx === currentLineIndex;
-                                const isNextTap = idx === tapIndex && tapMode;
-                                return (
-                                    <div
-                                        key={line.id}
-                                        ref={(el) => (lineRefs.current[line.id] = el)}
-                                        onClick={(e) => {
-                                            const target = e.target as HTMLElement;
-                                            if (target.tagName === 'INPUT' || target.tagName === 'BUTTON') return;
-                                            if (line.timeSeconds !== null) {
-                                                onSeek(line.timeSeconds);
-                                            }
-                                        }}
+                                </div>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button
+                                        onClick={handleClearEmptyLines}
                                         style={{
-                                            display: 'grid',
-                                            gridTemplateColumns: '140px 1fr',
-                                            gap: '10px',
-                                            padding: '10px',
-                                            borderRadius: '10px',
-                                            background: isCurrent ? '#1e1e1e' : '#151515',
-                                            border: isCurrent ? '1px solid var(--accent-color)' : '1px solid #1f1f1f',
-                                            cursor: line.timeSeconds !== null ? 'pointer' : 'default',
+                                            padding: '4px 8px',
+                                            background: '#2a2a2a',
+                                            color: '#aaa',
+                                            border: '1px solid #333',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                            fontSize: '12px',
                                         }}
                                     >
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fff' }}>
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                                                <input
-                                                    type="text"
-                                                    defaultValue={formatDisplayTime(line.timeSeconds)}
-                                                    key={line.timeSeconds} // Force re-render on time change
-                                                    onBlur={(e) => {
-                                                        const val = e.target.value.trim();
-                                                        const parts = val.split(':');
-                                                        let newTime = null;
-                                                        if (parts.length === 2) {
-                                                            const m = parseFloat(parts[0]);
-                                                            const s = parseFloat(parts[1]);
-                                                            if (!isNaN(m) && !isNaN(s)) newTime = m * 60 + s;
-                                                        } else {
-                                                            const s = parseFloat(val);
-                                                            if (!isNaN(s)) newTime = s;
-                                                        }
-                                                        if (newTime !== null && newTime >= 0 && newTime <= duration) {
-                                                            updateLineTime(idx, newTime);
-                                                        } else {
-                                                            e.target.value = formatDisplayTime(line.timeSeconds);
-                                                        }
-                                                    }}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter') e.currentTarget.blur();
-                                                    }}
-                                                    style={{
-                                                        width: '80px', background: 'transparent', border: '1px solid #333',
-                                                        color: '#fff', borderRadius: '4px', padding: '2px 4px', fontFamily: 'monospace', fontSize: '12px',
-                                                        textAlign: 'center'
-                                                    }}
-                                                />
-                                                <button
-                                                    onClick={() => updateLineTime(idx, currentTime)}
-                                                    style={{
-                                                        padding: '2px 6px', background: '#2a2a2a', color: '#fff', border: '1px solid #333',
-                                                        borderRadius: '4px', cursor: 'pointer', fontSize: '10px', width: '100%'
-                                                    }}
-                                                    title="套用目前播放時間"
-                                                >
-                                                    套用當前時間
-                                                </button>
-                                            </div>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                <button
-                                                    onClick={() => adjustLineTime(idx, -0.05)}
-                                                    disabled={line.timeSeconds === null}
-                                                    style={{
-                                                        padding: '4px 6px',
-                                                        background: '#262626',
-                                                        color: '#fff',
-                                                        border: '1px solid #333',
-                                                        borderRadius: '6px',
-                                                        cursor: line.timeSeconds === null ? 'not-allowed' : 'pointer',
-                                                        fontSize: '12px',
-                                                    }}
-                                                >
-                                                    稍早
-                                                </button>
-                                                <button
-                                                    onClick={() => adjustLineTime(idx, 0.05)}
-                                                    disabled={line.timeSeconds === null}
-                                                    style={{
-                                                        padding: '4px 6px',
-                                                        background: '#262626',
-                                                        color: '#fff',
-                                                        border: '1px solid #333',
-                                                        borderRadius: '6px',
-                                                        cursor: line.timeSeconds === null ? 'not-allowed' : 'pointer',
-                                                        fontSize: '12px',
-                                                    }}
-                                                >
-                                                    稍晚
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div style={{ minWidth: 0 }}>
-                                            <input
-                                                value={line.text}
-                                                onChange={(e) => updateLineText(line.id, e.target.value)}
-                                                style={{
-                                                    width: '100%',
-                                                    background: 'transparent',
-                                                    color: isCurrent ? '#fff' : '#ccc',
-                                                    border: '1px solid #222',
-                                                    borderRadius: '8px',
-                                                    padding: '8px 10px',
-                                                    boxSizing: 'border-box',
-                                                }}
-                                            />
-                                            {isNextTap && (
-                                                <div style={{ color: '#f0c36b', fontSize: '12px', marginTop: '4px' }}>下一次敲擊會套用到此行</div>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                                        清除空白
+                                    </button>
+                                    <button
+                                        onClick={() => applyDraftToLines(false)}
+                                        style={{
+                                            padding: '4px 10px',
+                                            background: '#2a2a2a',
+                                            color: '#fff',
+                                            border: '1px solid #333',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                            fontSize: '12px',
+                                        }}
+                                    >
+                                        套用
+                                    </button>
+                                </div>
+                            </div>
+                            <textarea
+                                value={rawTextDraft}
+                                onChange={(e) => setRawTextDraft(e.target.value)}
+                                placeholder="輸入歌詞..."
+                                style={{
+                                    flex: 1,
+                                    width: '100%',
+                                    background: '#0f0f0f',
+                                    border: '1px solid #222',
+                                    color: '#fff',
+                                    borderRadius: '8px',
+                                    padding: '8px',
+                                    resize: 'none',
+                                    fontSize: '13px',
+                                    lineHeight: 1.5,
+                                    boxSizing: 'border-box',
+                                }}
+                            />
                         </div>
-                    )}
-                </div>
-
-                {/* Bottom Control Bar */}
-                <div
-                    style={{
-                        background: '#121212',
-                        border: '1px solid #1f1f1f',
-                        borderRadius: '12px',
-                        padding: '8px 16px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '16px',
-                        position: 'relative' // For absolute centering
-                    }}
-                >
-                    {/* Time Display (Current Only) */}
-                    <div style={{ color: '#fff', fontSize: '16px', fontFamily: 'monospace', fontWeight: 700, minWidth: '80px' }}>
-                        {formatDisplayTime(currentTime)}
                     </div>
 
-                    {/* Center: Tap Button (Centered) and Toggle (Left of it) */}
-                    <div style={{
-                        position: 'absolute',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        display: 'flex',
-                        alignItems: 'center'
-                    }}>
-                        {/* Toggle (Absolute relative to this centered container) */}
+                    {/* Lyric Lines List */}
+                    <div
+                        style={{
+                            flex: 1,
+                            background: '#0f0f0f',
+                            borderRadius: '12px',
+                            border: '1px solid #1f1f1f',
+                            padding: '12px',
+                            overflowY: 'auto',
+                        }}
+                    >
+                        {loadingLyrics ? (
+                            <div style={{ color: '#b3b3b3' }}>載入歌詞中...</div>
+                        ) : lines.length === 0 ? (
+                            <div style={{ color: '#777' }}>尚未有歌詞，請先貼上並儲存歌詞文字。</div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {lines.map((line, idx) => {
+                                    const isCurrent = idx === currentLineIndex;
+                                    const isNextTap = idx === tapIndex && tapMode;
+                                    return (
+                                        <div
+                                            key={line.id}
+                                            ref={(el) => (lineRefs.current[line.id] = el)}
+                                            onClick={(e) => {
+                                                const target = e.target as HTMLElement;
+                                                if (target.tagName === 'INPUT' || target.tagName === 'BUTTON') return;
+                                                if (line.timeSeconds !== null) {
+                                                    onSeek(line.timeSeconds);
+                                                }
+                                            }}
+                                            style={{
+                                                display: 'grid',
+                                                gridTemplateColumns: '140px 1fr',
+                                                gap: '10px',
+                                                padding: '10px',
+                                                borderRadius: '10px',
+                                                background: isCurrent ? '#1e1e1e' : '#151515',
+                                                border: isCurrent ? '1px solid var(--accent-color)' : '1px solid #1f1f1f',
+                                                cursor: line.timeSeconds !== null ? 'pointer' : 'default',
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fff' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                                                    <input
+                                                        type="text"
+                                                        defaultValue={formatDisplayTime(line.timeSeconds)}
+                                                        key={line.timeSeconds} // Force re-render on time change
+                                                        onBlur={(e) => {
+                                                            const val = e.target.value.trim();
+                                                            const parts = val.split(':');
+                                                            let newTime = null;
+                                                            if (parts.length === 2) {
+                                                                const m = parseFloat(parts[0]);
+                                                                const s = parseFloat(parts[1]);
+                                                                if (!isNaN(m) && !isNaN(s)) newTime = m * 60 + s;
+                                                            } else {
+                                                                const s = parseFloat(val);
+                                                                if (!isNaN(s)) newTime = s;
+                                                            }
+                                                            if (newTime !== null && newTime >= 0 && newTime <= duration) {
+                                                                updateLineTime(idx, newTime);
+                                                            } else {
+                                                                e.target.value = formatDisplayTime(line.timeSeconds);
+                                                            }
+                                                        }}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') e.currentTarget.blur();
+                                                        }}
+                                                        style={{
+                                                            width: '80px', background: 'transparent', border: '1px solid #333',
+                                                            color: '#fff', borderRadius: '4px', padding: '2px 4px', fontFamily: 'monospace', fontSize: '12px',
+                                                            textAlign: 'center'
+                                                        }}
+                                                    />
+                                                    <button
+                                                        onClick={() => updateLineTime(idx, currentTime)}
+                                                        style={{
+                                                            padding: '2px 6px', background: '#2a2a2a', color: '#fff', border: '1px solid #333',
+                                                            borderRadius: '4px', cursor: 'pointer', fontSize: '10px', width: '100%'
+                                                        }}
+                                                        title="套用目前播放時間"
+                                                    >
+                                                        套用當前時間
+                                                    </button>
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                    <button
+                                                        onClick={() => adjustLineTime(idx, -0.05)}
+                                                        disabled={line.timeSeconds === null}
+                                                        style={{
+                                                            padding: '4px 6px',
+                                                            background: '#262626',
+                                                            color: '#fff',
+                                                            border: '1px solid #333',
+                                                            borderRadius: '6px',
+                                                            cursor: line.timeSeconds === null ? 'not-allowed' : 'pointer',
+                                                            fontSize: '12px',
+                                                        }}
+                                                    >
+                                                        稍早
+                                                    </button>
+                                                    <button
+                                                        onClick={() => adjustLineTime(idx, 0.05)}
+                                                        disabled={line.timeSeconds === null}
+                                                        style={{
+                                                            padding: '4px 6px',
+                                                            background: '#262626',
+                                                            color: '#fff',
+                                                            border: '1px solid #333',
+                                                            borderRadius: '6px',
+                                                            cursor: line.timeSeconds === null ? 'not-allowed' : 'pointer',
+                                                            fontSize: '12px',
+                                                        }}
+                                                    >
+                                                        稍晚
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div style={{ minWidth: 0 }}>
+                                                <input
+                                                    value={line.text}
+                                                    onChange={(e) => updateLineText(line.id, e.target.value)}
+                                                    style={{
+                                                        width: '100%',
+                                                        background: 'transparent',
+                                                        color: isCurrent ? '#fff' : '#ccc',
+                                                        border: '1px solid #222',
+                                                        borderRadius: '8px',
+                                                        padding: '8px 10px',
+                                                        boxSizing: 'border-box',
+                                                    }}
+                                                />
+                                                {isNextTap && (
+                                                    <div style={{ color: '#f0c36b', fontSize: '12px', marginTop: '4px' }}>下一次敲擊會套用到此行</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Bottom Control Bar */}
+                    <div
+                        style={{
+                            background: '#121212',
+                            border: '1px solid #1f1f1f',
+                            borderRadius: '12px',
+                            padding: '8px 16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '16px',
+                            position: 'relative' // For absolute centering
+                        }}
+                    >
+                        {/* Time Display (Current Only) */}
+                        <div style={{ color: '#fff', fontSize: '16px', fontFamily: 'monospace', fontWeight: 700, minWidth: '80px' }}>
+                            {formatDisplayTime(currentTime)}
+                        </div>
+
+                        {/* Center: Tap Button (Centered) and Toggle (Left of it) */}
                         <div style={{
                             position: 'absolute',
-                            right: '100%',
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            paddingRight: '12px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
                             display: 'flex',
                             alignItems: 'center'
                         }}>
-                            <div
-                                onClick={() => setTapMode(p => !p)}
+                            {/* Toggle (Absolute relative to this centered container) */}
+                            <div style={{
+                                position: 'absolute',
+                                right: '100%',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                paddingRight: '12px',
+                                display: 'flex',
+                                alignItems: 'center'
+                            }}>
+                                <div
+                                    onClick={() => setTapMode(p => !p)}
+                                    style={{
+                                        cursor: 'pointer',
+                                        color: tapMode ? 'var(--accent-color)' : '#444',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        padding: '2px 6px', // Smaller padding
+                                        borderRadius: '8px',
+                                        background: tapMode ? 'rgba(var(--accent-color-rgb), 0.1)' : 'transparent',
+                                        transition: 'all 0.2s',
+                                        border: tapMode ? '1px solid rgba(var(--accent-color-rgb), 0.3)' : '1px solid transparent',
+                                        whiteSpace: 'nowrap'
+                                    }}
+                                    title="敲擊模式 (J)"
+                                >
+                                    <img src={TapModeIcon} alt="Tap Mode" style={{ width: '20px', height: '20px', filter: tapMode ? 'none' : 'grayscale(100%) opacity(0.3)' }} />
+                                    <span style={{ fontSize: '9px', fontWeight: 600, marginTop: '2px' }}>敲擊模式</span>
+                                </div>
+                            </div>
+
+                            {/* Big Tap Button */}
+                            <button
+                                onClick={handleTap}
+                                disabled={!tapMode || !selectedSong}
                                 style={{
-                                    cursor: 'pointer',
-                                    color: tapMode ? 'var(--accent-color)' : '#444',
+                                    padding: '8px 32px', // Wider
+                                    background: tapMode ? 'var(--accent-color)' : '#333',
+                                    color: tapMode ? '#000' : '#888',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    fontSize: '14px',
+                                    fontWeight: 800,
+                                    cursor: tapMode ? 'pointer' : 'not-allowed',
+                                    transition: 'transform 0.1s',
+                                    opacity: tapMode ? 1 : 0.5,
+                                    height: '40px',
                                     display: 'flex',
-                                    flexDirection: 'column',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    padding: '2px 6px', // Smaller padding
-                                    borderRadius: '8px',
-                                    background: tapMode ? 'rgba(var(--accent-color-rgb), 0.1)' : 'transparent',
-                                    transition: 'all 0.2s',
-                                    border: tapMode ? '1px solid rgba(var(--accent-color-rgb), 0.3)' : '1px solid transparent',
-                                    whiteSpace: 'nowrap'
+                                    gap: '8px'
                                 }}
-                                title="敲擊模式 (J)"
+                                onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+                                onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                             >
-                                <img src={TapModeIcon} alt="Tap Mode" style={{ width: '20px', height: '20px', filter: tapMode ? 'none' : 'grayscale(100%) opacity(0.3)' }} />
-                                <span style={{ fontSize: '9px', fontWeight: 600, marginTop: '2px' }}>敲擊模式</span>
-                            </div>
+                                <span>敲擊</span>
+                                <span style={{
+                                    background: 'rgba(0,0,0,0.2)',
+                                    color: tapMode ? '#000' : '#888',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    fontSize: '11px',
+                                    fontWeight: 700
+                                }}>J</span>
+                            </button>
                         </div>
 
-                        {/* Big Tap Button */}
+                        {/* Right: Save Button */}
                         <button
-                            onClick={handleTap}
-                            disabled={!tapMode || !selectedSong}
+                            onClick={handleSaveLrc}
+                            disabled={savingLrc}
                             style={{
-                                padding: '8px 32px', // Wider
-                                background: tapMode ? 'var(--accent-color)' : '#333',
-                                color: tapMode ? '#000' : '#888',
-                                border: 'none',
-                                borderRadius: '8px',
-                                fontSize: '14px',
-                                fontWeight: 800,
-                                cursor: tapMode ? 'pointer' : 'not-allowed',
-                                transition: 'transform 0.1s',
-                                opacity: tapMode ? 1 : 0.5,
-                                height: '40px',
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '8px'
+                                gap: '8px',
+                                padding: '8px 16px',
+                                background: '#2a2a2a',
+                                border: '1px solid #333',
+                                borderRadius: '8px',
+                                color: '#fff',
+                                cursor: 'pointer',
+                                fontSize: '13px',
+                                fontWeight: 600
                             }}
-                            onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
-                            onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                         >
-                            <span>敲擊</span>
-                            <span style={{
-                                background: 'rgba(0,0,0,0.2)',
-                                color: tapMode ? '#000' : '#888',
-                                padding: '2px 6px',
-                                borderRadius: '4px',
-                                fontSize: '11px',
-                                fontWeight: 700
-                            }}>J</span>
+                            <img src={SaveLrcIcon} alt="Save" style={{ width: '16px', height: '16px' }} />
+                            {savingLrc ? '儲存中...' : '儲存 LRC'}
                         </button>
                     </div>
 
-                    {/* Right: Save LRC */}
-                    <div
-                        onClick={handleSaveLrc}
-                        style={{
-                            cursor: selectedSong && !savingLrc ? 'pointer' : 'not-allowed',
-                            opacity: selectedSong && !savingLrc ? 1 : 0.3,
-                            color: '#fff',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: '8px',
-                        }}
-                        title="儲存同步歌詞 (LRC)"
-                    >
-                        <img src={SaveLrcIcon} alt="Save" style={{ width: '24px', height: '24px' }} />
-                    </div>
+                    {errorMessage && <div style={{ color: '#ff8b8b', fontSize: '13px' }}>{errorMessage}</div>}
                 </div>
-
-                {errorMessage && <div style={{ color: '#ff8b8b', fontSize: '13px' }}>{errorMessage}</div>}
-            </div>
+            )}
         </div>
     );
 };

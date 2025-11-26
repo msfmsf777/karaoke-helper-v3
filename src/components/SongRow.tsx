@@ -3,6 +3,7 @@ import { SongMeta } from '../../shared/songTypes';
 import { useQueue } from '../contexts/QueueContext';
 import { useUserData } from '../contexts/UserDataContext';
 import SongContextMenu from './SongContextMenu';
+import AddToPlaylistMenu from './AddToPlaylistMenu';
 import FavoritesIcon from '../assets/icons/favorites.svg';
 import FavoritesFilledIcon from '../assets/icons/favorites_filled.svg';
 import AddIcon from '../assets/icons/add.svg';
@@ -63,12 +64,10 @@ const SongRow: React.FC<SongRowProps> = ({
     customActions
 }) => {
     const { playImmediate, addToQueue } = useQueue();
-    const { isFavorite, toggleFavorite, playlists, addSongToPlaylist, createPlaylist } = useUserData();
+    const { isFavorite, toggleFavorite } = useUserData();
     const [isHovered, setIsHovered] = useState(false);
     const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
     const [showAddToPlaylistMenu, setShowAddToPlaylistMenu] = useState<{ x: number; y: number } | null>(null);
-    const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
-    const [newPlaylistName, setNewPlaylistName] = useState('');
 
     const handleDoubleClick = () => {
         playImmediate(song.id);
@@ -297,115 +296,11 @@ const SongRow: React.FC<SongRowProps> = ({
             )}
 
             {showAddToPlaylistMenu && (
-                <div
-                    style={{
-                        position: 'fixed',
-                        left: showAddToPlaylistMenu.x,
-                        top: showAddToPlaylistMenu.y,
-                        backgroundColor: '#2d2d2d',
-                        border: '1px solid #3a3a3a',
-                        borderRadius: '8px',
-                        padding: '8px',
-                        zIndex: 100,
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                        minWidth: '160px',
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {/* Overlay to close when clicking outside */}
-                    <div
-                        style={{ position: 'fixed', inset: 0, zIndex: -1 }}
-                        onClick={() => setShowAddToPlaylistMenu(null)}
-                    />
-
-                    <div
-                        onClick={() => {
-                            addToQueue(song.id);
-                            setShowAddToPlaylistMenu(null);
-                        }}
-                        style={{
-                            padding: '6px 8px',
-                            cursor: 'pointer',
-                            color: '#fff',
-                            fontSize: '14px',
-                            borderRadius: '4px',
-                            marginBottom: '4px'
-                        }}
-                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
-                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                    >
-                        加入播放隊列
-                    </div>
-                    <div style={{ height: '1px', backgroundColor: '#3a3a3a', margin: '4px 0' }}></div>
-                    <div style={{ fontSize: '12px', color: '#888', marginBottom: '4px', padding: '0 8px' }}>加入歌單...</div>
-                    {playlists.map(p => (
-                        <div
-                            key={p.id}
-                            onClick={() => {
-                                addSongToPlaylist(p.id, song.id);
-                                setShowAddToPlaylistMenu(null);
-                            }}
-                            style={{
-                                padding: '6px 8px',
-                                cursor: 'pointer',
-                                color: '#fff',
-                                fontSize: '14px',
-                                borderRadius: '4px',
-                            }}
-                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
-                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                        >
-                            {p.name}
-                        </div>
-                    ))}
-                    <div style={{ height: '1px', backgroundColor: '#3a3a3a', margin: '4px 0' }}></div>
-                    {isCreatingPlaylist ? (
-                        <div style={{ padding: '4px' }}>
-                            <input
-                                autoFocus
-                                type="text"
-                                value={newPlaylistName}
-                                onChange={(e) => setNewPlaylistName(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        if (newPlaylistName.trim()) {
-                                            const id = createPlaylist(newPlaylistName.trim());
-                                            addSongToPlaylist(id, song.id);
-                                            setShowAddToPlaylistMenu(null);
-                                        }
-                                    }
-                                    if (e.key === 'Escape') setIsCreatingPlaylist(false);
-                                }}
-                                placeholder="新歌單名稱"
-                                style={{
-                                    width: '100%',
-                                    padding: '4px',
-                                    backgroundColor: '#1f1f1f',
-                                    border: '1px solid #3a3a3a',
-                                    color: '#fff',
-                                    borderRadius: '4px',
-                                    fontSize: '12px'
-                                }}
-                            />
-                        </div>
-                    ) : (
-                        <div
-                            onClick={() => setIsCreatingPlaylist(true)}
-                            style={{
-                                padding: '6px 8px',
-                                cursor: 'pointer',
-                                color: 'var(--accent-color)',
-                                fontSize: '14px',
-                                borderRadius: '4px',
-                                fontWeight: 600
-                            }}
-                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
-                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                        >
-                            ＋ 新建歌單
-                        </div>
-                    )}
-                </div>
+                <AddToPlaylistMenu
+                    songId={song.id}
+                    position={showAddToPlaylistMenu}
+                    onClose={() => setShowAddToPlaylistMenu(null)}
+                />
             )}
         </>
     );

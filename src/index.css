@@ -4,7 +4,8 @@
   --bg-player: #181818;
   --text-primary: #ffffff;
   --text-secondary: #b3b3b3;
-  --accent-color: #1db954; /* Placeholder green, can be changed to a more "QQ" teal/pink */
+  --accent-color: #1db954;
+  /* Placeholder green, can be changed to a more "QQ" teal/pink */
   --accent-color-rgb: 29, 185, 84;
   --accent-hover: #1ed760;
   --border-color: #282828;
@@ -17,7 +18,8 @@ body {
   font-family: var(--font-family);
   background-color: var(--bg-main);
   color: var(--text-primary);
-  overflow: hidden; /* App-like feel */
+  overflow: hidden;
+  /* App-like feel */
   user-select: none;
 }
 
@@ -40,4 +42,35 @@ body {
 
 button {
   font-family: inherit;
+}
+
+/* Global Input Styling */
+input[type="text"],
+input[type="search"],
+input[type="password"],
+input[type="email"],
+textarea {
+  background-color: #333;
+  border: 1px solid #555;
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 4px;
+  outline: none;
+  font-family: inherit;
+  font-size: 14px;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+input[type="text"]:focus,
+input[type="search"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus,
+textarea:focus {
+  border-color: var(--accent-color);
+  background-color: #3a3a3a;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #888;
 }
