@@ -8,6 +8,7 @@ import { useQueue } from '../contexts/QueueContext';
 import { useLibrary } from '../contexts/LibraryContext';
 import { useUserData } from '../contexts/UserDataContext';
 import { isJapanese } from '../utils/japaneseDetection';
+import ObsLinkIcon from '../assets/icons/obs_link.svg';
 
 interface StreamModeViewProps {
   currentTrack: { id: string; title: string; artist?: string } | null;
@@ -223,6 +224,7 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
                         borderLeft: isCurrent ? '4px solid var(--accent-color)' : '4px solid transparent',
                         cursor: 'pointer',
                         transition: 'background-color 0.2s',
+                        overflow: 'hidden'
                       }}
                       onMouseOver={(e) => {
                         if (!isCurrent) e.currentTarget.style.backgroundColor = '#1a1a1a';
@@ -235,11 +237,20 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
                         color: isCurrent ? '#fff' : '#ccc',
                         fontWeight: isCurrent ? 'bold' : 'normal',
                         fontSize: '14px',
-                        marginBottom: '2px'
-                      }}>
+                        marginBottom: '2px',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }} title={song.title}>
                         {song.title}
                       </div>
-                      <div style={{ color: '#666', fontSize: '12px' }}>
+                      <div style={{
+                        color: '#666',
+                        fontSize: '12px',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }} title={song.artist || 'Unknown'}>
                         {song.artist || 'Unknown'}
                       </div>
                     </div>
@@ -293,11 +304,8 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
                 backdropFilter: 'blur(4px)',
               }}
             >
-              {/* OBS Icon (Circle with dot) */}
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <circle cx="12" cy="12" r="3" fill="currentColor" />
-              </svg>
+              {/* OBS Icon */}
+              <img src={ObsLinkIcon} alt="OBS Link" style={{ width: '20px', height: '20px', filter: 'invert(1)' }} />
             </button>
             <button
               onClick={() => setShowStylePopup(!showStylePopup)}

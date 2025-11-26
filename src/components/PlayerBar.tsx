@@ -1,15 +1,24 @@
-import React, { useEffect, useState, useRef } from 'react';
-import audioEngine from '../audio/AudioEngine';
-import { loadVolumePreferences, saveVolumePreferences } from '../settings/volumePreferences';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQueue } from '../contexts/QueueContext';
 import { useLibrary } from '../contexts/LibraryContext';
+import { useUserData } from '../contexts/UserDataContext';
+import audioEngine from '../audio/AudioEngine';
+import { loadVolumePreferences, saveVolumePreferences } from '../settings/volumePreferences';
 import PlaybackControlPopup from './PlaybackControlPopup';
 import VolumeControlPopup from './VolumeControlPopup';
-import PrevIcon from '../assets/icons/prev.svg';
-import NextIcon from '../assets/icons/next.svg';
-import LiveModeIcon from '../assets/icons/live_mode.svg';
+import ScrollingText from './ScrollingText';
+import AddToPlaylistMenu from './AddToPlaylistMenu';
+
+// Icons
 import PlayIcon from '../assets/icons/play.svg';
 import PauseIcon from '../assets/icons/pause.svg';
+import NextIcon from '../assets/icons/next.svg';
+import PrevIcon from '../assets/icons/prev.svg';
+import LiveIcon from '../assets/icons/live.svg';
+import LiveModeIcon from '../assets/icons/live_mode.svg';
+import FavoritesIcon from '../assets/icons/favorites.svg';
+import FavoritesFilledIcon from '../assets/icons/favorites_filled.svg';
+import AddIcon from '../assets/icons/add.svg';
 import PlaylistIcon from '../assets/icons/playlist.svg';
 import SpeedIcon from '../assets/icons/speed.svg';
 import PitchIcon from '../assets/icons/pitch.svg';
@@ -45,6 +54,11 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [backingVolume, setBackingVolume] = useState(() => Math.round(initialVolumes.streamVolume * 100));
   const [vocalVolume, setVocalVolume] = useState(() => Math.round(initialVolumes.headphoneVolume * 100));
+  const { isFavorite, toggleFavorite } = useUserData();
+
+  // Playlist Popup State
+  const [showPlaylistPopup, setShowPlaylistPopup] = useState(false);
+  const [playlistPopupPosition, setPlaylistPopupPosition] = useState({ x: 0, y: 0 });
 
   // Playback Transform State
   const [speed, setSpeed] = useState(1.0);
@@ -70,8 +84,6 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
       if (song && song.playback) {
         setSpeed(song.playback.speed);
         setPitch(song.playback.transpose);
-        // AudioEngine is updated by QueueContext on play, 
-        // but if we just loaded the app or switched songs, we want UI to match.
       } else {
         setSpeed(1.0);
         setPitch(0);
@@ -101,8 +113,6 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
     audioEngine.setPlaybackTransform({ speed: speed, transpose: newPitch });
     savePlaybackSettings();
   };
-
-
 
   const formatTime = (value: number) => {
     if (!Number.isFinite(value) || value < 0) return '0:00';
@@ -154,7 +164,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
       }}
     >
       {/* Left: Song Info & Live Toggle */}
-      <div style={{ display: 'flex', alignItems: 'center', width: '30%' }}>
+      <div style={{ display: 'flex', alignItems: 'center', width: '30%', minWidth: 0 }}>
         <div
           style={{
             width: '56px',
@@ -174,6 +184,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
             fontSize: '14px',
             textAlign: 'center' as const,
             lineHeight: 1.2,
+            flexShrink: 0, // Prevent shrinking
           }}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
@@ -205,12 +216,70 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
             </svg>
           )}
         </div>
-        <div>
-          <div style={{ color: '#fff', fontSize: '14px', marginBottom: '4px' }}>
-            {currentTrackName || '尚未選擇歌曲'}
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flex: 1, minWidth: 0 }}>
+          {/* Song Title + Artist Marquee */}
+          <div style={{ marginBottom: '4px', width: '100%' }}>
+            <ScrollingText
+              text={currentTrackName || '尚未選擇歌曲'}
+              style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}
+            />
           </div>
-          <div style={{ color: '#b3b3b3', fontSize: '12px' }}>
-            {currentView === 'stream' ? '直播模式' : '切換至直播模式'}
+
+          {/* Action Icons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', height: '20px' }}>
+            {currentSongId ? (
+              <>
+                <img
+                  src={isFavorite(currentSongId) ? FavoritesFilledIcon : FavoritesIcon}
+                  alt="Favorite"
+                  style={{
+                    width: '20px',
+                    height: '20px',
+                    cursor: 'pointer',
+                    color: isFavorite(currentSongId) ? 'var(--primary-color)' : '#b3b3b3',
+                    opacity: 0.8,
+                    transition: 'opacity 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                  onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
+                  onClick={() => toggleFavorite(currentSongId)}
+                  title={isFavorite(currentSongId) ? "取消最愛" : "加入最愛"}
+                />
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <img
+                    src={AddIcon}
+                    alt="Add to Playlist"
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      cursor: 'pointer',
+                      opacity: 0.8,
+                      transition: 'opacity 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
+                    onClick={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setPlaylistPopupPosition({ x: rect.left, y: rect.top });
+                      setShowPlaylistPopup(true);
+                    }}
+                    title="加入歌單"
+                  />
+                  {showPlaylistPopup && currentSongId && (
+                    <AddToPlaylistMenu
+                      songId={currentSongId}
+                      position={{
+                        x: playlistPopupPosition.x,
+                        y: playlistPopupPosition.y
+                      }}
+                      onClose={() => setShowPlaylistPopup(false)}
+                    />
+                  )}
+                </div>
+              </>
+            ) : (
+              <div style={{ fontSize: '12px', color: '#666' }}>點擊左側圖標進入直播模式</div>
+            )}
           </div>
         </div>
       </div>
