@@ -1,0 +1,266 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import audioEngine, { OutputRole } from '../audio/AudioEngine';
+import { useUserData } from '../contexts/UserDataContext';
+
+interface SettingsViewProps {
+    onBack: () => void;
+    streamDeviceId: string | null;
+    headphoneDeviceId: string | null;
+    onChangeDevice: (role: OutputRole, deviceId: string | null) => void;
+}
+
+const SettingsView: React.FC<SettingsViewProps> = ({
+    onBack,
+    streamDeviceId,
+    headphoneDeviceId,
+    onChangeDevice,
+}) => {
+    const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const { separationQuality, setSeparationQuality } = useUserData();
+
+    const refreshDevices = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const list = await audioEngine.enumerateOutputDevices();
+            setDevices(list);
+        } catch (err) {
+            console.error('[Settings] Failed to enumerate devices', err);
+            setError('無法取得音訊輸出裝置清單');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        refreshDevices();
+    }, []);
+
+    const deviceOptions = useMemo(() => {
+        return [
+            { deviceId: '', label: '系統預設' },
+            ...devices.map((d, idx) => ({
+                deviceId: d.deviceId,
+                label: d.label || `裝置 ${idx + 1}`,
+            })),
+        ];
+    }, [devices]);
+
+    return (
+        <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            backgroundColor: '#1f1f1f',
+            color: '#fff',
+            overflow: 'hidden'
+        }}>
+            {/* Header */}
+            <div style={{
+                padding: '20px 24px',
+                borderBottom: '1px solid #333',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                backgroundColor: '#252525',
+                flexShrink: 0
+            }}>
+                <button
+                    onClick={onBack}
+                    style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        fontSize: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '50%',
+                        transition: 'background 0.2s',
+                        padding: 0,
+                        lineHeight: 1
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                    ‹
+                </button>
+                <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold' }}>設定</h1>
+            </div>
+
+            {/* Content Container - Scrollbar lives here */}
+            <div style={{
+                flex: 1,
+                overflowY: 'auto',
+                width: '100%',
+            }}>
+                {/* Centered Content Wrapper */}
+                <div style={{
+                    padding: '32px',
+                    maxWidth: '800px',
+                    margin: '0 auto',
+                    boxSizing: 'border-box'
+                }}>
+
+                    {/* Section: Audio Devices */}
+                    <section style={{ marginBottom: '40px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h2 style={{ margin: 0, fontSize: '18px', color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: '12px' }}>
+                                音訊輸出裝置
+                            </h2>
+                            <button
+                                onClick={refreshDevices}
+                                disabled={loading}
+                                style={{
+                                    padding: '6px 12px',
+                                    backgroundColor: '#333',
+                                    color: '#fff',
+                                    border: '1px solid #444',
+                                    borderRadius: '6px',
+                                    cursor: loading ? 'not-allowed' : 'pointer',
+                                    fontSize: '13px',
+                                    opacity: loading ? 0.7 : 1
+                                }}
+                            >
+                                {loading ? '掃描中...' : '重新掃描'}
+                            </button>
+                        </div>
+
+                        <p style={{ margin: '0 0 24px', color: '#aaa', fontSize: '14px', lineHeight: '1.6' }}>
+                            設定觀眾聽到（Stream）與您自己聽到（Headphone）的聲音輸出位置。
+                            <br />
+                            若歌曲已進行人聲分離，Stream 只會輸出伴奏，而 Headphone 會同時輸出人聲與伴奏。
+                        </p>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                            <div style={{ background: '#2a2a2a', padding: '20px', borderRadius: '12px', border: '1px solid #333' }}>
+                                <label style={{ display: 'block', marginBottom: '12px', color: '#ddd', fontSize: '14px', fontWeight: 'bold' }}>
+                                    觀眾輸出 (Stream)
+                                </label>
+                                <select
+                                    value={streamDeviceId ?? ''}
+                                    onChange={(e) => onChangeDevice('stream', e.target.value || null)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px',
+                                        background: '#1f1f1f',
+                                        color: '#fff',
+                                        border: '1px solid #444',
+                                        borderRadius: '8px',
+                                        fontSize: '14px',
+                                        outline: 'none'
+                                    }}
+                                >
+                                    {deviceOptions.map((opt) => (
+                                        <option key={opt.deviceId} value={opt.deviceId}>
+                                            {opt.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div style={{ background: '#2a2a2a', padding: '20px', borderRadius: '12px', border: '1px solid #333' }}>
+                                <label style={{ display: 'block', marginBottom: '12px', color: '#ddd', fontSize: '14px', fontWeight: 'bold' }}>
+                                    耳機輸出 (Headphone)
+                                </label>
+                                <select
+                                    value={headphoneDeviceId ?? ''}
+                                    onChange={(e) => onChangeDevice('headphone', e.target.value || null)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px',
+                                        background: '#1f1f1f',
+                                        color: '#fff',
+                                        border: '1px solid #444',
+                                        borderRadius: '8px',
+                                        fontSize: '14px',
+                                        outline: 'none'
+                                    }}
+                                >
+                                    {deviceOptions.map((opt) => (
+                                        <option key={opt.deviceId} value={opt.deviceId}>
+                                            {opt.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        {error && <div style={{ color: '#ff6666', marginTop: '12px', fontSize: '14px' }}>{error}</div>}
+                    </section>
+
+                    {/* Section: Processing */}
+                    <section>
+                        <h2 style={{ margin: '0 0 16px 0', fontSize: '18px', color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: '12px' }}>
+                            人聲分離品質
+                        </h2>
+                        <div style={{ background: '#2a2a2a', padding: '24px', borderRadius: '12px', border: '1px solid #333' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', padding: '8px', borderRadius: '8px', transition: 'background 0.2s' }}
+                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#333'}
+                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="separationQuality"
+                                        value="fast"
+                                        checked={separationQuality === 'fast'}
+                                        onChange={() => setSeparationQuality('fast')}
+                                        style={{ accentColor: 'var(--accent-color)', width: '18px', height: '18px' }}
+                                    />
+                                    <div>
+                                        <div style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold' }}>快速 (Fast)</div>
+                                        <div style={{ color: '#aaa', fontSize: '13px' }}>較省資源，處理速度最快，但音質略低。</div>
+                                    </div>
+                                </label>
+
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', padding: '8px', borderRadius: '8px', transition: 'background 0.2s' }}
+                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#333'}
+                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="separationQuality"
+                                        value="normal"
+                                        checked={separationQuality === 'normal'}
+                                        onChange={() => setSeparationQuality('normal')}
+                                        style={{ accentColor: 'var(--accent-color)', width: '18px', height: '18px' }}
+                                    />
+                                    <div>
+                                        <div style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold' }}>標準 (Normal)</div>
+                                        <div style={{ color: '#aaa', fontSize: '13px' }}>推薦選項。在速度與音質之間取得平衡。</div>
+                                    </div>
+                                </label>
+
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', padding: '8px', borderRadius: '8px', transition: 'background 0.2s' }}
+                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#333'}
+                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="separationQuality"
+                                        value="high"
+                                        checked={separationQuality === 'high'}
+                                        onChange={() => setSeparationQuality('high')}
+                                        style={{ accentColor: 'var(--accent-color)', width: '18px', height: '18px' }}
+                                    />
+                                    <div>
+                                        <div style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold' }}>高品質 (High)</div>
+                                        <div style={{ color: '#aaa', fontSize: '13px' }}>處理時間較長，但能提供最佳的分離效果。</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </section>
+
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default SettingsView;

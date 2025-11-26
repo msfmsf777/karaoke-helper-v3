@@ -16,7 +16,7 @@ import SkeletonSongList from './components/skeletons/SkeletonSongList';
 // Lazy load heavy components
 const LyricEditorView = lazy(() => import('./components/LyricEditorView'));
 const StreamModeView = lazy(() => import('./components/StreamModeView'));
-const SettingsModal = lazy(() => import('./components/SettingsModal'));
+const SettingsView = lazy(() => import('./components/SettingsView'));
 const ProcessingListModal = lazy(() => import('./components/ProcessingListModal'));
 const FavoritesView = lazy(() => import('./components/FavoritesView'));
 const HistoryView = lazy(() => import('./components/HistoryView'));
@@ -24,14 +24,14 @@ const PlaylistView = lazy(() => import('./components/PlaylistView'));
 const DownloadManagerView = lazy(() => import('./components/DownloadManagerView'));
 const SearchResultsView = lazy(() => import('./components/SearchResultsView'));
 
-type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history' | 'download-manager' | string;
+type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history' | 'download-manager' | 'settings' | string;
 
 function AppContent() {
   const [currentView, setCurrentView] = useState<View>('library');
+  const [previousView, setPreviousView] = useState<View>('library');
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [showSettings, setShowSettings] = useState(false);
   const [showProcessingList, setShowProcessingList] = useState(false);
   const [showQueuePanel, setShowQueuePanel] = useState(false);
   const [showAddSongWizard, setShowAddSongWizard] = useState(false);
@@ -152,6 +152,15 @@ function AppContent() {
     }
   };
 
+  const handleOpenSettings = () => {
+    if (currentView === 'settings') {
+      setCurrentView(previousView);
+    } else {
+      setPreviousView(currentView);
+      setCurrentView('settings');
+    }
+  };
+
   const renderContent = () => {
     return (
       <Suspense fallback={
@@ -206,7 +215,15 @@ function AppContent() {
                   onOpenOverlayWindow={() => window.api.openOverlayWindow()}
                 />
               );
-
+            case 'settings':
+              return (
+                <SettingsView
+                  onBack={() => setCurrentView(previousView)}
+                  streamDeviceId={outputDevices.streamDeviceId}
+                  headphoneDeviceId={outputDevices.headphoneDeviceId}
+                  onChangeDevice={handleDeviceChange}
+                />
+              );
             case 'favorites':
               return <FavoritesView />;
             case 'history':
@@ -224,7 +241,7 @@ function AppContent() {
       {/* 1. Top Header (Hidden in Stream Mode) */}
       {currentView !== 'stream' && (
         <TopBar
-          onOpenSettings={() => setShowSettings(true)}
+          onOpenSettings={handleOpenSettings}
           onOpenProcessing={() => setShowProcessingList(true)}
           onSearch={(term) => setCurrentView(`search-results:${encodeURIComponent(term)}`)}
         />
@@ -263,15 +280,6 @@ function AppContent() {
       <QueuePanel isOpen={showQueuePanel} onClose={() => setShowQueuePanel(false)} />
       <AddSongSidebar isOpen={showAddSongWizard} onClose={() => setShowAddSongWizard(false)} />
       <Suspense fallback={null}>
-        {showSettings && (
-          <SettingsModal
-            open={showSettings}
-            onClose={() => setShowSettings(false)}
-            streamDeviceId={outputDevices.streamDeviceId}
-            headphoneDeviceId={outputDevices.headphoneDeviceId}
-            onChangeDevice={handleDeviceChange}
-          />
-        )}
         {showProcessingList && (
           <ProcessingListModal open={showProcessingList} onClose={() => setShowProcessingList(false)} />
         )}
