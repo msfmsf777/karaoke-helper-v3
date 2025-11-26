@@ -4,6 +4,7 @@ import PlayerBar from './components/PlayerBar';
 import LibraryView from './components/LibraryView';
 import TopBar from './components/TopBar';
 import QueuePanel from './components/QueuePanel';
+import AddSongSidebar from './components/AddSongSidebar';
 import audioEngine, { OutputRole } from './audio/AudioEngine';
 import { loadOutputDevicePreferences, saveOutputDevicePreferences } from './settings/devicePreferences';
 import './App.css';
@@ -33,6 +34,7 @@ function AppContent() {
   const [showSettings, setShowSettings] = useState(false);
   const [showProcessingList, setShowProcessingList] = useState(false);
   const [showQueuePanel, setShowQueuePanel] = useState(false);
+  const [showAddSongWizard, setShowAddSongWizard] = useState(false);
   const [outputDevices, setOutputDevices] = useState({
     streamDeviceId: null as string | null,
     headphoneDeviceId: null as string | null,
@@ -176,6 +178,7 @@ function AppContent() {
                     setLyricsEditorSongId(song.id);
                     setCurrentView('lyrics');
                   }}
+                  onOpenAddSong={() => setShowAddSongWizard(true)}
                 />
               );
             case 'download-manager':
@@ -209,7 +212,7 @@ function AppContent() {
             case 'history':
               return <HistoryView />;
             default:
-              return <LibraryView />;
+              return <LibraryView onOpenAddSong={() => setShowAddSongWizard(true)} />;
           }
         })()}
       </Suspense>
@@ -258,6 +261,7 @@ function AppContent() {
         onToggleQueue={() => setShowQueuePanel((prev) => !prev)}
       />
       <QueuePanel isOpen={showQueuePanel} onClose={() => setShowQueuePanel(false)} />
+      <AddSongSidebar isOpen={showAddSongWizard} onClose={() => setShowAddSongWizard(false)} />
       <Suspense fallback={null}>
         {showSettings && (
           <SettingsModal

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { loadAllSongs, SongMeta } from '../library/songLibrary';
 import { subscribeJobUpdates } from '../jobs/separationJobs';
+import { DownloadJob } from '../../shared/songTypes';
 
 interface LibraryContextType {
     songs: SongMeta[];
@@ -16,6 +17,7 @@ const LibraryContext = createContext<LibraryContextType | null>(null);
 export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [songs, setSongs] = useState<SongMeta[]>([]);
     const [loading, setLoading] = useState(false);
+    const processedDownloadIds = React.useRef<Set<string>>(new Set());
 
     const fetchSongs = useCallback(async () => {
         setLoading(true);
@@ -35,9 +37,28 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }, [fetchSongs]);
 
     useEffect(() => {
-        const unsubscribe = subscribeJobUpdates(() => {
+        const unsubscribeSeparation = subscribeJobUpdates(() => {
             fetchSongs();
         });
+
+        // Listen for download updates to refresh library when a download completes
+        let unsubscribeDownloads: (() => void) | undefined;
+        if (window.khelper?.downloads?.subscribeUpdates) {
+            unsubscribeDownloads = window.khelper.downloads.subscribeUpdates((jobs: DownloadJob[]) => {
+                let shouldRefresh = false;
+                jobs.forEach(job => {
+                    if (job.status === 'completed' && !processedDownloadIds.current.has(job.id)) {
+                        processedDownloadIds.current.add(job.id);
+                        shouldRefresh = true;
+                    }
+                });
+
+                if (shouldRefresh) {
+                    console.log('[LibraryContext] Download completed, refreshing library...');
+                    fetchSongs();
+                }
+            });
+        }
 
         // Listen for library:changed event from main process
         const removeListener = window.ipcRenderer?.on('library:changed', () => {
@@ -46,7 +67,8 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
         });
 
         return () => {
-            unsubscribe();
+            unsubscribeSeparation();
+            unsubscribeDownloads?.();
             removeListener?.();
         };
     }, [fetchSongs]);

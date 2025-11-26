@@ -110,7 +110,7 @@ function generateSongId(): string {
 let cachedSongs: SongMeta[] | null = null;
 let loadPromise: Promise<SongMeta[]> | null = null;
 
-function invalidateCache() {
+export function invalidateCache() {
   cachedSongs = null;
   loadPromise = null;
   console.log('[Library] Cache invalidated');
