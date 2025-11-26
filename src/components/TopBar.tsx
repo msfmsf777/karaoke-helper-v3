@@ -5,14 +5,16 @@ import { useQueue } from '../contexts/QueueContext';
 import LogoImage from '../assets/images/logo.png';
 import TasksIcon from '../assets/icons/tasks.svg';
 import SettingsIcon from '../assets/icons/settings.svg';
+import AboutIcon from '../assets/icons/about.svg';
 
 interface TopBarProps {
   onOpenSettings?: () => void;
   onOpenProcessing?: () => void;
+  onOpenAbout?: () => void;
   onSearch?: (term: string) => void;
 }
 
-const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onSearch }) => {
+const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpenAbout, onSearch }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const { recentSearches, addRecentSearch, clearRecentSearches } = useUserData();
@@ -304,6 +306,25 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onSea
           onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
         >
           <img src={SettingsIcon} alt="Settings" style={{ width: '24px', height: '24px', display: 'block' }} />
+        </button>
+        <button
+          onClick={onOpenAbout}
+          title="關於"
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: 0.8,
+            transition: 'opacity 0.2s',
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+          onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
+        >
+          <img src={AboutIcon} alt="About" style={{ width: '24px', height: '24px', display: 'block' }} />
         </button>
       </div>
     </div>

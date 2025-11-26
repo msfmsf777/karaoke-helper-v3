@@ -24,6 +24,8 @@ const PlaylistView = lazy(() => import('./components/PlaylistView'));
 const DownloadManagerView = lazy(() => import('./components/DownloadManagerView'));
 const SearchResultsView = lazy(() => import('./components/SearchResultsView'));
 
+const AboutPopup = lazy(() => import('./components/AboutPopup'));
+
 type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history' | 'download-manager' | 'settings' | string;
 
 function AppContent() {
@@ -35,6 +37,7 @@ function AppContent() {
   const [showProcessingList, setShowProcessingList] = useState(false);
   const [showQueuePanel, setShowQueuePanel] = useState(false);
   const [showAddSongWizard, setShowAddSongWizard] = useState(false);
+  const [showAboutPopup, setShowAboutPopup] = useState(false);
   const [outputDevices, setOutputDevices] = useState({
     streamDeviceId: null as string | null,
     headphoneDeviceId: null as string | null,
@@ -243,6 +246,7 @@ function AppContent() {
         <TopBar
           onOpenSettings={handleOpenSettings}
           onOpenProcessing={() => setShowProcessingList(true)}
+          onOpenAbout={() => setShowAboutPopup(true)}
           onSearch={(term) => setCurrentView(`search-results:${encodeURIComponent(term)}`)}
         />
       )}
@@ -282,6 +286,9 @@ function AppContent() {
       <Suspense fallback={null}>
         {showProcessingList && (
           <ProcessingListModal open={showProcessingList} onClose={() => setShowProcessingList(false)} />
+        )}
+        {showAboutPopup && (
+          <AboutPopup open={showAboutPopup} onClose={() => setShowAboutPopup(false)} />
         )}
       </Suspense>
 
