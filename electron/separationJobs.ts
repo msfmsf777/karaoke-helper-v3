@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import { app } from 'electron';
 import path from 'node:path';
 import { getSongMeta, getSongsBaseDir, updateSongMeta } from './songLibrary';
 import type { SongMeta } from '../shared/songTypes';
@@ -26,7 +27,12 @@ async function runDemucsSeparation(
   const pythonPath = await getPythonPath();
   console.log('[Separation] Starting MDX separation', { originalPath, songFolder, quality, pythonPath, modelDir });
 
-  const scriptPath = path.join(process.cwd(), 'resources', 'separation', 'separate.py');
+  let scriptPath: string;
+  if (app.isPackaged) {
+    scriptPath = path.join(process.resourcesPath, 'separation', 'separate.py');
+  } else {
+    scriptPath = path.join(process.cwd(), 'resources', 'separation', 'separate.py');
+  }
 
   return new Promise((resolve, reject) => {
     const python = spawn(pythonPath, [

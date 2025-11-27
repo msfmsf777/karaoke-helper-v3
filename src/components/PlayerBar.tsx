@@ -14,7 +14,6 @@ import PlayIcon from '../assets/icons/play.svg';
 import PauseIcon from '../assets/icons/pause.svg';
 import NextIcon from '../assets/icons/next.svg';
 import PrevIcon from '../assets/icons/prev.svg';
-import LiveIcon from '../assets/icons/live.svg';
 import LiveModeIcon from '../assets/icons/live_mode.svg';
 import FavoritesIcon from '../assets/icons/favorites.svg';
 import FavoritesFilledIcon from '../assets/icons/favorites_filled.svg';

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from "electron";
+import { app, BrowserWindow, ipcMain, dialog, shell } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import fs from "node:fs";
@@ -42,19 +42,41 @@ function createWindow() {
     y: state.y,
     minWidth: 1130,
     minHeight: 660,
-    icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
+    icon: path.join(process.env.VITE_PUBLIC, "logo_outer.png"),
     webPreferences: {
       preload: path.join(__dirname$1, "preload.mjs"),
       // Allow loading local file:// resources from the renderer (needed for direct audio file playback in dev/HTTP origin).
       webSecurity: false
     },
-    show: false
+    show: false,
     // Don't show immediately to avoid flickering if maximizing
+    frame: false
+    // Custom window controls
+    // autoHideMenuBar: true, // Not needed with frame: false
   });
   if (state.isMaximized) {
     win.maximize();
   }
   win.show();
+  ipcMain.on("window:minimize", () => {
+    win == null ? void 0 : win.minimize();
+  });
+  ipcMain.on("window:maximize", () => {
+    if (win == null ? void 0 : win.isMaximized()) {
+      win.unmaximize();
+    } else {
+      win == null ? void 0 : win.maximize();
+    }
+  });
+  ipcMain.on("window:close", () => {
+    win == null ? void 0 : win.close();
+  });
+  ipcMain.handle("window:is-maximized", () => {
+    return (win == null ? void 0 : win.isMaximized()) ?? false;
+  });
+  ipcMain.handle("shell:open-external", async (_event, url) => {
+    await shell.openExternal(url);
+  });
   let saveTimeout = null;
   const handleSave = () => {
     if (!win) return;
@@ -75,6 +97,14 @@ function createWindow() {
   };
   win.on("resize", handleSave);
   win.on("move", handleSave);
+  win.on("maximize", () => {
+    win == null ? void 0 : win.webContents.send("window:maximized");
+    handleSave();
+  });
+  win.on("unmaximize", () => {
+    win == null ? void 0 : win.webContents.send("window:unmaximized");
+    handleSave();
+  });
   win.on("close", () => {
     if (win && !win.isDestroyed() && !win.isMinimized()) {
       const isMaximized = win.isMaximized();
@@ -172,11 +202,11 @@ ipcMain.handle("library:update-song", async (_event, payload) => {
   return updateSong(payload.id, payload.updates);
 });
 ipcMain.handle("jobs:queue-separation", async (_event, songId, quality) => {
-  const { queueSeparationJob } = await import("./separationJobs-Bdu2G3fu.js");
+  const { queueSeparationJob } = await import("./separationJobs-Bcbyp7Ya.js");
   return queueSeparationJob(songId, quality);
 });
 ipcMain.handle("jobs:get-all", async () => {
-  const { getAllJobs } = await import("./separationJobs-Bdu2G3fu.js");
+  const { getAllJobs } = await import("./separationJobs-Bcbyp7Ya.js");
   return getAllJobs();
 });
 ipcMain.handle("lyrics:read-raw", async (_event, songId) => {
@@ -240,7 +270,7 @@ ipcMain.handle("userData:load-settings", async () => {
   return loadSettings();
 });
 ipcMain.on("jobs:subscribe", async (event, subscriptionId) => {
-  const { subscribeJobUpdates } = await import("./separationJobs-Bdu2G3fu.js");
+  const { subscribeJobUpdates } = await import("./separationJobs-Bcbyp7Ya.js");
   const wc = event.sender;
   const disposer = subscribeJobUpdates((jobs) => wc.send("jobs:updated", jobs));
   let disposers = jobSubscriptions.get(wc.id);

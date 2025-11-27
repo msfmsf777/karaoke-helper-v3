@@ -24,6 +24,7 @@ electron.contextBridge.exposeInMainWorld("ipcRenderer", {
 });
 electron.contextBridge.exposeInMainWorld("api", {
   openAudioFileDialog: () => electron.ipcRenderer.invoke("dialog:open-audio-file"),
+  openExternal: (url) => electron.ipcRenderer.invoke("shell:open-external", url),
   openOverlayWindow: () => electron.ipcRenderer.send("window:open-overlay"),
   sendOverlayUpdate: (payload) => electron.ipcRenderer.send("overlay:update", payload),
   subscribeOverlayUpdates: (callback) => {
@@ -113,5 +114,21 @@ electron.contextBridge.exposeInMainWorld("khelper", {
     loadPlaylists: () => electron.ipcRenderer.invoke("userData:load-playlists"),
     saveSettings: (settings) => electron.ipcRenderer.invoke("userData:save-settings", settings),
     loadSettings: () => electron.ipcRenderer.invoke("userData:load-settings")
+  },
+  windowOps: {
+    minimize: () => electron.ipcRenderer.send("window:minimize"),
+    maximize: () => electron.ipcRenderer.send("window:maximize"),
+    close: () => electron.ipcRenderer.send("window:close"),
+    isMaximized: () => electron.ipcRenderer.invoke("window:is-maximized"),
+    onMaximized: (callback) => {
+      const subscription = (_event) => callback();
+      electron.ipcRenderer.on("window:maximized", subscription);
+      return () => electron.ipcRenderer.removeListener("window:maximized", subscription);
+    },
+    onUnmaximized: (callback) => {
+      const subscription = (_event) => callback();
+      electron.ipcRenderer.on("window:unmaximized", subscription);
+      return () => electron.ipcRenderer.removeListener("window:unmaximized", subscription);
+    }
   }
 });

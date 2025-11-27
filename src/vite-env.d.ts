@@ -14,6 +14,7 @@ interface Window {
   };
   api: {
     openAudioFileDialog: () => Promise<string | null>;
+    openExternal: (url: string) => Promise<void>;
     openOverlayWindow: () => void;
     sendOverlayUpdate: (payload: { songId: string; currentTime: number; isPlaying: boolean }) => void;
     subscribeOverlayUpdates: (callback: (payload: { songId: string; currentTime: number; isPlaying: boolean }) => void) => () => void;
@@ -83,8 +84,17 @@ interface Window {
       loadHistory: () => Promise<string[]>;
       savePlaylists: (playlists: any[]) => Promise<void>;
       loadPlaylists: () => Promise<any[]>;
-      saveSettings: (settings: { separationQuality: 'high' | 'normal' | 'fast'; lyricStyles?: import('./contexts/UserDataContext').LyricStyleConfig; songPreferences?: Record<string, { furigana?: boolean; romaji?: boolean }> }) => Promise<void>;
-      loadSettings: () => Promise<{ separationQuality: 'high' | 'normal' | 'fast'; lyricStyles?: import('./contexts/UserDataContext').LyricStyleConfig; songPreferences?: Record<string, { furigana?: boolean; romaji?: boolean }> }>;
+      saveSettings: (settings: any) => Promise<void>;
+      loadSettings: () => Promise<any>;
+    };
+    windowOps: {
+      minimize: () => void;
+      maximize: () => void;
+      close: () => void;
+      isMaximized: () => Promise<boolean>;
+      onMaximized: (callback: () => void) => () => void;
+      onUnmaximized: (callback: () => void) => () => void;
     };
   };
 }
+

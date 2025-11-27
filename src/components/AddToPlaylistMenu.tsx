@@ -144,13 +144,13 @@ const AddToPlaylistMenu: React.FC<AddToPlaylistMenuProps> = ({ songId, position,
                             {p.name}
                         </span>
                         {isPresent && (
-                            <div
+                            <img
+                                src={CheckIcon}
+                                alt="Selected"
                                 style={{
                                     width: '16px',
                                     height: '16px',
-                                    backgroundColor: 'var(--accent-color)',
-                                    mask: `url(${CheckIcon}) no-repeat center / contain`,
-                                    WebkitMask: `url(${CheckIcon}) no-repeat center / contain`,
+                                    // filter: 'drop-shadow(0 0 0 var(--accent-color))', // Optional: if we want to colorize it
                                 }}
                             />
                         )}

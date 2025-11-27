@@ -6,6 +6,7 @@ import LogoImage from '../assets/images/logo.png';
 import TasksIcon from '../assets/icons/tasks.svg';
 import SettingsIcon from '../assets/icons/settings.svg';
 import AboutIcon from '../assets/icons/about.svg';
+import WindowControls from './WindowControls';
 
 interface TopBarProps {
   onOpenSettings?: () => void;
@@ -74,6 +75,8 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
         padding: '0 16px',
         flexShrink: 0,
         zIndex: 100, // Ensure dropdown is on top
+        // @ts-ignore
+        WebkitAppRegion: 'drag',
       }}
     >
       {/* Left: Logo (Fixed Width to match Sidebar) */}
@@ -103,7 +106,15 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
       {/* Center: Search Bar */}
       <div
         ref={searchContainerRef}
-        style={{ flex: 1, display: 'flex', alignItems: 'center', paddingLeft: '16px', position: 'relative' }}
+        style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          paddingLeft: '16px',
+          position: 'relative',
+          // @ts-ignore
+          WebkitAppRegion: 'no-drag'
+        }}
       >
         <div style={{ position: 'relative', width: '300px' }}>
           <input
@@ -268,7 +279,13 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
       </div>
 
       {/* Right: Actions */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        // @ts-ignore
+        WebkitAppRegion: 'no-drag'
+      }}>
         <button
           onClick={onOpenProcessing}
           title="處理中任務"
@@ -326,6 +343,10 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
         >
           <img src={AboutIcon} alt="About" style={{ width: '24px', height: '24px', display: 'block' }} />
         </button>
+
+        <div style={{ width: '1px', height: '24px', backgroundColor: '#3e3e3e', margin: '0 8px' }}></div>
+
+        <WindowControls />
       </div>
     </div>
   );

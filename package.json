@@ -1,11 +1,11 @@
 {
   "name": "khelper-live",
   "private": true,
-  "version": "0.0.0",
+  "version": "3.0.0-beta",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && electron-builder",
+    "build": "tsc && vite build && electron-builder --win",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
