@@ -63,7 +63,7 @@ const SongRow: React.FC<SongRowProps> = ({
     showDuration = true,
     customActions
 }) => {
-    const { playImmediate, addToQueue } = useQueue();
+    const { playImmediate } = useQueue();
     const { isFavorite, toggleFavorite } = useUserData();
     const [isHovered, setIsHovered] = useState(false);
     const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);

@@ -9,7 +9,7 @@ import BugIcon from '../assets/icons/bug.svg';
 const SOCIAL_LINKS = [
     {
         id: 'website',
-        url: '#', // TODO: Enter official site URL
+        url: 'https://github.com/msfmsf777/karaoke-helper-v3', // TODO: Enter official site URL
         title: '官方網站',
         icon: WebIcon,
         label: '官網',
@@ -19,7 +19,7 @@ const SOCIAL_LINKS = [
     },
     {
         id: 'twitter',
-        url: '#', // TODO: Enter X (Twitter) URL
+        url: 'https://x.com/msfmsf777', // TODO: Enter X (Twitter) URL
         title: '追隨製作者就是最好的支持~',
         icon: XIcon,
         label: '追隨製作者',
@@ -29,8 +29,8 @@ const SOCIAL_LINKS = [
     },
     {
         id: 'discord',
-        url: '#', // TODO: Enter Discord invite URL
-        title: 'Discord 社群',
+        url: 'https://discord.gg/96zfTcBgZG', // TODO: Enter Discord invite URL
+        title: '加入 Discord 社群',
         icon: DiscordIcon,
         label: 'DC社群',
         bgColor: '#5865F2',
@@ -170,11 +170,13 @@ const AboutPopup: React.FC<AboutPopupProps> = ({ open, onClose }) => {
                 {/* Links */}
                 <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
                     {SOCIAL_LINKS.map((link) => (
-                        <a
+                        <div
                             key={link.id}
-                            href={link.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            onClick={() => {
+                                if (link.url && link.url !== '#') {
+                                    window.api.openExternal(link.url);
+                                }
+                            }}
                             title={link.title}
                             style={{
                                 display: 'flex',
@@ -185,6 +187,7 @@ const AboutPopup: React.FC<AboutPopupProps> = ({ open, onClose }) => {
                                 color: '#fff',
                                 fontSize: '12px',
                                 transition: 'transform 0.2s',
+                                cursor: 'pointer',
                             }}
                             onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
                             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
@@ -202,7 +205,7 @@ const AboutPopup: React.FC<AboutPopupProps> = ({ open, onClose }) => {
                                 <img src={link.icon} alt={link.label} style={{ width: `${link.iconSize}px`, height: `${link.iconSize}px` }} />
                             </div>
                             <span>{link.label}</span>
-                        </a>
+                        </div>
                     ))}
                 </div>
             </div>

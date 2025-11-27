@@ -1,128 +1,91 @@
-# KHelperLive (Phase 3)
+# KHelperLive (K歌小幫手 V3)
 
-## Phase 5 - Manual Lyric Editor & LRC Export
+![Version](https://img.shields.io/badge/version-3.0.0--beta-blue) ![Electron](https://img.shields.io/badge/Electron-30.0.0-47848F) ![React](https://img.shields.io/badge/React-18.2.0-61DAFB) ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6)
 
-- 歌詞檔案：每首歌資料夾 (`<userData>/KHelperLive/songs/<id>/`) 內會儲存 `lyrics_raw.txt`（純文字）與 `lyrics_synced.lrc`（對齊後的 LRC）。
-- 歌曲庫：新增「歌詞狀態」欄，操作欄提供「歌詞對齊」可直接切換到編輯器並選中該曲。
-- 歌詞編輯視圖：
-  - 左側列表選歌，顯示歌詞狀態；右側為編輯 + 對齊區。
-  - 可貼上/編輯多行歌詞文字並按「儲存歌詞文字」寫入 `lyrics_raw.txt`（狀態變為純文字）。
-  - 點「開始重新對齊」重置時間標記並跳回 0 秒，播放原始音訊；按「敲擊對齊 (Space)」逐行寫入時間戳（tapIndex 會往下走），播放時會自動醒目目前行並自動捲動。
-  - 可用「稍早 / 稍晚」微調每行時間（每次 50ms），速度滑桿可在 0.5x~1.25x 之間調整對齊難度。
-  - 按「儲存同步歌詞 (LRC)」會輸出 `[mm:ss.xx]Lyric text` 行格式（含可選 [ti]/[ar] 標籤），寫入 `lyrics_synced.lrc` 並將歌詞狀態設為已對齊。
-- 除錯：載入/儲存歌詞檔、敲擊事件、微調與 LRC 匯出都會在主控台留下 debug 訊息，方便追蹤流程。
-KHelperLive is a desktop application designed for VTubers and streamers who sing live. It provides a song library, lyric tools, and live mode controls built on Electron + React + TypeScript + Vite.
+**KHelper V3** 是一款專為 VTuber 與實況主量身打造的全能 K 歌直播輔助工具。結合了強大的歌曲管理、AI 人聲分離、動態歌詞顯示與 OBS 直播整合功能，讓您的歌回直播更加專業、流暢。
 
-## Tech Stack
+---
 
-- Electron
-- React
-- TypeScript
-- Vite
+## ✨ V3 核心功能 (Features)
 
-## Getting Started
+### 🎵 全方位歌曲管理
+- **本地歌曲匯入**：支援 MP3, WAV, FLAC, OGG, M4A 等多種音訊格式。
+- **YouTube 下載**：內建下載管理器，可直接貼上 YouTube 連結下載歌曲並自動匯入。
+- **智慧分類**：支援「原曲」、「伴奏」、「阿卡貝拉」等多種歌曲類型標記。
+- **播放清單**：支援「我的最愛」、「歷史記錄」與自訂播放清單，輕鬆管理歌單。
 
-### Prerequisites
-- Node.js (v16 or higher recommended)
-- npm (or pnpm/yarn)
+### 🤖 AI 音訊處理 (Powered by UVR)
+- **人聲分離**：內建 AI 模型，可將原曲自動分離為「人聲」與「伴奏」軌道。
+- **獨立音控**：直播時可獨立調整伴奏與人聲的音量，實現即時導唱/消音功能。
+- **雙輸出路由**：支援將音樂分別輸出至「直播串流 (Stream)」與「監聽耳機 (Monitor)」，確保觀眾聽到最佳混音效果。
 
-### Installation
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
+### 📝 強大的歌詞系統
+- **歌詞編輯器**：內建視覺化歌詞編輯與對齊工具。
+- **敲擊對齊 (Tap Sync)**：直覺的敲擊模式，輕鬆製作精準的 LRC 動態歌詞。
+- **日文輔助**：自動為日文歌詞標註平假名 (Furigana) 與羅馬拼音 (Romaji)，唱日文歌不再卡詞。
 
-### Running in Development Mode
+### 📺 專為直播設計
+- **串流模式 (Stream Mode)**：簡潔的專屬介面，隱藏不必要的控制項，專注於演唱。
+- **OBS Overlay**：提供瀏覽器來源 (Browser Source) 連結，輕鬆將動態歌詞、歌曲資訊美觀地整合至 OBS 直播畫面。
+- **高度客製化**：Overlay 樣式、字體、顏色、動畫皆可即時調整。
 
-To start the app with hot reload:
+---
 
+## 🚀 快速開始 (Getting Started)
+
+### 環境需求
+- **Node.js**: v18 或更高版本
+- **Python**: v3.10 (用於 AI 運算模組)
+
+### 安裝依賴
+```bash
+npm install
+```
+
+### 開發模式 (Development)
+啟動 Electron 開發伺服器 (支援 Hot Reload)：
 ```bash
 npm run dev
 ```
 
-## Project Structure
+### 建置發布 (Build)
+打包應用程式 (Windows)：
+```bash
+npm run build
+```
+建置完成的安裝檔將位於 `dist/` 目錄下。
 
-- `electron/`: Main and preload process code.
-- `src/`: Renderer (React) code.
-  - `components/`: UI components (Sidebar, PlayerBar, Views).
-  - `App.tsx`: Main application layout.
-  - `index.css`: Global styles.
-- `shared/`: Shared types between main and renderer.
+---
 
-## Phase 0 Features
+## 🛠️ 技術棧 (Tech Stack)
 
-- Basic layout: sidebar navigation, main content area, and a persistent player bar.
-- Views: `???` (Library), `????` (Lyric Editor placeholder), `????` (Stream Mode placeholder).
-- Dark theme inspired by modern music apps.
+- **Frontend**: React, Vite, TypeScript, TailwindCSS (Styled Components)
+- **Backend**: Electron (Main Process)
+- **AI/NLP**: Python (Demucs for separation, Fugashi for Japanese tokenization)
+- **Data**: JSON-based local storage
 
-## Phase 1 - Audio Playback
+---
 
-- `AudioEngine` abstraction wraps an HTML5 `<audio>` element; React components only talk to this interface.
-- Temporary "add song" button opened the OS file picker (mp3/wav etc.) via IPC and loaded directly into the player.
-- Footer player shows track name, supports play/pause, displays current time vs. duration, updates the progress bar, and allows seeking.
+## 📂 專案結構
 
-## Phase 2 - Song Library
+```
+KHelperLive/
+├── electron/          # Electron 主進程與 Preload 腳本
+├── resources/         # 外部資源 (Python 腳本、預設圖示等)
+├── src/
+│   ├── assets/        # 靜態資源 (圖片、SVG)
+│   ├── components/    # React UI 元件
+│   ├── contexts/      # React Context (狀態管理)
+│   ├── library/       # 歌曲庫邏輯
+│   ├── styles/        # CSS 樣式檔
+│   ├── App.tsx        # 應用程式入口
+│   └── main.tsx
+└── ...
+```
 
-### Storage model
+---
 
-- Base directory: `app.getPath('userData')/KHelperLive/songs/`.
-- Each song: `<userData>/KHelperLive/songs/<song_id>/` containing `Original.<ext>` and `meta.json`:
-  ```json
-  {
-    "id": "1732040000000",
-    "title": "Song Title",
-    "artist": "Artist Name",
-    "type": "原曲",
-    "audio_status": "original_only",
-    "lyrics_status": "none",
-    "source": { "kind": "file", "originalPath": "C:/path/to/file.mp3" },
-    "stored_filename": "Original.mp3",
-    "instrumental_path": "C:/Path/To/Instrumental.mp3",
-    "vocal_path": "C:/Path/To/Vocals.mp3",
-    "last_separation_error": null,
-    "created_at": "2025-11-19T12:34:56.000Z",
-    "updated_at": "2025-11-19T12:34:56.000Z"
-  }
-  ```
+## 📝 License
 
-### UI updates
-
-- `???` view has an **????** dialog: file picker (mp3/wav via Electron), type selector (??/??), required title + optional artist.
-- Library table columns: song title / artist / ?? / ???? / ????.
-- Clicking a row resolves the stored file path, loads it into `AudioEngine`, and updates the footer. Playback controls continue to work as before.
-- On restart, `meta.json` files reload and the list persists.
-
-### Debug logging
-
-- Song add: logs source path + song id + destination folder.
-- Library load: logs how many songs were found.
-- Song select: logs song id + resolved path passed to the player.
-
-### How to use Phase 2
-
-1. Run `npm run dev`.
-2. Open **???** and click **????**.
-3. Pick an mp3/wav, choose ??, fill in ?? (and optionally ??), then save.
-4. The new song appears in the table; click its row to load it. Use the footer Play/Pause and seek bar to control playback.
-5. Stored files live under `<userData>/KHelperLive/songs/<id>/Original.ext` with the matching `meta.json`.
-
-## Phase 3 - Dual Output & Volumes
-
-- Dual output routing: the AudioEngine now mirrors playback to both logical roles (????/stream and ????/monitor).
-- Device selection: open the top-bar ?? button to pick the ?????? and ?????? (includes a ???? option). Choices are remembered and re-applied on startup.
-- Per-output volume: footer sliders now drive ???? ? stream and ???? ? headphone output gains.
-- Debug logging covers device enumeration, device selection, and per-output volume changes to verify routing.
-- Both outputs currently play the same audio. Multi-device routing relies on `setSinkId`; if unsupported, playback falls back to the default device without crashing.
-
-## Phase 4 - Separation Jobs & Processing List
-
-- Separation jobs: queuing system runs one 原曲 separation at a time; new requests are added to an in-memory queue.
-- Stub separation: copies `Original.ext` to `Instrumental.ext` and `Vocals.ext` in the song folder (same extension), ready to be replaced by a real Demucs/demucs.cpp pipeline later.
-- `audio_status` mapping shown in the UI: `original_only` → 未分離, `separation_pending` → 已排程, `separating` → 處理中, `separation_failed` → 失敗, `separated` → 已完成.
-- How to trigger: in **歌曲庫**, 原曲 rows with 未分離或失敗 show 「開始分離 / 重新分離」; clicking queues a job and updates the status.
-- How to monitor: click **處理中任務** on the top bar to open the processing list (song name, status, created/updated time, and error tooltip on failure).
-- Metadata persistence: `meta.json` now stores separation results (`instrumental_path`, `vocal_path`, `last_separation_error`) so statuses survive restarts; successful separation updates the paths and sets `audio_status` to `separated`.
-- Logging: job creation/start/finish/failure, stub separation input/output paths, and meta updates are logged in the main process console for debugging.
-
-
-
+本專案目前為 **Private Beta** 階段。
+Copyright © 2025 KHelperLive Team. All rights reserved.

@@ -101,6 +101,8 @@ const VolumeControlPopup: React.FC<VolumeControlPopupProps> = ({
                     transition: 'all 0.2s ease-out',
                     paddingBottom: isHovered ? '4px' : '0',
                     zIndex: 1000, // Ensure it overlaps other elements when expanded
+                    // @ts-ignore
+                    WebkitAppRegion: 'no-drag',
                 }}
             >
                 {/* Slider Section (Hidden by default, expands up) */}

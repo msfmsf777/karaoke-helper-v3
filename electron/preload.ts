@@ -29,6 +29,7 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
 
 contextBridge.exposeInMainWorld('api', {
   openAudioFileDialog: () => ipcRenderer.invoke('dialog:open-audio-file'),
+  openExternal: (url: string) => ipcRenderer.invoke('shell:open-external', url),
   openOverlayWindow: () => ipcRenderer.send('window:open-overlay'),
   sendOverlayUpdate: (payload: { songId: string; currentTime: number; isPlaying: boolean }) => ipcRenderer.send('overlay:update', payload),
   subscribeOverlayUpdates: (callback: (payload: { songId: string; currentTime: number; isPlaying: boolean }) => void) => {
@@ -135,5 +136,21 @@ contextBridge.exposeInMainWorld('khelper', {
     loadPlaylists: (): Promise<any[]> => ipcRenderer.invoke('userData:load-playlists'),
     saveSettings: (settings: any): Promise<void> => ipcRenderer.invoke('userData:save-settings', settings),
     loadSettings: (): Promise<any> => ipcRenderer.invoke('userData:load-settings'),
+  },
+  windowOps: {
+    minimize: () => ipcRenderer.send('window:minimize'),
+    maximize: () => ipcRenderer.send('window:maximize'),
+    close: () => ipcRenderer.send('window:close'),
+    isMaximized: () => ipcRenderer.invoke('window:is-maximized'),
+    onMaximized: (callback: () => void) => {
+      const subscription = (_event: any) => callback()
+      ipcRenderer.on('window:maximized', subscription)
+      return () => ipcRenderer.removeListener('window:maximized', subscription)
+    },
+    onUnmaximized: (callback: () => void) => {
+      const subscription = (_event: any) => callback()
+      ipcRenderer.on('window:unmaximized', subscription)
+      return () => ipcRenderer.removeListener('window:unmaximized', subscription)
+    }
   },
 })

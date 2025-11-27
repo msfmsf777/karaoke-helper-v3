@@ -1,6 +1,8 @@
 # Logs
 logs
 *.log
+build_error.txt
+vite.config.ts.timestamp-*
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -11,6 +13,7 @@ node_modules
 dist
 dist-electron/
 dist-ssr
+release/
 *.local
 
 # Editor directories and files
@@ -23,7 +26,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+thumbs.db
 
 # Python private runtime (Phase 11)
 resources/python-runtime/
 
+# Environment variables
+.env
+.env.*.local
+
+# Testing
+coverage/
+test-results/

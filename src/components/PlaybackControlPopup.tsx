@@ -104,6 +104,8 @@ const PlaybackControlPopup: React.FC<PlaybackControlPopupProps> = ({
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '12px',
+                // @ts-ignore
+                WebkitAppRegion: 'no-drag',
             }}
         >
             {/* Top Row */}

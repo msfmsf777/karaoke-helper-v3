@@ -155,12 +155,46 @@ function AppContent() {
     }
   };
 
+  const [isStreamMode, setIsStreamMode] = useState(false);
+  // We keep track of whether we should render the stream view to save resources when hidden
+  const [renderStreamView, setRenderStreamView] = useState(false);
+  const [isMainLayerVisible, setIsMainLayerVisible] = useState(true);
+
+  useEffect(() => {
+    if (isStreamMode) {
+      const timer = setTimeout(() => setIsMainLayerVisible(false), 500);
+      return () => clearTimeout(timer);
+    } else {
+      setIsMainLayerVisible(true);
+    }
+  }, [isStreamMode]);
+
+  const handleViewChange = (newView: View) => {
+    if (newView === 'stream') {
+      setRenderStreamView(true);
+      // Small delay to allow render before fading in
+      requestAnimationFrame(() => {
+        setIsStreamMode(true);
+      });
+    } else {
+      if (isStreamMode) {
+        // Exiting stream mode
+        setIsStreamMode(false);
+        // Wait for transition to finish before unmounting
+        setTimeout(() => {
+          setRenderStreamView(false);
+        }, 500); // Match CSS transition duration
+      }
+      setCurrentView(newView);
+    }
+  };
+
   const handleOpenSettings = () => {
     if (currentView === 'settings') {
-      setCurrentView(previousView);
+      handleViewChange(previousView);
     } else {
       setPreviousView(currentView);
-      setCurrentView('settings');
+      handleViewChange('settings');
     }
   };
 
@@ -188,7 +222,7 @@ function AppContent() {
                 <LibraryView
                   onOpenLyrics={(song) => {
                     setLyricsEditorSongId(song.id);
-                    setCurrentView('lyrics');
+                    handleViewChange('lyrics');
                   }}
                   onOpenAddSong={() => setShowAddSongWizard(true)}
                 />
@@ -208,20 +242,10 @@ function AppContent() {
                   onSeek={handleSeek}
                 />
               );
-            case 'stream':
-              return (
-                <StreamModeView
-                  currentTrack={currentTrack}
-                  currentTime={currentTime}
-                  isPlaying={isPlaying}
-                  onExit={() => setCurrentView('library')}
-                  onOpenOverlayWindow={() => window.api.openOverlayWindow()}
-                />
-              );
             case 'settings':
               return (
                 <SettingsView
-                  onBack={() => setCurrentView(previousView)}
+                  onBack={() => handleViewChange(previousView)}
                   streamDeviceId={outputDevices.streamDeviceId}
                   headphoneDeviceId={outputDevices.headphoneDeviceId}
                   onChangeDevice={handleDeviceChange}
@@ -240,33 +264,72 @@ function AppContent() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
-      {/* 1. Top Header (Hidden in Stream Mode) */}
-      {currentView !== 'stream' && (
-        <TopBar
-          onOpenSettings={handleOpenSettings}
-          onOpenProcessing={() => setShowProcessingList(true)}
-          onOpenAbout={() => setShowAboutPopup(true)}
-          onSearch={(term) => setCurrentView(`search-results:${encodeURIComponent(term)}`)}
-        />
-      )}
+    <div style={{ display: 'flex', flexDirection: 'column', width: '100vw', height: '100vh', overflow: 'hidden', backgroundColor: '#121212' }}>
 
-      {/* 2. Middle Region (Sidebar + Content) */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
-        {/* Sidebar (Hidden in Stream Mode) */}
-        {currentView !== 'stream' && (
-          <Sidebar currentView={currentView} onViewChange={setCurrentView} />
-        )}
+      {/* Upper Area (Fading Content) */}
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
 
-        <div ref={mainContentRef} style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-          {renderContent()}
+        {/* Main App Layer */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            display: isMainLayerVisible ? 'flex' : 'none',
+            flexDirection: 'column',
+            opacity: isStreamMode ? 0 : 1,
+            transition: 'opacity 0.5s ease-in-out',
+            pointerEvents: isStreamMode ? 'none' : 'auto',
+            zIndex: 1
+          }}
+        >
+          <TopBar
+            onOpenSettings={handleOpenSettings}
+            onOpenProcessing={() => setShowProcessingList(true)}
+            onOpenAbout={() => setShowAboutPopup(true)}
+            onSearch={(term) => handleViewChange(`search-results:${encodeURIComponent(term)}`)}
+          />
+
+          <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
+            <Sidebar currentView={currentView} onViewChange={handleViewChange} />
+            <div ref={mainContentRef} style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+              {renderContent()}
+            </div>
+          </div>
         </div>
+
+        {/* Stream Mode Overlay */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            opacity: isStreamMode ? 1 : 0,
+            transition: 'opacity 0.5s ease-in-out',
+            pointerEvents: isStreamMode ? 'auto' : 'none',
+            zIndex: 10,
+            backgroundColor: '#000' // Ensure opaque background
+          }}
+        >
+          {renderStreamView && (
+            <Suspense fallback={null}>
+              <StreamModeView
+                currentTime={currentTime}
+              />
+            </Suspense>
+          )}
+        </div>
+
       </div>
 
-      {/* 3. Bottom Footer */}
+      {/* Persistent Footer */}
       <PlayerBar
-        currentView={currentView}
-        onViewChange={setCurrentView}
+        currentView={isStreamMode ? 'stream' : currentView}
+        onViewChange={handleViewChange}
         onPlayPause={handlePlayPause}
         onSeek={handleSeek}
         currentTime={currentTime}
@@ -281,6 +344,8 @@ function AppContent() {
         }
         onToggleQueue={() => setShowQueuePanel((prev) => !prev)}
       />
+
+      {/* Global Modals */}
       <QueuePanel isOpen={showQueuePanel} onClose={() => setShowQueuePanel(false)} />
       <AddSongSidebar isOpen={showAddSongWizard} onClose={() => setShowAddSongWizard(false)} />
       <Suspense fallback={null}>

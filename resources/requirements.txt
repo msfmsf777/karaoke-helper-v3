@@ -1,0 +1,6 @@
+# JPN lyrics
+fugashi[unidic-lite]
+cutlet
+
+# Audio separation
+audio-separator[cpu]

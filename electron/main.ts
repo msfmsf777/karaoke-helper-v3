@@ -1,6 +1,6 @@
 
 
-import { app, BrowserWindow, dialog, ipcMain } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
@@ -82,13 +82,15 @@ function createWindow() {
     y: state.y,
     minWidth: 1130,
     minHeight: 660,
-    icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
+    icon: path.join(process.env.VITE_PUBLIC, 'logo_outer.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
       // Allow loading local file:// resources from the renderer (needed for direct audio file playback in dev/HTTP origin).
       webSecurity: false,
     },
-    show: false // Don't show immediately to avoid flickering if maximizing
+    show: false, // Don't show immediately to avoid flickering if maximizing
+    frame: false, // Custom window controls
+    // autoHideMenuBar: true, // Not needed with frame: false
   })
 
   if (state.isMaximized) {
@@ -96,6 +98,31 @@ function createWindow() {
   }
 
   win.show()
+
+  // Window Control IPC
+  ipcMain.on('window:minimize', () => {
+    win?.minimize()
+  })
+
+  ipcMain.on('window:maximize', () => {
+    if (win?.isMaximized()) {
+      win.unmaximize()
+    } else {
+      win?.maximize()
+    }
+  })
+
+  ipcMain.on('window:close', () => {
+    win?.close()
+  })
+
+  ipcMain.handle('window:is-maximized', () => {
+    return win?.isMaximized() ?? false
+  })
+
+  ipcMain.handle('shell:open-external', async (_event, url: string) => {
+    await shell.openExternal(url)
+  })
 
   // Save state on close
   let saveTimeout: NodeJS.Timeout | null = null
@@ -123,6 +150,14 @@ function createWindow() {
 
   win.on('resize', handleSave)
   win.on('move', handleSave)
+  win.on('maximize', () => {
+    win?.webContents.send('window:maximized')
+    handleSave()
+  })
+  win.on('unmaximize', () => {
+    win?.webContents.send('window:unmaximized')
+    handleSave()
+  })
   win.on('close', () => {
     // Force save on close without debounce
     if (win && !win.isDestroyed() && !win.isMinimized()) {

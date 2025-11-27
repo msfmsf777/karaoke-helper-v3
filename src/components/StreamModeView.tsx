@@ -9,18 +9,14 @@ import { useLibrary } from '../contexts/LibraryContext';
 import { useUserData } from '../contexts/UserDataContext';
 import { isJapanese } from '../utils/japaneseDetection';
 import ObsLinkIcon from '../assets/icons/obs_link.svg';
+import WindowControls from './WindowControls';
 
 interface StreamModeViewProps {
-  currentTrack: { id: string; title: string; artist?: string } | null;
   currentTime: number;
-  isPlaying: boolean;
-  onExit: () => void;
-  onOpenOverlayWindow: () => void;
 }
 
 const StreamModeView: React.FC<StreamModeViewProps> = ({
   currentTime,
-  onExit,
 }) => {
   const { queue, currentIndex, playQueueIndex } = useQueue();
   const { getSongById } = useLibrary();
@@ -155,7 +151,27 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
       padding: '24px',
       position: 'relative',
       boxSizing: 'border-box',
+      // @ts-ignore
+      WebkitAppRegion: 'drag',
     }}>
+      {/* Window Controls (Fade in on hover) */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          padding: '8px',
+          zIndex: 100,
+          opacity: 0,
+          transition: 'opacity 0.2s',
+          // @ts-ignore
+          WebkitAppRegion: 'no-drag',
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+        onMouseLeave={(e) => e.currentTarget.style.opacity = '0'}
+      >
+        <WindowControls iconColor="#fff" hoverColor="#fff" variant="stream" />
+      </div>
       <div style={{ display: 'flex', flex: 1, gap: '24px', overflow: 'hidden' }}>
         {/* Left: Setlist / Now Playing */}
         <div
@@ -167,6 +183,8 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
             display: 'flex',
             flexDirection: 'column',
             border: '1px solid #222',
+            // @ts-ignore
+            WebkitAppRegion: 'no-drag',
           }}
         >
           <div style={{ marginBottom: '24px' }}>
@@ -270,6 +288,8 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
             overflow: 'hidden',
             position: 'relative',
             border: '1px solid #222',
+            // @ts-ignore
+            WebkitAppRegion: 'no-drag',
           }}
         >
           {/* Controls Overlay */}
@@ -281,6 +301,8 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
               display: 'flex',
               gap: '12px',
               zIndex: 20,
+              // @ts-ignore
+              WebkitAppRegion: 'no-drag',
             }}
           >
             <button
@@ -290,6 +312,7 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
                 alert('已複製 OBS 網址: ' + url);
               }}
               title="複製 OBS 網址"
+              className="stream-control-btn"
               style={{
                 width: '32px',
                 height: '32px',
@@ -302,7 +325,10 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 backdropFilter: 'blur(4px)',
+                transition: 'background-color 0.2s',
               }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-color)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.5)'}
             >
               {/* OBS Icon */}
               <img src={ObsLinkIcon} alt="OBS Link" style={{ width: '20px', height: '20px', filter: 'invert(1)' }} />
@@ -310,6 +336,7 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
             <button
               onClick={() => setShowStylePopup(!showStylePopup)}
               title="歌詞樣式設定"
+              className="stream-control-btn"
               style={{
                 width: '32px',
                 height: '32px',
@@ -322,6 +349,13 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 backdropFilter: 'blur(4px)',
+                transition: 'background-color 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                if (!showStylePopup) e.currentTarget.style.backgroundColor = 'var(--accent-color)';
+              }}
+              onMouseLeave={(e) => {
+                if (!showStylePopup) e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.5)';
               }}
             >
               {/* Text Icon */}
@@ -329,28 +363,6 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
                 <path d="M4 7V4h16v3" />
                 <path d="M9 20h6" />
                 <path d="M12 4v16" />
-              </svg>
-            </button>
-            <button
-              onClick={onExit}
-              title="退出直播模式"
-              style={{
-                width: '32px',
-                height: '32px',
-                backgroundColor: 'rgba(0,0,0,0.5)',
-                color: '#fff',
-                border: '1px solid rgba(255,255,255,0.2)',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backdropFilter: 'blur(4px)',
-              }}
-            >
-              {/* Chevron Down Icon */}
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M6 9l6 6 6-6" />
               </svg>
             </button>
           </div>
