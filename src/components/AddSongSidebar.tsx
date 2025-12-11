@@ -131,7 +131,9 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                     form.youtubeUrl.trim(),
                     form.youtubeQuality,
                     form.title.trim(),
-                    form.artist.trim()
+                    form.artist.trim(),
+                    form.type,
+                    form.lyricsMode === 'paste' ? form.lyricsText : undefined
                 );
             }
             onClose();

@@ -410,9 +410,9 @@ ipcMain.handle('downloads:validate', async (_event, url: string) => {
   return dm.validateUrl(url)
 })
 
-ipcMain.handle('downloads:queue', async (_event, url: string, quality: 'best' | 'high' | 'normal', title?: string, artist?: string) => {
+ipcMain.handle('downloads:queue', async (_event, url: string, quality: 'best' | 'high' | 'normal', title?: string, artist?: string, type?: import('./shared/songTypes').SongType, lyricsText?: string) => {
   const dm = await getDownloadManager()
-  return dm.queueJob(url, quality, title, artist)
+  return dm.queueJob(url, quality, title, artist, type, lyricsText)
 })
 
 ipcMain.handle('downloads:get-all', async () => {
@@ -639,9 +639,21 @@ const server = http.createServer((req, res) => {
   })
 })
 
+server.on('error', (e: any) => {
+  if (e.code === 'EADDRINUSE') {
+    console.warn(`[OverlayServer] Port ${OVERLAY_PORT} is already in use. Overlay server might effectively be unavailable or running in another instance.`);
+  } else {
+    console.error('[OverlayServer] Server error:', e);
+  }
+});
+
 server.listen(OVERLAY_PORT, () => {
   console.log(`[OverlayServer] Listening on port ${OVERLAY_PORT}`)
 })
+
+app.on('before-quit', () => {
+  server.close();
+});
 
 ipcMain.on('window:open-overlay', () => {
   // Deprecated: We now use the browser source URL

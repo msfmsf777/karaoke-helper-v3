@@ -37,8 +37,30 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }, [fetchSongs]);
 
     useEffect(() => {
-        const unsubscribeSeparation = subscribeJobUpdates(() => {
-            fetchSongs();
+        // Track previous job statuses to avoid unnecessary refreshes on progress updates
+        let prevJobStatuses = new Map<string, string>();
+
+        const unsubscribeSeparation = subscribeJobUpdates((jobs) => {
+            let shouldRefresh = false;
+
+            for (const job of jobs) {
+                const prevStatus = prevJobStatuses.get(job.id);
+                // Refresh if status changed (e.g. queued -> running -> succeeded)
+                // New jobs also trigger refresh
+                if (prevStatus !== job.status) {
+                    shouldRefresh = true;
+                    prevJobStatuses.set(job.id, job.status);
+                }
+            }
+
+            // Also check for removed jobs? 
+            // If a job finishes and is removed from the list (though they aren't removed immediately in separationJobs logic), we might miss it. 
+            // But separationJobs currently keeps history.
+
+            if (shouldRefresh) {
+                // If status changed to success, we definitely need to reload to get new paths
+                fetchSongs();
+            }
         });
 
         // Listen for download updates to refresh library when a download completes
