@@ -60,7 +60,7 @@ interface Window {
     };
     downloads: {
       validateUrl: (url: string) => Promise<{ videoId: string; title: string; duration?: number } | null>;
-      queueDownload: (url: string, quality: 'best' | 'high' | 'normal', title?: string, artist?: string) => Promise<import('../shared/songTypes').DownloadJob>;
+      queueDownload: (url: string, quality: 'best' | 'high' | 'normal', title?: string, artist?: string, type?: import('../shared/songTypes').SongType, lyricsText?: string) => Promise<import('../shared/songTypes').DownloadJob>;
       getAllJobs: () => Promise<import('../shared/songTypes').DownloadJob[]>;
       subscribeUpdates: (
         callback: (jobs: import('../shared/songTypes').DownloadJob[]) => void

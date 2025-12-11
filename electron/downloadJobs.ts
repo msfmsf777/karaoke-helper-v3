@@ -3,7 +3,7 @@ import path from 'node:path';
 import { app } from 'electron';
 import { spawn } from 'node:child_process';
 import { getSongsBaseDir } from './songLibrary';
-import type { SongMeta } from '../shared/songTypes';
+import type { SongMeta, SongType } from '../shared/songTypes';
 
 // --- Types ---
 
@@ -13,6 +13,8 @@ export interface DownloadJob {
     title: string;
     artist?: string;
     quality: 'best' | 'high' | 'normal';
+    type: SongType;
+    lyricsText?: string;
     status: 'queued' | 'downloading' | 'processing' | 'completed' | 'failed';
     progress: number;
     error?: string;
@@ -178,7 +180,14 @@ class DownloadJobManager {
         });
     }
 
-    async queueJob(url: string, quality: 'best' | 'high' | 'normal', titleOverride?: string, artistOverride?: string) {
+    async queueJob(
+        url: string,
+        quality: 'best' | 'high' | 'normal',
+        titleOverride?: string,
+        artistOverride?: string,
+        type: SongType = '原曲',
+        lyricsText?: string
+    ) {
         // 1. Validate & Get Metadata
         const meta = await this.validateUrl(url);
         if (!meta) throw new Error('Invalid YouTube URL');
@@ -204,6 +213,8 @@ class DownloadJobManager {
             title: titleOverride || meta.title,
             artist: artistOverride,
             quality,
+            type,
+            lyricsText,
             status: 'queued',
             progress: 0,
             createdAt: new Date().toISOString(),
@@ -247,15 +258,17 @@ class DownloadJobManager {
 
             const outputTemplate = path.join(songDir, 'Original.%(ext)s');
 
-            // Quality mapping
-            let formatSelector = 'bestaudio/best';
-            if (job.quality === 'normal') formatSelector = 'bestaudio[abr<=128]/bestaudio';
-            if (job.quality === 'high') formatSelector = 'bestaudio[abr<=192]/bestaudio';
+            // Quality mapping for MP3
+            // 0 = best (approx 320k), 2 = high (~190-250k), 5 = normal (~128k)
+            let audioQuality = '5';
+            if (job.quality === 'best') audioQuality = '0';
+            if (job.quality === 'high') audioQuality = '2';
 
             const args = [
-                '-f', formatSelector,
-                '-x',
-                '--audio-format', 'wav',
+                '-f', 'bestaudio/best', // Download best source
+                '-x', // Extract audio
+                '--audio-format', 'mp3', // Convert to MP3
+                '--audio-quality', audioQuality,
                 '-o', outputTemplate,
                 '--no-playlist',
                 '--newline', // For progress parsing
@@ -286,7 +299,7 @@ class DownloadJobManager {
             });
 
             // Download complete. Now register song in library.
-            const finalPath = path.join(songDir, 'Original.wav');
+            const finalPath = path.join(songDir, 'Original.mp3');
 
             // Calculate duration
             let duration: number | undefined;
@@ -300,19 +313,32 @@ class DownloadJobManager {
 
             // Create Meta
             const now = new Date().toISOString();
+
+            // Handle Lyrics if provided
+            let lyricsRawPath: string | undefined;
+            if (job.lyricsText && job.lyricsText.trim().length > 0) {
+                const { RAW_LYRICS_FILENAME } = await import('./songLibrary');
+                lyricsRawPath = path.join(songDir, RAW_LYRICS_FILENAME);
+                // Sanitize line endings
+                const content = job.lyricsText.replace(/\r\n/g, '\n');
+                await fs.writeFile(lyricsRawPath, content, 'utf-8');
+            }
+
             const meta: SongMeta = {
                 id: songId,
                 title: job.title,
                 artist: job.artist,
-                type: '原曲',
+                type: job.type || '原曲', // type from job
                 audio_status: 'original_only',
-                lyrics_status: 'none',
+                lyrics_status: lyricsRawPath ? 'text_only' : 'none', // Set based on lyrics presence
+                lyrics_raw_path: lyricsRawPath,
+                lyrics_lrc_path: undefined,
                 source: {
                     kind: 'youtube',
                     youtubeId: job.youtubeId,
                     originalPath: finalPath
                 },
-                stored_filename: 'Original.wav',
+                stored_filename: 'Original.mp3',
                 created_at: now,
                 updated_at: now,
                 last_separation_error: null,

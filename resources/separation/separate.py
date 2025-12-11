@@ -86,6 +86,8 @@ def main():
     parser.add_argument('--input', required=True, help='Input audio file path')
     parser.add_argument('--output-dir', required=True, help='Output directory for stems')
     parser.add_argument('--quality', default='normal', choices=['high', 'normal', 'fast'], help='Separation quality preset')
+    parser.add_argument('--output-format', default='wav', help='Output format (wav, mp3, m4a, etc)')
+    parser.add_argument('--bitrate', default='320k', help='Bitrate for encoded output (e.g. 320k)')
     parser.add_argument('--model-override', help='Override model filename directly')
     parser.add_argument('--model-dir', help='Directory containing model files')
     
@@ -135,7 +137,8 @@ def main():
             log_level=logging.WARNING,
             model_file_dir=args.model_dir,
             output_dir=str(output_dir),
-            output_format="wav"
+            output_format=args.output_format,
+            output_bitrate=args.bitrate
         )
 
         print(json.dumps({"status": "loading_model", "model": model_filename}))
@@ -154,8 +157,9 @@ def main():
         # Phase 3: Finalizing (95-100%)
         tracker.set_phase("finalizing", 95, 100)
         
-        dest_vocals = output_dir / "Vocals.wav"
-        dest_instrumental = output_dir / "Instrumental.wav"
+        ext = f".{args.output_format}"
+        dest_vocals = output_dir / f"Vocals{ext}"
+        dest_instrumental = output_dir / f"Instrumental{ext}"
         
         if dest_vocals.exists(): dest_vocals.unlink()
         if dest_instrumental.exists(): dest_instrumental.unlink()

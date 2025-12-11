@@ -40,7 +40,9 @@ async function runDemucsSeparation(
       '--input', originalPath,
       '--output-dir', songFolder,
       '--quality', quality,
-      '--model-dir', modelDir
+      '--model-dir', modelDir,
+      '--output-format', 'mp3',
+      '--bitrate', '320k'
     ]);
 
     let result: { instrumental?: string; vocal?: string; error?: string } | null = null;

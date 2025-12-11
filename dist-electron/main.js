@@ -191,7 +191,7 @@ ipcMain.handle("library:delete-song", async (_event, id) => {
   if (result.response === 1) {
     const { deleteSong } = await import("./songLibrary-DokIiX9f.js").then((n) => n.a2);
     await deleteSong(id);
-    const { downloadManager } = await import("./downloadJobs-DPJFe6wF.js");
+    const { downloadManager } = await import("./downloadJobs-BVaKNl37.js");
     downloadManager.removeJobBySongId(id);
     return true;
   }
@@ -202,11 +202,11 @@ ipcMain.handle("library:update-song", async (_event, payload) => {
   return updateSong(payload.id, payload.updates);
 });
 ipcMain.handle("jobs:queue-separation", async (_event, songId, quality) => {
-  const { queueSeparationJob } = await import("./separationJobs-Bcbyp7Ya.js");
+  const { queueSeparationJob } = await import("./separationJobs-DGgmD3Yd.js");
   return queueSeparationJob(songId, quality);
 });
 ipcMain.handle("jobs:get-all", async () => {
-  const { getAllJobs } = await import("./separationJobs-Bcbyp7Ya.js");
+  const { getAllJobs } = await import("./separationJobs-DGgmD3Yd.js");
   return getAllJobs();
 });
 ipcMain.handle("lyrics:read-raw", async (_event, songId) => {
@@ -270,7 +270,7 @@ ipcMain.handle("userData:load-settings", async () => {
   return loadSettings();
 });
 ipcMain.on("jobs:subscribe", async (event, subscriptionId) => {
-  const { subscribeJobUpdates } = await import("./separationJobs-Bcbyp7Ya.js");
+  const { subscribeJobUpdates } = await import("./separationJobs-DGgmD3Yd.js");
   const wc = event.sender;
   const disposer = subscribeJobUpdates((jobs) => wc.send("jobs:updated", jobs));
   let disposers = jobSubscriptions.get(wc.id);
@@ -297,7 +297,7 @@ ipcMain.on("jobs:unsubscribe", (event, subscriptionId) => {
   }
 });
 async function getDownloadManager() {
-  const { downloadManager } = await import("./downloadJobs-DPJFe6wF.js");
+  const { downloadManager } = await import("./downloadJobs-BVaKNl37.js");
   downloadManager.onLibraryChanged = () => {
     BrowserWindow.getAllWindows().forEach((w) => {
       w.webContents.send("library:changed");
@@ -309,9 +309,9 @@ ipcMain.handle("downloads:validate", async (_event, url) => {
   const dm = await getDownloadManager();
   return dm.validateUrl(url);
 });
-ipcMain.handle("downloads:queue", async (_event, url, quality, title, artist) => {
+ipcMain.handle("downloads:queue", async (_event, url, quality, title, artist, type, lyricsText) => {
   const dm = await getDownloadManager();
-  return dm.queueJob(url, quality, title, artist);
+  return dm.queueJob(url, quality, title, artist, type, lyricsText);
 });
 ipcMain.handle("downloads:get-all", async () => {
   const dm = await getDownloadManager();
@@ -494,8 +494,18 @@ const server = http.createServer((req, res) => {
     }
   });
 });
+server.on("error", (e) => {
+  if (e.code === "EADDRINUSE") {
+    console.warn(`[OverlayServer] Port ${OVERLAY_PORT} is already in use. Overlay server might effectively be unavailable or running in another instance.`);
+  } else {
+    console.error("[OverlayServer] Server error:", e);
+  }
+});
 server.listen(OVERLAY_PORT, () => {
   console.log(`[OverlayServer] Listening on port ${OVERLAY_PORT}`);
+});
+app.on("before-quit", () => {
+  server.close();
 });
 ipcMain.on("window:open-overlay", () => {
   console.log("[Main] window:open-overlay called but deprecated in favor of OBS URL");

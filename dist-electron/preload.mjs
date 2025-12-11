@@ -81,7 +81,7 @@ electron.contextBridge.exposeInMainWorld("khelper", {
   },
   downloads: {
     validateUrl: (url) => electron.ipcRenderer.invoke("downloads:validate", url),
-    queueDownload: (url, quality, title, artist) => electron.ipcRenderer.invoke("downloads:queue", url, quality, title, artist),
+    queueDownload: (url, quality, title, artist, type, lyricsText) => electron.ipcRenderer.invoke("downloads:queue", url, quality, title, artist, type, lyricsText),
     getAllJobs: () => electron.ipcRenderer.invoke("downloads:get-all"),
     subscribeUpdates: (callback) => {
       const listener = (_event, jobs) => callback(jobs);

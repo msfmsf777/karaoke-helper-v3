@@ -39,7 +39,7 @@ const SOCIAL_LINKS = [
     },
     {
         id: 'report',
-        url: '#', // TODO: Enter issue report URL
+        url: 'https://github.com/msfmsf777/karaoke-helper-v3/issues/new', // TODO: Enter issue report URL
         title: '去 GitHub 回報問題 / 提功能建議',
         icon: BugIcon,
         label: '回報問題',
