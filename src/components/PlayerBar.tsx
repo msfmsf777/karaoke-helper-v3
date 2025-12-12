@@ -353,7 +353,9 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
                 </div>
               </>
             ) : (
-              <div style={{ fontSize: '12px', color: '#666' }}>直播模式</div>
+              <div style={{ fontSize: '12px', color: '#666' }}>
+                {currentView === 'stream' ? '直播模式' : '點擊左側切換模式'}
+              </div>
             )}
           </div>
         </div>
