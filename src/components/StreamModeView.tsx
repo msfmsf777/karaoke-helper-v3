@@ -217,7 +217,7 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
                   gap: '4px',
                 }}
               >
-                {confirmReset ? '確認重置?' : 'Reset'}
+                {confirmReset ? '確認重置?' : '重置'}
               </button>
             </h3>
             {currentSong ? (
