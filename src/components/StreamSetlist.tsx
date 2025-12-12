@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useQueue } from '../contexts/QueueContext';
 import { useLibrary } from '../contexts/LibraryContext';
+import ReplayIcon from '../assets/icons/replay.svg';
 // Icons are defined inline for now to avoid import issues until assets are confirmed
 
 
@@ -25,7 +26,7 @@ const IconDelete = () => (
 );
 
 const StreamSetlist: React.FC = () => {
-    const { queue, currentIndex, moveQueueItem, removeFromQueue } = useQueue();
+    const { queue, currentIndex, moveQueueItem, removeFromQueue, addToQueue } = useQueue();
     const { getSongById } = useLibrary();
     const [activeTab, setActiveTab] = useState<'up_next' | 'played'>('up_next');
 
@@ -112,13 +113,30 @@ const StreamSetlist: React.FC = () => {
                                 const song = getSongById(songId);
                                 if (!song) return null;
                                 return (
-                                    <div key={`${songId}-${idx}`} style={{
-                                        padding: '8px 12px',
-                                        opacity: 0.5,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '8px'
-                                    }}>
+                                    <div
+                                        key={`${songId}-${idx}`}
+                                        style={{
+                                            padding: '8px 12px',
+                                            opacity: 0.5,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            position: 'relative'
+                                        }}
+                                        className="stream-list-item"
+                                        onMouseEnter={(e) => {
+                                            const btn = e.currentTarget.querySelector('.requeue-btn') as HTMLElement;
+                                            if (btn) btn.style.opacity = '1';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            const btn = e.currentTarget.querySelector('.requeue-btn') as HTMLElement;
+                                            if (btn) btn.style.opacity = '0';
+                                        }}
+                                    >
+                                        <div style={{ color: '#666', fontSize: '12px', width: '20px', textAlign: 'center' }}>
+                                            {idx + 1}
+                                        </div>
+
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             <div style={{ color: '#fff', fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                 {song.title}
@@ -127,6 +145,25 @@ const StreamSetlist: React.FC = () => {
                                                 {song.artist || 'Unknown'}
                                             </div>
                                         </div>
+
+                                        <button
+                                            className="requeue-btn"
+                                            onClick={() => addToQueue(songId)}
+                                            style={{
+                                                opacity: 0,
+                                                background: 'none',
+                                                border: 'none',
+                                                color: '#fff',
+                                                cursor: 'pointer',
+                                                padding: '4px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                transition: 'opacity 0.2s',
+                                            }}
+                                            title="將此曲重新加入待播清單底部"
+                                        >
+                                            <img src={ReplayIcon} alt="Requeue" style={{ width: '16px', height: '16px', filter: 'invert(1)' }} />
+                                        </button>
                                     </div>
                                 );
                             })
@@ -170,7 +207,7 @@ const StreamSetlist: React.FC = () => {
                                                                 borderRadius: '8px',
                                                                 display: 'flex',
                                                                 alignItems: 'center',
-                                                                gap: '8px',
+                                                                gap: '12px',
                                                                 position: 'relative',
                                                                 ...provided.draggableProps.style
                                                             }}
@@ -178,25 +215,40 @@ const StreamSetlist: React.FC = () => {
                                                             onMouseEnter={(e) => {
                                                                 e.currentTarget.style.backgroundColor = '#1a1a1a';
                                                                 const handle = e.currentTarget.querySelector('.drag-handle') as HTMLElement;
+                                                                const num = e.currentTarget.querySelector('.item-number') as HTMLElement;
                                                                 const btn = e.currentTarget.querySelector('.delete-btn') as HTMLElement;
-                                                                if (handle) handle.style.opacity = '1';
+                                                                if (handle) handle.style.display = 'flex';
+                                                                if (num) num.style.display = 'none';
                                                                 if (btn) btn.style.opacity = '1';
                                                             }}
                                                             onMouseLeave={(e) => {
                                                                 if (!snapshot.isDragging) e.currentTarget.style.backgroundColor = 'transparent';
                                                                 const handle = e.currentTarget.querySelector('.drag-handle') as HTMLElement;
+                                                                const num = e.currentTarget.querySelector('.item-number') as HTMLElement;
                                                                 const btn = e.currentTarget.querySelector('.delete-btn') as HTMLElement;
-                                                                if (handle) handle.style.opacity = '0';
+                                                                if (handle) handle.style.display = 'none';
+                                                                if (num) num.style.display = 'block';
                                                                 if (btn) btn.style.opacity = '0';
                                                             }}
                                                         >
-                                                            {/* Drag Handle (Hidden by default, show on hover) */}
+                                                            {/* Number (Default) */}
+                                                            <div className="item-number" style={{
+                                                                color: '#666',
+                                                                fontSize: '12px',
+                                                                width: '16px',
+                                                                textAlign: 'center',
+                                                                display: 'block'
+                                                            }}>
+                                                                {idx + 1}
+                                                            </div>
+
+                                                            {/* Drag Handle (Hover) */}
                                                             <div className="drag-handle" style={{
-                                                                opacity: 0,
                                                                 cursor: 'grab',
-                                                                display: 'flex',
+                                                                display: 'none',
                                                                 alignItems: 'center',
-                                                                transition: 'opacity 0.2s'
+                                                                justifyContent: 'center',
+                                                                width: '16px'
                                                             }}>
                                                                 <IconDragHandle />
                                                             </div>
