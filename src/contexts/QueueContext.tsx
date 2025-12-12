@@ -38,7 +38,13 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const shouldAutoPlay = useRef(true);
     const shouldEnterStreamWait = useRef(false);
 
-    const [playbackModeState, setPlaybackModeState] = useState<PlaybackMode>('normal');
+    const [playbackModeState, setPlaybackModeState] = useState<PlaybackMode>(() => {
+        try {
+            return (localStorage.getItem('khelper_playback_mode') as PlaybackMode) || 'normal';
+        } catch {
+            return 'normal';
+        }
+    });
 
     // Custom setter for mode to handle side effects
     const setPlaybackMode = useCallback((mode: PlaybackMode) => {
@@ -47,11 +53,6 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 // Leaving Stream Mode while waiting -> Load the song but don't play
                 setIsStreamWaiting(false);
                 shouldAutoPlay.current = false;
-                // Force triggering playSongInternal by invalidating ref logic temporarily if needed
-                // actually setIsStreamWaiting(false) will trigger effect.
-                // Effect sees isStreamWaiting=false, checks indices.
-                // Indices haven't changed, but effect deps changed (isStreamWaiting).
-                // It will call playSongInternal. shouldAutoPlay=false prevents audio.
             }
             return mode;
         });
@@ -70,9 +71,6 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 if (saved) {
                     setQueue(saved.songIds);
                     setCurrentIndex(-1); // Always unload on startup as requested
-                    // Restore playback mode if saved
-                    const savedMode = localStorage.getItem('khelper_playback_mode') as PlaybackMode;
-                    if (savedMode) setPlaybackMode(savedMode);
 
                     console.log('[QueueContext] Restored queue', saved.songIds.length, 'Current index reset to -1');
                 }

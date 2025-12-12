@@ -50,6 +50,8 @@ const ModeSelector: React.FC<ModeSelectorProps> = ({ currentMode, onSelect, onCl
                 minWidth: '140px',
                 display: 'flex',
                 flexDirection: 'column',
+                // @ts-ignore
+                WebkitAppRegion: 'no-drag',
             }}
         >
             {options.map((option) => (
