@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import LyricsOverlay from './LyricsOverlay';
+import StreamSetlist from './StreamSetlist';
 import LyricStylePopup from './LyricStylePopup';
 import { SongMeta, EnrichedLyricLine } from '../../shared/songTypes';
 import { EditableLyricLine, linesFromRawText, parseLrc, readRawLyrics, readSyncedLyrics } from '../library/lyrics';
@@ -25,6 +26,7 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
   const [lines, setLines] = useState<EditableLyricLine[]>([]);
   const [lyricsStatus, setLyricsStatus] = useState<SongMeta['lyrics_status']>('none');
   const [showStylePopup, setShowStylePopup] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   // Japanese Enrichment State
   const [isJp, setIsJp] = useState(false);
@@ -188,8 +190,35 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
           }}
         >
           <div style={{ marginBottom: '24px' }}>
-            <h3 style={{ color: '#666', fontSize: '12px', textTransform: 'uppercase', marginBottom: '8px' }}>
-              Now Playing
+            <h3 style={{ color: '#666', fontSize: '12px', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>Now Playing</span>
+              <button
+                onClick={() => {
+                  if (confirmReset) {
+                    playQueueIndex(0);
+                    setConfirmReset(false);
+                  } else {
+                    setConfirmReset(true);
+                    setTimeout(() => setConfirmReset(false), 3000);
+                  }
+                }}
+                title={confirmReset ? "再次點擊確認重置" : "重置播放進度"}
+                style={{
+                  background: confirmReset ? '#ff4444' : 'transparent',
+                  border: '1px solid #444',
+                  borderRadius: '4px',
+                  color: confirmReset ? '#fff' : '#666',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  padding: '2px 6px',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                {confirmReset ? '確認重置?' : 'Reset'}
+              </button>
             </h3>
             {currentSong ? (
               <div>
@@ -205,78 +234,8 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
             )}
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto' }}>
-            <h3
-              style={{
-                color: '#666',
-                fontSize: '12px',
-                textTransform: 'uppercase',
-                marginBottom: '12px',
-                borderBottom: '1px solid #333',
-                paddingBottom: '8px',
-              }}
-            >
-              Queue / Setlist
-            </h3>
-
-            {queue.length === 0 ? (
-              <div style={{ padding: '12px', color: '#444', fontSize: '13px', fontStyle: 'italic' }}>
-                播放隊列是空的，請先在歌曲庫中加入歌曲。
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                {queue.map((songId, index) => {
-                  const song = getSongById(songId);
-                  const isCurrent = index === currentIndex;
-
-                  if (!song) return null; // Should handle missing songs gracefully
-
-                  return (
-                    <div
-                      key={`${songId}-${index}`}
-                      onClick={() => playQueueIndex(index)}
-                      style={{
-                        padding: '10px 12px',
-                        backgroundColor: isCurrent ? '#1f1f1f' : 'transparent',
-                        borderRadius: '8px',
-                        borderLeft: isCurrent ? '4px solid var(--accent-color)' : '4px solid transparent',
-                        cursor: 'pointer',
-                        transition: 'background-color 0.2s',
-                        overflow: 'hidden'
-                      }}
-                      onMouseOver={(e) => {
-                        if (!isCurrent) e.currentTarget.style.backgroundColor = '#1a1a1a';
-                      }}
-                      onMouseOut={(e) => {
-                        if (!isCurrent) e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
-                    >
-                      <div style={{
-                        color: isCurrent ? '#fff' : '#ccc',
-                        fontWeight: isCurrent ? 'bold' : 'normal',
-                        fontSize: '14px',
-                        marginBottom: '2px',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis'
-                      }} title={song.title}>
-                        {song.title}
-                      </div>
-                      <div style={{
-                        color: '#666',
-                        fontSize: '12px',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis'
-                      }} title={song.artist || 'Unknown'}>
-                        {song.artist || 'Unknown'}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          {/* New Stream Setlist Component */}
+          <StreamSetlist />
         </div>
 
         {/* Right: Lyrics Overlay */}
