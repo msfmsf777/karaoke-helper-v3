@@ -26,13 +26,17 @@ const IconDelete = () => (
 );
 
 const StreamSetlist: React.FC = () => {
-    const { queue, currentIndex, moveQueueItem, removeFromQueue, addToQueue } = useQueue();
+    const { queue, currentIndex, moveQueueItem, removeFromQueue, addToQueue, isStreamWaiting } = useQueue();
     const { getSongById } = useLibrary();
     const [activeTab, setActiveTab] = useState<'up_next' | 'played'>('up_next');
 
     // Derived lists
-    const playedSongs = queue.slice(0, currentIndex);
-    const upNextSongs = queue.slice(currentIndex + 1);
+    const playedSongs = queue.slice(0, Math.max(0, currentIndex));
+    // If waiting for stream next (player unloaded), the song at currentIndex is "Up Next".
+    // If playing, the song at currentIndex is "Now Playing" (hidden from lists).
+    const upNextSongs = isStreamWaiting
+        ? queue.slice(currentIndex)
+        : queue.slice(currentIndex + 1);
 
     const handleDragEnd = (result: DropResult) => {
         if (!result.destination) return;

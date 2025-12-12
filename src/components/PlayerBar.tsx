@@ -8,6 +8,7 @@ import PlaybackControlPopup from './PlaybackControlPopup';
 import VolumeControlPopup from './VolumeControlPopup';
 import ScrollingText from './ScrollingText';
 import AddToPlaylistMenu from './AddToPlaylistMenu';
+import ModeSelector from './ModeSelector';
 
 // Icons
 import PlayIcon from '../assets/icons/play.svg';
@@ -21,6 +22,11 @@ import AddIcon from '../assets/icons/add.svg';
 import PlaylistIcon from '../assets/icons/playlist.svg';
 import SpeedIcon from '../assets/icons/speed.svg';
 import PitchIcon from '../assets/icons/pitch.svg';
+import ModeOrderIcon from '../assets/icons/mode_order.svg';
+import ModeRepeatIcon from '../assets/icons/mode_repeat_one.svg';
+import ModeRandomIcon from '../assets/icons/mode_random.svg';
+import ModeStreamIcon from '../assets/icons/mode_stream.svg';
+
 
 type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history' | string;
 
@@ -47,13 +53,14 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   currentTrackName,
   onToggleQueue,
 }) => {
-  const { playNext, playPrev, currentSongId } = useQueue();
+  const { playNext, playPrev, currentSongId, playbackMode, setPlaybackMode } = useQueue();
   const { getSongById, updateSong } = useLibrary();
   const initialVolumes = loadVolumePreferences() ?? { streamVolume: 0.8, headphoneVolume: 1 };
   const [isHovered, setIsHovered] = useState(false);
   const [backingVolume, setBackingVolume] = useState(() => Math.round(initialVolumes.streamVolume * 100));
   const [vocalVolume, setVocalVolume] = useState(() => Math.round(initialVolumes.headphoneVolume * 100));
   const { isFavorite, toggleFavorite } = useUserData();
+  const [showModeSelector, setShowModeSelector] = useState(false);
 
   // Playlist Popup State
   const [showPlaylistPopup, setShowPlaylistPopup] = useState(false);
@@ -147,6 +154,24 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
     audioEngine.setTrackVolume('vocal', vocalVolume / 100);
     saveVolumePreferences({ streamVolume: backingVolume / 100, headphoneVolume: vocalVolume / 100 });
   }, [vocalVolume]);
+
+  const getModeIcon = () => {
+    switch (playbackMode) {
+      case 'repeat_one': return ModeRepeatIcon;
+      case 'random': return ModeRandomIcon;
+      case 'stream': return ModeStreamIcon;
+      default: return ModeOrderIcon;
+    }
+  };
+
+  const getModeLabel = () => {
+    switch (playbackMode) {
+      case 'repeat_one': return '單曲循環';
+      case 'random': return '隨機播放';
+      case 'stream': return '直播模式';
+      default: return '順序播放';
+    }
+  };
 
   return (
     <div
@@ -285,86 +310,141 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
 
       {/* Center Controls */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: '600px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '4px' }}>
-          <button
-            onClick={playPrev}
-            title="上一首"
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '8px',
-              opacity: 0.8,
-              transition: 'opacity 0.2s, transform 0.1s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.opacity = '1';
-              e.currentTarget.style.transform = 'scale(1.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.opacity = '0.8';
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-            onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
-            onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-          >
-            <img src={PrevIcon} alt="Previous" style={{ width: '24px', height: '24px', display: 'block' }} />
-          </button>
-          <button
-            onClick={onPlayPause}
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '18px', // Circle
-              backgroundColor: '#fff',
-              border: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: '#1e1e1e', // Soft black (matches app bg)
-              transition: 'transform 0.1s',
-            }}
-            onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
-            onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            {isPlaying ? (
-              <img src={PauseIcon} alt="Pause" style={{ width: '16px', height: '16px', display: 'block' }} />
-            ) : (
-              <img src={PlayIcon} alt="Play" style={{ width: '16px', height: '16px', display: 'block', marginLeft: '1px' }} />
+        {/* Transport Row - Centered */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center', // Center content
+          gap: '20px',
+          marginBottom: '4px',
+          width: '100%',
+          position: 'relative' // For absolute positioning if needed, or just flex balance
+        }}>
+
+          {/* Left Balance: Mode Button */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowModeSelector(!showModeSelector)}
+              title={getModeLabel()} // Tooltip on hover
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '8px',
+                opacity: 0.8,
+                transition: 'opacity 0.2s, transform 0.1s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = '1';
+                e.currentTarget.style.transform = 'scale(1.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = '0.8';
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+              onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+              onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+            >
+              <img src={getModeIcon()} alt={getModeLabel()} style={{ width: '20px', height: '20px', display: 'block' }} />
+            </button>
+            {showModeSelector && (
+              <ModeSelector
+                currentMode={playbackMode}
+                onSelect={setPlaybackMode}
+                onClose={() => setShowModeSelector(false)}
+              />
             )}
-          </button>
-          <button
-            onClick={playNext}
-            title="下一首"
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '8px',
-              opacity: 0.8,
-              transition: 'opacity 0.2s, transform 0.1s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.opacity = '1';
-              e.currentTarget.style.transform = 'scale(1.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.opacity = '0.8';
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-            onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
-            onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-          >
-            <img src={NextIcon} alt="Next" style={{ width: '24px', height: '24px', display: 'block' }} />
-          </button>
+          </div>
+
+          {/* Center Group: Prev / Play / Next */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <button
+              onClick={playPrev}
+              title="上一首"
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '8px',
+                opacity: 0.8,
+                transition: 'opacity 0.2s, transform 0.1s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = '1';
+                e.currentTarget.style.transform = 'scale(1.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = '0.8';
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+              onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+              onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+            >
+              <img src={PrevIcon} alt="Previous" style={{ width: '24px', height: '24px', display: 'block' }} />
+            </button>
+            <button
+              onClick={onPlayPause}
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '18px', // Circle
+                backgroundColor: '#fff',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#1e1e1e', // Soft black (matches app bg)
+                transition: 'transform 0.1s',
+              }}
+              onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+              onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              {isPlaying ? (
+                <img src={PauseIcon} alt="Pause" style={{ width: '16px', height: '16px', display: 'block' }} />
+              ) : (
+                <img src={PlayIcon} alt="Play" style={{ width: '16px', height: '16px', display: 'block', marginLeft: '1px' }} />
+              )}
+            </button>
+            <button
+              onClick={() => playNext(false)}
+              title="下一首"
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '8px',
+                opacity: 0.8,
+                transition: 'opacity 0.2s, transform 0.1s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = '1';
+                e.currentTarget.style.transform = 'scale(1.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = '0.8';
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+              onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+              onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+            >
+              <img src={NextIcon} alt="Next" style={{ width: '24px', height: '24px', display: 'block' }} />
+            </button>
+          </div>
+
+          {/* Right Balance: Spacer */}
+          <div style={{ width: '36px', height: '36px' }} />
+
         </div>
         <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '11px', color: '#b3b3b3', minWidth: '42px', textAlign: 'right' }}>

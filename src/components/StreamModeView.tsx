@@ -19,7 +19,7 @@ interface StreamModeViewProps {
 const StreamModeView: React.FC<StreamModeViewProps> = ({
   currentTime,
 }) => {
-  const { queue, currentIndex, playQueueIndex } = useQueue();
+  const { queue, currentIndex, playQueueIndex, currentSongId } = useQueue();
   const { getSongById } = useLibrary();
   const { lyricStyles, setLyricStyles, songPreferences, setSongPreference } = useUserData();
 
@@ -32,7 +32,6 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
   const [isJp, setIsJp] = useState(false);
   const [enrichedLines, setEnrichedLines] = useState<EnrichedLyricLine[] | null>(null);
 
-  const currentSongId = queue[currentIndex];
   const currentSong = currentSongId ? getSongById(currentSongId) : null;
 
   // Derive enabled states from preferences or default to false

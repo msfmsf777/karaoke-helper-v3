@@ -72,11 +72,12 @@ function AppContent() {
     });
     const unsubscribeEnded = audioEngine.onEnded(() => {
       // Auto-play next song
-      playNext();
+      playNext(true);
     });
 
     // Sync initial state
     setIsPlaying(audioEngine.isPlaying());
+
 
     return () => {
       unsubscribeTime();
