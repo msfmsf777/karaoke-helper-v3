@@ -43,13 +43,13 @@ const ModeSelector: React.FC<ModeSelectorProps> = ({ currentMode, onSelect, onCl
                 backgroundColor: '#1e1e1e', // Match theme
                 border: '1px solid #444',
                 borderRadius: '8px',
-                padding: '4px',
+                padding: '0',
+                gap: '0',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
                 zIndex: 1000,
                 minWidth: '140px',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '2px',
             }}
         >
             {options.map((option) => (

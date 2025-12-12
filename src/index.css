@@ -12,15 +12,22 @@
   --font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
 }
 
-body {
+html,
+body,
+#root {
   margin: 0;
   padding: 0;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  /* App-like feel */
+  user-select: none;
+}
+
+body {
   font-family: var(--font-family);
   background-color: var(--bg-main);
   color: var(--text-primary);
-  overflow: hidden;
-  /* App-like feel */
-  user-select: none;
 }
 
 ::-webkit-scrollbar {
@@ -73,4 +80,13 @@ textarea:focus {
 input::placeholder,
 textarea::placeholder {
   color: #888;
+}
+
+/* 
+   Optimization for Touch/Drag 
+   Helps browser distinguish between scrolling and dragging
+*/
+.queue-item,
+.stream-list-item {
+  touch-action: none;
 }

@@ -31,13 +31,34 @@ const QueueContext = createContext<QueueContextType | null>(null);
 export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [queue, setQueue] = useState<string[]>([]);
     const [currentIndex, setCurrentIndex] = useState<number>(-1);
-    const [playbackMode, setPlaybackMode] = useState<PlaybackMode>('normal');
-    const [historyStack, setHistoryStack] = useState<number[]>([]);
+    const [, setHistoryStack] = useState<number[]>([]);
     const [isStreamWaiting, setIsStreamWaiting] = useState(false);
     const { getSongById, loading: libraryLoading } = useLibrary();
     const isInitialized = useRef(false);
     const shouldAutoPlay = useRef(true);
     const shouldEnterStreamWait = useRef(false);
+
+    const [playbackModeState, setPlaybackModeState] = useState<PlaybackMode>('normal');
+
+    // Custom setter for mode to handle side effects
+    const setPlaybackMode = useCallback((mode: PlaybackMode) => {
+        setPlaybackModeState(prevMode => {
+            if (prevMode === 'stream' && mode !== 'stream' && isStreamWaiting) {
+                // Leaving Stream Mode while waiting -> Load the song but don't play
+                setIsStreamWaiting(false);
+                shouldAutoPlay.current = false;
+                // Force triggering playSongInternal by invalidating ref logic temporarily if needed
+                // actually setIsStreamWaiting(false) will trigger effect.
+                // Effect sees isStreamWaiting=false, checks indices.
+                // Indices haven't changed, but effect deps changed (isStreamWaiting).
+                // It will call playSongInternal. shouldAutoPlay=false prevents audio.
+            }
+            return mode;
+        });
+    }, [isStreamWaiting]);
+
+    // Derived value for context
+    const playbackMode = playbackModeState;
 
     // Load queue from disk on startup
     useEffect(() => {
@@ -322,12 +343,21 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         });
 
         setCurrentIndex((prev) => {
+            // In Stream Waiting mode, we want currentIndex to represent the "Next Slot"
+            // So we generally stay on the "Slot" unless the slot itself shifts due to insertions/deletions before it.
+            if (isStreamWaiting) {
+                let adjustment = 0;
+                if (fromIndex < prev) adjustment -= 1;
+                if (toIndex < prev) adjustment += 1;
+                return prev + adjustment;
+            }
+
             if (prev === fromIndex) return toIndex;
             if (fromIndex < prev && toIndex >= prev) return prev - 1;
             if (fromIndex > prev && toIndex <= prev) return prev + 1;
             return prev;
         });
-    }, [queue.length]);
+    }, [queue.length, isStreamWaiting]);
 
     const playSongList = useCallback((songIds: string[]) => {
         if (songIds.length === 0) return;
