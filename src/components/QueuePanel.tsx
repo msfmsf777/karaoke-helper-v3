@@ -1,6 +1,18 @@
 import React, { useState } from 'react';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useQueue } from '../contexts/QueueContext';
 import { useLibrary } from '../contexts/LibraryContext';
+
+const IconDragHandle = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="#666">
+        <circle cx="8" cy="4" r="2" />
+        <circle cx="16" cy="4" r="2" />
+        <circle cx="8" cy="12" r="2" />
+        <circle cx="16" cy="12" r="2" />
+        <circle cx="8" cy="20" r="2" />
+        <circle cx="16" cy="20" r="2" />
+    </svg>
+);
 
 interface QueuePanelProps {
     isOpen: boolean;
@@ -37,6 +49,15 @@ const QueuePanel: React.FC<QueuePanelProps> = ({ isOpen, onClose }) => {
             setConfirmClear(true);
             setTimeout(() => setConfirmClear(false), 3000);
         }
+    };
+
+    const handleDragEnd = (result: DropResult) => {
+        if (!result.destination) return;
+        const sourceIndex = result.source.index;
+        const destinationIndex = result.destination.index;
+        if (sourceIndex === destinationIndex) return;
+
+        moveQueueItem(sourceIndex, destinationIndex);
     };
 
     return (
@@ -108,95 +129,108 @@ const QueuePanel: React.FC<QueuePanelProps> = ({ isOpen, onClose }) => {
                         播放隊列是空的，請在歌曲庫或歌單中加入歌曲。
                     </div>
                 ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        {queue.map((songId, index) => {
-                            const song = getSongById(songId);
-                            const isCurrent = index === currentIndex;
-
-                            if (!song) return null;
-
-                            return (
+                    <DragDropContext onDragEnd={handleDragEnd}>
+                        <Droppable droppableId="queue-panel-list">
+                            {(provided) => (
                                 <div
-                                    key={`${songId}-${index}`}
-                                    onDoubleClick={() => playQueueIndex(index)}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        padding: '8px 12px',
-                                        backgroundColor: isCurrent ? '#2a2a2a' : 'transparent',
-                                        borderRadius: '6px',
-                                        borderLeft: isCurrent ? '3px solid var(--accent-color)' : '3px solid transparent',
-                                    }}
-                                    className="queue-item"
+                                    {...provided.droppableProps}
+                                    ref={provided.innerRef}
+                                    style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}
                                 >
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{
-                                            color: isCurrent ? 'var(--accent-color)' : '#ddd',
-                                            fontWeight: isCurrent ? 'bold' : 'normal',
-                                            fontSize: '14px',
-                                            whiteSpace: 'nowrap',
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis'
-                                        }}>
-                                            {song.title}
-                                        </div>
-                                        <div style={{ color: '#666', fontSize: '12px' }}>
-                                            {song.artist || 'Unknown'}
-                                        </div>
-                                    </div>
+                                    {queue.map((songId, index) => {
+                                        const song = getSongById(songId);
+                                        const isCurrent = index === currentIndex;
+                                        // Use unique key for DND
+                                        const draggableId = `q-panel-${songId}-${index}`;
 
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '8px' }}>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); moveQueueItem(index, index - 1); }}
-                                            disabled={index === 0}
-                                            style={{
-                                                background: 'none',
-                                                border: 'none',
-                                                color: index === 0 ? '#333' : '#666',
-                                                cursor: index === 0 ? 'default' : 'pointer',
-                                                fontSize: '12px',
-                                                padding: '2px',
-                                            }}
-                                            title="上移"
-                                        >
-                                            ▲
-                                        </button>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); moveQueueItem(index, index + 1); }}
-                                            disabled={index === queue.length - 1}
-                                            style={{
-                                                background: 'none',
-                                                border: 'none',
-                                                color: index === queue.length - 1 ? '#333' : '#666',
-                                                cursor: index === queue.length - 1 ? 'default' : 'pointer',
-                                                fontSize: '12px',
-                                                padding: '2px',
-                                            }}
-                                            title="下移"
-                                        >
-                                            ▼
-                                        </button>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); removeFromQueue(index); }}
-                                            style={{
-                                                background: 'none',
-                                                border: 'none',
-                                                color: '#666',
-                                                cursor: 'pointer',
-                                                fontSize: '16px',
-                                                padding: '0 4px',
-                                                marginLeft: '4px',
-                                                marginTop: '2px'
-                                            }}
-                                            title="從隊列移除"
-                                        >
-                                            ×
-                                        </button>
-                                    </div>
+                                        if (!song) return null;
+
+                                        return (
+                                            <Draggable key={draggableId} draggableId={draggableId} index={index}>
+                                                {(provided, snapshot) => (
+                                                    <div
+                                                        ref={provided.innerRef}
+                                                        {...provided.draggableProps}
+                                                        {...provided.dragHandleProps}
+                                                        onDoubleClick={() => playQueueIndex(index)}
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            padding: '8px 12px',
+                                                            backgroundColor: isCurrent
+                                                                ? '#2a2a2a'
+                                                                : snapshot.isDragging ? '#2a2a2a' : 'transparent',
+                                                            borderRadius: '6px',
+                                                            borderLeft: isCurrent ? '3px solid var(--accent-color)' : '3px solid transparent',
+                                                            gap: '8px',
+                                                            position: 'relative',
+                                                            ...provided.draggableProps.style
+                                                        }}
+                                                        className="queue-item"
+                                                        onMouseEnter={(e) => {
+                                                            if (!isCurrent) e.currentTarget.style.backgroundColor = '#1a1a1a';
+                                                            const handle = e.currentTarget.querySelector('.drag-handle') as HTMLElement;
+                                                            if (handle) handle.style.opacity = '1';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            if (!isCurrent && !snapshot.isDragging) e.currentTarget.style.backgroundColor = 'transparent';
+                                                            const handle = e.currentTarget.querySelector('.drag-handle') as HTMLElement;
+                                                            if (handle) handle.style.opacity = '0';
+                                                        }}
+                                                    >
+                                                        {/* Drag Handle */}
+                                                        <div className="drag-handle" style={{
+                                                            opacity: 0,
+                                                            cursor: 'grab',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            transition: 'opacity 0.2s'
+                                                        }}>
+                                                            <IconDragHandle />
+                                                        </div>
+
+                                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                                            <div style={{
+                                                                color: isCurrent ? 'var(--accent-color)' : '#ddd',
+                                                                fontWeight: isCurrent ? 'bold' : 'normal',
+                                                                fontSize: '14px',
+                                                                whiteSpace: 'nowrap',
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis'
+                                                            }}>
+                                                                {song.title}
+                                                            </div>
+                                                            <div style={{ color: '#666', fontSize: '12px' }}>
+                                                                {song.artist || 'Unknown'}
+                                                            </div>
+                                                        </div>
+
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '8px' }}>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); removeFromQueue(index); }}
+                                                                style={{
+                                                                    background: 'none',
+                                                                    border: 'none',
+                                                                    color: '#666',
+                                                                    cursor: 'pointer',
+                                                                    fontSize: '16px',
+                                                                    padding: '0 4px',
+                                                                }}
+                                                                title="從隊列移除"
+                                                            >
+                                                                ×
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </Draggable>
+                                        );
+                                    })}
+                                    {provided.placeholder}
                                 </div>
-                            );
-                        })}
-                    </div>
+                            )}
+                        </Droppable>
+                    </DragDropContext>
                 )}
             </div>
 
