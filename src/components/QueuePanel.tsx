@@ -26,6 +26,24 @@ const QueuePanel: React.FC<QueuePanelProps> = ({ isOpen, onClose }) => {
 
     const panelRef = React.useRef<HTMLDivElement>(null);
 
+    // Capture-phase click blocker to prevent "ghost clicks" after drag
+    const isDraggingRef = React.useRef(false);
+    // We use a ref to track if we need to block clicks, because the event listener needs to run immediately in the capture phase.
+    const shouldBlockClickRef = React.useRef(false);
+
+    React.useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (shouldBlockClickRef.current) {
+                e.stopPropagation();
+                e.preventDefault();
+                console.log('[QueuePanel] Ghost click blocked');
+            }
+        };
+        // Capture phase is crucial
+        window.addEventListener('click', handler, true);
+        return () => window.removeEventListener('click', handler, true);
+    }, []);
+
     React.useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (isOpen && panelRef.current && !panelRef.current.contains(event.target as Node)) {
@@ -51,7 +69,19 @@ const QueuePanel: React.FC<QueuePanelProps> = ({ isOpen, onClose }) => {
         }
     };
 
+    const handleDragStart = () => {
+        isDraggingRef.current = true;
+        shouldBlockClickRef.current = true;
+    };
+
     const handleDragEnd = (result: DropResult) => {
+        isDraggingRef.current = false;
+
+        // Keep blocking for a short window after drag ends to catch the "mouseup -> click" event
+        setTimeout(() => {
+            shouldBlockClickRef.current = false;
+        }, 100);
+
         if (!result.destination) return;
         const sourceIndex = result.source.index;
         const destinationIndex = result.destination.index;
@@ -63,6 +93,11 @@ const QueuePanel: React.FC<QueuePanelProps> = ({ isOpen, onClose }) => {
     return (
         <div
             ref={panelRef}
+            className="queue-panel"
+            onDragStart={(e) => e.stopPropagation()}
+
+            onDragOver={(e) => e.stopPropagation()}
+            onDrop={(e) => e.stopPropagation()}
             style={{
                 position: 'absolute',
                 top: 0,

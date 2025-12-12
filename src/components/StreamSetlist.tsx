@@ -38,6 +38,10 @@ const StreamSetlist: React.FC = () => {
         ? queue.slice(currentIndex)
         : queue.slice(currentIndex + 1);
 
+    // Helper to determine if a song in the list is the "Waiting" song
+    // Only valid if isStreamWaiting is true, and it should be the first item (local index 0)
+    const isWaitingSong = (localIndex: number) => isStreamWaiting && localIndex === 0;
+
     const handleDragEnd = (result: DropResult) => {
         if (!result.destination) return;
 
@@ -48,9 +52,11 @@ const StreamSetlist: React.FC = () => {
 
         // The Drag context sees indices 0 to N inside "upNextSongs".
         // We need to map these back to global queue indices.
-        // Global Index = currentIndex + 1 + localIndex
-        const globalSourceIndex = currentIndex + 1 + sourceIndex;
-        const globalDestIndex = currentIndex + 1 + destinationIndex;
+        // If isStreamWaiting, local 0 is global currentIndex.
+        // If !isStreamWaiting, local 0 is global currentIndex + 1.
+        const offset = isStreamWaiting ? currentIndex : currentIndex + 1;
+        const globalSourceIndex = offset + sourceIndex;
+        const globalDestIndex = offset + destinationIndex;
 
         moveQueueItem(globalSourceIndex, globalDestIndex);
     };
@@ -104,7 +110,7 @@ const StreamSetlist: React.FC = () => {
             </div>
 
             {/* Content Area */}
-            <div style={{ flex: 1, overflowY: 'auto' }}>
+            <div className="stream-setlist-container" style={{ flex: 1, overflowY: 'auto' }}>
                 {activeTab === 'played' ? (
                     // Played List (Static, no DND)
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -166,7 +172,7 @@ const StreamSetlist: React.FC = () => {
                                             }}
                                             title="將此曲重新加入待播清單底部"
                                         >
-                                            <img src={ReplayIcon} alt="Requeue" style={{ width: '16px', height: '16px', filter: 'invert(1)' }} />
+                                            <img src={ReplayIcon} alt="Requeue" style={{ width: '16px', height: '16px' }} />
                                         </button>
                                     </div>
                                 );
@@ -257,11 +263,24 @@ const StreamSetlist: React.FC = () => {
                                                                 <IconDragHandle />
                                                             </div>
 
+                                                            {/* Content */}
                                                             <div style={{ flex: 1, minWidth: 0 }}>
-                                                                <div style={{ color: '#ccc', fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                <div style={{
+                                                                    color: isWaitingSong(idx) ? 'var(--accent-color)' : '#ccc', // Highlight if waiting
+                                                                    fontSize: '14px',
+                                                                    overflow: 'hidden',
+                                                                    textOverflow: 'ellipsis',
+                                                                    whiteSpace: 'nowrap',
+                                                                    fontWeight: isWaitingSong(idx) ? 'bold' : 'normal'
+                                                                }}>
                                                                     {song.title}
                                                                 </div>
                                                                 <div style={{ color: '#666', fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                    {isWaitingSong(idx) ? (
+                                                                        <span style={{ color: 'var(--accent-color)', fontWeight: 'bold', marginRight: '6px' }}>
+                                                                            下一首 •
+                                                                        </span>
+                                                                    ) : null}
                                                                     {song.artist || 'Unknown'}
                                                                 </div>
                                                             </div>
@@ -271,8 +290,9 @@ const StreamSetlist: React.FC = () => {
                                                                 className="delete-btn"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation(); // prevent drag start if native
-                                                                    // Global index = currentIndex + 1 + idx
-                                                                    removeFromQueue(currentIndex + 1 + idx);
+                                                                    // Map back to global index correctly using same offset logic
+                                                                    const offset = isStreamWaiting ? currentIndex : currentIndex + 1;
+                                                                    removeFromQueue(offset + idx);
                                                                 }}
                                                                 style={{
                                                                     opacity: 0,

@@ -348,7 +348,9 @@ function AppContent() {
 
       {/* Global Modals */}
       <QueuePanel isOpen={showQueuePanel} onClose={() => setShowQueuePanel(false)} />
-      <AddSongSidebar isOpen={showAddSongWizard} onClose={() => setShowAddSongWizard(false)} />
+      {showAddSongWizard && (
+        <AddSongSidebar isOpen={showAddSongWizard} onClose={() => setShowAddSongWizard(false)} />
+      )}
       <Suspense fallback={null}>
         {showProcessingList && (
           <ProcessingListModal open={showProcessingList} onClose={() => setShowProcessingList(false)} />

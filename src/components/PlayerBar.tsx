@@ -53,14 +53,65 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   currentTrackName,
   onToggleQueue,
 }) => {
-  const { playNext, playPrev, currentSongId, playbackMode, setPlaybackMode } = useQueue();
+  const { playNext, playPrev, currentSongId, playbackMode, setPlaybackMode, isStreamWaiting, queue, currentIndex } = useQueue();
   const { getSongById, updateSong } = useLibrary();
   const initialVolumes = loadVolumePreferences() ?? { streamVolume: 0.8, headphoneVolume: 1 };
+
+  // Logic to determine display text
+  let displayText = currentTrackName || '尚未選擇歌曲';
+  let isWaiting = false;
+  let nextSongTitle = '';
+
+  if (playbackMode === 'stream' && isStreamWaiting) {
+    isWaiting = true;
+    const nextId = queue[currentIndex]; // In waiting state, currentIndex is the next song
+    if (nextId) {
+      const nextSong = getSongById(nextId);
+      nextSongTitle = nextSong ? nextSong.title : '未知歌曲';
+      displayText = `下一首: ${nextSongTitle}`;
+    } else {
+      displayText = '待播清單已空';
+    }
+  }
+
   const [isHovered, setIsHovered] = useState(false);
   const [backingVolume, setBackingVolume] = useState(() => Math.round(initialVolumes.streamVolume * 100));
   const [vocalVolume, setVocalVolume] = useState(() => Math.round(initialVolumes.headphoneVolume * 100));
   const { isFavorite, toggleFavorite } = useUserData();
   const [showModeSelector, setShowModeSelector] = useState(false);
+
+  // ... (rest of state logic)
+
+  // Play Button Handler
+  const handlePlayClick = () => {
+    if (isWaiting) {
+      // In Waiting State, Play button acts as "Start Next Song"
+      playNext(false);
+    } else {
+      onPlayPause();
+    }
+  };
+
+  // ... (rest of render logic)
+
+  // Inside Return JSX for Play Button
+  // replace onClick={onPlayPause} with onClick={handlePlayClick}
+  // replace ScrollingText text={displayText}
+
+  // To make replacement cleaner, I will replace the component start and specific Play button block.
+  // Actually, I need to be careful with the ReplaceFileContent.
+  // I will replace the start of component to add derived variables, and the ScrollingText, and the PlayButton.
+  // But doing it consistently in one chunk is hard due to separation.
+  // I will use multi-replace.
+
+  // Wait, I only have replace_file_content tool available right now or I can switch to multi_replace.
+  // I will use replace_file_content to update the Hook destructuring and insert the logic variables at the top.
+  // Then another call for the usage.
+
+  // Or I can replace the whole function body or larger chunk?
+  // Let's replace from function start to `const [isHovered`.
+
+
 
   // Playlist Popup State
   const [showPlaylistPopup, setShowPlaylistPopup] = useState(false);
@@ -244,7 +295,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
           {/* Song Title + Artist Marquee */}
           <div style={{ marginBottom: '4px', width: '100%' }}>
             <ScrollingText
-              text={currentTrackName || '尚未選擇歌曲'}
+              text={displayText}
               style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}
             />
           </div>
@@ -302,7 +353,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
                 </div>
               </>
             ) : (
-              <div style={{ fontSize: '12px', color: '#666' }}>點擊左側圖標進入直播模式</div>
+              <div style={{ fontSize: '12px', color: '#666' }}>直播模式</div>
             )}
           </div>
         </div>
@@ -389,7 +440,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
               <img src={PrevIcon} alt="Previous" style={{ width: '24px', height: '24px', display: 'block' }} />
             </button>
             <button
-              onClick={onPlayPause}
+              onClick={handlePlayClick}
               style={{
                 width: '36px',
                 height: '36px',

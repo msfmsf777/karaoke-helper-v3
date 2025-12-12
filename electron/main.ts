@@ -6,17 +6,8 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import fs from 'node:fs'
 
-// Lazy load these modules
-// import {
-//   addLocalSong, getOriginalSongFilePath,
-//   getSeparatedSongPaths,
-//   getSongFilePath, getSongsBaseDir, loadAllSongs
-// } from './songLibrary'
-// import { getAllJobs, queueSeparationJob, subscribeJobUpdates } from './separationJobs'
-// import { downloadManager } from './downloadJobs'
-// import { readRawLyrics, readSyncedLyrics, writeRawLyrics, writeSyncedLyrics } from './lyrics'
-// import { loadQueue, saveQueue } from './queue'
-// import { loadFavorites, saveFavorites, loadHistory, saveHistory } from './userData'
+// Disable native swipe navigation (fixes sidebar drag sliding the screen)
+app.commandLine.appendSwitch('disable-features', 'OverscrollHistoryNavigation')
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -32,6 +23,17 @@ process.env.APP_ROOT = path.join(__dirname, '..')
 export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
 export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron')
 export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
+
+// Lazy load these modules
+// import {
+//   addLocalSong, getOriginalSongFilePath,
+//   getSeparatedSongPaths,
+//   getSongFilePath, getSongsBaseDir, loadAllSongs
+// } from './songLibrary'
+// import { getAllJobs, queueSeparationJob, subscribeJobUpdates } from './separationJobs'
+// import { downloadManager } from './downloadJobs'
+// import { readRawLyrics, readSyncedLyrics, writeRawLyrics, writeSyncedLyrics } from './lyrics'
+// import { loadQueue, saveQueue } from './queue'
 
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST
 
@@ -410,7 +412,7 @@ ipcMain.handle('downloads:validate', async (_event, url: string) => {
   return dm.validateUrl(url)
 })
 
-ipcMain.handle('downloads:queue', async (_event, url: string, quality: 'best' | 'high' | 'normal', title?: string, artist?: string, type?: import('./shared/songTypes').SongType, lyricsText?: string) => {
+ipcMain.handle('downloads:queue', async (_event, url: string, quality: 'best' | 'high' | 'normal', title?: string, artist?: string, type?: import('../shared/songTypes').SongType, lyricsText?: string) => {
   const dm = await getDownloadManager()
   return dm.queueJob(url, quality, title, artist, type, lyricsText)
 })

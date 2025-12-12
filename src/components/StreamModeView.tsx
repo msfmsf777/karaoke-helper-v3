@@ -19,7 +19,7 @@ interface StreamModeViewProps {
 const StreamModeView: React.FC<StreamModeViewProps> = ({
   currentTime,
 }) => {
-  const { queue, currentIndex, playQueueIndex, currentSongId } = useQueue();
+  const { playQueueIndex, currentSongId } = useQueue();
   const { getSongById } = useLibrary();
   const { lyricStyles, setLyricStyles, songPreferences, setSongPreference } = useUserData();
 
