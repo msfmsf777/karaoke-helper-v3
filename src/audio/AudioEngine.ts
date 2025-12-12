@@ -59,6 +59,8 @@ class AudioPlayer {
   private _currentTime = 0;
   private _isPlaying = false;
 
+  public onEnded?: () => void;
+
   constructor(role: OutputRole) {
     this.role = role;
     this.audioContext = new AudioContext({ latencyHint: 'playback' }) as AudioContextWithSinkId;
@@ -103,7 +105,8 @@ class AudioPlayer {
           this._duration = duration;
         } else if (type === 'ended') {
           this._isPlaying = false;
-          // We let the main engine handle the global 'ended' event
+          // Trigger internal callback to notify engine
+          if (this.onEnded) this.onEnded();
         }
       };
 
@@ -237,6 +240,11 @@ class DualAudioEngine implements AudioEngine {
     this.streamPlayer = new AudioPlayer('stream');
     this.headphonePlayer = new AudioPlayer('headphone');
 
+    // Wire up event-based ended detection to avoid race conditions in the render loop
+    this.headphonePlayer.onEnded = () => {
+      this.handleEnded();
+    };
+
     this.streamPlayer.setVolume(0.8);
     this.headphonePlayer.setVolume(1.0);
   }
@@ -252,14 +260,8 @@ class DualAudioEngine implements AudioEngine {
     const loop = () => {
       if (this.isPlaying()) {
         const time = this.headphonePlayer.currentTime;
-        const duration = this.headphonePlayer.duration;
         this.timeUpdateSubscribers.forEach((cb) => cb(time));
-
-        if (duration > 0 && (time >= duration || Math.abs(time - duration) < 0.1)) {
-          this.handleEnded();
-        } else {
-          this.animationFrameId = requestAnimationFrame(loop);
-        }
+        this.animationFrameId = requestAnimationFrame(loop);
       }
     };
     this.animationFrameId = requestAnimationFrame(loop);

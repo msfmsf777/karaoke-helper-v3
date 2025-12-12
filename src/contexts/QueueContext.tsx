@@ -7,9 +7,12 @@ interface QueueContextType {
     queue: string[];
     currentIndex: number;
     currentSongId: string | null;
+    playbackMode: PlaybackMode;
+    isStreamWaiting: boolean;
+    setPlaybackMode: (mode: PlaybackMode) => void;
     playSong: (songId: string) => Promise<void>;
     addToQueue: (songId: string) => void;
-    playNext: () => void;
+    playNext: (auto?: boolean) => void;
     playPrev: () => void;
     playQueueIndex: (index: number) => void;
     removeFromQueue: (index: number) => void;
@@ -21,14 +24,20 @@ interface QueueContextType {
     replaceQueue: (songIds: string[]) => void;
 }
 
+export type PlaybackMode = 'normal' | 'repeat_one' | 'random' | 'stream';
+
 const QueueContext = createContext<QueueContextType | null>(null);
 
 export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [queue, setQueue] = useState<string[]>([]);
     const [currentIndex, setCurrentIndex] = useState<number>(-1);
+    const [playbackMode, setPlaybackMode] = useState<PlaybackMode>('normal');
+    const [historyStack, setHistoryStack] = useState<number[]>([]);
+    const [isStreamWaiting, setIsStreamWaiting] = useState(false);
     const { getSongById, loading: libraryLoading } = useLibrary();
     const isInitialized = useRef(false);
     const shouldAutoPlay = useRef(true);
+    const shouldEnterStreamWait = useRef(false);
 
     // Load queue from disk on startup
     useEffect(() => {
@@ -39,19 +48,12 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 const saved = await window.khelper?.queue.load();
                 if (saved) {
                     setQueue(saved.songIds);
-                    // Startup change: Do not load the last played song into the player.
-                    // Just restore the queue list, but set current index to -1 so nothing is active.
-                    setCurrentIndex(-1);
-
-                    // Prevent autoplay on startup by syncing lastPlayedIndex with saved index
-                    // actually, we want to sync it with -1 so if user clicks the same song it plays?
-                    // If we set currentIndex to -1, the effect won't fire.
-                    // If user clicks index 0, it changes to 0, effect fires.
-                    // So we don't need to preload anything.
+                    setCurrentIndex(-1); // Always unload on startup as requested
+                    // Restore playback mode if saved
+                    const savedMode = localStorage.getItem('khelper_playback_mode') as PlaybackMode;
+                    if (savedMode) setPlaybackMode(savedMode);
 
                     console.log('[QueueContext] Restored queue', saved.songIds.length, 'Current index reset to -1');
-
-                    console.log('[QueueContext] Restored queue', saved.songIds.length, saved.currentIndex);
                 }
             } catch (err) {
                 console.error('[QueueContext] Failed to load queue', err);
@@ -61,6 +63,11 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         };
         load();
     }, [libraryLoading, getSongById]);
+
+    // Persist playback mode
+    useEffect(() => {
+        localStorage.setItem('khelper_playback_mode', playbackMode);
+    }, [playbackMode]);
 
     // Save queue to disk on change
     useEffect(() => {
@@ -77,6 +84,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, [queue, currentIndex]);
 
     const playSongInternal = async (songId: string, autoPlay = true) => {
+        setIsStreamWaiting(false); // Reset waiting state explicitly
         console.debug('[QueueContext] playSongInternal', songId);
         const song = getSongById(songId);
         if (!song) {
@@ -142,6 +150,23 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const lastPlayedSongId = useRef<string | null>(null);
 
     useEffect(() => {
+        // Guard: Transitioning to Stream Wait
+        // Prioritize this ref check over isStreamWaiting state to prevent race conditions
+        if (shouldEnterStreamWait.current) {
+            shouldEnterStreamWait.current = false;
+            if (!isStreamWaiting) setIsStreamWaiting(true); // Ensure state catches up
+            // Update references so we don't trigger playback later
+            // logic removed to fix resumption issue
+            audioEngine.stop();
+            return;
+        }
+
+        if (isStreamWaiting) {
+            // If waiting, ensure player is stopped
+            audioEngine.stop();
+            return;
+        }
+
         if (currentIndex >= 0 && currentIndex < queue.length) {
             const songId = queue[currentIndex];
             // Play if index changed OR song ID changed (e.g. replaced song at same index)
@@ -153,7 +178,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 shouldAutoPlay.current = true;
             }
         }
-    }, [currentIndex, queue, getSongById]);
+    }, [currentIndex, queue, getSongById, isStreamWaiting]);
 
     const addToQueue = useCallback((songId: string) => {
         // Use current state to calculate new state
@@ -175,23 +200,91 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
     }, [queue, currentIndex]);
 
-    const playNext = useCallback(() => {
-        setCurrentIndex((prev) => {
-            if (prev < queue.length - 1) {
-                return prev + 1;
+
+
+    const playNext = useCallback((auto: boolean = false) => {
+        // Handle Repeat One Auto explicitly: Simply replay
+        if (playbackMode === 'repeat_one' && auto) {
+            audioEngine.seek(0);
+            audioEngine.play();
+            return;
+        }
+
+        // Manual Next in Stream Mode (Resume)
+        if (playbackMode === 'stream' && !auto && isStreamWaiting) {
+            setIsStreamWaiting(false);
+            return;
+        }
+
+        setCurrentIndex(prev => {
+            // Mode Logic
+            if (playbackMode === 'repeat_one') {
+                return (prev < queue.length - 1) ? prev + 1 : prev;
             }
-            return prev; // No loop for now
+
+            if (playbackMode === 'random') {
+                if (queue.length === 0) return prev;
+                if (prev >= 0) setHistoryStack(h => [...h, prev]);
+
+                // Ensure unique next index
+                let nextIndex = prev;
+                let attempts = 0;
+                while (nextIndex === prev && attempts < 5 && queue.length > 1) {
+                    nextIndex = Math.floor(Math.random() * queue.length);
+                    attempts++;
+                }
+
+                if (nextIndex === prev) {
+                    // Force replay if same index (queue length 1 or collision)
+                    audioEngine.seek(0);
+                    audioEngine.play();
+                    // Return prev so currentIndex doesn't change -> Effect won't double play
+                    return prev;
+                }
+                return nextIndex;
+            }
+
+            if (playbackMode === 'stream') {
+                // Determine next index first
+                const nextIndex = prev < queue.length ? prev + 1 : prev;
+
+                // Signal wait transition
+                shouldEnterStreamWait.current = true;
+
+                return nextIndex;
+            }
+
+            // Normal
+            return (prev < queue.length - 1) ? prev + 1 : prev;
         });
-    }, [queue.length]);
+
+        if (playbackMode === 'stream') {
+            setIsStreamWaiting(true);
+        }
+
+    }, [queue.length, playbackMode, isStreamWaiting]);
 
     const playPrev = useCallback(() => {
+        if (playbackMode === 'random') {
+            setHistoryStack(h => {
+                if (h.length === 0) return h;
+                const prev = h[h.length - 1];
+                setCurrentIndex(prev);
+                return h.slice(0, -1);
+            });
+            // Also reset waiting if moving back?
+            setIsStreamWaiting(false);
+            return;
+        }
+
         setCurrentIndex((prev) => {
             if (prev > 0) {
                 return prev - 1;
             }
             return prev;
         });
-    }, []);
+        setIsStreamWaiting(false);
+    }, [playbackMode]);
 
     const playQueueIndex = useCallback((index: number) => {
         if (index >= 0 && index < queue.length) {
@@ -337,7 +430,10 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             value={{
                 queue,
                 currentIndex,
-                currentSongId: queue[currentIndex] || null,
+                currentSongId: isStreamWaiting ? null : (queue[currentIndex] || null),
+                playbackMode,
+                isStreamWaiting,
+                setPlaybackMode,
                 playSong,
                 addToQueue,
                 playNext,
