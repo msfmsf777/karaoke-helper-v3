@@ -13,8 +13,11 @@ interface LyricsOverlayProps {
     enrichedLines?: EnrichedLyricLine[] | null;
     furiganaEnabled?: boolean;
     romajiEnabled?: boolean;
+    onToggleFurigana?: () => void;
+    onToggleRomaji?: () => void;
     onScrollChange?: (scrollTop: number) => void;
     externalScrollTop?: number | null;
+    showControls?: boolean;
 }
 
 const LyricLine = React.memo(({
@@ -128,8 +131,11 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({
     enrichedLines,
     furiganaEnabled,
     romajiEnabled,
+    onToggleFurigana,
+    onToggleRomaji,
     onScrollChange,
-    externalScrollTop
+    externalScrollTop,
+    showControls = false
 }) => {
     const activeLineRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -192,23 +198,33 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({
     // Helper for text-only mode (reusing LyricLine but without click/active logic if desired, or just simple render)
     // For text-only, we can still use LyricLine but isActive is always false
 
+    // Helper for buttons
+    const SwitchButton = ({ label, active, onClick }: { label: string, active?: boolean, onClick?: () => void }) => (
+        <div
+            onClick={onClick}
+            style={{
+                width: '24px',
+                height: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: active ? 'var(--accent-color, #00e5ff)' : 'rgba(255,255,255,0.1)',
+                color: active ? '#000' : '#fff',
+                borderRadius: '4px',
+                fontSize: '12px',
+                cursor: onClick ? 'pointer' : 'default',
+                fontWeight: 'bold',
+                transition: 'all 0.2s',
+                border: '1px solid rgba(255,255,255,0.1)',
+                opacity: onClick ? 1 : 0.7
+            }}
+        >
+            {label}
+        </div>
+    );
+
     if (status === 'none') {
-        return (
-            <div
-                className={className}
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: '100%',
-                    color: '#666',
-                    fontSize: '24px',
-                    fontWeight: 500,
-                }}
-            >
-                此歌曲沒有歌詞
-            </div>
-        );
+        return null;
     }
 
     const maskStyle = {
@@ -216,102 +232,104 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({
         WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 75%, transparent 100%)',
     };
 
-    if (status === 'text_only') {
-        return (
-            <div className={className} style={{ height: '100%', position: 'relative', ...maskStyle }}>
-                <div
-                    ref={containerRef}
-                    onScroll={(e) => {
-                        if (onScrollChange) {
-                            onScrollChange(e.currentTarget.scrollTop);
-                        }
-                    }}
-                    style={{
-                        height: '100%',
-                        overflowY: 'auto',
-                        padding: '0 32px',
-                        textAlign: 'center',
-                        fontSize: `${styleConfig.fontSize}px`,
-                        lineHeight: 1.8,
-                        color: styleConfig.inactiveColor,
-                        whiteSpace: 'pre-wrap',
-                        scrollbarWidth: 'none',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        textShadow: styleConfig.strokeWidth > 0 ?
-                            `-${styleConfig.strokeWidth}px -${styleConfig.strokeWidth}px 0 ${styleConfig.strokeColor}, 
-                             ${styleConfig.strokeWidth}px -${styleConfig.strokeWidth}px 0 ${styleConfig.strokeColor}, 
-                             -${styleConfig.strokeWidth}px ${styleConfig.strokeWidth}px 0 ${styleConfig.strokeColor}, 
-                             ${styleConfig.strokeWidth}px ${styleConfig.strokeWidth}px 0 ${styleConfig.strokeColor}` : 'none',
-                    }}>
-                    <div style={{ height: '50vh', flexShrink: 0 }} />
-                    {lines.map((line, idx) => (
-                        <div key={line.id} style={{ marginBottom: '16px', flexShrink: 0 }}>
-                            <LyricLine
-                                line={line}
-                                enriched={enrichedLines?.[idx]}
-                                isActive={false}
-                                isPast={false}
-                                styleConfig={styleConfig}
-                                furiganaEnabled={furiganaEnabled}
-                                romajiEnabled={romajiEnabled}
-                                onLineClick={undefined}
-                            />
-                        </div>
-                    ))}
-                    <div style={{ height: '50vh', flexShrink: 0 }} />
+    // Render logic
+    const content = (
+        <div className={className} style={{ height: '100%', position: 'relative' }}>
+            {/* Plain Text Badge */}
+            {showControls && status === 'text_only' && (
+                <div style={{
+                    position: 'absolute',
+                    top: '16px',
+                    left: '16px',
+                    padding: '4px 8px',
+                    backgroundColor: 'rgba(0,0,0,0.6)',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    color: '#aaa',
+                    pointerEvents: 'none',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    zIndex: 10
+                }}>
+                    純文字
                 </div>
-            </div>
-        );
-    }
+            )}
 
-    // Synced Lyrics
-    return (
-        <div className={className} style={{ height: '100%', position: 'relative', ...maskStyle }}>
+            {/* Furigana/Romaji Switches (Bottom Right) */}
+            {showControls && enrichedLines && (
+                <div style={{
+                    position: 'absolute',
+                    bottom: '16px',
+                    right: '16px',
+                    display: 'flex',
+                    gap: '8px',
+                    zIndex: 10
+                }}>
+                    <SwitchButton
+                        label="あ"
+                        active={furiganaEnabled}
+                        onClick={onToggleFurigana}
+                    />
+                    <SwitchButton
+                        label="a"
+                        active={romajiEnabled}
+                        onClick={onToggleRomaji}
+                    />
+                </div>
+            )}
+
             <div
                 ref={containerRef}
-                onWheel={handleUserScroll}
-                onTouchMove={handleUserScroll}
+                onScroll={status === 'text_only' ? (e) => onScrollChange?.(e.currentTarget.scrollTop) : undefined}
+                onWheel={status === 'synced' ? handleUserScroll : undefined}
+                onTouchMove={status === 'synced' ? handleUserScroll : undefined}
                 style={{
                     height: '100%',
-                    overflowY: 'auto', // Enable manual scrolling
+                    overflowY: 'auto',
                     padding: '0 32px',
+                    textAlign: status === 'text_only' ? 'center' : undefined,
                     display: 'flex',
                     flexDirection: 'column',
-                    alignItems: 'center',
-                    scrollbarWidth: 'none', // Firefox
-                    msOverflowStyle: 'none', // IE/Edge
+                    alignItems: status === 'synced' ? 'center' : undefined,
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none',
+                    fontSize: status === 'text_only' ? `${styleConfig.fontSize}px` : undefined,
+                    lineHeight: status === 'text_only' ? 1.8 : undefined,
+                    color: status === 'text_only' ? styleConfig.inactiveColor : undefined,
+                    whiteSpace: status === 'text_only' ? 'pre-wrap' : undefined,
+                    textShadow: status === 'text_only' && styleConfig.strokeWidth > 0 ?
+                        `-${styleConfig.strokeWidth}px -${styleConfig.strokeWidth}px 0 ${styleConfig.strokeColor}, 
+                         ${styleConfig.strokeWidth}px -${styleConfig.strokeWidth}px 0 ${styleConfig.strokeColor}, 
+                         -${styleConfig.strokeWidth}px ${styleConfig.strokeWidth}px 0 ${styleConfig.strokeColor}, 
+                         ${styleConfig.strokeWidth}px ${styleConfig.strokeWidth}px 0 ${styleConfig.strokeColor}` : 'none',
+                    ...maskStyle
                 }}
             >
                 <style>{`
                 .${className}::-webkit-scrollbar {
-                    display: none; /* Chrome/Safari/Opera */
+                    display: none;
                 }
             `}</style>
                 <div style={{ height: '50vh', flexShrink: 0 }} />
-                {lines.map((line, idx) => {
-                    const isActive = idx === currentIdx;
-                    const isPast = idx < currentIdx;
-
-                    return (
-                        <div key={line.id} ref={isActive ? activeLineRef : null}>
-                            <LyricLine
-                                line={line}
-                                enriched={enrichedLines?.[idx]}
-                                isActive={isActive}
-                                isPast={isPast}
-                                styleConfig={styleConfig}
-                                furiganaEnabled={furiganaEnabled}
-                                romajiEnabled={romajiEnabled}
-                                onLineClick={onLineClick}
-                            />
-                        </div>
-                    );
-                })}
+                {lines.map((line, idx) => (
+                    <div key={line.id} ref={idx === currentIdx ? activeLineRef : null} style={{ marginBottom: status === 'text_only' ? '16px' : undefined, flexShrink: 0 }}>
+                        <LyricLine
+                            line={line}
+                            enriched={enrichedLines?.[idx]}
+                            isActive={idx === currentIdx}
+                            isPast={idx < currentIdx}
+                            styleConfig={styleConfig}
+                            furiganaEnabled={furiganaEnabled}
+                            romajiEnabled={romajiEnabled}
+                            onLineClick={onLineClick}
+                        />
+                    </div>
+                ))}
                 <div style={{ height: '50vh', flexShrink: 0 }} />
             </div>
         </div>
     );
+
+    return content;
 };
 
 export default LyricsOverlay;

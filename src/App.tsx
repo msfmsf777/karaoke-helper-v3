@@ -45,7 +45,7 @@ function AppContent() {
   const [lyricsEditorSongId, setLyricsEditorSongId] = useState<string | null>(null);
   const mainContentRef = useRef<HTMLDivElement>(null);
 
-  const { currentSongId, playNext } = useQueue();
+  const { currentSongId, playNext, queue, currentIndex, isStreamWaiting } = useQueue();
   const { getSongById } = useLibrary();
 
   const currentTrack = useMemo(() => {
@@ -108,16 +108,17 @@ function AppContent() {
     });
   }, []);
 
-  // Send updates to overlay window
+  // Always send update if state changes, even if no track is playing (e.g. waiting state)
   useEffect(() => {
-    if (currentTrack) {
-      window.api.sendOverlayUpdate({
-        songId: currentTrack.id,
-        currentTime,
-        isPlaying,
-      });
-    }
-  }, [currentTrack, currentTime, isPlaying]);
+    window.api.sendOverlayUpdate({
+      songId: currentTrack?.id ?? '',
+      currentTime,
+      isPlaying,
+      queue,
+      currentIndex,
+      isStreamWaiting
+    });
+  }, [currentTrack, currentTime, isPlaying, queue, currentIndex, isStreamWaiting]);
 
   const handlePlayPause = () => {
     if (!currentTrack) {

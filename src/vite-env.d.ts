@@ -16,8 +16,8 @@ interface Window {
     openAudioFileDialog: () => Promise<string | null>;
     openExternal: (url: string) => Promise<void>;
     openOverlayWindow: () => void;
-    sendOverlayUpdate: (payload: { songId: string; currentTime: number; isPlaying: boolean }) => void;
-    subscribeOverlayUpdates: (callback: (payload: { songId: string; currentTime: number; isPlaying: boolean }) => void) => () => void;
+    sendOverlayUpdate: (payload: { songId: string; currentTime: number; isPlaying: boolean; queue?: string[]; currentIndex?: number; isStreamWaiting?: boolean }) => void;
+    subscribeOverlayUpdates: (callback: (payload: { songId: string; currentTime: number; isPlaying: boolean; queue?: string[]; currentIndex?: number; isStreamWaiting?: boolean }) => void) => () => void;
     sendOverlayStyleUpdate: (style: any) => void;
     subscribeOverlayStyleUpdates: (callback: (style: any) => void) => () => void;
     sendOverlayPreferenceUpdate: (prefs: { furiganaEnabled: boolean; romajiEnabled: boolean }) => void;
