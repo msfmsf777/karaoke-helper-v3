@@ -22,6 +22,7 @@ interface QueueContextType {
     loadImmediate: (songId: string) => void;
     clearQueue: () => void;
     replaceQueue: (songIds: string[]) => void;
+    resetStream: () => void;
 }
 
 export type PlaybackMode = 'normal' | 'repeat_one' | 'random' | 'stream';
@@ -453,6 +454,17 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         // because queue changed (so songId at index 0 likely changed)
     }, []);
 
+    const resetStream = useCallback(() => {
+        // Reset to first song but in waiting state
+        shouldEnterStreamWait.current = true;
+        setCurrentIndex(0);
+        if (playbackMode === 'stream') {
+            setIsStreamWaiting(true);
+        } else {
+            audioEngine.stop();
+        }
+    }, [playbackMode]);
+
     return (
         <QueueContext.Provider
             value={{
@@ -474,6 +486,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 loadImmediate,
                 clearQueue,
                 replaceQueue,
+                resetStream,
             }}
         >
             {children}

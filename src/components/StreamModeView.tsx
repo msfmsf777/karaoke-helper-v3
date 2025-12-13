@@ -19,7 +19,7 @@ interface StreamModeViewProps {
 const StreamModeView: React.FC<StreamModeViewProps> = ({
   currentTime,
 }) => {
-  const { playQueueIndex, currentSongId } = useQueue();
+  const { currentSongId, resetStream } = useQueue();
   const { getSongById } = useLibrary();
   const { lyricStyles, setLyricStyles, songPreferences, setSongPreference } = useUserData();
 
@@ -237,7 +237,7 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
               <button
                 onClick={() => {
                   if (confirmReset) {
-                    playQueueIndex(0);
+                    resetStream();
                     setConfirmReset(false);
                   } else {
                     setConfirmReset(true);
