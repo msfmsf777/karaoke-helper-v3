@@ -2,6 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import audioEngine, { OutputRole } from '../audio/AudioEngine';
 import { useUserData } from '../contexts/UserDataContext';
 
+import CalibrationModal from './CalibrationModal';
+import { getAudioOffset } from '../settings/devicePreferences';
+
 interface SettingsViewProps {
     onBack: () => void;
     streamDeviceId: string | null;
@@ -20,12 +23,23 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     const [error, setError] = useState<string | null>(null);
     const { separationQuality, setSeparationQuality } = useUserData();
 
+    // Calibration State
+    const [showCalibration, setShowCalibration] = useState(false);
+    const [currentOffset, setCurrentOffset] = useState(0);
+
+    // Sample Rates
+    const [streamSampleRate, setStreamSampleRate] = useState(0);
+    const [headphoneSampleRate, setHeadphoneSampleRate] = useState(0);
+
     const refreshDevices = async () => {
         setLoading(true);
         setError(null);
         try {
             const list = await audioEngine.enumerateOutputDevices();
             setDevices(list);
+            // Also refresh sample rates
+            setStreamSampleRate(audioEngine.getSampleRate('stream'));
+            setHeadphoneSampleRate(audioEngine.getSampleRate('headphone'));
         } catch (err) {
             console.error('[Settings] Failed to enumerate devices', err);
             setError('無法取得音訊輸出裝置清單');
@@ -36,7 +50,21 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 
     useEffect(() => {
         refreshDevices();
+        // Load initial offset
+        const saved = getAudioOffset(streamDeviceId, headphoneDeviceId);
+        setCurrentOffset(saved);
     }, []);
+
+    // Update displayed offset and sample rates when devices change
+    useEffect(() => {
+        const saved = getAudioOffset(streamDeviceId, headphoneDeviceId);
+        setCurrentOffset(saved);
+
+        // Brief delay to ensure context updated if async (though setOutputDevice is awaited in App, here we just react/poll)
+        // Ideally App calls refresh, but we can just poll the engine
+        setStreamSampleRate(audioEngine.getSampleRate('stream'));
+        setHeadphoneSampleRate(audioEngine.getSampleRate('headphone'));
+    }, [streamDeviceId, headphoneDeviceId]);
 
     const deviceOptions = useMemo(() => {
         return [
@@ -137,11 +165,25 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                             若歌曲已進行人聲分離，Stream 只會輸出伴奏，而 Headphone 會同時輸出人聲與伴奏。
                         </p>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
                             <div style={{ background: '#2a2a2a', padding: '20px', borderRadius: '12px', border: '1px solid #333' }}>
-                                <label style={{ display: 'block', marginBottom: '12px', color: '#ddd', fontSize: '14px', fontWeight: 'bold' }}>
-                                    觀眾輸出 (Stream)
-                                </label>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                    <label style={{ display: 'block', color: '#ddd', fontSize: '14px', fontWeight: 'bold' }}>
+                                        觀眾輸出 (Stream)
+                                    </label>
+                                    {streamSampleRate > 0 && (
+                                        <div style={{
+                                            fontSize: '11px',
+                                            color: '#aaa',
+                                            backgroundColor: '#383838',
+                                            padding: '2px 8px',
+                                            borderRadius: '12px',
+                                            border: '1px solid #555'
+                                        }}>
+                                            {streamSampleRate} Hz
+                                        </div>
+                                    )}
+                                </div>
                                 <select
                                     value={streamDeviceId ?? ''}
                                     onChange={(e) => onChangeDevice('stream', e.target.value || null)}
@@ -165,9 +207,23 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                             </div>
 
                             <div style={{ background: '#2a2a2a', padding: '20px', borderRadius: '12px', border: '1px solid #333' }}>
-                                <label style={{ display: 'block', marginBottom: '12px', color: '#ddd', fontSize: '14px', fontWeight: 'bold' }}>
-                                    耳機輸出 (Headphone)
-                                </label>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                    <label style={{ display: 'block', color: '#ddd', fontSize: '14px', fontWeight: 'bold' }}>
+                                        耳機輸出 (Headphone)
+                                    </label>
+                                    {headphoneSampleRate > 0 && (
+                                        <div style={{
+                                            fontSize: '11px',
+                                            color: '#aaa',
+                                            backgroundColor: '#383838',
+                                            padding: '2px 8px',
+                                            borderRadius: '12px',
+                                            border: '1px solid #555'
+                                        }}>
+                                            {headphoneSampleRate} Hz
+                                        </div>
+                                    )}
+                                </div>
                                 <select
                                     value={headphoneDeviceId ?? ''}
                                     onChange={(e) => onChangeDevice('headphone', e.target.value || null)}
@@ -190,6 +246,44 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                                 </select>
                             </div>
                         </div>
+
+                        {/* Calibration Row */}
+                        <div style={{
+                            background: '#2a2a2a',
+                            padding: '16px 20px',
+                            borderRadius: '12px',
+                            border: '1px solid #333',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ fontSize: '14px', color: '#ddd', fontWeight: 'bold' }}>雙輸出同步偏移：</div>
+                                <div style={{
+                                    fontSize: '14px',
+                                    color: currentOffset === 0 ? '#aaa' : 'var(--accent-color)',
+                                    fontFamily: 'monospace'
+                                }}>
+                                    {currentOffset > 0 ? `+${currentOffset}` : currentOffset} ms
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={() => setShowCalibration(true)}
+                                style={{
+                                    padding: '8px 16px',
+                                    backgroundColor: '#444',
+                                    color: '#fff',
+                                    borderRadius: '6px',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    fontSize: '13px'
+                                }}
+                            >
+                                校準
+                            </button>
+                        </div>
+
                         {error && <div style={{ color: '#ff6666', marginTop: '12px', fontSize: '14px' }}>{error}</div>}
                     </section>
 
@@ -259,6 +353,16 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 
                 </div>
             </div>
+
+            {showCalibration && (
+                <CalibrationModal
+                    onClose={() => setShowCalibration(false)}
+                    streamDeviceId={streamDeviceId}
+                    headphoneDeviceId={headphoneDeviceId}
+                    initialOffset={currentOffset}
+                    onOffsetChange={setCurrentOffset}
+                />
+            )}
         </div>
     );
 };

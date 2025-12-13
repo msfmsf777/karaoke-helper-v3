@@ -35,6 +35,12 @@ export interface AudioEngine {
   // New API
   setPlaybackTransform(transform: PlaybackTransform): void;
   getPlaybackTransform(): PlaybackTransform;
+
+  // Calibration
+  // Calibration
+  setOffset(offsetMs: number): void;
+  setLoop(loop: boolean): void;
+  getSampleRate(role: OutputRole): number;
 }
 
 type SinkableAudioElement = HTMLAudioElement & { setSinkId?: (sinkId: string) => Promise<void> };
@@ -45,6 +51,7 @@ type SinkableAudioElement = HTMLAudioElement & { setSinkId?: (sinkId: string) =>
 class AudioPlayer {
   public audioContext: AudioContextWithSinkId;
   private workletNode: AudioWorkletNode | null = null;
+  private delayNode: DelayNode;
   private gainNode: GainNode;
 
   // Fallback
@@ -53,6 +60,7 @@ class AudioPlayer {
 
   private role: OutputRole;
   private isReady = false;
+  public loop = false;
 
   // State mirrors
   private _duration = 0;
@@ -64,7 +72,12 @@ class AudioPlayer {
   constructor(role: OutputRole) {
     this.role = role;
     this.audioContext = new AudioContext({ latencyHint: 'playback' }) as AudioContextWithSinkId;
+
+    this.delayNode = this.audioContext.createDelay(1.0); // Max delay 1 second
     this.gainNode = this.audioContext.createGain();
+
+    // Chain: Worklet -> Delay -> Gain -> Destination
+    this.delayNode.connect(this.gainNode);
     this.gainNode.connect(this.audioContext.destination);
 
     console.log(`[${role}Player] Created. SampleRate: ${this.audioContext.sampleRate}`);
@@ -104,13 +117,17 @@ class AudioPlayer {
         } else if (type === 'loaded') {
           this._duration = duration;
         } else if (type === 'ended') {
-          this._isPlaying = false;
-          // Trigger internal callback to notify engine
-          if (this.onEnded) this.onEnded();
+          if (this.loop) {
+            this.seek(0);
+          } else {
+            this._isPlaying = false;
+            // Trigger internal callback to notify engine
+            if (this.onEnded) this.onEnded();
+          }
         }
       };
 
-      this.workletNode.connect(this.gainNode);
+      this.workletNode.connect(this.delayNode);
       this.isReady = true;
       console.log(`[${this.role}Player] Worklet initialized.`);
     } catch (err) {
@@ -215,13 +232,27 @@ class AudioPlayer {
     }
   }
 
+  setDelay(seconds: number) {
+    // Smooth transition
+    this.delayNode.delayTime.setTargetAtTime(seconds, this.audioContext.currentTime, 0.05);
+  }
+
   // Getters
   get currentTime() { return this._currentTime; }
   get duration() { return this._duration; }
   get isPlaying() { return this._isPlaying; }
+
+  dispose() {
+    this.stop();
+    this.audioContext.close();
+  }
+
+  get sampleRate() {
+    return this.audioContext.sampleRate;
+  }
 }
 
-class DualAudioEngine implements AudioEngine {
+export class DualAudioEngine implements AudioEngine {
   private streamPlayer: AudioPlayer;
   private headphonePlayer: AudioPlayer;
 
@@ -250,7 +281,9 @@ class DualAudioEngine implements AudioEngine {
   }
 
   private toFileUrl(filePath: string): string {
-    if (filePath.startsWith('file://')) return filePath;
+    if (filePath.startsWith('file://') || filePath.startsWith('http://') || filePath.startsWith('https://') || filePath.startsWith('blob:')) {
+      return filePath;
+    }
     const normalized = filePath.replace(/\\/g, '/');
     return `file:///${encodeURI(normalized.startsWith('/') ? normalized.slice(1) : normalized)}`;
   }
@@ -428,11 +461,41 @@ class DualAudioEngine implements AudioEngine {
   setPlaybackTransform(transform: PlaybackTransform): void {
     this.transform = transform;
     this.streamPlayer.setTransform(transform);
+    this.streamPlayer.setTransform(transform);
     this.headphonePlayer.setTransform(transform);
+  }
+
+  setOffset(offsetMs: number): void {
+    // offsetMs > 0 => Delay Monitor (Headphone)
+    // offsetMs < 0 => Delay Stream
+    const abs = Math.abs(offsetMs) / 1000;
+
+    if (offsetMs > 0) {
+      this.headphonePlayer.setDelay(abs);
+      this.streamPlayer.setDelay(0);
+    } else {
+      this.headphonePlayer.setDelay(0);
+      this.streamPlayer.setDelay(abs);
+      this.streamPlayer.setDelay(abs);
+    }
+  }
+
+  setLoop(loop: boolean): void {
+    this.streamPlayer.loop = loop;
+    this.headphonePlayer.loop = loop;
   }
 
   getPlaybackTransform(): PlaybackTransform {
     return this.transform;
+  }
+
+  dispose() {
+    this.streamPlayer.dispose();
+    this.headphonePlayer.dispose();
+  }
+
+  getSampleRate(role: OutputRole): number {
+    return role === 'stream' ? this.streamPlayer.sampleRate : this.headphonePlayer.sampleRate;
   }
 }
 
