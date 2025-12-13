@@ -6,7 +6,7 @@ import TopBar from './components/TopBar';
 import QueuePanel from './components/QueuePanel';
 import AddSongSidebar from './components/AddSongSidebar';
 import audioEngine, { OutputRole } from './audio/AudioEngine';
-import { loadOutputDevicePreferences, saveOutputDevicePreferences } from './settings/devicePreferences';
+import { loadOutputDevicePreferences, saveOutputDevicePreferences, getAudioOffset } from './settings/devicePreferences';
 import './App.css';
 import { LibraryProvider, useLibrary } from './contexts/LibraryContext';
 import { QueueProvider, useQueue } from './contexts/QueueContext';
@@ -106,6 +106,10 @@ function AppContent() {
     audioEngine.setOutputDevice('headphone', saved.headphoneDeviceId ?? null).catch((err) => {
       console.warn('[AudioEngine] Failed to apply saved headphone device', saved.headphoneDeviceId, err);
     });
+
+    // Apply saved offset
+    const savedOffset = getAudioOffset(saved.streamDeviceId ?? null, saved.headphoneDeviceId ?? null);
+    audioEngine.setOffset(savedOffset);
   }, []);
 
   // Always send update if state changes, even if no track is playing (e.g. waiting state)
@@ -152,6 +156,10 @@ function AppContent() {
 
     try {
       await audioEngine.setOutputDevice(role, deviceId);
+
+      // Update offset for the new pair
+      const offset = getAudioOffset(next.streamDeviceId, next.headphoneDeviceId);
+      audioEngine.setOffset(offset);
     } catch (err) {
       console.error(`[Settings] Failed to set output device for ${role}`, deviceId, err);
     }
