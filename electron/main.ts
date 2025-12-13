@@ -469,7 +469,7 @@ const OVERLAY_PORT = 10001
 const server = http.createServer((req, res) => {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
 
   if (req.method === 'OPTIONS') {
@@ -576,10 +576,85 @@ const server = http.createServer((req, res) => {
     return
   }
 
+  if (req.url === '/batch-metadata' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk.toString());
+    req.on('end', async () => {
+      try {
+        const { ids } = JSON.parse(body);
+        if (!Array.isArray(ids)) {
+          res.writeHead(400);
+          res.end('Invalid IDs');
+          return;
+        }
+
+        // We might need loadAllSongs to ensure cache is populated if getting by ID relies on memory
+        // But getSongById usually reads from a map. loadAllSongs might be needed if strictly cold.
+        // Assuming the main process has the library loaded or we can load it.
+        // getSongById isn't exported as a standalone usually, it's often inside the closure or class.
+        // Wait, looking at main.ts imports: "import { addLocalSong ...} from './songLibrary'".
+        // Let's check songLibrary exports.
+        // If getSongById isn't available, we might need to use loadAllSongs and filter.
+
+        const { loadAllSongs } = await import('./songLibrary');
+        const allSongs = await loadAllSongs();
+        const map = new Map(allSongs.map(s => [s.id, s]));
+
+        const results = ids.map(id => {
+          const s = map.get(id);
+          if (!s) return null;
+          return { id: s.id, title: s.title, artist: s.artist };
+        });
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(results));
+      } catch (e) {
+        console.error('[OverlayServer] Failed to fetch metadata', e);
+        res.writeHead(500);
+        res.end('Server Error');
+      }
+    });
+    return;
+  }
+
   // If in Dev mode, redirect to Vite server for the overlay page
   if (process.env.VITE_DEV_SERVER_URL) {
+    const devUrl = process.env.VITE_DEV_SERVER_URL.endsWith('/')
+      ? process.env.VITE_DEV_SERVER_URL
+      : `${process.env.VITE_DEV_SERVER_URL}/`;
+
+    console.log('[OverlayServer] Dev Redirect Check:', req.url);
+
+    if (req.url?.startsWith('/obs/setlist') || req.url === '/setlist') {
+      console.log('[OverlayServer] Redirecting to Setlist');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.writeHead(302, { 'Location': `${devUrl}#/setlist` })
+      res.end()
+      return
+    }
+    if (req.url?.startsWith('/obs/all') || req.url === '/all') {
+      console.log('[OverlayServer] Redirecting to Combined');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.writeHead(302, { 'Location': `${devUrl}#/all` })
+      res.end()
+      return
+    }
     if (req.url === '/' || req.url === '/overlay' || req.url?.startsWith('/#/')) {
-      res.writeHead(302, { 'Location': `${process.env.VITE_DEV_SERVER_URL}#/overlay` })
+      console.log('[OverlayServer] Redirecting to Default Overlay');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.writeHead(302, { 'Location': `${devUrl}#/overlay` })
+      res.end()
+      return
+    }
+    // Also support readable /lyrics or /obs/lyrics -> redirect to overlay
+    if (req.url?.startsWith('/lyrics') || req.url?.startsWith('/obs/lyrics')) {
+      console.log('[OverlayServer] Redirecting to Lyrics');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.writeHead(302, { 'Location': `${devUrl}#/overlay` })
       res.end()
       return
     }
@@ -590,7 +665,7 @@ const server = http.createServer((req, res) => {
   let filePath = path.join(RENDERER_DIST, req.url === '/' ? 'index.html' : req.url || 'index.html')
 
   // If requesting root or /overlay, serve index.html
-  if (req.url === '/' || req.url === '/overlay') {
+  if (req.url === '/' || req.url === '/overlay' || req.url === '/obs/setlist' || req.url === '/obs/all' || req.url === '/obs/lyrics' || req.url === '/lyrics') {
     filePath = path.join(RENDERER_DIST, 'index.html')
   }
 

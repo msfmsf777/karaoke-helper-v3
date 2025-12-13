@@ -352,9 +352,9 @@ app.whenReady().then(async () => {
 const clients = /* @__PURE__ */ new Set();
 const OVERLAY_PORT = 10001;
 const server = http.createServer((req, res) => {
-  var _a, _b;
+  var _a, _b, _c, _d, _e, _f;
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") {
     res.writeHead(204);
@@ -440,15 +440,73 @@ const server = http.createServer((req, res) => {
     });
     return;
   }
+  if (req.url === "/batch-metadata" && req.method === "POST") {
+    let body = "";
+    req.on("data", (chunk) => body += chunk.toString());
+    req.on("end", async () => {
+      try {
+        const { ids } = JSON.parse(body);
+        if (!Array.isArray(ids)) {
+          res.writeHead(400);
+          res.end("Invalid IDs");
+          return;
+        }
+        const { loadAllSongs } = await import("./songLibrary-DokIiX9f.js").then((n) => n.a2);
+        const allSongs = await loadAllSongs();
+        const map = new Map(allSongs.map((s) => [s.id, s]));
+        const results = ids.map((id) => {
+          const s = map.get(id);
+          if (!s) return null;
+          return { id: s.id, title: s.title, artist: s.artist };
+        });
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(results));
+      } catch (e) {
+        console.error("[OverlayServer] Failed to fetch metadata", e);
+        res.writeHead(500);
+        res.end("Server Error");
+      }
+    });
+    return;
+  }
   if (process.env.VITE_DEV_SERVER_URL) {
-    if (req.url === "/" || req.url === "/overlay" || ((_b = req.url) == null ? void 0 : _b.startsWith("/#/"))) {
-      res.writeHead(302, { "Location": `${process.env.VITE_DEV_SERVER_URL}#/overlay` });
+    const devUrl = process.env.VITE_DEV_SERVER_URL.endsWith("/") ? process.env.VITE_DEV_SERVER_URL : `${process.env.VITE_DEV_SERVER_URL}/`;
+    console.log("[OverlayServer] Dev Redirect Check:", req.url);
+    if (((_b = req.url) == null ? void 0 : _b.startsWith("/obs/setlist")) || req.url === "/setlist") {
+      console.log("[OverlayServer] Redirecting to Setlist");
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.writeHead(302, { "Location": `${devUrl}#/setlist` });
+      res.end();
+      return;
+    }
+    if (((_c = req.url) == null ? void 0 : _c.startsWith("/obs/all")) || req.url === "/all") {
+      console.log("[OverlayServer] Redirecting to Combined");
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.writeHead(302, { "Location": `${devUrl}#/all` });
+      res.end();
+      return;
+    }
+    if (req.url === "/" || req.url === "/overlay" || ((_d = req.url) == null ? void 0 : _d.startsWith("/#/"))) {
+      console.log("[OverlayServer] Redirecting to Default Overlay");
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.writeHead(302, { "Location": `${devUrl}#/overlay` });
+      res.end();
+      return;
+    }
+    if (((_e = req.url) == null ? void 0 : _e.startsWith("/lyrics")) || ((_f = req.url) == null ? void 0 : _f.startsWith("/obs/lyrics"))) {
+      console.log("[OverlayServer] Redirecting to Lyrics");
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.writeHead(302, { "Location": `${devUrl}#/overlay` });
       res.end();
       return;
     }
   }
   let filePath = path.join(RENDERER_DIST, req.url === "/" ? "index.html" : req.url || "index.html");
-  if (req.url === "/" || req.url === "/overlay") {
+  if (req.url === "/" || req.url === "/overlay" || req.url === "/obs/setlist" || req.url === "/obs/all" || req.url === "/obs/lyrics" || req.url === "/lyrics") {
     filePath = path.join(RENDERER_DIST, "index.html");
   }
   const extname = path.extname(filePath);

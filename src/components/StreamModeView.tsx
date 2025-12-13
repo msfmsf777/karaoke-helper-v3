@@ -1,16 +1,16 @@
+
 import React, { useEffect, useState } from 'react';
 import LyricsOverlay from './LyricsOverlay';
 import StreamSetlist from './StreamSetlist';
 import LyricStylePopup from './LyricStylePopup';
 import { SongMeta, EnrichedLyricLine } from '../../shared/songTypes';
 import { EditableLyricLine, linesFromRawText, parseLrc, readRawLyrics, readSyncedLyrics } from '../library/lyrics';
-import audioEngine from '../audio/AudioEngine';
 import { useQueue } from '../contexts/QueueContext';
 import { useLibrary } from '../contexts/LibraryContext';
 import { useUserData } from '../contexts/UserDataContext';
 import { isJapanese } from '../utils/japaneseDetection';
-import ObsLinkIcon from '../assets/icons/obs_link.svg';
 import WindowControls from './WindowControls';
+import StreamControlDropdown from './StreamControlDropdown';
 
 interface StreamModeViewProps {
   currentTime: number;
@@ -27,9 +27,10 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
   const [lyricsStatus, setLyricsStatus] = useState<SongMeta['lyrics_status']>('none');
   const [showStylePopup, setShowStylePopup] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Japanese Enrichment State
-  const [isJp, setIsJp] = useState(false);
+
   const [enrichedLines, setEnrichedLines] = useState<EnrichedLyricLine[] | null>(null);
 
   const currentSong = currentSongId ? getSongById(currentSongId) : null;
@@ -37,6 +38,11 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
   // Derive enabled states from preferences or default to false
   const furiganaEnabled = currentSongId ? (songPreferences?.[currentSongId]?.furigana ?? false) : false;
   const romajiEnabled = currentSongId ? (songPreferences?.[currentSongId]?.romaji ?? false) : false;
+
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), 2000);
+  };
 
   const toggleFurigana = () => {
     if (currentSongId) {
@@ -76,7 +82,7 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
     if (!currentSongId) {
       setLines([]);
       setLyricsStatus('none');
-      setIsJp(false);
+
       setEnrichedLines(null);
       return;
     }
@@ -110,7 +116,7 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
 
         if (status !== 'none') {
           const detectedJp = isJapanese(rawText);
-          setIsJp(detectedJp);
+
 
           if (detectedJp && window.khelper?.lyrics?.enrichLyrics) {
             window.khelper.lyrics.enrichLyrics(parsedLines.map(l => l.text))
@@ -122,7 +128,7 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
             setEnrichedLines(null);
           }
         } else {
-          setIsJp(false);
+
           setEnrichedLines(null);
         }
 
@@ -131,7 +137,7 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
         if (active) {
           setLines([]);
           setLyricsStatus('none');
-          setIsJp(false);
+
           setEnrichedLines(null);
         }
       }
@@ -155,6 +161,43 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
       // @ts-ignore
       WebkitAppRegion: 'drag',
     }}>
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div style={{
+          position: 'absolute',
+          top: '24px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: 'rgba(20, 20, 20, 0.9)',
+          border: '1px solid var(--accent-color, #00e5ff)',
+          color: '#fff',
+          padding: '8px 24px',
+          borderRadius: '8px',
+          fontSize: '14px',
+          fontWeight: '500',
+          zIndex: 1000,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+          backdropFilter: 'blur(8px)',
+          pointerEvents: 'none',
+          animation: 'toastSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          whiteSpace: 'nowrap'
+        }}>
+          <style>{`
+            @keyframes toastSlideDown {
+              from { opacity: 0; transform: translate(-50%, -20px); }
+              to { opacity: 1; transform: translate(-50%, 0); }
+            }
+          `}</style>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-color, #00e5ff)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          {toastMessage}
+        </div>
+      )}
+
       {/* Window Controls (Fade in on hover) */}
       <div
         style={{
@@ -263,34 +306,9 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
               WebkitAppRegion: 'no-drag',
             }}
           >
-            <button
-              onClick={() => {
-                const url = 'http://localhost:10001/#/overlay';
-                navigator.clipboard.writeText(url);
-                alert('已複製 OBS 網址: ' + url);
-              }}
-              title="複製 OBS 網址"
-              className="stream-control-btn"
-              style={{
-                width: '32px',
-                height: '32px',
-                backgroundColor: 'rgba(0,0,0,0.5)',
-                color: '#fff',
-                border: '1px solid rgba(255,255,255,0.2)',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backdropFilter: 'blur(4px)',
-                transition: 'background-color 0.2s',
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-color)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.5)'}
-            >
-              {/* OBS Icon */}
-              <img src={ObsLinkIcon} alt="OBS Link" style={{ width: '20px', height: '20px', filter: 'invert(1)' }} />
-            </button>
+            {/* New Dropdown */}
+            <StreamControlDropdown onCopy={() => showToast('已複製')} />
+
             <button
               onClick={() => setShowStylePopup(!showStylePopup)}
               title="歌詞樣式設定"
@@ -333,99 +351,39 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
             />
           )}
 
-          {/* Plain Text Tag */}
-          {lyricsStatus === 'text_only' && (
+          {/* No Lyrics Placeholder */}
+          {lyricsStatus === 'none' && (
             <div
               style={{
-                position: 'absolute',
-                top: '16px',
-                left: '16px',
-                padding: '4px 8px',
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                color: '#aaa',
-                fontSize: '12px',
-                borderRadius: '4px',
-                zIndex: 20,
-                pointerEvents: 'none',
-              }}
-            >
-              純文字
-            </div>
-          )}
-
-          {/* Japanese Enrichment Controls */}
-          {isJp && (
-            <div
-              style={{
-                position: 'absolute',
-                bottom: '16px',
-                right: '16px',
+                width: '100%',
+                height: '100%',
                 display: 'flex',
-                gap: '12px',
-                zIndex: 20,
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#444',
+                fontSize: '14px',
               }}
             >
-              <button
-                onClick={toggleFurigana}
-                title="顯示假名 (Furigana)"
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  backgroundColor: furiganaEnabled ? 'var(--accent-color)' : 'rgba(0,0,0,0.5)',
-                  color: '#fff',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backdropFilter: 'blur(4px)',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                }}
-              >
-                あ
-              </button>
-              <button
-                onClick={toggleRomaji}
-                title="顯示羅馬音 (Romaji)"
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  backgroundColor: romajiEnabled ? 'var(--accent-color)' : 'rgba(0,0,0,0.5)',
-                  color: '#fff',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backdropFilter: 'blur(4px)',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  lineHeight: 1,
-                }}
-              >
-                a
-              </button>
+              無歌詞
             </div>
           )}
 
-          <LyricsOverlay
-            status={lyricsStatus}
-            lines={lines}
-            enrichedLines={enrichedLines}
-            furiganaEnabled={furiganaEnabled}
-            romajiEnabled={romajiEnabled}
-            currentTime={currentTime}
-            className="stream-lyrics-container"
-            onLineClick={(time) => {
-              audioEngine.seek(time);
-            }}
-            styleConfig={lyricStyles}
-            onScrollChange={handleScrollChange}
-          />
-
+          {/* Actual Lyrics Component */}
+          {lyricsStatus !== 'none' && (
+            <LyricsOverlay
+              status={lyricsStatus}
+              lines={lines}
+              enrichedLines={enrichedLines}
+              currentTime={currentTime}
+              styleConfig={lyricStyles}
+              furiganaEnabled={furiganaEnabled}
+              romajiEnabled={romajiEnabled}
+              onToggleFurigana={toggleFurigana}
+              onToggleRomaji={toggleRomaji}
+              onScrollChange={handleScrollChange}
+              showControls={true}
+            />
+          )}
         </div>
       </div>
     </div>

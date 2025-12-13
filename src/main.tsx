@@ -4,15 +4,30 @@ import App from './App.tsx'
 import OverlayWindow from './components/OverlayWindow.tsx'
 import './index.css'
 
-const isOverlay = window.location.hash === '#/overlay' || window.location.pathname === '/overlay';
+import SetlistOverlayWindow from './components/SetlistOverlayWindow.tsx'
+
+const path = window.location.pathname;
+const hash = window.location.hash;
+
+console.log('[Main] Routing Check:', { path, hash });
+
+const isSetlist = path === '/setlist' || path.startsWith('/obs/setlist') || hash.includes('/setlist');
+const isLyrics = path === '/lyrics' || path.startsWith('/obs/lyrics') || path === '/overlay' || hash.includes('/overlay');
+
+// Priority: Setlist > Lyrics default
+const isOverlay = isSetlist || isLyrics;
 
 if (isOverlay) {
   document.body.style.backgroundColor = 'transparent';
 }
 
+let ComponentToRender: React.ComponentType = App;
+if (isSetlist) ComponentToRender = SetlistOverlayWindow;
+else if (isOverlay) ComponentToRender = OverlayWindow;
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    {isOverlay ? <OverlayWindow /> : <App />}
+    <ComponentToRender />
   </React.StrictMode>,
 )
 

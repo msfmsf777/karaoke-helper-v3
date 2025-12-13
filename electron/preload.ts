@@ -31,8 +31,8 @@ contextBridge.exposeInMainWorld('api', {
   openAudioFileDialog: () => ipcRenderer.invoke('dialog:open-audio-file'),
   openExternal: (url: string) => ipcRenderer.invoke('shell:open-external', url),
   openOverlayWindow: () => ipcRenderer.send('window:open-overlay'),
-  sendOverlayUpdate: (payload: { songId: string; currentTime: number; isPlaying: boolean }) => ipcRenderer.send('overlay:update', payload),
-  subscribeOverlayUpdates: (callback: (payload: { songId: string; currentTime: number; isPlaying: boolean }) => void) => {
+  sendOverlayUpdate: (payload: { songId: string; currentTime: number; isPlaying: boolean; queue?: string[]; currentIndex?: number; isStreamWaiting?: boolean }) => ipcRenderer.send('overlay:update', payload),
+  subscribeOverlayUpdates: (callback: (payload: { songId: string; currentTime: number; isPlaying: boolean; queue?: string[]; currentIndex?: number; isStreamWaiting?: boolean }) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, payload: any) => callback(payload)
     ipcRenderer.on('overlay:update', listener)
     return () => ipcRenderer.off('overlay:update', listener)
