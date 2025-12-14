@@ -137,6 +137,18 @@ contextBridge.exposeInMainWorld('khelper', {
     saveSettings: (settings: any): Promise<void> => ipcRenderer.invoke('userData:save-settings', settings),
     loadSettings: (): Promise<any> => ipcRenderer.invoke('userData:load-settings'),
   },
+  updater: {
+    check: () => ipcRenderer.invoke('updater:check'),
+    download: () => ipcRenderer.invoke('updater:download'),
+    install: () => ipcRenderer.invoke('updater:install'),
+    ignore: (version: string) => ipcRenderer.invoke('updater:ignore', version),
+    getStatus: () => ipcRenderer.invoke('updater:get-status'),
+    onStatus: (callback: (status: any) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, payload: any) => callback(payload)
+      ipcRenderer.on('updater:status', listener)
+      return () => ipcRenderer.off('updater:status', listener)
+    },
+  },
   windowOps: {
     minimize: () => ipcRenderer.send('window:minimize'),
     maximize: () => ipcRenderer.send('window:maximize'),

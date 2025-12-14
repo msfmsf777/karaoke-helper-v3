@@ -155,28 +155,28 @@ ipcMain.handle("dialog:open-audio-file", async () => {
   return filePaths[0];
 });
 ipcMain.handle("library:add-local-song", async (_event, payload) => {
-  const { addLocalSong } = await import("./songLibrary-DokIiX9f.js").then((n) => n.a2);
+  const { addLocalSong } = await import("./songLibrary-DuH3-KfR.js").then((n) => n.a1);
   return addLocalSong(payload);
 });
 ipcMain.handle("library:load-all", async () => {
-  const { loadAllSongs } = await import("./songLibrary-DokIiX9f.js").then((n) => n.a2);
+  const { loadAllSongs } = await import("./songLibrary-DuH3-KfR.js").then((n) => n.a1);
   const songs = await loadAllSongs();
   return songs;
 });
 ipcMain.handle("library:get-song-file-path", async (_event, id) => {
-  const { getSongFilePath } = await import("./songLibrary-DokIiX9f.js").then((n) => n.a2);
+  const { getSongFilePath } = await import("./songLibrary-DuH3-KfR.js").then((n) => n.a1);
   return getSongFilePath(id);
 });
 ipcMain.handle("library:get-original-song-file-path", async (_event, id) => {
-  const { getOriginalSongFilePath } = await import("./songLibrary-DokIiX9f.js").then((n) => n.a2);
+  const { getOriginalSongFilePath } = await import("./songLibrary-DuH3-KfR.js").then((n) => n.a1);
   return getOriginalSongFilePath(id);
 });
 ipcMain.handle("library:get-separated-song-paths", async (_event, id) => {
-  const { getSeparatedSongPaths } = await import("./songLibrary-DokIiX9f.js").then((n) => n.a2);
+  const { getSeparatedSongPaths } = await import("./songLibrary-DuH3-KfR.js").then((n) => n.a1);
   return getSeparatedSongPaths(id);
 });
 ipcMain.handle("library:get-base-path", async () => {
-  const { getSongsBaseDir } = await import("./songLibrary-DokIiX9f.js").then((n) => n.a2);
+  const { getSongsBaseDir } = await import("./songLibrary-DuH3-KfR.js").then((n) => n.a1);
   return getSongsBaseDir();
 });
 ipcMain.handle("library:delete-song", async (_event, id) => {
@@ -190,40 +190,40 @@ ipcMain.handle("library:delete-song", async (_event, id) => {
     cancelId: 0
   });
   if (result.response === 1) {
-    const { deleteSong } = await import("./songLibrary-DokIiX9f.js").then((n) => n.a2);
+    const { deleteSong } = await import("./songLibrary-DuH3-KfR.js").then((n) => n.a1);
     await deleteSong(id);
-    const { downloadManager } = await import("./downloadJobs-BVaKNl37.js");
+    const { downloadManager } = await import("./downloadJobs-D95PfcNm.js");
     downloadManager.removeJobBySongId(id);
     return true;
   }
   return false;
 });
 ipcMain.handle("library:update-song", async (_event, payload) => {
-  const { updateSong } = await import("./songLibrary-DokIiX9f.js").then((n) => n.a2);
+  const { updateSong } = await import("./songLibrary-DuH3-KfR.js").then((n) => n.a1);
   return updateSong(payload.id, payload.updates);
 });
 ipcMain.handle("jobs:queue-separation", async (_event, songId, quality) => {
-  const { queueSeparationJob } = await import("./separationJobs-DGgmD3Yd.js");
+  const { queueSeparationJob } = await import("./separationJobs-CbQdaBvW.js");
   return queueSeparationJob(songId, quality);
 });
 ipcMain.handle("jobs:get-all", async () => {
-  const { getAllJobs } = await import("./separationJobs-DGgmD3Yd.js");
+  const { getAllJobs } = await import("./separationJobs-CbQdaBvW.js");
   return getAllJobs();
 });
 ipcMain.handle("lyrics:read-raw", async (_event, songId) => {
-  const { readRawLyrics } = await import("./lyrics-DLfrVUtW.js");
+  const { readRawLyrics } = await import("./lyrics-AriVWzPm.js");
   return readRawLyrics(songId);
 });
 ipcMain.handle("lyrics:read-synced", async (_event, songId) => {
-  const { readSyncedLyrics } = await import("./lyrics-DLfrVUtW.js");
+  const { readSyncedLyrics } = await import("./lyrics-AriVWzPm.js");
   return readSyncedLyrics(songId);
 });
 ipcMain.handle("lyrics:write-raw", async (_event, payload) => {
-  const { writeRawLyrics } = await import("./lyrics-DLfrVUtW.js");
+  const { writeRawLyrics } = await import("./lyrics-AriVWzPm.js");
   return writeRawLyrics(payload.songId, payload.content);
 });
 ipcMain.handle("lyrics:write-synced", async (_event, payload) => {
-  const { writeSyncedLyrics } = await import("./lyrics-DLfrVUtW.js");
+  const { writeSyncedLyrics } = await import("./lyrics-AriVWzPm.js");
   return writeSyncedLyrics(payload.songId, payload.content);
 });
 ipcMain.handle("lyrics:enrich", async (_event, lines) => {
@@ -271,7 +271,7 @@ ipcMain.handle("userData:load-settings", async () => {
   return loadSettings();
 });
 ipcMain.on("jobs:subscribe", async (event, subscriptionId) => {
-  const { subscribeJobUpdates } = await import("./separationJobs-DGgmD3Yd.js");
+  const { subscribeJobUpdates } = await import("./separationJobs-CbQdaBvW.js");
   const wc = event.sender;
   const disposer = subscribeJobUpdates((jobs) => wc.send("jobs:updated", jobs));
   let disposers = jobSubscriptions.get(wc.id);
@@ -298,7 +298,7 @@ ipcMain.on("jobs:unsubscribe", (event, subscriptionId) => {
   }
 });
 async function getDownloadManager() {
-  const { downloadManager } = await import("./downloadJobs-BVaKNl37.js");
+  const { downloadManager } = await import("./downloadJobs-D95PfcNm.js");
   downloadManager.onLibraryChanged = () => {
     BrowserWindow.getAllWindows().forEach((w) => {
       w.webContents.send("library:changed");
@@ -347,6 +347,8 @@ ipcMain.on("downloads:unsubscribe", (event, subscriptionId) => {
 });
 app.whenReady().then(async () => {
   console.log("[App] userData path:", app.getPath("userData"));
+  const { initUpdater } = await import("./updater-DFfRFRgt.js");
+  initUpdater();
   createWindow();
 });
 const clients = /* @__PURE__ */ new Set();
@@ -402,7 +404,7 @@ const server = http.createServer((req, res) => {
       res.end("Missing songId");
       return;
     }
-    import("./lyrics-DLfrVUtW.js").then(({ readSyncedLyrics, readRawLyrics }) => {
+    import("./lyrics-AriVWzPm.js").then(({ readSyncedLyrics, readRawLyrics }) => {
       Promise.all([
         readSyncedLyrics(songId),
         readRawLyrics(songId)
@@ -451,7 +453,7 @@ const server = http.createServer((req, res) => {
           res.end("Invalid IDs");
           return;
         }
-        const { loadAllSongs } = await import("./songLibrary-DokIiX9f.js").then((n) => n.a2);
+        const { loadAllSongs } = await import("./songLibrary-DuH3-KfR.js").then((n) => n.a1);
         const allSongs = await loadAllSongs();
         const map = new Map(allSongs.map((s) => [s.id, s]));
         const results = ids.map((id) => {

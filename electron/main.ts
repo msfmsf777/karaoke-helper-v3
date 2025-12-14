@@ -454,6 +454,11 @@ ipcMain.on('downloads:unsubscribe', (event, subscriptionId: string) => {
 
 app.whenReady().then(async () => {
   console.log('[App] userData path:', app.getPath('userData'))
+
+  // Initialize Updater
+  const { initUpdater } = await import('./updater')
+  initUpdater()
+
   // Lazy load this too if needed, or just remove if not critical
   // console.log('[Library] base songs dir:', getSongsBaseDir()) 
   createWindow()

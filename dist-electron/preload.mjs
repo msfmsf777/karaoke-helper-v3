@@ -115,6 +115,18 @@ electron.contextBridge.exposeInMainWorld("khelper", {
     saveSettings: (settings) => electron.ipcRenderer.invoke("userData:save-settings", settings),
     loadSettings: () => electron.ipcRenderer.invoke("userData:load-settings")
   },
+  updater: {
+    check: () => electron.ipcRenderer.invoke("updater:check"),
+    download: () => electron.ipcRenderer.invoke("updater:download"),
+    install: () => electron.ipcRenderer.invoke("updater:install"),
+    ignore: (version) => electron.ipcRenderer.invoke("updater:ignore", version),
+    getStatus: () => electron.ipcRenderer.invoke("updater:get-status"),
+    onStatus: (callback) => {
+      const listener = (_event, payload) => callback(payload);
+      electron.ipcRenderer.on("updater:status", listener);
+      return () => electron.ipcRenderer.off("updater:status", listener);
+    }
+  },
   windowOps: {
     minimize: () => electron.ipcRenderer.send("window:minimize"),
     maximize: () => electron.ipcRenderer.send("window:maximize"),
