@@ -59,8 +59,8 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "YOUR_GITHUB_USERNAME",
-        "repo": "YOUR_REPO_NAME"
+        "owner": "msfmsf777",
+        "repo": "karaoke-helper-v3"
       }
     ],
     "win": {
