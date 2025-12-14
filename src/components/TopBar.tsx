@@ -15,6 +15,102 @@ interface TopBarProps {
   onSearch?: (term: string) => void;
 }
 
+import { useUpdater } from '../contexts/UpdaterContext';
+import UpdatePopup from './UpdatePopup';
+
+import UpdateIconBase from '../assets/icons/update_base.svg';
+
+const UpdateIndicator: React.FC = () => {
+  const { status, progress } = useUpdater();
+  const [showPopup, setShowPopup] = useState(false);
+
+  // Show if available, downloading, or downloaded
+  const isVisible = ['available', 'downloading', 'downloaded'].includes(status);
+
+  if (!isVisible) return null;
+
+  return (
+    <>
+      <button
+        onClick={() => setShowPopup(true)}
+        title={status === 'downloading' ? '下載中...' : status === 'downloaded' ? '點擊安裝更新' : '有新版本可用'}
+        style={{
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          padding: '8px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          opacity: 0.8,
+          transition: 'opacity 0.2s',
+          position: 'relative',
+          gap: '0px' // Space for progress bar
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+        onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
+      >
+        <div style={{ position: 'relative', display: 'flex' }}>
+          {/* Base Icon - Use imported SVG */}
+          <img
+            src={UpdateIconBase}
+            alt="Update"
+            style={{
+              width: '24px',
+              height: '24px',
+              display: 'block',
+              // No filter needed as user provided green SVG
+            }}
+          />
+
+          {/* Checkmark Badge for Ready State */}
+          {status === 'downloaded' && (
+            <div style={{
+              position: 'absolute',
+              bottom: '-2px',
+              right: '-2px',
+              width: '12px',
+              height: '12px',
+              backgroundColor: '#4caf50',
+              borderRadius: '50%',
+              border: '2px solid var(--bg-sidebar)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+          )}
+        </div>
+
+        {/* Downloading Progress Bar */}
+        {status === 'downloading' && (
+          <div style={{
+            width: '24px',
+            height: '3px',
+            backgroundColor: 'rgba(255,255,255,0.2)',
+            borderRadius: '2px',
+            overflow: 'hidden',
+            marginTop: '1px'
+          }}>
+            <div style={{
+              height: '100%',
+              width: `${progress?.percent || 0}%`,
+              backgroundColor: '#4caf50', // Green progress bar
+              transition: 'width 0.2s'
+            }} />
+          </div>
+        )}
+      </button>
+      {showPopup && <UpdatePopup onClose={() => setShowPopup(false)} />}
+    </>
+  );
+};
+
+
 const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpenAbout, onSearch }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isFocused, setIsFocused] = useState(false);
@@ -286,6 +382,7 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
         // @ts-ignore
         WebkitAppRegion: 'no-drag'
       }}>
+        <UpdateIndicator />
         <button
           onClick={onOpenProcessing}
           title="處理中任務"

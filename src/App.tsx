@@ -11,6 +11,7 @@ import './App.css';
 import { LibraryProvider, useLibrary } from './contexts/LibraryContext';
 import { QueueProvider, useQueue } from './contexts/QueueContext';
 import { UserDataProvider } from './contexts/UserDataContext';
+import { UpdaterProvider } from './contexts/UpdaterContext';
 import SkeletonSongList from './components/skeletons/SkeletonSongList';
 
 // Lazy load heavy components
@@ -378,7 +379,9 @@ function App() {
     <LibraryProvider>
       <QueueProvider>
         <UserDataProvider>
-          <AppContent />
+          <UpdaterProvider>
+            <AppContent />
+          </UpdaterProvider>
         </UserDataProvider>
       </QueueProvider>
     </LibraryProvider>

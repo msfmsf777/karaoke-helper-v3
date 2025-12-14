@@ -71,6 +71,7 @@ export interface LyricStyleConfig {
 
 export interface UserSettings {
     separationQuality: 'high' | 'normal' | 'fast';
+    ignoredVersion?: string;
     lyricStyles?: LyricStyleConfig;
 }
 

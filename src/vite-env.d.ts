@@ -94,7 +94,14 @@ interface Window {
       isMaximized: () => Promise<boolean>;
       onMaximized: (callback: () => void) => () => void;
       onUnmaximized: (callback: () => void) => () => void;
+      updater: {
+        check: () => Promise<void>;
+        download: () => Promise<void>;
+        install: () => Promise<void>;
+        ignore: (version: string) => Promise<void>;
+        getStatus: () => Promise<any>;
+        onStatus: (callback: (status: any) => void) => () => void;
+      };
     };
   };
 }
-

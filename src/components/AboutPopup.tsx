@@ -4,6 +4,8 @@ import WebIcon from '../assets/icons/web.svg';
 import XIcon from '../assets/icons/x.svg';
 import DiscordIcon from '../assets/icons/discord.svg';
 import BugIcon from '../assets/icons/bug.svg';
+import { useUpdater } from '../contexts/UpdaterContext';
+import pkg from '../../package.json';
 
 // Configuration for social links - Edit here to change links
 const SOCIAL_LINKS = [
@@ -56,6 +58,7 @@ interface AboutPopupProps {
 
 const AboutPopup: React.FC<AboutPopupProps> = ({ open, onClose }) => {
     const [visible, setVisible] = useState(false);
+    const { checkForUpdates, status } = useUpdater();
 
     useEffect(() => {
         if (open) {
@@ -110,6 +113,42 @@ const AboutPopup: React.FC<AboutPopupProps> = ({ open, onClose }) => {
                     transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
                 }}
             >
+                {/* Check Update Button (Top Left) */}
+                <button
+                    onClick={() => checkForUpdates(true)}
+                    disabled={status === 'checking' || status === 'downloading'}
+                    style={{
+                        position: 'absolute',
+                        top: '12px',
+                        left: '12px',
+                        background: 'none',
+                        border: '1px solid #444',
+                        color: '#aaa',
+                        cursor: status === 'checking' ? 'wait' : 'pointer',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        fontSize: '11px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'background-color 0.2s, color 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                        if (status !== 'checking') {
+                            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                            e.currentTarget.style.color = '#fff';
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (status !== 'checking') {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.color = '#aaa';
+                        }
+                    }}
+                >
+                    {status === 'checking' ? '檢查中...' : '檢查更新'}
+                </button>
+
                 {/* Close Button */}
                 <button
                     onClick={onClose}
@@ -157,7 +196,7 @@ const AboutPopup: React.FC<AboutPopupProps> = ({ open, onClose }) => {
                     KHelper V3
                 </h2>
                 <div style={{ fontSize: '13px', color: '#888', marginBottom: '20px' }}>
-                    V3.0.0-Beta
+                    V{pkg.version}
                 </div>
 
                 {/* Description */}

@@ -1,9 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, Suspense } from 'react';
 import audioEngine, { OutputRole } from '../audio/AudioEngine';
 import { useUserData } from '../contexts/UserDataContext';
 
 import CalibrationModal from './CalibrationModal';
 import { getAudioOffset } from '../settings/devicePreferences';
+
+// Lazy loading DebugUpdaterUI
+const DebugUpdaterUI = React.lazy(() => import('./DebugUpdaterUI'));
+import { useUpdater } from '../contexts/UpdaterContext';
 
 interface SettingsViewProps {
     onBack: () => void;
@@ -288,7 +292,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     </section>
 
                     {/* Section: Processing */}
-                    <section>
+                    <section style={{ marginBottom: '40px' }}>
                         <h2 style={{ margin: '0 0 16px 0', fontSize: '18px', color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: '12px' }}>
                             人聲分離品質
                         </h2>
@@ -351,6 +355,31 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                         </div>
                     </section>
 
+                    {/* Section: Software Update */}
+                    <section>
+                        <h2 style={{ margin: '0 0 16px 0', fontSize: '18px', color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: '12px' }}>
+                            軟體更新
+                        </h2>
+                        <div style={{ background: '#2a2a2a', padding: '24px', borderRadius: '12px', border: '1px solid #333' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div>
+                                    <div style={{ fontSize: '15px', color: '#fff', fontWeight: 'bold', marginBottom: '4px' }}>
+                                        檢查更新
+                                    </div>
+                                    <LastCheckedText />
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                    {/* Dev Mode Debug UI embedded */}
+                                    <Suspense fallback={null}>
+                                        <DebugUpdaterUI inline />
+                                    </Suspense>
+                                    <CheckForUpdatesButton />
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
                 </div>
             </div>
 
@@ -366,5 +395,40 @@ const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
     );
 };
+
+const LastCheckedText: React.FC = () => {
+    const { lastCheckTime } = useUpdater();
+
+    if (!lastCheckTime) return <div style={{ color: '#aaa', fontSize: '13px' }}>尚未檢查</div>;
+
+    const date = new Date(lastCheckTime);
+    const timeString = date.toLocaleString(); // Or simpler formatting
+
+    return <div style={{ color: '#aaa', fontSize: '13px' }}>上次檢查時間：{timeString}</div>;
+};
+
+// Sub-component for clean context usage
+const CheckForUpdatesButton: React.FC = () => {
+    const { checkForUpdates, status } = useUpdater();
+
+    return (
+        <button
+            onClick={() => checkForUpdates(true)}
+            disabled={status === 'checking' || status === 'downloading'}
+            style={{
+                background: 'transparent',
+                border: '1px solid #555',
+                color: '#aaa',
+                borderRadius: '8px',
+                cursor: status === 'checking' ? 'wait' : 'pointer',
+                fontSize: '14px',
+                padding: '8px 20px',
+            }}
+        >
+            {status === 'checking' ? '檢查中...' : '檢查更新'}
+        </button>
+    );
+};
+
 
 export default SettingsView;
