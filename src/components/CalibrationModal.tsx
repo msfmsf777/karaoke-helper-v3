@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import audioEngine, { DualAudioEngine, AudioEngine } from '../audio/AudioEngine';
+import audioEngine, { DualAudioEngine } from '../audio/AudioEngine';
 import { saveAudioOffset } from '../settings/devicePreferences';
 
 interface CalibrationModalProps {

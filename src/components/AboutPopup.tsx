@@ -116,7 +116,7 @@ const AboutPopup: React.FC<AboutPopupProps> = ({ open, onClose }) => {
                 {/* Check Update Button (Top Left) */}
                 <button
                     onClick={() => checkForUpdates(true)}
-                    disabled={status === 'checking' || status === 'downloading'}
+                    disabled={status === 'checking'}
                     style={{
                         position: 'absolute',
                         top: '12px',

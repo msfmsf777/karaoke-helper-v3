@@ -60,28 +60,7 @@ const DebugUpdaterUI: React.FC<DebugUpdaterUIProps> = ({ inline }) => {
                 releaseDate: new Date().toISOString(),
                 releaseNotes: '### Mock Update\nThis is a simulated update for testing UI.',
             },
-            progress: null,
             error: null
-        });
-    };
-
-    const setProgress = (val: number) => {
-        _debugSetState({
-            status: 'downloading',
-            progress: {
-                total: 100 * 1024 * 1024,
-                delta: 10 * 1024 * 1024,
-                transferred: val * 1024 * 1024,
-                percent: val,
-                bytesPerSecond: 1024 * 1024
-            }
-        });
-    };
-
-    const setDownloaded = () => {
-        _debugSetState({
-            status: 'downloaded',
-            progress: null
         });
     };
 
@@ -96,7 +75,6 @@ const DebugUpdaterUI: React.FC<DebugUpdaterUIProps> = ({ inline }) => {
         _debugSetState({
             status: 'idle',
             updateInfo: null,
-            progress: null,
             error: null
         });
     };
@@ -130,11 +108,6 @@ const DebugUpdaterUI: React.FC<DebugUpdaterUIProps> = ({ inline }) => {
             />
 
             <button onClick={setAvailable}>Simulate Available</button>
-            <div style={{ display: 'flex', gap: '4px' }}>
-                <button onClick={() => setProgress(25)}>25%</button>
-                <button onClick={() => setProgress(75)}>75%</button>
-            </div>
-            <button onClick={setDownloaded}>Simulate Ready</button>
             <button onClick={setError}>Simulate Error</button>
             <button onClick={reset}>Reset (Idle)</button>
         </div>

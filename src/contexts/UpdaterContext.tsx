@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 // Define types based on what we exposed
-export type UpdaterStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'error';
+export type UpdaterStatus = 'idle' | 'checking' | 'available' | 'error';
 
 export interface UpdateInfo {
     version: string;
@@ -14,26 +14,16 @@ export interface UpdateInfo {
     releaseDate: string;
 }
 
-export interface ProgressInfo {
-    total: number;
-    delta: number;
-    transferred: number;
-    percent: number;
-    bytesPerSecond: number;
-}
-
 interface UpdaterState {
     status: UpdaterStatus;
     updateInfo: UpdateInfo | null;
-    progress: ProgressInfo | null;
     error: string | null;
     lastCheckTime: number | null;
 }
 
 interface UpdaterContextType extends UpdaterState {
     checkForUpdates: (manual?: boolean) => void;
-    downloadUpdate: () => void;
-    quitAndInstall: () => void;
+    openReleasePage: () => void;
     ignoreVersion: (version: string) => void;
     _debugSetState?: (state: Partial<UpdaterState>) => void;
 }
@@ -44,7 +34,6 @@ export const UpdaterProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [state, setState] = useState<UpdaterState>({
         status: 'idle',
         updateInfo: null,
-        progress: null,
         error: null,
         lastCheckTime: null,
     });
@@ -66,12 +55,8 @@ export const UpdaterProvider: React.FC<{ children: React.ReactNode }> = ({ child
         window.khelper?.updater.check();
     };
 
-    const downloadUpdate = async () => {
-        window.khelper?.updater.download();
-    };
-
-    const quitAndInstall = async () => {
-        window.khelper?.updater.install();
+    const openReleasePage = async () => {
+        window.khelper?.updater.openReleasePage();
     };
 
     const ignoreVersion = async (version: string) => {
@@ -84,18 +69,11 @@ export const UpdaterProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
     };
 
-    // Logic to filter ignored version is handled in MAIN process (per MUST-1).
-    // But we still need to know IF we should show the popup for "available".
-    // Actually, Main process filters 'available' event if ignored.
-    // So if status is 'available', we know it's not ignored (or forced via manual check).
-    // So we don't need to filter here.
-
     return (
         <UpdaterContext.Provider value={{
             ...state,
             checkForUpdates,
-            downloadUpdate,
-            quitAndInstall,
+            openReleasePage,
             ignoreVersion,
             ...(import.meta.env.DEV ? { _debugSetState } : {})
         }}>

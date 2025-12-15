@@ -1,10 +1,26 @@
-
-
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import fs from 'node:fs'
+
+// Static Imports to ensure bundling
+import {
+  addLocalSong, getOriginalSongFilePath,
+  getSeparatedSongPaths,
+  getSongFilePath, getSongsBaseDir, loadAllSongs,
+  deleteSong, updateSong
+} from './songLibrary'
+import { getAllJobs, queueSeparationJob, subscribeJobUpdates } from './separationJobs'
+import { downloadManager } from './downloadJobs'
+import { readRawLyrics, readSyncedLyrics, writeRawLyrics, writeSyncedLyrics } from './lyrics'
+import { loadQueue, saveQueue } from './queue'
+import { enrichLyrics } from './lyricEnrichment'
+import {
+  loadFavorites, loadHistory, loadPlaylists, loadSettings,
+  saveFavorites, saveHistory, savePlaylists, saveSettings
+} from './userData'
+import { initUpdater } from './updater'
 
 // Disable native swipe navigation (fixes sidebar drag sliding the screen)
 app.commandLine.appendSwitch('disable-features', 'OverscrollHistoryNavigation')
@@ -23,17 +39,6 @@ process.env.APP_ROOT = path.join(__dirname, '..')
 export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
 export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron')
 export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
-
-// Lazy load these modules
-// import {
-//   addLocalSong, getOriginalSongFilePath,
-//   getSeparatedSongPaths,
-//   getSongFilePath, getSongsBaseDir, loadAllSongs
-// } from './songLibrary'
-// import { getAllJobs, queueSeparationJob, subscribeJobUpdates } from './separationJobs'
-// import { downloadManager } from './downloadJobs'
-// import { readRawLyrics, readSyncedLyrics, writeRawLyrics, writeSyncedLyrics } from './lyrics'
-// import { loadQueue, saveQueue } from './queue'
 
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST
 
@@ -223,33 +228,26 @@ ipcMain.handle('dialog:open-audio-file', async () => {
 })
 
 ipcMain.handle('library:add-local-song', async (_event, payload) => {
-  const { addLocalSong } = await import('./songLibrary')
   return addLocalSong(payload)
 })
 
 ipcMain.handle('library:load-all', async () => {
-  const { loadAllSongs } = await import('./songLibrary')
-  const songs = await loadAllSongs()
-  return songs
+  return loadAllSongs()
 })
 
 ipcMain.handle('library:get-song-file-path', async (_event, id: string) => {
-  const { getSongFilePath } = await import('./songLibrary')
   return getSongFilePath(id)
 })
 
 ipcMain.handle('library:get-original-song-file-path', async (_event, id: string) => {
-  const { getOriginalSongFilePath } = await import('./songLibrary')
   return getOriginalSongFilePath(id)
 })
 
 ipcMain.handle('library:get-separated-song-paths', async (_event, id: string) => {
-  const { getSeparatedSongPaths } = await import('./songLibrary')
   return getSeparatedSongPaths(id)
 })
 
 ipcMain.handle('library:get-base-path', async () => {
-  const { getSongsBaseDir } = await import('./songLibrary')
   return getSongsBaseDir()
 })
 
@@ -265,10 +263,8 @@ ipcMain.handle('library:delete-song', async (_event, id: string) => {
   })
 
   if (result.response === 1) {
-    const { deleteSong } = await import('./songLibrary')
     await deleteSong(id)
     // Also remove from download history if exists
-    const { downloadManager } = await import('./downloadJobs')
     downloadManager.removeJobBySongId(id)
     return true
   }
@@ -276,97 +272,78 @@ ipcMain.handle('library:delete-song', async (_event, id: string) => {
 })
 
 ipcMain.handle('library:update-song', async (_event, payload: { id: string; updates: any }) => {
-  const { updateSong } = await import('./songLibrary')
   return updateSong(payload.id, payload.updates)
 })
 
 ipcMain.handle('jobs:queue-separation', async (_event, songId: string, quality?: 'high' | 'normal' | 'fast') => {
-  const { queueSeparationJob } = await import('./separationJobs')
   return queueSeparationJob(songId, quality)
 })
 
 ipcMain.handle('jobs:get-all', async () => {
-  const { getAllJobs } = await import('./separationJobs')
   return getAllJobs()
 })
 
 ipcMain.handle('lyrics:read-raw', async (_event, songId: string) => {
-  const { readRawLyrics } = await import('./lyrics')
   return readRawLyrics(songId)
 })
 
 ipcMain.handle('lyrics:read-synced', async (_event, songId: string) => {
-  const { readSyncedLyrics } = await import('./lyrics')
   return readSyncedLyrics(songId)
 })
 
 ipcMain.handle('lyrics:write-raw', async (_event, payload: { songId: string; content: string }) => {
-  const { writeRawLyrics } = await import('./lyrics')
   return writeRawLyrics(payload.songId, payload.content)
 })
 
 ipcMain.handle('lyrics:write-synced', async (_event, payload: { songId: string; content: string }) => {
-  const { writeSyncedLyrics } = await import('./lyrics')
   return writeSyncedLyrics(payload.songId, payload.content)
 })
 
 ipcMain.handle('lyrics:enrich', async (_event, lines: string[]) => {
-  const { enrichLyrics } = await import('./lyricEnrichment')
   return enrichLyrics(lines)
 })
 
 ipcMain.handle('queue:save', async (_event, payload: { songIds: string[]; currentIndex: number }) => {
-  const { saveQueue } = await import('./queue')
   return saveQueue(payload)
 })
 
 ipcMain.handle('queue:load', async () => {
-  const { loadQueue } = await import('./queue')
   return loadQueue()
 })
 
 ipcMain.handle('userData:save-favorites', async (_event, songIds: string[]) => {
-  const { saveFavorites } = await import('./userData')
   return saveFavorites(songIds)
 })
 
 ipcMain.handle('userData:load-favorites', async () => {
-  const { loadFavorites } = await import('./userData')
   return loadFavorites()
 })
 
 ipcMain.handle('userData:save-history', async (_event, songIds: string[]) => {
-  const { saveHistory } = await import('./userData')
   return saveHistory(songIds)
 })
 
 ipcMain.handle('userData:load-history', async () => {
-  const { loadHistory } = await import('./userData')
   return loadHistory()
 })
 
 ipcMain.handle('userData:save-playlists', async (_event, playlists: any[]) => {
-  const { savePlaylists } = await import('./userData')
   return savePlaylists(playlists)
 })
 
 ipcMain.handle('userData:load-playlists', async () => {
-  const { loadPlaylists } = await import('./userData')
   return loadPlaylists()
 })
 
 ipcMain.handle('userData:save-settings', async (_event, settings: any) => {
-  const { saveSettings } = await import('./userData')
   return saveSettings(settings)
 })
 
 ipcMain.handle('userData:load-settings', async () => {
-  const { loadSettings } = await import('./userData')
   return loadSettings()
 })
 
 ipcMain.on('jobs:subscribe', async (event, subscriptionId: string) => {
-  const { subscribeJobUpdates } = await import('./separationJobs')
   const wc = event.sender
   const disposer = subscribeJobUpdates((jobs) => wc.send('jobs:updated', jobs))
 
@@ -396,8 +373,7 @@ ipcMain.on('jobs:unsubscribe', (event, subscriptionId: string) => {
 })
 
 // Helper to ensure download manager is initialized and hooked
-async function getDownloadManager() {
-  const { downloadManager } = await import('./downloadJobs')
+function getDownloadManager() {
   // Ensure hook is set (idempotent assignment)
   downloadManager.onLibraryChanged = () => {
     BrowserWindow.getAllWindows().forEach(w => {
@@ -408,22 +384,22 @@ async function getDownloadManager() {
 }
 
 ipcMain.handle('downloads:validate', async (_event, url: string) => {
-  const dm = await getDownloadManager()
+  const dm = getDownloadManager()
   return dm.validateUrl(url)
 })
 
 ipcMain.handle('downloads:queue', async (_event, url: string, quality: 'best' | 'high' | 'normal', title?: string, artist?: string, type?: import('../shared/songTypes').SongType, lyricsText?: string) => {
-  const dm = await getDownloadManager()
+  const dm = getDownloadManager()
   return dm.queueJob(url, quality, title, artist, type, lyricsText)
 })
 
 ipcMain.handle('downloads:get-all', async () => {
-  const dm = await getDownloadManager()
+  const dm = getDownloadManager()
   return dm.getAll()
 })
 
 ipcMain.on('downloads:subscribe', async (event, subscriptionId: string) => {
-  const dm = await getDownloadManager()
+  const dm = getDownloadManager()
   const wc = event.sender
   const disposer = dm.subscribe((jobs) => wc.send('downloads:updated', jobs))
 
@@ -456,7 +432,6 @@ app.whenReady().then(async () => {
   console.log('[App] userData path:', app.getPath('userData'))
 
   // Initialize Updater
-  const { initUpdater } = await import('./updater')
   initUpdater()
 
   // Lazy load this too if needed, or just remove if not critical
@@ -465,6 +440,12 @@ app.whenReady().then(async () => {
 })
 
 const clients: Set<Response> = new Set()
+
+// State cache for new clients
+// Moved from bottom of file to here for scope access in server
+let lastSongInfo: any = null;
+let lastStyle: any = null;
+let lastPreferences: any = null;
 
 // Create a simple HTTP server to serve the overlay and SSE
 import http from 'node:http'
@@ -483,7 +464,18 @@ const server = http.createServer((req, res) => {
     return
   }
 
-  if (req.url === '/events') {
+  // Parse URL to ignore query parameters in routing
+  const urlObj = new URL(req.url || '/', `http://localhost:${OVERLAY_PORT}`)
+  const pathname = urlObj.pathname
+
+  // Logging for debug
+  const isAsset = pathname.startsWith('/assets/');
+  if (isAsset || pathname.startsWith('/obs/')) {
+    console.log(`[OverlayServer] Request: ${pathname} (Original: ${req.url})`);
+  }
+
+  if (pathname === '/events') {
+    // ... (keep existing SSE logic)
     // SSE Endpoint
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -521,9 +513,9 @@ const server = http.createServer((req, res) => {
     return
   }
 
-  if (req.url?.startsWith('/lyrics')) {
-    const url = new URL(req.url, `http://localhost:${OVERLAY_PORT}`)
-    const songId = url.searchParams.get('id')
+  if (pathname.startsWith('/lyrics')) {
+    // ... (keep existing Lyrics logic)
+    const songId = urlObj.searchParams.get('id')
 
     if (!songId) {
       res.writeHead(400)
@@ -531,57 +523,53 @@ const server = http.createServer((req, res) => {
       return
     }
 
-    // Lazy load lyrics module here too
-    import('./lyrics').then(({ readSyncedLyrics, readRawLyrics }) => {
-      Promise.all([
-        readSyncedLyrics(songId),
-        readRawLyrics(songId)
-      ]).then(async ([synced, raw]) => {
-        let enriched = null;
-        const content = synced?.content || raw?.content || '';
+    Promise.all([
+      readSyncedLyrics(songId),
+      readRawLyrics(songId)
+    ]).then(async ([synced, raw]) => {
+      let enriched = null;
+      const content = synced?.content || raw?.content || '';
 
-        // Simple Japanese detection (Hiragana, Katakana, Kanji)
-        const hasJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(content);
+      // Simple Japanese detection (Hiragana, Katakana, Kanji)
+      const hasJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(content);
 
-        if (hasJapanese) {
-          try {
-            const { enrichLyrics } = await import('./lyricEnrichment');
-            // Parse lines for enrichment
-            let lines: string[] = [];
-            if (synced?.content) {
-              // Simple parse to get text
-              lines = synced.content.split('\n')
-                .map(l => l.replace(/^\[.*?\]/, '').trim())
-                .filter(l => l.length > 0);
-            } else if (raw?.content) {
-              lines = raw.content.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-            }
-
-            if (lines.length > 0) {
-              enriched = await enrichLyrics(lines);
-            }
-          } catch (e) {
-            console.error('[OverlayServer] Enrichment failed', e);
+      if (hasJapanese) {
+        try {
+          // Parse lines for enrichment
+          let lines: string[] = [];
+          if (synced?.content) {
+            // Simple parse to get text
+            lines = synced.content.split('\n')
+              .map(l => l.replace(/^\[.*?\]/, '').trim())
+              .filter(l => l.length > 0);
+          } else if (raw?.content) {
+            lines = raw.content.split('\n').map(l => l.trim()).filter(l => l.length > 0);
           }
+
+          if (lines.length > 0) {
+            enriched = await enrichLyrics(lines);
+          }
+        } catch (e) {
+          console.error('[OverlayServer] Enrichment failed', e);
         }
+      }
 
-        res.writeHead(200, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({
-          synced: synced?.content || null,
-          raw: raw?.content || null,
-          enriched
-        }))
-      }).catch(err => {
-        console.error('[OverlayServer] Failed to read lyrics', err)
-        res.writeHead(500)
-        res.end('Internal Server Error')
-      })
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({
+        synced: synced?.content || null,
+        raw: raw?.content || null,
+        enriched
+      }))
+    }).catch(err => {
+      console.error('[OverlayServer] Failed to read lyrics', err)
+      res.writeHead(500)
+      res.end('Internal Server Error')
     })
-
     return
   }
 
-  if (req.url === '/batch-metadata' && req.method === 'POST') {
+  if (pathname === '/batch-metadata' && req.method === 'POST') {
+    // ... (keep existing Metadata logic)
     let body = '';
     req.on('data', chunk => body += chunk.toString());
     req.on('end', async () => {
@@ -593,15 +581,6 @@ const server = http.createServer((req, res) => {
           return;
         }
 
-        // We might need loadAllSongs to ensure cache is populated if getting by ID relies on memory
-        // But getSongById usually reads from a map. loadAllSongs might be needed if strictly cold.
-        // Assuming the main process has the library loaded or we can load it.
-        // getSongById isn't exported as a standalone usually, it's often inside the closure or class.
-        // Wait, looking at main.ts imports: "import { addLocalSong ...} from './songLibrary'".
-        // Let's check songLibrary exports.
-        // If getSongById isn't available, we might need to use loadAllSongs and filter.
-
-        const { loadAllSongs } = await import('./songLibrary');
         const allSongs = await loadAllSongs();
         const map = new Map(allSongs.map(s => [s.id, s]));
 
@@ -624,13 +603,14 @@ const server = http.createServer((req, res) => {
 
   // If in Dev mode, redirect to Vite server for the overlay page
   if (process.env.VITE_DEV_SERVER_URL) {
+    // ... (keep existing Dev logic)
     const devUrl = process.env.VITE_DEV_SERVER_URL.endsWith('/')
       ? process.env.VITE_DEV_SERVER_URL
       : `${process.env.VITE_DEV_SERVER_URL}/`;
 
-    console.log('[OverlayServer] Dev Redirect Check:', req.url);
+    console.log('[OverlayServer] Dev Redirect Check:', pathname);
 
-    if (req.url?.startsWith('/obs/setlist') || req.url === '/setlist') {
+    if (pathname.startsWith('/obs/setlist') || pathname === '/setlist') {
       console.log('[OverlayServer] Redirecting to Setlist');
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
@@ -638,7 +618,7 @@ const server = http.createServer((req, res) => {
       res.end()
       return
     }
-    if (req.url?.startsWith('/obs/all') || req.url === '/all') {
+    if (pathname.startsWith('/obs/all') || pathname === '/all') {
       console.log('[OverlayServer] Redirecting to Combined');
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
@@ -646,7 +626,7 @@ const server = http.createServer((req, res) => {
       res.end()
       return
     }
-    if (req.url === '/' || req.url === '/overlay' || req.url?.startsWith('/#/')) {
+    if (pathname === '/' || pathname === '/overlay' || pathname.startsWith('/#/')) {
       console.log('[OverlayServer] Redirecting to Default Overlay');
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
@@ -655,7 +635,7 @@ const server = http.createServer((req, res) => {
       return
     }
     // Also support readable /lyrics or /obs/lyrics -> redirect to overlay
-    if (req.url?.startsWith('/lyrics') || req.url?.startsWith('/obs/lyrics')) {
+    if (pathname.startsWith('/lyrics') || pathname.startsWith('/obs/lyrics')) {
       console.log('[OverlayServer] Redirecting to Lyrics');
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
@@ -666,12 +646,31 @@ const server = http.createServer((req, res) => {
   }
 
   // Serve static files for the overlay
-  // We want to serve the renderer dist folder
-  let filePath = path.join(RENDERER_DIST, req.url === '/' ? 'index.html' : req.url || 'index.html')
+  // Handle relative path safely
+  let safePath = pathname.startsWith('/') ? pathname.slice(1) : pathname;
 
-  // If requesting root or /overlay, serve index.html
-  if (req.url === '/' || req.url === '/overlay' || req.url === '/obs/setlist' || req.url === '/obs/all' || req.url === '/obs/lyrics' || req.url === '/lyrics') {
+  // FIX for relative asset paths when accessing nested routes (e.g. /obs/setlist -> /obs/assets/index.js)
+  // If the path contains 'assets/', we force it to be served from the root 'dist/assets/'
+  if (pathname.includes('/assets/')) {
+    const assetPart = pathname.substring(pathname.indexOf('/assets/')); // "/assets/foo.js"
+    safePath = assetPart.startsWith('/') ? assetPart.slice(1) : assetPart; // "assets/foo.js"
+  } else if (safePath.endsWith('.svg') || safePath.endsWith('.png') || safePath.endsWith('.ico')) {
+    // Also handle root assets like vite.svg referenced relatively
+    safePath = path.basename(safePath);
+  }
+
+  let filePath = path.join(RENDERER_DIST, safePath === '' ? 'index.html' : safePath);
+
+  // SPA Routing overrides
+  if (pathname === '/' || pathname === '/overlay' || pathname === '/obs/setlist' || pathname === '/obs/all' || pathname === '/obs/lyrics' || pathname === '/lyrics') {
     filePath = path.join(RENDERER_DIST, 'index.html')
+  }
+
+  if (isAsset || pathname.includes('/assets/')) {
+    // console.log(`[OverlayServer] Serving Asset: ${pathname} -> ${filePath}`);
+    if (!fs.existsSync(filePath)) {
+      console.error(`[OverlayServer] Asset NOT FOUND: ${filePath} (Base: ${RENDERER_DIST})`);
+    }
   }
 
   const extname = path.extname(filePath)
@@ -701,6 +700,11 @@ const server = http.createServer((req, res) => {
     if (err) {
       if (err.code === 'ENOENT') {
         // Fallback to index.html for SPA routing
+        // Only warn if it looked like an asset
+        if (filePath.includes('assets') || filePath.endsWith('.js') || filePath.endsWith('.css')) {
+          console.warn(`[OverlayServer] Asset fallback triggered for ${pathname} (Resolved: ${filePath})`);
+        }
+
         fs.readFile(path.join(RENDERER_DIST, 'index.html'), (err2, content2) => {
           if (err2) {
             res.writeHead(500)
@@ -731,6 +735,7 @@ server.on('error', (e: any) => {
 
 server.listen(OVERLAY_PORT, () => {
   console.log(`[OverlayServer] Listening on port ${OVERLAY_PORT}`)
+  console.log(`[OverlayServer] Serving from: ${RENDERER_DIST}`)
 })
 
 app.on('before-quit', () => {
@@ -741,11 +746,6 @@ ipcMain.on('window:open-overlay', () => {
   // Deprecated: We now use the browser source URL
   console.log('[Main] window:open-overlay called but deprecated in favor of OBS URL')
 })
-
-// State cache for new clients
-let lastSongInfo: any = null;
-let lastStyle: any = null;
-let lastPreferences: any = null;
 
 ipcMain.on('overlay:update', (_event, payload) => {
   lastSongInfo = payload;
@@ -790,6 +790,3 @@ ipcMain.on('overlay:scroll-update', (_event, scrollY: number) => {
     client.write(`data: ${data}\n\n`)
   }
 })
-
-
-

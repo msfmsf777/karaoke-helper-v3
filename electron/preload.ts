@@ -139,8 +139,7 @@ contextBridge.exposeInMainWorld('khelper', {
   },
   updater: {
     check: () => ipcRenderer.invoke('updater:check'),
-    download: () => ipcRenderer.invoke('updater:download'),
-    install: () => ipcRenderer.invoke('updater:install'),
+    openReleasePage: () => ipcRenderer.invoke('updater:open-release-page'),
     ignore: (version: string) => ipcRenderer.invoke('updater:ignore', version),
     getStatus: () => ipcRenderer.invoke('updater:get-status'),
     onStatus: (callback: (status: any) => void) => {
