@@ -1,5 +1,7 @@
 {
   "name": "khelper-live",
+  "description": "Karaoke Helper Application",
+  "author": "msfmsf777",
   "private": true,
   "version": "3.0.0-beta",
   "type": "module",
@@ -76,7 +78,7 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "deleteAppDataOnUninstall": true
+      "deleteAppDataOnUninstall": false
     }
   }
 }

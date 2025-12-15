@@ -414,7 +414,7 @@ const CheckForUpdatesButton: React.FC = () => {
     return (
         <button
             onClick={() => checkForUpdates(true)}
-            disabled={status === 'checking' || status === 'downloading'}
+            disabled={status === 'checking'}
             style={{
                 background: 'transparent',
                 border: '1px solid #555',

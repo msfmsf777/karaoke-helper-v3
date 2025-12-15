@@ -7,7 +7,7 @@ interface UpdatePopupProps {
 }
 
 const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose }) => {
-    const { status, updateInfo, progress, downloadUpdate, quitAndInstall, ignoreVersion } = useUpdater();
+    const { status, updateInfo, openReleasePage, ignoreVersion } = useUpdater();
     const [isClosing, setIsClosing] = useState(false);
 
     useEffect(() => {
@@ -23,8 +23,9 @@ const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose }) => {
         setTimeout(onClose, 200);
     };
 
-    const handleDownload = () => {
-        downloadUpdate();
+    const handleGoToDownload = () => {
+        openReleasePage();
+        handleClose();
     };
 
     const handleIgnore = () => {
@@ -72,7 +73,7 @@ const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose }) => {
                 }}>
                     <div>
                         <h2 style={{ margin: 0, fontSize: '18px', color: '#fff' }}>
-                            {status === 'downloaded' ? '更新已準備就緒' : '有新版本可用'}
+                            有新版本可用
                         </h2>
                         <div style={{ fontSize: '13px', color: 'var(--accent-color)', marginTop: '4px' }}>
                             v{updateInfo.version}
@@ -111,40 +112,36 @@ const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose }) => {
                         border: '1px solid #333',
                         maxHeight: '200px',
                         overflowY: 'auto',
-                        whiteSpace: 'pre-wrap'
+                        whiteSpace: 'normal', // Allow wrapping
+                        color: '#ccc'
                     }}>
-                        {/* Sanitize: Just rendering text content if it's a string, or simple default msg */}
-                        {typeof updateInfo.releaseNotes === 'string'
-                            ? updateInfo.releaseNotes
-                            : (Array.isArray(updateInfo.releaseNotes)
-                                ? updateInfo.releaseNotes.map(n => n.note).join('\n')
-                                : '此版本沒有提供更新說明。')
-                        }
+                        {typeof updateInfo.releaseNotes === 'string' ? (
+                            <div
+                                dangerouslySetInnerHTML={{ __html: updateInfo.releaseNotes }}
+                                style={{ lineHeight: '1.6' }}
+                                className="markdown-body" // Optional class for styling if you add global styles
+                            />
+                        ) : (
+                            <div>
+                                {Array.isArray(updateInfo.releaseNotes)
+                                    ? updateInfo.releaseNotes.map((n, i) => <div key={i}>{n.note}</div>)
+                                    : '此版本沒有提供更新說明。'}
+                            </div>
+                        )}
                     </div>
 
-                    {/* Progress */}
-                    {status === 'downloading' && progress && (
-                        <div style={{ marginTop: '20px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '12px', color: '#aaa' }}>
-                                <span>下載中...</span>
-                                <span>{Math.round(progress.percent)}%</span>
-                            </div>
-                            <div style={{
-                                height: '6px',
-                                backgroundColor: '#333',
-                                borderRadius: '3px',
-                                overflow: 'hidden'
-                            }}>
-                                <div style={{
-                                    height: '100%',
-                                    width: `${progress.percent}%`,
-                                    backgroundColor: 'var(--accent-color)',
-                                    transition: 'width 0.2s'
-                                }} />
-                            </div>
-                            <div style={{ textAlign: 'right', fontSize: '11px', color: '#666', marginTop: '4px' }}>
-                                {(progress.transferred / 1024 / 1024).toFixed(1)}MB / {(progress.total / 1024 / 1024).toFixed(1)}MB
-                            </div>
+                    {/* Error Message */}
+                    {status === 'error' && (
+                        <div style={{
+                            marginTop: '20px',
+                            padding: '12px',
+                            backgroundColor: 'rgba(255, 0, 0, 0.1)',
+                            border: '1px solid #ff4444',
+                            borderRadius: '8px',
+                            color: '#ff4444',
+                            fontSize: '13px'
+                        }}>
+                            更新失敗。請檢查網路連線或稍後再試。
                         </div>
                     )}
                 </div>
@@ -158,106 +155,50 @@ const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose }) => {
                     justifyContent: 'flex-end',
                     gap: '12px'
                 }}>
-                    {status === 'downloaded' ? (
-                        <>
-                            <button
-                                onClick={handleClose}
-                                style={{
-                                    padding: '8px 16px',
-                                    backgroundColor: 'transparent',
-                                    color: '#aaa',
-                                    border: '1px solid transparent',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                    fontSize: '14px'
-                                }}
-                            >
-                                稍後
-                            </button>
-                            <button
-                                onClick={quitAndInstall}
-                                style={{
-                                    padding: '8px 20px',
-                                    backgroundColor: 'var(--accent-color)',
-                                    color: '#fff',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                    fontSize: '14px',
-                                    fontWeight: 'bold'
-                                }}
-                            >
-                                重新啟動並更新
-                            </button>
-                        </>
-                    ) : status === 'downloading' ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
-                            <div style={{ color: '#aaa', fontSize: '14px', flex: 1, display: 'flex', alignItems: 'center' }}>
-                                請稍候...
-                            </div>
-                            <button
-                                onClick={handleClose}
-                                style={{
-                                    padding: '8px 16px',
-                                    backgroundColor: 'transparent',
-                                    color: '#aaa',
-                                    border: '1px solid #444',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                    fontSize: '14px'
-                                }}
-                            >
-                                隱藏
-                            </button>
-                        </div>
-                    ) : (
-                        <>
-                            <button
-                                onClick={handleIgnore}
-                                style={{
-                                    padding: '8px 16px',
-                                    backgroundColor: 'transparent',
-                                    color: '#888',
-                                    border: '1px solid transparent',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                    fontSize: '14px',
-                                    marginRight: 'auto'
-                                }}
-                            >
-                                忽略此版本
-                            </button>
-                            <button
-                                onClick={handleClose}
-                                style={{
-                                    padding: '8px 16px',
-                                    backgroundColor: 'transparent',
-                                    color: '#aaa',
-                                    border: '1px solid #444',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                    fontSize: '14px'
-                                }}
-                            >
-                                取消
-                            </button>
-                            <button
-                                onClick={handleDownload}
-                                style={{
-                                    padding: '8px 20px',
-                                    backgroundColor: 'var(--accent-color)',
-                                    color: '#fff',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                    fontSize: '14px',
-                                    fontWeight: 'bold'
-                                }}
-                            >
-                                下載更新
-                            </button>
-                        </>
-                    )}
+                    <button
+                        onClick={handleIgnore}
+                        style={{
+                            padding: '8px 16px',
+                            backgroundColor: 'transparent',
+                            color: '#888',
+                            border: '1px solid transparent',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            marginRight: 'auto'
+                        }}
+                    >
+                        忽略此版本
+                    </button>
+                    <button
+                        onClick={handleClose}
+                        style={{
+                            padding: '8px 16px',
+                            backgroundColor: 'transparent',
+                            color: '#aaa',
+                            border: '1px solid #444',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '14px'
+                        }}
+                    >
+                        取消
+                    </button>
+                    <button
+                        onClick={handleGoToDownload}
+                        style={{
+                            padding: '8px 20px',
+                            backgroundColor: 'var(--accent-color)',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            fontWeight: 'bold'
+                        }}
+                    >
+                        前往下載頁面
+                    </button>
                 </div>
             </div>
         </div>

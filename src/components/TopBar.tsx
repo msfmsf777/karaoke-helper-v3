@@ -21,11 +21,12 @@ import UpdatePopup from './UpdatePopup';
 import UpdateIconBase from '../assets/icons/update_base.svg';
 
 const UpdateIndicator: React.FC = () => {
-  const { status, progress } = useUpdater();
+  const { status } = useUpdater();
   const [showPopup, setShowPopup] = useState(false);
 
-  // Show if available, downloading, or downloaded
-  const isVisible = ['available', 'downloading', 'downloaded'].includes(status);
+  // Show if available OR error
+  // Note: we removed 'downloading' and 'downloaded' states
+  const isVisible = ['available', 'error'].includes(status);
 
   if (!isVisible) return null;
 
@@ -33,7 +34,7 @@ const UpdateIndicator: React.FC = () => {
     <>
       <button
         onClick={() => setShowPopup(true)}
-        title={status === 'downloading' ? '下載中...' : status === 'downloaded' ? '點擊安裝更新' : '有新版本可用'}
+        title={status === 'error' ? '更新檢查失敗' : '有新版本可用'}
         style={{
           background: 'none',
           border: 'none',
@@ -43,13 +44,13 @@ const UpdateIndicator: React.FC = () => {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          opacity: 0.8,
+          opacity: status === 'error' ? 1 : 0.8, // Full opacity for error
           transition: 'opacity 0.2s',
           position: 'relative',
-          gap: '0px' // Space for progress bar
+          gap: '0px'
         }}
         onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-        onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
+        onMouseLeave={(e) => e.currentTarget.style.opacity = status === 'error' ? '1' : '0.8'}
       >
         <div style={{ position: 'relative', display: 'flex' }}>
           {/* Base Icon - Use imported SVG */}
@@ -60,50 +61,13 @@ const UpdateIndicator: React.FC = () => {
               width: '24px',
               height: '24px',
               display: 'block',
-              // No filter needed as user provided green SVG
+              // Tint red if error (using filter because it's an img tag)
+              filter: status === 'error'
+                ? 'sepia(1) saturate(10000%) hue-rotate(0deg) brightness(80%) saturate(1000%)' // Attempt to make it red
+                : 'none'
             }}
           />
-
-          {/* Checkmark Badge for Ready State */}
-          {status === 'downloaded' && (
-            <div style={{
-              position: 'absolute',
-              bottom: '-2px',
-              right: '-2px',
-              width: '12px',
-              height: '12px',
-              backgroundColor: '#4caf50',
-              borderRadius: '50%',
-              border: '2px solid var(--bg-sidebar)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </div>
-          )}
         </div>
-
-        {/* Downloading Progress Bar */}
-        {status === 'downloading' && (
-          <div style={{
-            width: '24px',
-            height: '3px',
-            backgroundColor: 'rgba(255,255,255,0.2)',
-            borderRadius: '2px',
-            overflow: 'hidden',
-            marginTop: '1px'
-          }}>
-            <div style={{
-              height: '100%',
-              width: `${progress?.percent || 0}%`,
-              backgroundColor: '#4caf50', // Green progress bar
-              transition: 'width 0.2s'
-            }} />
-          </div>
-        )}
       </button>
       {showPopup && <UpdatePopup onClose={() => setShowPopup(false)} />}
     </>

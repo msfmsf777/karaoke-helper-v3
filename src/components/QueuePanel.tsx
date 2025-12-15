@@ -69,10 +69,7 @@ const QueuePanel: React.FC<QueuePanelProps> = ({ isOpen, onClose }) => {
         }
     };
 
-    const handleDragStart = () => {
-        isDraggingRef.current = true;
-        shouldBlockClickRef.current = true;
-    };
+
 
     const handleDragEnd = (result: DropResult) => {
         isDraggingRef.current = false;
