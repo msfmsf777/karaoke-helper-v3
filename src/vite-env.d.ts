@@ -102,5 +102,8 @@ interface Window {
       getStatus: () => Promise<any>;
       onStatus: (callback: (status: any) => void) => () => void;
     };
+    navigation: {
+      onNavigate: (callback: (view: string) => void) => () => void;
+    };
   };
 }
