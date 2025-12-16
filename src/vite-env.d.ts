@@ -105,5 +105,12 @@ interface Window {
     navigation: {
       onNavigate: (callback: (view: string) => void) => () => void;
     };
+    miniPlayer: {
+      sendCommand: (command: string, ...args: any[]) => void;
+      onCommand: (callback: (command: string, ...args: any[]) => void) => () => void;
+      sendStateUpdate: (state: any) => void;
+      onStateUpdate: (callback: (state: any) => void) => () => void;
+      toggle: () => void;
+    };
   };
 }

@@ -148,5 +148,20 @@ electron.contextBridge.exposeInMainWorld("khelper", {
       electron.ipcRenderer.on("navigate", listener);
       return () => electron.ipcRenderer.off("navigate", listener);
     }
+  },
+  miniPlayer: {
+    sendCommand: (command, ...args) => electron.ipcRenderer.send("mini-player:command", command, ...args),
+    onCommand: (callback) => {
+      const listener = (_event, command, ...args) => callback(command, ...args);
+      electron.ipcRenderer.on("mini-player:command", listener);
+      return () => electron.ipcRenderer.off("mini-player:command", listener);
+    },
+    sendStateUpdate: (state) => electron.ipcRenderer.send("mini-player:update-state", state),
+    onStateUpdate: (callback) => {
+      const listener = (_event, state) => callback(state);
+      electron.ipcRenderer.on("mini-player:update-state", listener);
+      return () => electron.ipcRenderer.off("mini-player:update-state", listener);
+    },
+    toggle: () => electron.ipcRenderer.send("mini-player:toggle")
   }
 });

@@ -26,6 +26,7 @@ const DownloadManagerView = lazy(() => import('./components/DownloadManagerView'
 const SearchResultsView = lazy(() => import('./components/SearchResultsView'));
 
 const AboutPopup = lazy(() => import('./components/AboutPopup'));
+import MiniPlayerSync from './components/MiniPlayer/MiniPlayerSync';
 
 type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history' | 'download-manager' | 'settings' | string;
 
@@ -377,6 +378,7 @@ function AppContent() {
         <AddSongSidebar isOpen={showAddSongWizard} onClose={() => setShowAddSongWizard(false)} />
       )}
       <Suspense fallback={null}>
+        <MiniPlayerSync />
         {showProcessingList && (
           <ProcessingListModal open={showProcessingList} onClose={() => setShowProcessingList(false)} />
         )}

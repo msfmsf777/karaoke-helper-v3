@@ -171,4 +171,19 @@ contextBridge.exposeInMainWorld('khelper', {
       return () => ipcRenderer.off('navigate', listener)
     }
   },
+  miniPlayer: {
+    sendCommand: (command: string, ...args: any[]) => ipcRenderer.send('mini-player:command', command, ...args),
+    onCommand: (callback: (command: string, ...args: any[]) => void) => {
+      const listener = (_event: IpcRendererEvent, command: string, ...args: any[]) => callback(command, ...args)
+      ipcRenderer.on('mini-player:command', listener)
+      return () => ipcRenderer.off('mini-player:command', listener)
+    },
+    sendStateUpdate: (state: any) => ipcRenderer.send('mini-player:update-state', state),
+    onStateUpdate: (callback: (state: any) => void) => {
+      const listener = (_event: IpcRendererEvent, state: any) => callback(state)
+      ipcRenderer.on('mini-player:update-state', listener)
+      return () => ipcRenderer.off('mini-player:update-state', listener)
+    },
+    toggle: () => ipcRenderer.send('mini-player:toggle'),
+  }
 })

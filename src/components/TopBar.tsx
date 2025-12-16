@@ -407,6 +407,29 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
 
         <div style={{ width: '1px', height: '24px', backgroundColor: '#3e3e3e', margin: '0 8px' }}></div>
 
+        <button
+          onClick={() => window.khelper?.miniPlayer?.toggle()}
+          title="迷你播放器"
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: 0.8,
+            transition: 'opacity 0.2s',
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+          onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+            <rect x="11" y="11" width="8" height="8" fill="currentColor" stroke="none" rx="1" />
+          </svg>
+        </button>
+
         <WindowControls />
       </div>
     </div>
