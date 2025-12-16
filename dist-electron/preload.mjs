@@ -162,6 +162,7 @@ electron.contextBridge.exposeInMainWorld("khelper", {
       electron.ipcRenderer.on("mini-player:update-state", listener);
       return () => electron.ipcRenderer.off("mini-player:update-state", listener);
     },
-    toggle: () => electron.ipcRenderer.send("mini-player:toggle")
+    toggle: () => electron.ipcRenderer.send("mini-player:toggle"),
+    resize: (width, height) => electron.ipcRenderer.send("mini-player:resize", width, height)
   }
 });

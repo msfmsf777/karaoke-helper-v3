@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import LogoIcon from '../../assets/images/logo.png';
 import PlayIcon from '../../assets/icons/play.svg';
 import PauseIcon from '../../assets/icons/pause.svg';
@@ -124,6 +124,23 @@ export default function MiniPlayerWindow() {
     const [showSpeed, setShowSpeed] = useState(false);
     const [showPitch, setShowPitch] = useState(false);
     const [showQueue, setShowQueue] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!containerRef.current) return;
+        const observer = new ResizeObserver((entries) => {
+            for (let entry of entries) {
+                // Add generous padding to width to ensure no shadows/borders are cut off
+                const width = entry.contentRect.width + 100;
+                // Height is usually fixed 110 but let's dynamic it if needed, or keep fixed
+                // The pill + shadows might need more space.
+                // Current window height is 110 in main.ts
+                window.khelper?.miniPlayer.resize(width, 140); // 140 to be safe for shadows
+            }
+        });
+        observer.observe(containerRef.current);
+        return () => observer.disconnect();
+    }, []);
 
     useEffect(() => {
         const removeListener = window.khelper?.miniPlayer.onStateUpdate((newState) => {
@@ -160,12 +177,14 @@ export default function MiniPlayerWindow() {
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => { setHovered(false); setShowSpeed(false); setShowPitch(false); setShowQueue(false); }}
         >
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                width: 'auto', // Allow dynamic width
-                maxWidth: '90vw'
-            }}>
+            <div
+                ref={containerRef}
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    width: 'auto', // Allow dynamic width
+                    maxWidth: '90vw'
+                }}>
                 {/* Floating Circle Knob (Left) - Z-Index higher to sit on top of pill */}
                 <div
                     onClick={() => window.khelper?.miniPlayer?.sendCommand('toggleMainWindow')}
@@ -218,7 +237,7 @@ export default function MiniPlayerWindow() {
                     height: '60px',
                     paddingLeft: '60px', // Adjusted space
                     paddingRight: '20px',
-                    minWidth: '380px', // Fixed minimum width
+                    minWidth: '320px', // Reduced to tighten spacing
                     width: 'auto', // Dynamic width expands if needed
                     backgroundColor: 'rgba(20, 20, 20, 0.95)',
                     borderRadius: '0 30px 30px 0', // rounded right only effectively
@@ -247,7 +266,7 @@ export default function MiniPlayerWindow() {
                             onClick={() => window.khelper?.miniPlayer?.toggle()}
                             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}
                         >
-                            <img src={CloseIcon} alt="Close" style={{ width: '12px', height: '12px', filter: 'invert(0.5)' }} />
+                            <img src={CloseIcon} alt="Close" style={{ width: '12px', height: '12px', filter: 'brightness(0) invert(1)' }} />
                         </button>
                     </div>
 
@@ -261,7 +280,7 @@ export default function MiniPlayerWindow() {
                             alignItems: 'center',
                             justifyContent: 'center',
                             textAlign: 'center',
-                            transform: 'translateX(-20px)' // Visually pull back left to center in the *visible* pill area
+                            transform: 'translateX(-15px)' // Adjusted to center visually including right corner
                         }}>
                             <div style={{
                                 fontSize: '16px',

@@ -111,6 +111,7 @@ interface Window {
       sendStateUpdate: (state: any) => void;
       onStateUpdate: (callback: (state: any) => void) => () => void;
       toggle: () => void;
+      resize: (width: number, height: number) => void;
     };
   };
 }

@@ -185,5 +185,6 @@ contextBridge.exposeInMainWorld('khelper', {
       return () => ipcRenderer.off('mini-player:update-state', listener)
     },
     toggle: () => ipcRenderer.send('mini-player:toggle'),
+    resize: (width: number, height: number) => ipcRenderer.send('mini-player:resize', width, height),
   }
 })
