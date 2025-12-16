@@ -1,1 +1,152 @@
-"use strict";const r=require("electron");r.contextBridge.exposeInMainWorld("ipcRenderer",{on(e,n){const i=(o,...d)=>n(o,...d);return r.ipcRenderer.on(e,i),()=>{r.ipcRenderer.off(e,i)}},off(e,n){r.ipcRenderer.off(e,n)},send(...e){const[n,...i]=e;return r.ipcRenderer.send(n,...i)},invoke(...e){const[n,...i]=e;return r.ipcRenderer.invoke(n,...i)}});r.contextBridge.exposeInMainWorld("api",{openAudioFileDialog:()=>r.ipcRenderer.invoke("dialog:open-audio-file"),openExternal:e=>r.ipcRenderer.invoke("shell:open-external",e),openOverlayWindow:()=>r.ipcRenderer.send("window:open-overlay"),sendOverlayUpdate:e=>r.ipcRenderer.send("overlay:update",e),subscribeOverlayUpdates:e=>{const n=(i,o)=>e(o);return r.ipcRenderer.on("overlay:update",n),()=>r.ipcRenderer.off("overlay:update",n)},sendOverlayStyleUpdate:e=>r.ipcRenderer.send("overlay:style-update",e),subscribeOverlayStyleUpdates:e=>{const n=(i,o)=>e(o);return r.ipcRenderer.on("overlay:style-update",n),()=>r.ipcRenderer.off("overlay:style-update",n)},sendOverlayPreferenceUpdate:e=>r.ipcRenderer.send("overlay:preference-update",e),subscribeOverlayPreferenceUpdates:e=>{const n=(i,o)=>e(o);return r.ipcRenderer.on("overlay:preference-update",n),()=>r.ipcRenderer.off("overlay:preference-update",n)},sendOverlayScrollUpdate:e=>r.ipcRenderer.send("overlay:scroll-update",e),subscribeOverlayScrollUpdates:e=>{const n=(i,o)=>e(o);return r.ipcRenderer.on("overlay:scroll-update",n),()=>r.ipcRenderer.off("overlay:scroll-update",n)}});r.contextBridge.exposeInMainWorld("khelper",{dialogs:{pickAudioFile:()=>r.ipcRenderer.invoke("dialog:open-audio-file")},songLibrary:{addLocalSong:e=>r.ipcRenderer.invoke("library:add-local-song",e),loadAllSongs:()=>r.ipcRenderer.invoke("library:load-all"),getSongFilePath:e=>r.ipcRenderer.invoke("library:get-song-file-path",e),getOriginalSongFilePath:e=>r.ipcRenderer.invoke("library:get-original-song-file-path",e),getSeparatedSongPaths:e=>r.ipcRenderer.invoke("library:get-separated-song-paths",e),getBasePath:()=>r.ipcRenderer.invoke("library:get-base-path"),deleteSong:e=>r.ipcRenderer.invoke("library:delete-song",e),updateSong:(e,n)=>r.ipcRenderer.invoke("library:update-song",{id:e,updates:n})},jobs:{queueSeparationJob:(e,n)=>r.ipcRenderer.invoke("jobs:queue-separation",e,n),getAllJobs:()=>r.ipcRenderer.invoke("jobs:get-all"),subscribeJobUpdates:e=>{const n=(o,d)=>e(d),i=`jobs-${Date.now()}-${Math.random().toString(16).slice(2,6)}`;return r.ipcRenderer.send("jobs:subscribe",i),r.ipcRenderer.on("jobs:updated",n),()=>{r.ipcRenderer.send("jobs:unsubscribe",i),r.ipcRenderer.off("jobs:updated",n)}}},downloads:{validateUrl:e=>r.ipcRenderer.invoke("downloads:validate",e),queueDownload:(e,n,i,o,d,a)=>r.ipcRenderer.invoke("downloads:queue",e,n,i,o,d,a),getAllJobs:()=>r.ipcRenderer.invoke("downloads:get-all"),subscribeUpdates:e=>{const n=(o,d)=>e(d),i=`dl-${Date.now()}-${Math.random().toString(16).slice(2,6)}`;return r.ipcRenderer.send("downloads:subscribe",i),r.ipcRenderer.on("downloads:updated",n),()=>{r.ipcRenderer.send("downloads:unsubscribe",i),r.ipcRenderer.off("downloads:updated",n)}}},lyrics:{readRawLyrics:e=>r.ipcRenderer.invoke("lyrics:read-raw",e),readSyncedLyrics:e=>r.ipcRenderer.invoke("lyrics:read-synced",e),writeRawLyrics:e=>r.ipcRenderer.invoke("lyrics:write-raw",e),writeSyncedLyrics:e=>r.ipcRenderer.invoke("lyrics:write-synced",e),enrichLyrics:e=>r.ipcRenderer.invoke("lyrics:enrich",e)},queue:{save:e=>r.ipcRenderer.invoke("queue:save",e),load:()=>r.ipcRenderer.invoke("queue:load")},userData:{saveFavorites:e=>r.ipcRenderer.invoke("userData:save-favorites",e),loadFavorites:()=>r.ipcRenderer.invoke("userData:load-favorites"),saveHistory:e=>r.ipcRenderer.invoke("userData:save-history",e),loadHistory:()=>r.ipcRenderer.invoke("userData:load-history"),savePlaylists:e=>r.ipcRenderer.invoke("userData:save-playlists",e),loadPlaylists:()=>r.ipcRenderer.invoke("userData:load-playlists"),saveSettings:e=>r.ipcRenderer.invoke("userData:save-settings",e),loadSettings:()=>r.ipcRenderer.invoke("userData:load-settings")},updater:{check:()=>r.ipcRenderer.invoke("updater:check"),openReleasePage:()=>r.ipcRenderer.invoke("updater:open-release-page"),ignore:e=>r.ipcRenderer.invoke("updater:ignore",e),getStatus:()=>r.ipcRenderer.invoke("updater:get-status"),onStatus:e=>{const n=(i,o)=>e(o);return r.ipcRenderer.on("updater:status",n),()=>r.ipcRenderer.off("updater:status",n)}},windowOps:{minimize:()=>r.ipcRenderer.send("window:minimize"),maximize:()=>r.ipcRenderer.send("window:maximize"),close:()=>r.ipcRenderer.send("window:close"),isMaximized:()=>r.ipcRenderer.invoke("window:is-maximized"),onMaximized:e=>{const n=i=>e();return r.ipcRenderer.on("window:maximized",n),()=>r.ipcRenderer.removeListener("window:maximized",n)},onUnmaximized:e=>{const n=i=>e();return r.ipcRenderer.on("window:unmaximized",n),()=>r.ipcRenderer.removeListener("window:unmaximized",n)}}});
+"use strict";
+const electron = require("electron");
+electron.contextBridge.exposeInMainWorld("ipcRenderer", {
+  on(channel, listener) {
+    const subscription = (event, ...args) => listener(event, ...args);
+    electron.ipcRenderer.on(channel, subscription);
+    return () => {
+      electron.ipcRenderer.off(channel, subscription);
+    };
+  },
+  off(channel, listener) {
+    electron.ipcRenderer.off(channel, listener);
+  },
+  send(...args) {
+    const [channel, ...omit] = args;
+    return electron.ipcRenderer.send(channel, ...omit);
+  },
+  invoke(...args) {
+    const [channel, ...omit] = args;
+    return electron.ipcRenderer.invoke(channel, ...omit);
+  }
+  // You can expose other APTs you need here.
+  // ...
+});
+electron.contextBridge.exposeInMainWorld("api", {
+  openAudioFileDialog: () => electron.ipcRenderer.invoke("dialog:open-audio-file"),
+  openExternal: (url) => electron.ipcRenderer.invoke("shell:open-external", url),
+  openOverlayWindow: () => electron.ipcRenderer.send("window:open-overlay"),
+  sendOverlayUpdate: (payload) => electron.ipcRenderer.send("overlay:update", payload),
+  subscribeOverlayUpdates: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    electron.ipcRenderer.on("overlay:update", listener);
+    return () => electron.ipcRenderer.off("overlay:update", listener);
+  },
+  sendOverlayStyleUpdate: (style) => electron.ipcRenderer.send("overlay:style-update", style),
+  subscribeOverlayStyleUpdates: (callback) => {
+    const listener = (_event, style) => callback(style);
+    electron.ipcRenderer.on("overlay:style-update", listener);
+    return () => electron.ipcRenderer.off("overlay:style-update", listener);
+  },
+  sendOverlayPreferenceUpdate: (prefs) => electron.ipcRenderer.send("overlay:preference-update", prefs),
+  subscribeOverlayPreferenceUpdates: (callback) => {
+    const listener = (_event, prefs) => callback(prefs);
+    electron.ipcRenderer.on("overlay:preference-update", listener);
+    return () => electron.ipcRenderer.off("overlay:preference-update", listener);
+  },
+  sendOverlayScrollUpdate: (scrollY) => electron.ipcRenderer.send("overlay:scroll-update", scrollY),
+  subscribeOverlayScrollUpdates: (callback) => {
+    const listener = (_event, scrollY) => callback(scrollY);
+    electron.ipcRenderer.on("overlay:scroll-update", listener);
+    return () => electron.ipcRenderer.off("overlay:scroll-update", listener);
+  }
+});
+electron.contextBridge.exposeInMainWorld("khelper", {
+  dialogs: {
+    pickAudioFile: () => electron.ipcRenderer.invoke("dialog:open-audio-file")
+  },
+  songLibrary: {
+    addLocalSong: (payload) => electron.ipcRenderer.invoke("library:add-local-song", payload),
+    loadAllSongs: () => electron.ipcRenderer.invoke("library:load-all"),
+    getSongFilePath: (id) => electron.ipcRenderer.invoke("library:get-song-file-path", id),
+    getOriginalSongFilePath: (id) => electron.ipcRenderer.invoke("library:get-original-song-file-path", id),
+    getSeparatedSongPaths: (id) => electron.ipcRenderer.invoke("library:get-separated-song-paths", id),
+    getBasePath: () => electron.ipcRenderer.invoke("library:get-base-path"),
+    deleteSong: (id) => electron.ipcRenderer.invoke("library:delete-song", id),
+    updateSong: (id, updates) => electron.ipcRenderer.invoke("library:update-song", { id, updates })
+  },
+  jobs: {
+    queueSeparationJob: (songId, quality) => electron.ipcRenderer.invoke("jobs:queue-separation", songId, quality),
+    getAllJobs: () => electron.ipcRenderer.invoke("jobs:get-all"),
+    subscribeJobUpdates: (callback) => {
+      const listener = (_event, jobs) => callback(jobs);
+      const subscriptionId = `jobs-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`;
+      electron.ipcRenderer.send("jobs:subscribe", subscriptionId);
+      electron.ipcRenderer.on("jobs:updated", listener);
+      return () => {
+        electron.ipcRenderer.send("jobs:unsubscribe", subscriptionId);
+        electron.ipcRenderer.off("jobs:updated", listener);
+      };
+    }
+  },
+  downloads: {
+    validateUrl: (url) => electron.ipcRenderer.invoke("downloads:validate", url),
+    queueDownload: (url, quality, title, artist, type, lyricsText) => electron.ipcRenderer.invoke("downloads:queue", url, quality, title, artist, type, lyricsText),
+    getAllJobs: () => electron.ipcRenderer.invoke("downloads:get-all"),
+    subscribeUpdates: (callback) => {
+      const listener = (_event, jobs) => callback(jobs);
+      const subscriptionId = `dl-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`;
+      electron.ipcRenderer.send("downloads:subscribe", subscriptionId);
+      electron.ipcRenderer.on("downloads:updated", listener);
+      return () => {
+        electron.ipcRenderer.send("downloads:unsubscribe", subscriptionId);
+        electron.ipcRenderer.off("downloads:updated", listener);
+      };
+    }
+  },
+  lyrics: {
+    readRawLyrics: (songId) => electron.ipcRenderer.invoke("lyrics:read-raw", songId),
+    readSyncedLyrics: (songId) => electron.ipcRenderer.invoke("lyrics:read-synced", songId),
+    writeRawLyrics: (payload) => electron.ipcRenderer.invoke("lyrics:write-raw", payload),
+    writeSyncedLyrics: (payload) => electron.ipcRenderer.invoke("lyrics:write-synced", payload),
+    enrichLyrics: (lines) => electron.ipcRenderer.invoke("lyrics:enrich", lines)
+  },
+  queue: {
+    save: (payload) => electron.ipcRenderer.invoke("queue:save", payload),
+    load: () => electron.ipcRenderer.invoke("queue:load")
+  },
+  userData: {
+    saveFavorites: (songIds) => electron.ipcRenderer.invoke("userData:save-favorites", songIds),
+    loadFavorites: () => electron.ipcRenderer.invoke("userData:load-favorites"),
+    saveHistory: (songIds) => electron.ipcRenderer.invoke("userData:save-history", songIds),
+    loadHistory: () => electron.ipcRenderer.invoke("userData:load-history"),
+    savePlaylists: (playlists) => electron.ipcRenderer.invoke("userData:save-playlists", playlists),
+    loadPlaylists: () => electron.ipcRenderer.invoke("userData:load-playlists"),
+    saveSettings: (settings) => electron.ipcRenderer.invoke("userData:save-settings", settings),
+    loadSettings: () => electron.ipcRenderer.invoke("userData:load-settings")
+  },
+  updater: {
+    check: () => electron.ipcRenderer.invoke("updater:check"),
+    openReleasePage: () => electron.ipcRenderer.invoke("updater:open-release-page"),
+    ignore: (version) => electron.ipcRenderer.invoke("updater:ignore", version),
+    getStatus: () => electron.ipcRenderer.invoke("updater:get-status"),
+    onStatus: (callback) => {
+      const listener = (_event, payload) => callback(payload);
+      electron.ipcRenderer.on("updater:status", listener);
+      return () => electron.ipcRenderer.off("updater:status", listener);
+    }
+  },
+  windowOps: {
+    minimize: () => electron.ipcRenderer.send("window:minimize"),
+    maximize: () => electron.ipcRenderer.send("window:maximize"),
+    close: () => electron.ipcRenderer.send("window:close"),
+    isMaximized: () => electron.ipcRenderer.invoke("window:is-maximized"),
+    onMaximized: (callback) => {
+      const subscription = (_event) => callback();
+      electron.ipcRenderer.on("window:maximized", subscription);
+      return () => electron.ipcRenderer.removeListener("window:maximized", subscription);
+    },
+    onUnmaximized: (callback) => {
+      const subscription = (_event) => callback();
+      electron.ipcRenderer.on("window:unmaximized", subscription);
+      return () => electron.ipcRenderer.removeListener("window:unmaximized", subscription);
+    }
+  },
+  navigation: {
+    onNavigate: (callback) => {
+      const listener = (_event, view) => callback(view);
+      electron.ipcRenderer.on("navigate", listener);
+      return () => electron.ipcRenderer.off("navigate", listener);
+    }
+  }
+});

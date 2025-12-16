@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell, Tray, Menu, nativeImage } from 'electron'
 
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
@@ -20,7 +20,7 @@ import {
   loadFavorites, loadHistory, loadPlaylists, loadSettings,
   saveFavorites, saveHistory, savePlaylists, saveSettings
 } from './userData'
-import { initUpdater } from './updater'
+import { initUpdater, checkForUpdates, onStatusChange } from './updater'
 
 // Disable native swipe navigation (fixes sidebar drag sliding the screen)
 app.commandLine.appendSwitch('disable-features', 'OverscrollHistoryNavigation')
@@ -45,6 +45,126 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 
 let win: BrowserWindow | null
 const jobSubscriptions = new Map<number, Map<string, () => void>>()
 const downloadSubscriptions = new Map<number, Map<string, () => void>>()
+
+// Tray & Lifecycle
+let tray: Tray | null = null
+let isQuitting = false
+
+function createTray() {
+  // Use SVG if possible, assume logo is available
+  const iconPath = path.join(process.env.VITE_PUBLIC, 'logo_outer.png')
+  const icon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 })
+  tray = new Tray(icon)
+  tray.setToolTip('KHelper V3')
+
+  tray.on('click', () => {
+    if (win) {
+      if (win.isVisible()) {
+        if (win.isFocused()) {
+          win.hide()
+        } else {
+          win.focus()
+        }
+      } else {
+        win.show()
+        win.focus()
+      }
+    }
+  })
+
+  // Initial menu
+  updateTrayMenu()
+}
+
+function updateTrayMenu(updaterStatus?: string) {
+  if (!tray) return
+
+  const updaterLabel = updaterStatus === 'checking' ? '檢查更新中...' : '檢查更新'
+
+  // Icon Helpers
+  // Strict usage of src/assets/icons as requested.
+  const getIcon = (name: string) => {
+    // process.env.APP_ROOT is Project Root
+    if (!process.env.APP_ROOT) return null
+    const iconPath = path.join(process.env.APP_ROOT, 'src/assets/icons', name)
+    if (fs.existsSync(iconPath)) return nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 })
+    return null
+  }
+
+  // Define icons
+  // Logo is in public root, handle separately
+  const logoPath = path.join(process.env.VITE_PUBLIC, 'logo_outer.png')
+  const logoIcon = fs.existsSync(logoPath) ? nativeImage.createFromPath(logoPath).resize({ width: 16, height: 16 }) : undefined
+
+  // Use the dedicated Tray icons (black / separate ones)
+  const settingsIcon = getIcon('settings_tray.png')
+  const updateIcon = getIcon('update_tray.png')
+  const quitIcon = getIcon('quit.png')
+  const openIcon = getIcon('open.png')
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: '𝐊𝐇𝐞𝐥𝐩𝐞𝐫 𝐕𝟑',
+      enabled: false,
+      icon: logoIcon
+    },
+    { type: 'separator' },
+    {
+      label: '開啟主視窗',
+      icon: openIcon || undefined,
+      click: () => {
+        if (win) {
+          win.show()
+          win.focus()
+        }
+      }
+    },
+    {
+      label: '設定',
+      icon: settingsIcon || undefined,
+      click: () => {
+        if (win) {
+          // Whether hidden or visible, we want to nav
+          if (!win.isVisible()) {
+            win.show()
+            win.focus()
+          }
+          if (win.isMinimized()) win.restore()
+          win.focus()
+
+          win.webContents.send('navigate', 'settings')
+        }
+      }
+    },
+    {
+      label: updaterLabel,
+      icon: updateIcon || undefined,
+      enabled: updaterStatus !== 'checking',
+      click: () => {
+        if (win) {
+          if (!win.isVisible()) {
+            win.show()
+            win.focus()
+          } else {
+            win.focus()
+          }
+        }
+        checkForUpdates({ manual: true })
+      }
+    },
+    { type: 'separator' },
+    {
+      label: '退出',
+      icon: quitIcon || undefined,
+      click: () => {
+        isQuitting = true
+        app.quit()
+      }
+    }
+  ])
+
+  tray.setContextMenu(contextMenu)
+}
 
 const WINDOW_STATE_FILE = 'window-state.json'
 
@@ -165,7 +285,7 @@ function createWindow() {
     win?.webContents.send('window:unmaximized')
     handleSave()
   })
-  win.on('close', () => {
+  win.on('close', (event) => {
     // Force save on close without debounce
     if (win && !win.isDestroyed() && !win.isMinimized()) {
       const isMaximized = win.isMaximized()
@@ -177,6 +297,12 @@ function createWindow() {
         y: bounds.y,
         isMaximized
       })
+    }
+
+    if (!isQuitting) {
+      event.preventDefault()
+      win?.hide()
+      return
     }
   })
 
@@ -195,11 +321,13 @@ function createWindow() {
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+  // Keep app running for tray behavior on all platforms (Phase 1 req)
+  /* if (process.platform !== 'darwin') {
     app.quit()
     win = null
-  }
+  } */
 })
+
 
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
@@ -434,10 +562,19 @@ app.whenReady().then(async () => {
   // Initialize Updater
   initUpdater()
 
+  // Initialize Tray
+  createTray()
+
+  // Subscribe to Updater Status for Tray Menu
+  onStatusChange((status) => {
+    updateTrayMenu(status.status)
+  })
+
   // Lazy load this too if needed, or just remove if not critical
   // console.log('[Library] base songs dir:', getSongsBaseDir()) 
   createWindow()
 })
+
 
 const clients: Set<Response> = new Set()
 

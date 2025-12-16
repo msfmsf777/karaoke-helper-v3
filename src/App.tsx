@@ -209,6 +209,21 @@ function AppContent() {
     }
   };
 
+  // Listen for Tray navigation events
+  useEffect(() => {
+    const removeListener = window.khelper?.navigation.onNavigate((view) => {
+      if (view === 'settings') {
+        if (currentView !== 'settings') {
+          setPreviousView(currentView);
+          handleViewChange('settings');
+        }
+      } else {
+        handleViewChange(view);
+      }
+    });
+    return () => removeListener?.();
+  }, [currentView]);
+
   const renderContent = () => {
     return (
       <Suspense fallback={

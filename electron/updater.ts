@@ -44,6 +44,9 @@ function broadcastStatus() {
             win.webContents.send('updater:status', payload);
         }
     });
+
+    // Notify internal listeners (Tray)
+    internalListeners.forEach(cb => cb(currentState));
 }
 
 function setState(newState: Partial<UpdaterState>) {
@@ -158,3 +161,20 @@ function setupIpcHandlers() {
         };
     });
 }
+
+// Export for Main Process usage (Tray)
+export { checkForUpdates };
+
+export function onStatusChange(callback: (status: UpdaterState) => void) {
+    // Hook into broadcastStatus (we need to modify broadcastStatus or just poll/event emitter - 
+    // actually, lighter touch: let's just make broadcastStatus emit an internal event if we wanted, 
+    // OR just modify broadcastStatus to call a list of callbacks. 
+    // Let's modify broadcastStatus below.
+    internalListeners.push(callback);
+    return () => {
+        const idx = internalListeners.indexOf(callback);
+        if (idx !== -1) internalListeners.splice(idx, 1);
+    };
+}
+
+const internalListeners: ((status: UpdaterState) => void)[] = [];
