@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, shell, Tray, Menu, nativeImage } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell, Tray, Menu, nativeImage, screen } from 'electron'
 
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
@@ -315,7 +315,131 @@ function createWindow() {
   } else {
     win.loadFile(path.join(RENDERER_DIST, 'index.html'))
   }
+
+  createMiniPlayerWindow()
 }
+
+// ---------------- Mini Player Implementation ----------------
+
+let miniWin: BrowserWindow | null = null
+
+function createMiniPlayerWindow() {
+  // Load saved position if any
+  const miniStatePath = path.join(app.getPath('userData'), 'mini-player-state.json')
+  let miniState = { x: undefined as number | undefined, y: undefined as number | undefined }
+  try {
+    if (fs.existsSync(miniStatePath)) {
+      miniState = JSON.parse(fs.readFileSync(miniStatePath, 'utf-8'))
+    }
+  } catch (e) {
+    console.error('Failed to load mini player state', e)
+  }
+
+  // Calculate default position (bottom-right of primary display) if no saved state
+  if (miniState.x === undefined || miniState.y === undefined) {
+    const primaryDisplay = screen.getPrimaryDisplay()
+    const workArea = primaryDisplay.workArea
+    miniState.x = workArea.x + workArea.width - 450 // 420 width + padding
+    miniState.y = workArea.y + workArea.height - 150 // 110 height + padding
+  }
+
+  miniWin = new BrowserWindow({
+    width: 420,
+    height: 110,
+    x: miniState.x,
+    y: miniState.y,
+    frame: false,
+    resizable: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    show: false, // Hidden by default
+    transparent: true,
+    backgroundColor: '#00000000',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.mjs'),
+      webSecurity: false,
+      nodeIntegration: false,
+      contextIsolation: true,
+    },
+  })
+
+  // Persistence
+  const saveMiniState = () => {
+    if (!miniWin || miniWin.isDestroyed()) return
+    const bounds = miniWin.getBounds()
+    try {
+      fs.writeFileSync(miniStatePath, JSON.stringify({ x: bounds.x, y: bounds.y }))
+    } catch (e) {
+      console.error('Failed to save mini player state', e)
+    }
+  }
+
+  miniWin.on('move', () => {
+    saveMiniState()
+  })
+
+  // Clean up
+  miniWin.on('closed', () => {
+    miniWin = null
+  })
+
+  // Load URL
+  if (VITE_DEV_SERVER_URL) {
+    // Hash routing for mini player
+    miniWin.loadURL(`${VITE_DEV_SERVER_URL}#/mini-player`)
+  } else {
+    miniWin.loadFile(path.join(RENDERER_DIST, 'index.html'), { hash: 'mini-player' })
+  }
+}
+
+// IPC Wiring for Mini Player
+ipcMain.on('mini-player:toggle', () => {
+  if (!miniWin) {
+    createMiniPlayerWindow()
+    return
+  }
+  if (miniWin.isVisible()) {
+    miniWin.hide()
+    if (win && !win.isVisible()) win.show()
+  } else {
+    miniWin.show()
+    // Hide main window as requested
+    if (win) win.hide()
+  }
+})
+
+// Relay Commands: Mini -> Main Window
+ipcMain.on('mini-player:command', (_event, command, ...args) => {
+  // If "toggleMainWindow" command
+  if (command === 'toggleMainWindow') {
+    if (win) {
+      if (win.isVisible()) {
+        if (win.isMinimized()) {
+          win.restore()
+          win.focus()
+        } else {
+          win.hide()
+        }
+      } else {
+        win.show()
+        win.focus()
+      }
+    }
+    return
+  }
+
+  // Forward to Main Window
+  if (win && !win.isDestroyed()) {
+    win.webContents.send('mini-player:command', command, ...args)
+  }
+})
+
+// Relay State: Main Window -> Mini Player
+ipcMain.on('mini-player:update-state', (_event, state) => {
+  if (miniWin && !miniWin.isDestroyed()) {
+    miniWin.webContents.send('mini-player:update-state', state)
+  }
+})
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits

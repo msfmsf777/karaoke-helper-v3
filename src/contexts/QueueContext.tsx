@@ -23,6 +23,7 @@ interface QueueContextType {
     clearQueue: () => void;
     replaceQueue: (songIds: string[]) => void;
     resetStream: () => void;
+    togglePlayPause: () => void;
 }
 
 export type PlaybackMode = 'normal' | 'repeat_one' | 'random' | 'stream';
@@ -465,6 +466,14 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
     }, [playbackMode]);
 
+    const togglePlayPause = useCallback(() => {
+        if (audioEngine.isPlaying()) {
+            audioEngine.pause();
+        } else {
+            audioEngine.play();
+        }
+    }, []);
+
     return (
         <QueueContext.Provider
             value={{
@@ -487,6 +496,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 clearQueue,
                 replaceQueue,
                 resetStream,
+                togglePlayPause,
             }}
         >
             {children}

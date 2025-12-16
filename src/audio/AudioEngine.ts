@@ -41,6 +41,8 @@ export interface AudioEngine {
   setOffset(offsetMs: number): void;
   setLoop(loop: boolean): void;
   getSampleRate(role: OutputRole): number;
+  getVolume(role: OutputRole): number;
+  getTrackVolume(track: TrackType): number;
 }
 
 type SinkableAudioElement = HTMLAudioElement & { setSinkId?: (sinkId: string) => Promise<void> };
@@ -241,6 +243,7 @@ class AudioPlayer {
   get currentTime() { return this._currentTime; }
   get duration() { return this._duration; }
   get isPlaying() { return this._isPlaying; }
+  get volume() { return this.gainNode.gain.value; }
 
   dispose() {
     this.stop();
@@ -496,6 +499,23 @@ export class DualAudioEngine implements AudioEngine {
 
   getSampleRate(role: OutputRole): number {
     return role === 'stream' ? this.streamPlayer.sampleRate : this.headphonePlayer.sampleRate;
+  }
+
+  getVolume(role: OutputRole): number {
+    // Note: AudioPlayer doesn't expose gain value directly in previous code, 
+    // but we can access the private gainNode if we changed AudioPlayer or just store it.
+    // For now, let's assume we can access it or we should store it.
+    // Re-reading AudioPlayer code... it has `setVolume` which sets `gainNode.gain.value`.
+    // It does NOT expose getter.
+    // I need to update AudioPlayer to expose volume getter first?
+    // Actually, I can just return the local var if I tracked it, but safely accessing the node is better.
+    // Let's modify AudioPlayer class first in next step or use 'any' cast as hotfix? No.
+    // I'll update AudioPlayer to add 'volume' getter.
+    return role === 'stream' ? this.streamPlayer.volume : this.headphonePlayer.volume;
+  }
+
+  getTrackVolume(track: TrackType): number {
+    return track === 'instrumental' ? this.instrVolume : this.vocalVolume;
   }
 }
 
