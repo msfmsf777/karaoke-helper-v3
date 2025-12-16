@@ -408,6 +408,12 @@ ipcMain.on('mini-player:toggle', () => {
   }
 })
 
+ipcMain.on('mini-player:resize', (_event, width, height) => {
+  if (miniWin && !miniWin.isDestroyed()) {
+    miniWin.setSize(Math.ceil(width), Math.ceil(height))
+  }
+})
+
 // Relay Commands: Mini -> Main Window
 ipcMain.on('mini-player:command', (_event, command, ...args) => {
   // If "toggleMainWindow" command
