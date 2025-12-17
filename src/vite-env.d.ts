@@ -112,6 +112,7 @@ interface Window {
       onStateUpdate: (callback: (state: any) => void) => () => void;
       toggle: () => void;
       resize: (width: number, height: number) => void;
+      onMousePresence: (callback: (isOver: boolean) => void) => () => void;
     };
   };
 }

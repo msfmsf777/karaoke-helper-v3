@@ -1,10 +1,12 @@
-import React, { lazy } from 'react'
+import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import OverlayWindow from './components/OverlayWindow.tsx'
 import './index.css'
 
 import SetlistOverlayWindow from './components/SetlistOverlayWindow.tsx'
+
+import MiniPlayerWindow from './components/MiniPlayer/MiniPlayerWindow';
 
 const path = window.location.pathname;
 const hash = window.location.hash;
@@ -26,11 +28,16 @@ if (isOverlay || isMiniPlayer) {
 let ComponentToRender: React.ComponentType = App;
 if (isSetlist) ComponentToRender = SetlistOverlayWindow;
 else if (isOverlay) ComponentToRender = OverlayWindow;
-else if (isMiniPlayer) ComponentToRender = lazy(() => import('./components/MiniPlayer/MiniPlayerWindow'));
+else if (isMiniPlayer) {
+  console.log('[Main] Rendering MiniPlayerWindow');
+  ComponentToRender = MiniPlayerWindow;
+}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ComponentToRender />
+    <React.Suspense fallback={null}>
+      <ComponentToRender />
+    </React.Suspense>
   </React.StrictMode>,
 )
 
