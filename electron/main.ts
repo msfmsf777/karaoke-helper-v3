@@ -407,10 +407,12 @@ function createMiniPlayerWindow() {
     miniWin.loadFile(path.join(RENDERER_DIST, 'index.html'), { hash: 'mini-player' })
   }
 
-  // Mouse Detection Loop for Hover (fixes WebkitAppRegion: drag swallowing events)
-  const pollMouse = () => {
+  // Mouse Polling for Robust Hover/Drag Detection
+  // We send coordinates to renderer so it can perform elementFromPoint
+  // This bypasses the issue where WebkitAppRegion: drag swallows mouse events
+  const pollCursor = () => {
     if (!miniWin || miniWin.isDestroyed() || !miniWin.isVisible()) {
-      setTimeout(pollMouse, 100)
+      setTimeout(pollCursor, 100)
       return
     }
 
@@ -418,24 +420,36 @@ function createMiniPlayerWindow() {
       const point = screen.getCursorScreenPoint()
       const bounds = miniWin.getBounds()
 
-      // Check if mouse is within bounds
-      const isOver = (
+      const inside = (
         point.x >= bounds.x &&
         point.x <= bounds.x + bounds.width &&
         point.y >= bounds.y &&
         point.y <= bounds.y + bounds.height
       )
 
-      miniWin.webContents.send('mini-player:mouse-presence', isOver)
+      if (inside) {
+        const relativeX = point.x - bounds.x
+        const relativeY = point.y - bounds.y
+        miniWin.webContents.send('mini-player:cursor-poll', { x: relativeX, y: relativeY })
+      } else {
+        // Send one "outside" event to ensure cleanup
+        miniWin.webContents.send('mini-player:cursor-poll', { x: -1, y: -1 })
+      }
     } catch (e) {
-      // Ignore errors
+      // Ignore
     }
-    setTimeout(pollMouse, 50) // Fast polling for responsiveness
+    setTimeout(pollCursor, 40) // ~25fps is enough
   }
-  pollMouse()
+  pollCursor()
 }
 
 // IPC Wiring for Mini Player
+ipcMain.on('mini-player:set-ignore-mouse-events', (_event, ignore, options) => {
+  if (miniWin && !miniWin.isDestroyed()) {
+    miniWin.setIgnoreMouseEvents(ignore, options)
+  }
+})
+
 ipcMain.on('mini-player:toggle', () => {
   if (!miniWin) {
     createMiniPlayerWindow()

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useQueue } from '../../contexts/QueueContext';
 import { useLibrary } from '../../contexts/LibraryContext';
+import { useUserData } from '../../contexts/UserDataContext';
 import audioEngine from '../../audio/AudioEngine';
 
 interface MiniPlayerState {
@@ -24,34 +25,34 @@ interface MiniPlayerState {
         title: string;
         artist: string;
     }[];
+    currentIndex: number;
+    isFavorite: boolean;
 }
 
 export default function MiniPlayerSync() {
     const {
         currentSongId,
         queue,
+        currentIndex,
         playNext,
         playPrev,
-        togglePlayPause
+        togglePlayPause,
+        removeFromQueue,
+        playQueueIndex
     } = useQueue();
 
+    const { isFavorite, toggleFavorite } = useUserData();
     const { getSongById } = useLibrary();
 
     // Throttling ref
     const lastUpdateRef = useRef<number>(0);
     const rafRef = useRef<number>();
 
-    // Helpers for Mute Toggle (Simple: Toggle between 0 and 1, or restore? 
-    // For simplicity, we wont track 'previous volume' here to avoid complex state sync. 
-    // We'll just toggle 0 <-> 1 for the 'mute' command from Mini Player if current is > 0, else 1.
-    // Actually, UI probably expects proper mute. But AudioEngine doesn't have it.
-    // Let's implement simple toggle: if vol > 0, set to 0. If vol == 0, set to 1.
+    // Helpers for Mute Toggle
     const toggleMute = (role: 'instrumental' | 'vocal') => {
         const current = role === 'instrumental'
             ? audioEngine.getTrackVolume('instrumental')
-            : audioEngine.getTrackVolume('vocal'); // Wait, 'vocal' output? 
-        // Requirements said: Instrumental Volume and Vocal Volume. 
-        // Usually means Track Volumes.
+            : audioEngine.getTrackVolume('vocal');
 
         const target = current > 0 ? 0 : 1;
         audioEngine.setTrackVolume(role, target);
@@ -62,7 +63,7 @@ export default function MiniPlayerSync() {
         if (!window.khelper?.miniPlayer) return;
 
         const removeListener = window.khelper.miniPlayer.onCommand((command, ...args) => {
-            console.log('[MiniPlayerSync] Received command:', command, args);
+            // console.log('[MiniPlayerSync] Received command:', command, args);
             switch (command) {
                 case 'playPause':
                     togglePlayPause();
@@ -89,12 +90,10 @@ export default function MiniPlayerSync() {
                     break;
                 case 'setInstrumentalVolume':
                     const [instVol] = args;
-                    // Instrumental Volume slider likely controls the Instrumental TRACK volume
                     audioEngine.setTrackVolume('instrumental', instVol);
                     break;
                 case 'setVocalVolume':
                     const [vocVol] = args;
-                    // Vocal Volume slider likely controls the Vocal TRACK volume
                     audioEngine.setTrackVolume('vocal', vocVol);
                     break;
                 case 'toggleInstrumentalMute':
@@ -106,11 +105,24 @@ export default function MiniPlayerSync() {
                 case 'toggleMainWindow':
                     // Handled by Main Process
                     break;
+                case 'removeFromQueue':
+                    // @ts-ignore
+                    const [rmIdx] = args;
+                    if (typeof rmIdx === 'number') removeFromQueue(rmIdx);
+                    break;
+                case 'playQueueIndex':
+                    // @ts-ignore
+                    const [qIdx] = args;
+                    if (typeof qIdx === 'number') playQueueIndex(qIdx);
+                    break;
+                case 'toggleFavorite':
+                    if (currentSongId) toggleFavorite(currentSongId);
+                    break;
             }
         });
 
         return () => removeListener?.();
-    }, [togglePlayPause, playNext, playPrev]);
+    }, [togglePlayPause, playNext, playPrev, removeFromQueue, playQueueIndex, currentSongId, toggleFavorite]);
 
     // State Broadcaster
     useEffect(() => {
@@ -151,7 +163,9 @@ export default function MiniPlayerSync() {
                 queue: queue.slice(0, 20).map(id => {
                     const s = getSongById(id);
                     return { id, title: s?.title || 'Unknown', artist: s?.artist || '' };
-                })
+                }),
+                currentIndex: currentIndex,
+                isFavorite: currentSongId ? isFavorite(currentSongId) : false
             };
 
             window.khelper.miniPlayer.sendStateUpdate(state);
@@ -168,7 +182,7 @@ export default function MiniPlayerSync() {
             clearInterval(interval);
             if (rafRef.current) cancelAnimationFrame(rafRef.current);
         };
-    }, [currentSongId, queue, getSongById]);
+    }, [currentSongId, queue, getSongById, currentIndex, isFavorite]);
 
     return null;
 }
