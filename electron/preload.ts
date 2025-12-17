@@ -186,5 +186,10 @@ contextBridge.exposeInMainWorld('khelper', {
     },
     toggle: () => ipcRenderer.send('mini-player:toggle'),
     resize: (width: number, height: number) => ipcRenderer.send('mini-player:resize', width, height),
+    onMousePresence: (callback: (isOver: boolean) => void) => {
+      const listener = (_event: any, isOver: boolean) => callback(isOver)
+      ipcRenderer.on('mini-player:mouse-presence', listener)
+      return () => ipcRenderer.off('mini-player:mouse-presence', listener)
+    }
   }
 })

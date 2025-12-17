@@ -146,9 +146,26 @@ export default function MiniPlayerWindow() {
         const removeListener = window.khelper?.miniPlayer.onStateUpdate((newState) => {
             setState(newState);
         });
+
+        // Fix for hover: Use IPC mouse polling instead of reliance on DOM events
+        // which are often swallowed by draggable regions.
+        const removeMousePresence = window.khelper?.miniPlayer.onMousePresence?.((isOver) => {
+            setHovered(isOver);
+            // Also close menus if leaving
+            if (!isOver) {
+                setShowSpeed(false);
+                setShowPitch(false);
+                setShowQueue(false);
+            }
+        });
+
         // Request initial state
         window.khelper?.miniPlayer.sendCommand('refresh');
-        return () => removeListener?.();
+
+        return () => {
+            removeListener?.();
+            removeMousePresence?.();
+        };
     }, []);
 
     const progress = state.currentTrack?.duration ? state.currentTime / state.currentTrack.duration : 0;
@@ -174,8 +191,7 @@ export default function MiniPlayerWindow() {
                 overflow: 'hidden',
                 backgroundColor: 'transparent'
             }}
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => { setHovered(false); setShowSpeed(false); setShowPitch(false); setShowQueue(false); }}
+        // Hover handled by IPC polling now for robustness
         >
             <div
                 ref={containerRef}
@@ -419,6 +435,6 @@ export default function MiniPlayerWindow() {
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

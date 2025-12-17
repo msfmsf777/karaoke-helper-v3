@@ -2,7 +2,7 @@ import "electron";
 import "node:url";
 import "node:path";
 import "node:fs";
-import { Z, _, Y } from "./main-Bvn9YJS4.js";
+import { Z, _, Y } from "./main-BT7LOhYs.js";
 import "node:http";
 export {
   Z as MAIN_DIST,

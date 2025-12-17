@@ -336,11 +336,25 @@ function createMiniPlayerWindow() {
   }
 
   // Calculate default position (bottom-right of primary display) if no saved state
-  if (miniState.x === undefined || miniState.y === undefined) {
+  // Validate position is visible on some display
+  const isVisible = screen.getAllDisplays().some(display => {
+    const d = display.bounds
+    return (
+      miniState.x !== undefined &&
+      miniState.y !== undefined &&
+      miniState.x >= d.x &&
+      miniState.x < d.x + d.width &&
+      miniState.y >= d.y &&
+      miniState.y < d.y + d.height
+    )
+  })
+
+  // If invalid or undefined, center on primary
+  if (!isVisible || miniState.x === undefined || miniState.y === undefined) {
     const primaryDisplay = screen.getPrimaryDisplay()
     const workArea = primaryDisplay.workArea
-    miniState.x = workArea.x + workArea.width - 450 // 420 width + padding
-    miniState.y = workArea.y + workArea.height - 150 // 110 height + padding
+    miniState.x = Math.round(workArea.x + (workArea.width - 420) / 2)
+    miniState.y = Math.round(workArea.y + (workArea.height - 110) / 2)
   }
 
   miniWin = new BrowserWindow({
@@ -362,6 +376,8 @@ function createMiniPlayerWindow() {
       contextIsolation: true,
     },
   })
+
+
 
   // Persistence
   const saveMiniState = () => {
@@ -390,12 +406,45 @@ function createMiniPlayerWindow() {
   } else {
     miniWin.loadFile(path.join(RENDERER_DIST, 'index.html'), { hash: 'mini-player' })
   }
+
+  // Mouse Detection Loop for Hover (fixes WebkitAppRegion: drag swallowing events)
+  const pollMouse = () => {
+    if (!miniWin || miniWin.isDestroyed() || !miniWin.isVisible()) {
+      setTimeout(pollMouse, 100)
+      return
+    }
+
+    try {
+      const point = screen.getCursorScreenPoint()
+      const bounds = miniWin.getBounds()
+
+      // Check if mouse is within bounds
+      const isOver = (
+        point.x >= bounds.x &&
+        point.x <= bounds.x + bounds.width &&
+        point.y >= bounds.y &&
+        point.y <= bounds.y + bounds.height
+      )
+
+      miniWin.webContents.send('mini-player:mouse-presence', isOver)
+    } catch (e) {
+      // Ignore errors
+    }
+    setTimeout(pollMouse, 50) // Fast polling for responsiveness
+  }
+  pollMouse()
 }
 
 // IPC Wiring for Mini Player
 ipcMain.on('mini-player:toggle', () => {
   if (!miniWin) {
     createMiniPlayerWindow()
+    // TS thinks miniWin is still null here, but createMiniPlayerWindow assigns it.
+    if (miniWin) {
+      // @ts-ignore
+      miniWin.show()
+      if (win) win.hide()
+    }
     return
   }
   if (miniWin.isVisible()) {
