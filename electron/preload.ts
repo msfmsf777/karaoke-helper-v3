@@ -186,10 +186,16 @@ contextBridge.exposeInMainWorld('khelper', {
     },
     toggle: () => ipcRenderer.send('mini-player:toggle'),
     resize: (width: number, height: number) => ipcRenderer.send('mini-player:resize', width, height),
+    setIgnoreMouseEvents: (ignore: boolean, options?: { forward: boolean }) => ipcRenderer.send('mini-player:set-ignore-mouse-events', ignore, options),
     onMousePresence: (callback: (isOver: boolean) => void) => {
       const listener = (_event: any, isOver: boolean) => callback(isOver)
       ipcRenderer.on('mini-player:mouse-presence', listener)
       return () => ipcRenderer.off('mini-player:mouse-presence', listener)
+    },
+    onCursorPoll: (callback: (pos: { x: number, y: number }) => void) => {
+      const listener = (_event: any, pos: { x: number, y: number }) => callback(pos)
+      ipcRenderer.on('mini-player:cursor-poll', listener)
+      return () => ipcRenderer.removeListener('mini-player:cursor-poll', listener)
     }
   }
 })

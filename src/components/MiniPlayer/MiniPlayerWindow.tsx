@@ -9,6 +9,7 @@ import PitchIcon from '../../assets/icons/pitch.svg';
 import VolumeHighIcon from '../../assets/icons/volume_high.svg';
 import VolumeMuteIcon from '../../assets/icons/volume_mute.svg';
 import PlaylistIcon from '../../assets/icons/playlist.svg';
+import ScrollingText from '../ScrollingText';
 import CloseIcon from '../../assets/icons/cancel.svg';
 
 interface ControlProps {
@@ -118,7 +119,9 @@ export default function MiniPlayerWindow() {
         volume: { instrumental: 1, vocal: 1, instrumentalMuted: false, vocalMuted: false },
         speed: 1,
         pitch: 0,
-        queue: [] as { id: string; title: string }[]
+        queue: [] as { id: string; title: string; artist: string }[],
+        currentIndex: 0,
+        isFavorite: false,
     });
     const [hovered, setHovered] = useState(false);
     const [showSpeed, setShowSpeed] = useState(false);
@@ -147,26 +150,79 @@ export default function MiniPlayerWindow() {
             setState(newState);
         });
 
-        // Fix for hover: Use IPC mouse polling instead of reliance on DOM events
-        // which are often swallowed by draggable regions.
-        const removeMousePresence = window.khelper?.miniPlayer.onMousePresence?.((isOver) => {
-            setHovered(isOver);
-            // Also close menus if leaving
-            if (!isOver) {
-                setShowSpeed(false);
-                setShowPitch(false);
-                setShowQueue(false);
-            }
-        });
+        // Initialize: Ignore mouse events on transparent background (click-through)
+        // But forward them so we can detect entry into visible elements if possible,
+        // OR rely on the fact that we set it to forward: true in main.ts initially.
+        window.khelper?.miniPlayer.setIgnoreMouseEvents?.(true, { forward: true });
 
         // Request initial state
         window.khelper?.miniPlayer.sendCommand('refresh');
 
         return () => {
             removeListener?.();
-            removeMousePresence?.();
         };
     }, []);
+
+    // State for tracking interaction mode to avoid IPC flooding
+    const interactionRef = useRef({ ignore: true, hovered: false });
+
+    useEffect(() => {
+        // Robust Interaction Handling using Main Process Polling
+        // This receives cursor coordinates relative to the window
+        const handleCursorPoll = (pos: { x: number, y: number }) => {
+            let newIgnore = true;
+            let newHover = false;
+
+            if (pos.x >= 0 && pos.y >= 0) {
+                const el = document.elementFromPoint(pos.x, pos.y);
+                if (el) {
+                    const inPlaylist = !!el.closest('#mini-player-playlist');
+                    const inDisk = !!el.closest('#mini-player-disk');
+                    const inPill = !!el.closest('#mini-player-pill');
+                    const isVisible = inDisk || inPill;
+
+                    if (isVisible) {
+                        newIgnore = false; // Capture mouse
+                        if (inPlaylist) {
+                            newHover = false; // Hide controls in playlist
+                        } else {
+                            newHover = true; // Show controls in disk/top-bar
+                        }
+                    }
+                }
+            }
+            // If pos.x < 0, it means outside, so defaults (ignore=true, hover=false) apply
+
+            // Apply updates if changed
+            if (newIgnore !== interactionRef.current.ignore) {
+                window.khelper?.miniPlayer.setIgnoreMouseEvents?.(newIgnore, { forward: true });
+                interactionRef.current.ignore = newIgnore;
+            }
+
+            if (newHover !== interactionRef.current.hovered) {
+                setHovered(newHover);
+                interactionRef.current.hovered = newHover;
+                if (!newHover) {
+                    setShowSpeed(false);
+                    setShowPitch(false);
+                }
+            }
+        };
+
+        const cleanup = window.khelper?.miniPlayer?.onCursorPoll?.(handleCursorPoll);
+        return () => {
+            cleanup && cleanup();
+        };
+    }, []);
+
+    // Dynamic Window Resizing based on Queue State
+    useEffect(() => {
+        if (showQueue) {
+            window.khelper?.miniPlayer?.resize(420, 360);
+        } else {
+            window.khelper?.miniPlayer?.resize(420, 140);
+        }
+    }, [showQueue]);
 
     const progress = state.currentTrack?.duration ? state.currentTime / state.currentTrack.duration : 0;
 
@@ -184,42 +240,48 @@ export default function MiniPlayerWindow() {
                 width: '100vw',
                 height: '100vh',
                 display: 'flex',
-                alignItems: 'center',
+                alignItems: 'flex-start',
                 justifyContent: 'center',
                 fontFamily: '"Outfit", sans-serif',
                 userSelect: 'none',
                 overflow: 'hidden',
-                backgroundColor: 'transparent'
+                backgroundColor: 'transparent',
+                // @ts-ignore
+                WebkitAppRegion: 'no-drag' // Global no-drag
             }}
-        // Hover handled by IPC polling now for robustness
         >
             <div
                 ref={containerRef}
                 style={{
                     display: 'flex',
-                    alignItems: 'center',
-                    width: 'auto', // Allow dynamic width
-                    maxWidth: '90vw'
+                    alignItems: 'flex-start',
+                    width: 'auto',
+                    maxWidth: '90vw',
+                    paddingTop: '20px', // Compensate for top alignment & shadow
+                    paddingLeft: '20px', // Safety padding
                 }}>
-                {/* Floating Circle Knob (Left) - Z-Index higher to sit on top of pill */}
+                {/* Floating Circle Knob (Left) */}
                 <div
+                    id="mini-player-disk"
                     onClick={() => window.khelper?.miniPlayer?.sendCommand('toggleMainWindow')}
                     style={{
                         position: 'relative',
                         zIndex: 10,
-                        width: `${circleSize}px`, // 96px approx
+                        width: `${circleSize}px`,
                         height: `${circleSize}px`,
                         flexShrink: 0,
                         borderRadius: '50%',
-                        // removed background #111 to "remove outer black one", now relies on inner content bg or transparent
-                        backgroundColor: 'rgba(20,20,20,0.95)', // Match pill bg instead of black
+                        backgroundColor: 'rgba(20,20,20,0.95)',
                         boxShadow: '4px 0 20px rgba(0,0,0,0.6)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
+                        // Embossed Effect: Increased overlap & Lift
+                        marginTop: '0px',
+                        marginRight: '-65px', // Deep overlap
                         // @ts-ignore
-                        WebkitAppRegion: 'no-drag',
+                        WebkitAppRegion: 'drag', // Visible "knob" is draggable
                     }}
                 >
                     {/* Progress SVG */}
@@ -247,31 +309,41 @@ export default function MiniPlayerWindow() {
                 </div>
 
                 {/* Pill Container (Right) */}
-                <div style={{
-                    position: 'relative',
-                    marginLeft: '-48px', // Increase overlap slightly due to larger circle
-                    height: '60px',
-                    paddingLeft: '60px', // Adjusted space
-                    paddingRight: '20px',
-                    minWidth: '320px', // Reduced to tighten spacing
-                    width: 'auto', // Dynamic width expands if needed
-                    backgroundColor: 'rgba(20, 20, 20, 0.95)',
-                    borderRadius: '0 30px 30px 0', // rounded right only effectively
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.6)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderLeft: 'none', // Hide left border where it merges
-                    display: 'flex',
-                    alignItems: 'center',
-                    // @ts-ignore
-                    WebkitAppRegion: 'drag',
-                }}>
+                <div
+                    id="mini-player-pill"
+                    style={{
+                        position: 'relative',
+                        marginLeft: '0px',
+                        // Align Vertically:
+                        // Circle is at Top (0px local + 20px padding). Height 96. Center at 48.
+                        // Pill Height is 60 (Top Row). Center at 30.
+                        // To align centers: Pill Top needs to be at 48 - 30 = 18px relative to Circle Top.
+                        marginTop: '32px',
+
+                        minHeight: '60px',
+                        paddingLeft: '80px', // Increased padding for circle overlap (was 60, overlap +10)
+                        paddingRight: '20px',
+                        minWidth: '320px',
+                        width: 'auto', // Allow dynamic width
+                        backgroundColor: 'rgba(20, 20, 20, 0.95)',
+                        borderRadius: showQueue ? '30px 30px 16px 16px' : '30px',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.6)',
+                        backdropFilter: 'blur(10px)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderLeft: '1px solid rgba(255,255,255,0.1)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'flex-start', // Top align content
+                        // @ts-ignore
+                        WebkitAppRegion: 'drag',
+                        transition: 'border-radius 0.2s'
+                    }}>
 
                     {/* Close Button */}
                     <div style={{
                         position: 'absolute',
                         top: '8px',
-                        right: '12px',
+                        right: '18px',
                         zIndex: 20,
                         opacity: hovered ? 1 : 0,
                         transition: 'opacity 0.2s',
@@ -286,151 +358,228 @@ export default function MiniPlayerWindow() {
                         </button>
                     </div>
 
-                    {!hovered ? (
-                        // Idle View - Centered Text (Visually)
+                    {/* Top Row: Info + Controls */}
+                    <div
+                        onMouseEnter={() => setHovered(true)} // Explicitly ensure controls show here
+                        style={{
+                            height: '60px',
+                            width: '100%',
+                            position: 'relative', // Scope absolute children (Controls) to this row!
+                            display: 'flex',
+                            alignItems: 'center',
+                        }}>
+                        {/* Song Info */}
                         <div style={{
                             display: 'flex',
                             flexDirection: 'column',
-                            width: '100%',
-                            overflow: 'hidden',
-                            alignItems: 'center',
                             justifyContent: 'center',
-                            textAlign: 'center',
-                            transform: 'translateX(-15px)' // Adjusted to center visually including right corner
+                            flex: 1,
+                            minWidth: 0,
+                            marginRight: '12px', // Reduce margin
+                            opacity: hovered ? 0 : 1,
+                            transition: 'opacity 0.2s',
+                            // Remove transform for center align restoration
                         }}>
-                            <div style={{
-                                fontSize: '16px',
-                                fontWeight: '600',
-                                color: '#fff',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                maxWidth: '100%'
-                            }}>
-                                {state.currentTrack?.title || '未在播放'}
-                            </div>
-                            <div style={{
-                                fontSize: '12px',
-                                color: '#aaa',
-                                marginTop: '2px'
-                            }}>
-                                {state.currentTrack?.artist || 'Ready to Sing'}
+                            {/* Centered when idle */}
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <ScrollingText
+                                    text={state.currentTrack?.title || '未播放'}
+                                    style={{ fontSize: '14px', fontWeight: 600, color: '#fff', marginBottom: '2px', textAlign: 'center' }}
+                                />
+                                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {state.currentTrack?.artist || 'Ready'}
+                                </div>
                             </div>
                         </div>
-                    ) : (
-                        // Hovered Controls View
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                            {/* Speed */}
-                            <div style={{ position: 'relative' }}>
-                                <ControlButton
-                                    icon={SpeedIcon}
-                                    onClick={() => setShowSpeed(!showSpeed)}
-                                    title={`速度：${Math.round(state.speed * 100)}%`}
-                                    active={state.speed !== 1}
-                                />
-                                {showSpeed && (
-                                    <div style={{
-                                        position: 'absolute', bottom: '100%', left: '-10px',
-                                        backgroundColor: '#282828', padding: '8px', borderRadius: '4px',
-                                        display: 'flex', gap: '8px', alignItems: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                                        // @ts-ignore
-                                        WebkitAppRegion: 'no-drag'
-                                    }}>
-                                        <button onClick={() => window.khelper?.miniPlayer?.sendCommand('setSpeed', 1)} style={{ fontSize: '10px', padding: '2px 4px', background: '#444', border: 'none', color: '#fff', cursor: 'pointer', borderRadius: '2px' }}>重置</button>
-                                        <input type="range" min="0.5" max="1.5" step="0.05" value={state.speed}
-                                            onChange={(e) => window.khelper?.miniPlayer?.sendCommand('setSpeed', parseFloat(e.target.value))}
-                                            style={{ width: '80px', cursor: 'pointer' }}
-                                        />
-                                        <span style={{ fontSize: '10px', width: '30px' }}>{Math.round(state.speed * 100)}%</span>
-                                    </div>
-                                )}
-                            </div>
 
-                            {/* Pitch */}
-                            <div style={{ position: 'relative' }}>
-                                <ControlButton
-                                    icon={PitchIcon}
-                                    onClick={() => setShowPitch(!showPitch)}
-                                    title={`變調：${state.pitch}`}
-                                    active={state.pitch !== 0}
-                                />
-                                {showPitch && (
-                                    <div style={{
-                                        position: 'absolute', bottom: '100%', left: '-10px',
-                                        backgroundColor: '#282828', padding: '8px', borderRadius: '4px',
-                                        display: 'flex', gap: '8px', alignItems: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                                        // @ts-ignore
-                                        WebkitAppRegion: 'no-drag'
-                                    }}>
-                                        <button onClick={() => window.khelper?.miniPlayer?.sendCommand('setPitch', 0)} style={{ fontSize: '10px', padding: '2px 4px', background: '#444', border: 'none', color: '#fff', cursor: 'pointer', borderRadius: '2px' }}>重置</button>
-                                        <button onClick={() => window.khelper?.miniPlayer?.sendCommand('setPitch', state.pitch - 1)} style={{ background: 'none', color: '#fff', border: '1px solid #555', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer' }}>-</button>
-                                        <span style={{ fontSize: '12px', width: '20px', textAlign: 'center' }}>{state.pitch}</span>
-                                        <button onClick={() => window.khelper?.miniPlayer?.sendCommand('setPitch', state.pitch + 1)} style={{ background: 'none', color: '#fff', border: '1px solid #555', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer' }}>+</button>
-                                    </div>
-                                )}
-                            </div>
+                        {/* Controls (Visible on Hover) */}
+                        {hovered && (
+                            <div style={{
+                                position: 'absolute',
+                                left: '50px', // Match paddingLeft
+                                right: '36px', // Avoid close button
+                                top: 0,
+                                bottom: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center', // Center controls
+                                gap: '6px', // Compact gap
+                                // @ts-ignore
+                                WebkitAppRegion: 'no-drag'
+                            }}>
+                                {/* Order: Speed, Pitch, Prev, Play, Next, Volumes, Playlist */}
 
-                            {/* Transport */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <ControlButton icon={PrevIcon} onClick={() => window.khelper?.miniPlayer?.sendCommand('prev')} title="上一首" />
-                                <button
-                                    onClick={() => window.khelper?.miniPlayer?.sendCommand('playPause')}
-                                    style={{
-                                        background: '#fff', border: 'none', borderRadius: '50%', width: '32px', height: '32px',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                                        boxShadow: '0 2px 8px rgba(255,255,255,0.2)',
-                                        // @ts-ignore
-                                        WebkitAppRegion: 'no-drag'
-                                    }}
-                                >
-                                    <img src={state.isPlaying ? PauseIcon : PlayIcon} style={{ width: '16px', height: '16px' }} />
-                                </button>
-                                <ControlButton icon={NextIcon} onClick={() => window.khelper?.miniPlayer?.sendCommand('next')} title="下一首" />
-                            </div>
+                                {/* Speed & Pitch */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <ControlButton
+                                        icon={SpeedIcon}
+                                        title={`速度: ${state.speed}x`}
+                                        onClick={() => setShowSpeed(!showSpeed)}
+                                        active={showSpeed || state.speed !== 1}
+                                    />
+                                    {showSpeed && (
+                                        <div style={{
+                                            position: 'absolute', bottom: '100%', left: '0',
+                                            backgroundColor: '#282828', padding: '6px', borderRadius: '4px',
+                                            display: 'flex', gap: '4px', marginBottom: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)', zIndex: 100
+                                        }}>
+                                            {[0.5, 0.75, 1, 1.25, 1.5, 2].map(s => (
+                                                <button key={s} onClick={() => window.khelper?.miniPlayer?.sendCommand('setSpeed', s)}
+                                                    style={{
+                                                        background: state.speed === s ? 'var(--accent-color, #646cff)' : 'rgba(255,255,255,0.1)',
+                                                        border: 'none', color: '#fff', padding: '2px 6px', borderRadius: '2px', cursor: 'pointer', fontSize: '10px'
+                                                    }}>
+                                                    {s}x
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
 
-                            {/* Volumes */}
-                            <VolumeSlider
-                                value={state.volume.instrumental}
-                                onChange={(v) => window.khelper?.miniPlayer?.sendCommand('setInstrumentalVolume', v)}
-                                icon={VolumeHighIcon}
-                                muted={state.volume.instrumentalMuted}
-                                onToggleMute={() => window.khelper?.miniPlayer?.sendCommand('toggleInstrumentalMute')}
-                                title={`伴奏：${Math.round(state.volume.instrumental * 100)}%`}
-                            />
-                            <VolumeSlider
-                                value={state.volume.vocal}
-                                onChange={(v) => window.khelper?.miniPlayer?.sendCommand('setVocalVolume', v)}
-                                icon={VolumeHighIcon}
-                                muted={state.volume.vocalMuted}
-                                onToggleMute={() => window.khelper?.miniPlayer?.sendCommand('toggleVocalMute')}
-                                title={`人聲：${Math.round(state.volume.vocal * 100)}%`}
-                            />
+                                    <ControlButton
+                                        icon={PitchIcon}
+                                        title={`升降調: ${state.pitch}`}
+                                        onClick={() => setShowPitch(!showPitch)}
+                                        active={showPitch || state.pitch !== 0}
+                                    />
+                                    {showPitch && (
+                                        <div style={{
+                                            position: 'absolute', bottom: '100%', left: '10%',
+                                            backgroundColor: '#282828', padding: '6px', borderRadius: '4px',
+                                            display: 'flex', gap: '4px', marginBottom: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)', zIndex: 100
+                                        }}>
+                                            {[-2, -1, 0, 1, 2].map(p => (
+                                                <button key={p} onClick={() => window.khelper?.miniPlayer?.sendCommand('setPitch', p)}
+                                                    style={{
+                                                        background: state.pitch === p ? 'var(--accent-color, #646cff)' : 'rgba(255,255,255,0.1)',
+                                                        border: 'none', color: '#fff', padding: '2px 6px', borderRadius: '2px', cursor: 'pointer', fontSize: '10px'
+                                                    }}>
+                                                    {p > 0 ? `+${p}` : p}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
 
-                            {/* Queue Toggle */}
-                            <div style={{ position: 'relative' }}>
+                                {/* Transport: Prev, Play, Next */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <ControlButton icon={PrevIcon} onClick={() => window.khelper?.miniPlayer?.sendCommand('prev')} title="上一首" />
+                                    <button
+                                        onClick={() => window.khelper?.miniPlayer?.sendCommand('playPause')}
+                                        style={{
+                                            width: '28px', height: '28px', borderRadius: '50%',
+                                            backgroundColor: '#fff', border: 'none',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                                            boxShadow: '0 2px 8px rgba(255,255,255,0.2)',
+                                            // @ts-ignore
+                                            WebkitAppRegion: 'no-drag'
+                                        }}
+                                    >
+                                        <img src={state.isPlaying ? PauseIcon : PlayIcon} style={{ width: '12px', height: '12px', filter: 'brightness(0)' }} />
+                                    </button>
+                                    <ControlButton icon={NextIcon} onClick={() => window.khelper?.miniPlayer?.sendCommand('next')} title="下一首" />
+                                </div>
+
+                                {/* Volumes */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <VolumeSlider
+                                        icon={VolumeHighIcon}
+                                        title="伴奏音量"
+                                        value={state.volume.instrumental}
+                                        muted={state.volume.instrumentalMuted}
+                                        onToggleMute={() => window.khelper?.miniPlayer?.sendCommand('toggleInstrumentalMute')}
+                                        onChange={(v) => window.khelper?.miniPlayer?.sendCommand('setInstrumentalVolume', v)}
+                                    />
+                                    <VolumeSlider
+                                        icon={VolumeHighIcon}
+                                        title="人聲音量"
+                                        value={state.volume.vocal}
+                                        muted={state.volume.vocalMuted}
+                                        onToggleMute={() => window.khelper?.miniPlayer?.sendCommand('toggleVocalMute')}
+                                        onChange={(v) => window.khelper?.miniPlayer?.sendCommand('setVocalVolume', v)}
+                                    />
+                                </div>
+
+                                {/* Playlist Toggle */}
                                 <ControlButton
                                     icon={PlaylistIcon}
+                                    active={showQueue}
                                     onClick={() => setShowQueue(!showQueue)}
                                     title="待播清單"
                                 />
-                                {showQueue && (
-                                    <div style={{
-                                        position: 'absolute', top: '100%', right: 0,
-                                        width: '200px', maxHeight: '200px', overflowY: 'auto',
-                                        backgroundColor: '#1E1E1E', border: '1px solid #333', borderRadius: '8px',
-                                        zIndex: 50, marginTop: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.8)',
-                                        // @ts-ignore
-                                        WebkitAppRegion: 'no-drag'
-                                    }}>
-                                        {state.queue.map((item, idx) => (
-                                            <div key={idx} style={{ padding: '6px 10px', fontSize: '12px', borderBottom: '1px solid #2a2a2a', color: idx === 0 ? 'var(--primary-color)' : '#eee' }}>
-                                                <div style={{ fontWeight: '500' }}>{item.title}</div>
-                                            </div>
-                                        ))}
-                                        {state.queue.length === 0 && <div style={{ padding: '10px', textAlign: 'center', fontSize: '12px', color: '#666' }}>無待播歌曲</div>}
-                                    </div>
-                                )}
                             </div>
+
+                        )}
+                    </div>
+
+                    {/* Queue List (Bottom Row) */}
+                    {showQueue && (
+                        <div
+                            id="mini-player-playlist"
+                            style={{
+                                width: '100%',
+                                maxHeight: '180px', // Approx 4.5 rows
+                                overflowY: 'auto',
+                                borderTop: '1px solid rgba(255,255,255,0.1)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                // @ts-ignore
+                                WebkitAppRegion: 'no-drag' // List interaction no drag
+                            }}>
+                            {state.queue.length === 0 ? (
+                                <div style={{ padding: '16px', textAlign: 'center', fontSize: '12px', color: '#888' }}>
+                                    空蕩蕩的...
+                                </div>
+                            ) : (
+                                state.queue.map((item, idx) => {
+                                    const isCurrent = idx === state.currentIndex;
+                                    return (
+                                        <div
+                                            key={idx}
+                                            onDoubleClick={() => window.khelper?.miniPlayer?.sendCommand('playQueueIndex', idx)}
+                                            style={{
+                                                padding: '8px 12px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                fontSize: '12px',
+                                                backgroundColor: isCurrent ? 'rgba(255,255,255,0.08)' : 'transparent',
+                                                borderLeft: isCurrent ? '3px solid var(--accent-color, #646cff)' : '3px solid transparent',
+                                                cursor: 'default',
+                                                transition: 'background-color 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                if (!isCurrent) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'
+                                                const rmBtn = e.currentTarget.querySelector('.remove-btn') as HTMLElement;
+                                                if (rmBtn) rmBtn.style.opacity = '1';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                if (!isCurrent) e.currentTarget.style.backgroundColor = 'transparent'
+                                                const rmBtn = e.currentTarget.querySelector('.remove-btn') as HTMLElement;
+                                                if (rmBtn) rmBtn.style.opacity = '0';
+                                            }}
+                                        >
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{
+                                                    color: isCurrent ? 'var(--accent-color, #646cff)' : '#eee',
+                                                    fontWeight: isCurrent ? 600 : 400,
+                                                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                                                }}>{item.title}</div>
+                                                <div style={{ color: '#888', fontSize: '10px', marginTop: '1px' }}>{item.artist || 'Unknown'}</div>
+                                            </div>
+                                            <button
+                                                className="remove-btn"
+                                                onClick={(e) => { e.stopPropagation(); window.khelper?.miniPlayer?.sendCommand('removeFromQueue', idx); }}
+                                                style={{
+                                                    background: 'none', border: 'none', color: '#666', cursor: 'pointer',
+                                                    fontSize: '14px', opacity: 0, transition: 'opacity 0.2s'
+                                                }}
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    );
+                                })
+                            )}
                         </div>
                     )}
                 </div>

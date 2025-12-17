@@ -164,10 +164,16 @@ electron.contextBridge.exposeInMainWorld("khelper", {
     },
     toggle: () => electron.ipcRenderer.send("mini-player:toggle"),
     resize: (width, height) => electron.ipcRenderer.send("mini-player:resize", width, height),
+    setIgnoreMouseEvents: (ignore, options) => electron.ipcRenderer.send("mini-player:set-ignore-mouse-events", ignore, options),
     onMousePresence: (callback) => {
       const listener = (_event, isOver) => callback(isOver);
       electron.ipcRenderer.on("mini-player:mouse-presence", listener);
       return () => electron.ipcRenderer.off("mini-player:mouse-presence", listener);
+    },
+    onCursorPoll: (callback) => {
+      const listener = (_event, pos) => callback(pos);
+      electron.ipcRenderer.on("mini-player:cursor-poll", listener);
+      return () => electron.ipcRenderer.removeListener("mini-player:cursor-poll", listener);
     }
   }
 });
