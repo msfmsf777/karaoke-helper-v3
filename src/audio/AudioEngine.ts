@@ -43,6 +43,7 @@ export interface AudioEngine {
   getSampleRate(role: OutputRole): number;
   getVolume(role: OutputRole): number;
   getTrackVolume(track: TrackType): number;
+  onVolumeChange(callback: (track: TrackType, volume: number) => void): () => void;
 }
 
 type SinkableAudioElement = HTMLAudioElement & { setSinkId?: (sinkId: string) => Promise<void> };
@@ -269,6 +270,8 @@ export class DualAudioEngine implements AudioEngine {
   private instrVolume = 1.0;
   private vocalVolume = 1.0;
 
+  private volumeCallbacks = new Set<(track: TrackType, volume: number) => void>();
+
   constructor() {
     console.log('[AudioEngine] Initializing SoundTouch-based Dual Engine...');
     this.streamPlayer = new AudioPlayer('stream');
@@ -426,6 +429,11 @@ export class DualAudioEngine implements AudioEngine {
     return () => this.endedSubscribers.delete(callback);
   }
 
+  onVolumeChange(callback: (track: TrackType, volume: number) => void): () => void {
+    this.volumeCallbacks.add(callback);
+    return () => this.volumeCallbacks.delete(callback);
+  }
+
   async enumerateOutputDevices(): Promise<MediaDeviceInfo[]> {
     if (!navigator.mediaDevices?.enumerateDevices) return [];
     try {
@@ -459,6 +467,7 @@ export class DualAudioEngine implements AudioEngine {
       this.vocalVolume = volume;
     }
     this.applyTrackVolumes();
+    this.volumeCallbacks.forEach(cb => cb(track, volume));
   }
 
   setPlaybackTransform(transform: PlaybackTransform): void {

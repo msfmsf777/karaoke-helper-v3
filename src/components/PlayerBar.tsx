@@ -206,6 +206,19 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
     saveVolumePreferences({ streamVolume: backingVolume / 100, headphoneVolume: vocalVolume / 100 });
   }, [vocalVolume]);
 
+  // Two-way Sync: Listen for external volume changes (e.g. Mini Player)
+  useEffect(() => {
+    const cleanup = audioEngine.onVolumeChange((track, vol) => {
+      const volInt = Math.round(vol * 100);
+      if (track === 'instrumental') {
+        setBackingVolume(prev => (prev !== volInt ? volInt : prev));
+      } else {
+        setVocalVolume(prev => (prev !== volInt ? volInt : prev));
+      }
+    });
+    return cleanup;
+  }, []);
+
   const getModeIcon = () => {
     switch (playbackMode) {
       case 'repeat_one': return ModeRepeatIcon;
