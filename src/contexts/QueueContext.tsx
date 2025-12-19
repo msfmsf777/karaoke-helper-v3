@@ -269,7 +269,9 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 // Determine next index first
                 const nextIndex = prev < queue.length ? prev + 1 : prev;
 
-                // Signal wait transition
+                // Signal wait transition - ATOMIC UPDATE to prevent flash
+                // We set the state immediately so MiniPlayer sees "waiting" + "next index" together
+                if (!isStreamWaiting) setIsStreamWaiting(true);
                 shouldEnterStreamWait.current = true;
 
                 return nextIndex;
