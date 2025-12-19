@@ -60,13 +60,17 @@ const MergedVolumeControl: React.FC<{
     const [hover, setHover] = useState(false);
     const show = hover || props.forceHover;
 
-    // Logic for Restore-on-Unmute (Mimicking Main App)
+    // Logic for Restore-on-Unmute (Mem)
     const [lastInstVol, setLastInstVol] = useState(props.instVol > 0 ? props.instVol : 0.5);
     const [lastVocalVol, setLastVocalVol] = useState(props.vocalVol > 0 ? props.vocalVol : 0.5);
 
     // Sync last volumes when regular volume changes (and is not muted/zero)
     useEffect(() => { if (props.instVol > 0) setLastInstVol(props.instVol); }, [props.instVol]);
     useEffect(() => { if (props.vocalVol > 0) setLastVocalVol(props.vocalVol); }, [props.vocalVol]);
+
+    // Manual Input Handling (Declared at TOP LEVEL to fix scoping error)
+    const [localInst, setLocalInst] = useState<number | null>(null);
+    const [localVocal, setLocalVocal] = useState<number | null>(null);
 
     // Throttled IPC Update Refs
     const instThrottler = useRef<number | null>(null);
@@ -92,27 +96,28 @@ const MergedVolumeControl: React.FC<{
     };
 
     const toggleInst = () => {
-        // If current > 0, mute (0). Else restore last.
-        const effectiveVol = (localInst ?? props.instVol);
-        if (effectiveVol > 0) {
-            handleInstChange(0);
-        } else {
+        // If currently muted (prop) OR volume is 0, restore last > 0
+        if (props.instMuted || (localInst ?? props.instVol) === 0) {
+            // Unmute: Set volume to last known good volume
             handleInstChange(lastInstVol > 0 ? lastInstVol : 0.5);
+            // Also ensure backend mute flag is off if it exists
+            if (props.instMuted) props.onToggleInstMute();
+        } else {
+            // Mute: Set volume to 0 AND toggle mute flag
+            handleInstChange(0);
+            if (!props.instMuted) props.onToggleInstMute();
         }
     };
 
     const toggleVocal = () => {
-        const effectiveVol = (localVocal ?? props.vocalVol);
-        if (effectiveVol > 0) {
-            handleVocalChange(0);
-        } else {
+        if (props.vocalMuted || (localVocal ?? props.vocalVol) === 0) {
             handleVocalChange(lastVocalVol > 0 ? lastVocalVol : 0.5);
+            if (props.vocalMuted) props.onToggleVocalMute();
+        } else {
+            handleVocalChange(0);
+            if (!props.vocalMuted) props.onToggleVocalMute();
         }
     };
-
-    // Manual Input Handling
-    const [localInst, setLocalInst] = useState<number | null>(null);
-    const [localVocal, setLocalVocal] = useState<number | null>(null);
 
     // Helper for input text
     const handleTextInput = (val: string, handler: (v: number) => void) => {
@@ -150,7 +155,7 @@ const MergedVolumeControl: React.FC<{
                 pointerEvents: 'none',
                 display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
-                <img src={(sliderInstVal === 0) ? VolumeMuteIcon : (sliderInstVal < 0.5 ? VolumeLowIcon : VolumeHighIcon)} alt="Volume" style={{ width: '20px', height: '20px', filter: 'brightness(0) invert(1)' }} />
+                <img src={(props.instMuted || sliderInstVal === 0) ? VolumeMuteIcon : (sliderInstVal < 0.5 ? VolumeLowIcon : VolumeHighIcon)} alt="Volume" style={{ width: '20px', height: '20px', filter: 'brightness(0) invert(1)' }} />
             </div>
 
             {/* Split Controls */}
@@ -202,7 +207,7 @@ const MergedVolumeControl: React.FC<{
                         </div>
                     </div>
                     <button onClick={toggleInst} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}>
-                        <img src={(sliderInstVal === 0) ? VolumeMuteIcon : (sliderInstVal < 0.5 ? VolumeLowIcon : VolumeHighIcon)} style={{ width: '20px', height: '20px', filter: 'brightness(0) invert(1)' }} />
+                        <img src={(props.instMuted || sliderInstVal === 0) ? VolumeMuteIcon : (sliderInstVal < 0.5 ? VolumeLowIcon : VolumeHighIcon)} style={{ width: '20px', height: '20px', filter: 'brightness(0) invert(1)' }} />
                     </button>
                     <span style={{ fontSize: '10px', color: '#aaa', lineHeight: '1' }}>伴奏</span>
                 </div>
@@ -234,7 +239,7 @@ const MergedVolumeControl: React.FC<{
                         </div>
                     </div>
                     <button onClick={toggleVocal} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}>
-                        <img src={(sliderVocalVal === 0) ? VolumeMuteIcon : (sliderVocalVal < 0.5 ? VolumeLowIcon : VolumeHighIcon)} style={{ width: '20px', height: '20px', filter: 'brightness(0) invert(1)' }} />
+                        <img src={(props.vocalMuted || sliderVocalVal === 0) ? VolumeMuteIcon : (sliderVocalVal < 0.5 ? VolumeLowIcon : VolumeHighIcon)} style={{ width: '20px', height: '20px', filter: 'brightness(0) invert(1)' }} />
                     </button>
                     <span style={{ fontSize: '10px', color: '#aaa', lineHeight: '1' }}>人聲</span>
                 </div>
@@ -242,7 +247,6 @@ const MergedVolumeControl: React.FC<{
         </div>
     );
 };
-
 
 export default function MiniPlayerWindow() {
     const [state, setState] = useState({
@@ -255,6 +259,8 @@ export default function MiniPlayerWindow() {
         queue: [] as { id: string; title: string; artist: string }[],
         currentIndex: 0,
         isFavorite: false,
+        displayTitle: '',
+        displayArtist: ''
     });
     const [hovered, setHovered] = useState(false);
     const [isVolumeHovered, setIsVolumeHovered] = useState(false);
@@ -514,30 +520,35 @@ export default function MiniPlayerWindow() {
                             height: '60px',
                             width: '100%',
                             paddingLeft: '84px', // Compensate for Disk overlap HERE
+                            paddingRight: '36px', // Standard padding for controls right side
                             position: 'relative', // Scope absolute children (Controls) to this row!
                             display: 'flex',
                             alignItems: 'center',
                         }}>
-                        {/* Song Info */}
+                        {/* Song Info - ABOSLUTE CENTERED for perfect geometric alignment */}
                         <div style={{
+                            position: 'absolute',
+                            left: 0,
+                            top: 0,
+                            width: '100%',
+                            height: '60px',
                             display: 'flex',
                             flexDirection: 'column',
                             justifyContent: 'center',
-                            flex: 1,
-                            minWidth: 0,
-                            marginRight: '12px', // Reduce margin
+                            alignItems: 'center',
                             opacity: hovered ? 0 : 1,
                             transition: 'opacity 0.2s',
-                            // Remove transform for center align restoration
+                            pointerEvents: 'none', // Let touches pass through to row if needed
+                            zIndex: 0,
+                            transform: 'translateX(-15px)' // Direct Nudge Left
                         }}>
-                            {/* Centered when idle */}
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
                                 <ScrollingText
-                                    text={state.currentTrack?.title || '未播放'}
+                                    text={state.displayTitle || '未播放'}
                                     style={{ fontSize: '14px', fontWeight: 600, color: '#fff', marginBottom: '2px', textAlign: 'center' }}
                                 />
-                                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {state.currentTrack?.artist || 'Ready'}
+                                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center' }}>
+                                    {state.displayArtist || '迷你播放器'}
                                 </div>
                             </div>
                         </div>
@@ -552,8 +563,8 @@ export default function MiniPlayerWindow() {
                                 bottom: 0,
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center', // Center controls
-                                gap: '6px', // Compact gap
+                                justifyContent: 'flex-start', // Align left to reduce gap to disk
+                                gap: '4px', // Standardized compact gap
                                 // @ts-ignore
                                 WebkitAppRegion: 'no-drag'
                             }}>
@@ -644,53 +655,48 @@ export default function MiniPlayerWindow() {
                                     forceHover={isVolumeHovered || isDraggingVolume}
                                 />
 
-                                {/* Playlist Toggle */}
+                                {/* Playlist */}
                                 <ControlButton
                                     icon={PlaylistIcon}
-                                    active={showQueue}
                                     onClick={() => setShowQueue(!showQueue)}
-                                    title="待播清單"
+                                    title="播放清單"
+                                    active={showQueue}
                                 />
                             </div>
-
                         )}
                     </div>
 
-                    {/* Queue List (Bottom Row) */}
+                    {/* Playlist (Bottom Row) */}
                     {showQueue && (
                         <div
                             id="mini-player-playlist"
                             style={{
-                                width: '100%',
-                                maxHeight: '180px', // Approx 4.5 rows
+                                height: '360px',
                                 overflowY: 'auto',
+                                padding: '10px',
                                 borderTop: '1px solid rgba(255,255,255,0.1)',
-                                display: 'flex',
-                                flexDirection: 'column',
                                 // @ts-ignore
-                                WebkitAppRegion: 'no-drag' // List interaction no drag
-                            }}>
+                                WebkitAppRegion: 'no-drag'
+                            }}
+                        >
                             {state.queue.length === 0 ? (
-                                <div style={{ padding: '16px', textAlign: 'center', fontSize: '12px', color: '#888' }}>
-                                    空蕩蕩的...
+                                <div style={{ color: '#888', textAlign: 'center', fontSize: '12px', paddingTop: '20px' }}>
+                                    空空如也
                                 </div>
                             ) : (
                                 state.queue.map((item, idx) => {
                                     const isCurrent = idx === state.currentIndex;
                                     return (
                                         <div
-                                            key={idx}
-                                            onDoubleClick={() => window.khelper?.miniPlayer?.sendCommand('playQueueIndex', idx)}
+                                            key={item.id + idx}
+                                            onClick={() => window.khelper?.miniPlayer?.sendCommand('playQueueItem', idx)}
                                             style={{
-                                                padding: '8px 20px', // Full width, standard padding
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '8px',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                padding: '6px 8px', borderRadius: '4px',
+                                                cursor: 'pointer',
                                                 fontSize: '12px',
-                                                backgroundColor: isCurrent ? 'rgba(255,255,255,0.08)' : 'transparent',
-                                                borderLeft: isCurrent ? '3px solid var(--accent-color, #646cff)' : '3px solid transparent',
-                                                cursor: 'default',
-                                                transition: 'background-color 0.2s'
+                                                backgroundColor: isCurrent ? 'rgba(255,255,255,0.1)' : 'transparent',
+                                                marginBottom: '2px'
                                             }}
                                             onMouseEnter={(e) => {
                                                 if (!isCurrent) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'

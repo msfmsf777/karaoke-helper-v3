@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useQueue } from '../../contexts/QueueContext';
 import { useLibrary } from '../../contexts/LibraryContext';
 import { useUserData } from '../../contexts/UserDataContext';
@@ -27,6 +27,8 @@ interface MiniPlayerState {
     }[];
     currentIndex: number;
     isFavorite: boolean;
+    displayTitle: string;
+    displayArtist: string;
 }
 
 export default function MiniPlayerSync() {
@@ -38,7 +40,9 @@ export default function MiniPlayerSync() {
         playPrev,
         togglePlayPause,
         removeFromQueue,
-        playQueueIndex
+        playQueueIndex,
+        isStreamWaiting, // Destructure from hook
+        playbackMode // Need mode for logic
     } = useQueue();
 
     const { isFavorite, toggleFavorite } = useUserData();
@@ -125,64 +129,89 @@ export default function MiniPlayerSync() {
     }, [togglePlayPause, playNext, playPrev, removeFromQueue, playQueueIndex, currentSongId, toggleFavorite]);
 
     // State Broadcaster
-    useEffect(() => {
-        const broadcastState = () => {
-            if (!window.khelper?.miniPlayer) return;
+    const broadcastState = useCallback((force = false) => {
+        if (!window.khelper?.miniPlayer) return;
 
-            const now = Date.now();
-            if (now - lastUpdateRef.current < 30) {
-                rafRef.current = requestAnimationFrame(broadcastState);
-                return;
+        const now = Date.now();
+        if (!force && now - lastUpdateRef.current < 30) {
+            if (rafRef.current) cancelAnimationFrame(rafRef.current);
+            rafRef.current = requestAnimationFrame(() => broadcastState(false));
+            return;
+        }
+        lastUpdateRef.current = now;
+
+        // Construct State Snapshot
+        const song = currentSongId ? getSongById(currentSongId) : null;
+
+        const tf = audioEngine.getPlaybackTransform();
+
+        const instVol = audioEngine.getTrackVolume('instrumental');
+        const vocVol = audioEngine.getTrackVolume('vocal');
+
+        // Logic to determine display text (Exact match with PlayerBar)
+        let displayTitle = song ? song.title : '未播放';
+        let displayArtist = song ? (song.artist || '') : '迷你播放器';
+
+        if (playbackMode === 'stream' && isStreamWaiting) {
+            const nextId = queue[currentIndex];
+            if (nextId) {
+                const nextSong = getSongById(nextId);
+                const nextTitle = nextSong ? nextSong.title : '未知歌曲';
+                displayTitle = `下一首: ${nextTitle}`;
+                displayArtist = nextSong ? (nextSong.artist || '') : '未知歌手';
+            } else {
+                displayTitle = '待播清單已空';
+                displayArtist = '';
             }
-            lastUpdateRef.current = now;
+        }
 
-            // Construct State Snapshot
-            const song = currentSongId ? getSongById(currentSongId) : null;
-
-            const tf = audioEngine.getPlaybackTransform();
-
-            const instVol = audioEngine.getTrackVolume('instrumental');
-            const vocVol = audioEngine.getTrackVolume('vocal');
-
-            const state: MiniPlayerState = {
-                currentTrack: song ? {
-                    title: song.title,
-                    artist: song.artist || '',
-                    duration: audioEngine.getDuration()
-                } : null,
-                isPlaying: audioEngine.isPlaying(),
-                currentTime: audioEngine.getCurrentTime(),
-                volume: {
-                    instrumental: instVol,
-                    vocal: vocVol,
-                    instrumentalMuted: instVol === 0,
-                    vocalMuted: vocVol === 0
-                },
-                speed: tf.speed,
-                pitch: tf.transpose,
-                queue: queue.slice(0, 20).map(id => {
-                    const s = getSongById(id);
-                    return { id, title: s?.title || 'Unknown', artist: s?.artist || '' };
-                }),
-                currentIndex: currentIndex,
-                isFavorite: currentSongId ? isFavorite(currentSongId) : false
-            };
-
-            window.khelper.miniPlayer.sendStateUpdate(state);
+        const state: MiniPlayerState = {
+            currentTrack: song ? {
+                title: song.title,
+                artist: song.artist || '',
+                duration: audioEngine.getDuration()
+            } : null,
+            isPlaying: audioEngine.isPlaying(),
+            currentTime: audioEngine.getCurrentTime(),
+            volume: {
+                instrumental: instVol,
+                vocal: vocVol,
+                instrumentalMuted: instVol === 0,
+                vocalMuted: vocVol === 0
+            },
+            speed: tf.speed,
+            pitch: tf.transpose,
+            queue: queue.slice(0, 20).map(id => {
+                const s = getSongById(id);
+                return { id, title: s?.title || 'Unknown', artist: s?.artist || '' };
+            }),
+            currentIndex: currentIndex,
+            isFavorite: currentSongId ? isFavorite(currentSongId) : false,
+            displayTitle,
+            displayArtist
         };
 
-        const unsubTime = audioEngine.onTimeUpdate(broadcastState);
-        const interval = setInterval(broadcastState, 500);
+        window.khelper.miniPlayer.sendStateUpdate(state);
+    }, [currentSongId, queue, getSongById, currentIndex, isFavorite, isStreamWaiting, playbackMode]);
+
+    useEffect(() => {
+        const unsubTime = audioEngine.onTimeUpdate(() => broadcastState(false));
+        const interval = setInterval(() => broadcastState(false), 500);
 
         // Initial broadcast
-        broadcastState();
+        broadcastState(true);
 
         return () => {
             unsubTime();
             clearInterval(interval);
             if (rafRef.current) cancelAnimationFrame(rafRef.current);
         };
-    }, [currentSongId, queue, getSongById, currentIndex, isFavorite]);
+    }, [broadcastState]);
+
+    // React to state changes immediately
+    useEffect(() => {
+        broadcastState(true);
+    }, [currentSongId, queue, getSongById, currentIndex, isFavorite, isStreamWaiting, playbackMode, broadcastState]);
 
     return null;
 }
