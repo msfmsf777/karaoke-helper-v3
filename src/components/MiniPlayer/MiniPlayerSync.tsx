@@ -46,11 +46,39 @@ export default function MiniPlayerSync() {
     } = useQueue();
 
     const { isFavorite, toggleFavorite } = useUserData();
-    const { getSongById } = useLibrary();
+    const { getSongById, updateSong } = useLibrary();
 
-    // Throttling ref
+    // Throttling ref for updates
     const lastUpdateRef = useRef<number>(0);
     const rafRef = useRef<number>();
+
+    // Debounce refs for persistence
+    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const currentSpeedRef = useRef(1.0);
+    const currentPitchRef = useRef(0);
+
+    // Sync refs for persistence
+    useEffect(() => {
+        const song = currentSongId ? getSongById(currentSongId) : null;
+        if (song?.playback) {
+            currentSpeedRef.current = song.playback.speed;
+            currentPitchRef.current = song.playback.transpose;
+        } else {
+            currentSpeedRef.current = 1.0;
+            currentPitchRef.current = 0;
+        }
+    }, [currentSongId, getSongById]);
+
+    const savePlaybackSettings = () => {
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = setTimeout(() => {
+            if (currentSongId) {
+                updateSong(currentSongId, {
+                    playback: { speed: currentSpeedRef.current, transpose: currentPitchRef.current }
+                });
+            }
+        }, 1000);
+    };
 
     const toggleMute = (role: 'instrumental' | 'vocal') => {
         const current = role === 'instrumental'
@@ -100,11 +128,15 @@ export default function MiniPlayerSync() {
                     break;
                 case 'setSpeed':
                     const [speed] = args;
+                    currentSpeedRef.current = speed;
                     audioEngine.setPlaybackTransform({ ...audioEngine.getPlaybackTransform(), speed });
+                    savePlaybackSettings();
                     break;
                 case 'setPitch':
                     const [pitch] = args;
+                    currentPitchRef.current = pitch;
                     audioEngine.setPlaybackTransform({ ...audioEngine.getPlaybackTransform(), transpose: pitch });
+                    savePlaybackSettings();
                     break;
                 case 'setInstrumentalVolume':
                     const [instVol] = args;

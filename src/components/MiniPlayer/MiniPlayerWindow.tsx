@@ -248,6 +248,134 @@ const MergedVolumeControl: React.FC<{
     );
 };
 
+const MiniPlaybackControl: React.FC<{
+    title: string;
+    value: number;
+    min: number;
+    max: number;
+    step: number;
+    formatLabel: (val: number) => string;
+    onChange: (val: number) => void;
+    onReset: () => void;
+    onClose: () => void;
+}> = ({ title, value, min, max, step, formatLabel, onChange, onReset, onClose }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [editValue, setEditValue] = useState('');
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // Focus input when editing starts
+    useEffect(() => {
+        if (isEditing && inputRef.current) {
+            inputRef.current.focus();
+            inputRef.current.select();
+        }
+    }, [isEditing]);
+
+    const handleStartEdit = () => {
+        let initialEditVal = value;
+        if (title === '變速') initialEditVal = Math.round(value * 100);
+        setEditValue(initialEditVal.toString());
+        setIsEditing(true);
+    };
+
+    const handleCommitEdit = () => {
+        let num = parseFloat(editValue);
+        if (!isNaN(num)) {
+            if (title === '變速') num = num / 100;
+            const clamped = Math.max(min, Math.min(num, max));
+            onChange(clamped);
+        }
+        setIsEditing(false);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') handleCommitEdit();
+        else if (e.key === 'Escape') setIsEditing(false);
+    };
+
+    return (
+        <div style={{
+            position: 'absolute',
+            bottom: '100%',
+            left: 0,
+            marginBottom: '8px',
+            width: '180px', // Scaled down from 200px (increased slightly from 160px to fit buttons)
+            backgroundColor: '#2b2b2b',
+            borderRadius: '8px',
+            padding: '8px', // Scaled down padding
+            boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+            zIndex: 100,
+            color: '#fff',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            // @ts-ignore
+            WebkitAppRegion: 'no-drag'
+        }} onMouseDown={(e) => e.stopPropagation()}>
+            {/* Top Row: Title, Value/Input, Reset */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#aaa' }}>{title}</span>
+                {isEditing ? (
+                    <input
+                        ref={inputRef}
+                        type="text"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={handleCommitEdit}
+                        onKeyDown={handleKeyDown}
+                        style={{
+                            width: '40px',
+                            background: '#1a1a1a',
+                            border: '1px solid #444',
+                            borderRadius: '4px',
+                            color: '#fff',
+                            fontSize: '11px',
+                            textAlign: 'center',
+                            padding: '1px',
+                        }}
+                    />
+                ) : (
+                    <span
+                        onClick={handleStartEdit}
+                        style={{ fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', borderBottom: '1px dashed #666' }}
+                        title="Click to edit"
+                    >
+                        {formatLabel(value)}
+                    </span>
+                )}
+                <button onClick={onReset} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '14px', padding: '0 2px' }} title="Reset">
+                    ↺
+                </button>
+            </div>
+
+            {/* Middle Row: Controls ( - Slider + ) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <button
+                    onClick={() => onChange(Math.max(min, value - step))}
+                    style={{ background: '#333', border: 'none', borderRadius: '4px', color: '#fff', width: '20px', height: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                    -
+                </button>
+                <input
+                    type="range"
+                    min={min}
+                    max={max}
+                    step={step}
+                    value={value}
+                    onChange={(e) => onChange(parseFloat(e.target.value))}
+                    style={{ flex: 1, accentColor: 'var(--accent-color, #1db954)', height: '4px', minWidth: 0 }}
+                />
+                <button
+                    onClick={() => onChange(Math.min(max, value + step))}
+                    style={{ background: '#333', border: 'none', borderRadius: '4px', color: '#fff', width: '20px', height: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                    +
+                </button>
+            </div>
+        </div>
+    );
+};
+
 export default function MiniPlayerWindow() {
     const [state, setState] = useState({
         currentTrack: null as { title: string; artist: string; duration: number } | null,
@@ -330,7 +458,7 @@ export default function MiniPlayerWindow() {
                     if (inPlaylist) {
                         newHover = false;
                     } else {
-                        newHover = true;
+                        newHover = true; // Control visibility based on generic hover
                     }
                 }
             }
@@ -572,53 +700,49 @@ export default function MiniPlayerWindow() {
 
                                 {/* Speed & Pitch */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    <ControlButton
-                                        icon={SpeedIcon}
-                                        title={`速度: ${state.speed}x`}
-                                        onClick={() => setShowSpeed(!showSpeed)}
-                                        active={showSpeed || state.speed !== 1}
-                                    />
-                                    {showSpeed && (
-                                        <div style={{
-                                            position: 'absolute', bottom: '100%', left: '0',
-                                            backgroundColor: '#282828', padding: '6px', borderRadius: '4px',
-                                            display: 'flex', gap: '4px', marginBottom: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)', zIndex: 100
-                                        }}>
-                                            {[0.5, 0.75, 1, 1.25, 1.5, 2].map(s => (
-                                                <button key={s} onClick={() => window.khelper?.miniPlayer?.sendCommand('setSpeed', s)}
-                                                    style={{
-                                                        background: state.speed === s ? 'var(--accent-color, #646cff)' : 'rgba(255,255,255,0.1)',
-                                                        border: 'none', color: '#fff', padding: '2px 6px', borderRadius: '2px', cursor: 'pointer', fontSize: '10px'
-                                                    }}>
-                                                    {s}x
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
+                                    <div style={{ position: 'relative' }}>
+                                        <ControlButton
+                                            icon={SpeedIcon}
+                                            title={`速度: ${state.speed}x`}
+                                            onClick={() => { setShowSpeed(!showSpeed); setShowPitch(false); }}
+                                            active={showSpeed || state.speed !== 1}
+                                        />
+                                        {showSpeed && (
+                                            <MiniPlaybackControl
+                                                title="變速"
+                                                value={state.speed}
+                                                min={0.5}
+                                                max={2.0}
+                                                step={0.01}
+                                                formatLabel={(val) => `${Math.round(val * 100)}%`}
+                                                onChange={(val) => window.khelper?.miniPlayer?.sendCommand('setSpeed', val)}
+                                                onReset={() => window.khelper?.miniPlayer?.sendCommand('setSpeed', 1.0)}
+                                                onClose={() => setShowSpeed(false)}
+                                            />
+                                        )}
+                                    </div>
 
-                                    <ControlButton
-                                        icon={PitchIcon}
-                                        title={`升降調: ${state.pitch}`}
-                                        onClick={() => setShowPitch(!showPitch)}
-                                        active={showPitch || state.pitch !== 0}
-                                    />
-                                    {showPitch && (
-                                        <div style={{
-                                            position: 'absolute', bottom: '100%', left: '10%',
-                                            backgroundColor: '#282828', padding: '6px', borderRadius: '4px',
-                                            display: 'flex', gap: '4px', marginBottom: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)', zIndex: 100
-                                        }}>
-                                            {[-2, -1, 0, 1, 2].map(p => (
-                                                <button key={p} onClick={() => window.khelper?.miniPlayer?.sendCommand('setPitch', p)}
-                                                    style={{
-                                                        background: state.pitch === p ? 'var(--accent-color, #646cff)' : 'rgba(255,255,255,0.1)',
-                                                        border: 'none', color: '#fff', padding: '2px 6px', borderRadius: '2px', cursor: 'pointer', fontSize: '10px'
-                                                    }}>
-                                                    {p > 0 ? `+${p}` : p}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
+                                    <div style={{ position: 'relative' }}>
+                                        <ControlButton
+                                            icon={PitchIcon}
+                                            title={`變調: ${state.pitch}`}
+                                            onClick={() => { setShowPitch(!showPitch); setShowSpeed(false); }}
+                                            active={showPitch || state.pitch !== 0}
+                                        />
+                                        {showPitch && (
+                                            <MiniPlaybackControl
+                                                title="變調"
+                                                value={state.pitch}
+                                                min={-12}
+                                                max={12}
+                                                step={1}
+                                                formatLabel={(val) => val > 0 ? `+${val}` : `${val}`}
+                                                onChange={(val) => window.khelper?.miniPlayer?.sendCommand('setPitch', val)}
+                                                onReset={() => window.khelper?.miniPlayer?.sendCommand('setPitch', 0)}
+                                                onClose={() => setShowPitch(false)}
+                                            />
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Transport: Prev, Play, Next */}
@@ -722,10 +846,10 @@ export default function MiniPlayerWindow() {
                                                 onClick={(e) => { e.stopPropagation(); window.khelper?.miniPlayer?.sendCommand('removeFromQueue', idx); }}
                                                 style={{
                                                     background: 'none', border: 'none', color: '#666', cursor: 'pointer',
-                                                    fontSize: '14px', opacity: 0, transition: 'opacity 0.2s'
+                                                    fontSize: '16px', opacity: 0, transition: 'opacity 0.2s', padding: '4px'
                                                 }}
                                             >
-                                                ×
+                                                &times;
                                             </button>
                                         </div>
                                     );
@@ -735,6 +859,6 @@ export default function MiniPlayerWindow() {
                     )}
                 </div>
             </div>
-        </div >
+        </div>
     );
 }
