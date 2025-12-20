@@ -482,17 +482,22 @@ ipcMain.on('mini-player:command', (_event, command, ...args) => {
   // If "toggleMainWindow" command
   if (command === 'toggleMainWindow') {
     if (win) {
-      if (win.isVisible()) {
-        if (win.isMinimized()) {
-          win.restore()
-          win.focus()
-        } else {
-          win.hide()
-        }
+      if (win.isVisible() && !win.isMinimized()) {
+        win.hide()
       } else {
+        if (win.isMinimized()) win.restore()
         win.show()
         win.focus()
       }
+    }
+    return
+  }
+
+  if (command === 'showMainWindow') {
+    if (win) {
+      if (win.isMinimized()) win.restore()
+      win.show()
+      win.focus()
     }
     return
   }
