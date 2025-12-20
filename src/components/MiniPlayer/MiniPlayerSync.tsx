@@ -52,7 +52,6 @@ export default function MiniPlayerSync() {
     const lastUpdateRef = useRef<number>(0);
     const rafRef = useRef<number>();
 
-    // Helpers for Mute Toggle
     const toggleMute = (role: 'instrumental' | 'vocal') => {
         const current = role === 'instrumental'
             ? audioEngine.getTrackVolume('instrumental')
@@ -60,6 +59,21 @@ export default function MiniPlayerSync() {
 
         const target = current > 0 ? 0 : 1;
         audioEngine.setTrackVolume(role, target);
+    };
+
+    // Calculate Waiting State Logic (Match PlayerBar)
+    let isWaiting = false;
+    if (playbackMode === 'stream' && isStreamWaiting) {
+        isWaiting = true;
+    }
+
+    const handlePlayPauseLogic = () => {
+        if (isWaiting) {
+            // In Waiting State, Play button acts as "Start Next Song"
+            playNext(false);
+        } else {
+            togglePlayPause();
+        }
     };
 
     // Command Listener
@@ -70,10 +84,10 @@ export default function MiniPlayerSync() {
             // console.log('[MiniPlayerSync] Received command:', command, args);
             switch (command) {
                 case 'playPause':
-                    togglePlayPause();
+                    handlePlayPauseLogic();
                     break;
                 case 'next':
-                    playNext(true);
+                    playNext(false); // Manual click = false (Logic: Resume if waiting, or Go Next)
                     break;
                 case 'prev':
                     playPrev();
