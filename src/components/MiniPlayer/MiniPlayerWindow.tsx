@@ -257,8 +257,7 @@ const MiniPlaybackControl: React.FC<{
     formatLabel: (val: number) => string;
     onChange: (val: number) => void;
     onReset: () => void;
-    onClose: () => void;
-}> = ({ title, value, min, max, step, formatLabel, onChange, onReset, onClose }) => {
+}> = ({ title, value, min, max, step, formatLabel, onChange, onReset }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editValue, setEditValue] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);
@@ -397,6 +396,31 @@ export default function MiniPlayerWindow() {
     const [showPitch, setShowPitch] = useState(false);
     const [showQueue, setShowQueue] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
+    const speedContainerRef = useRef<HTMLDivElement>(null);
+    const pitchContainerRef = useRef<HTMLDivElement>(null);
+
+    // Close popups when volume is hovered
+    useEffect(() => {
+        if (isVolumeHovered) {
+            setShowSpeed(false);
+            setShowPitch(false);
+        }
+    }, [isVolumeHovered]);
+
+    // Close popups when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (showSpeed && speedContainerRef.current && !speedContainerRef.current.contains(event.target as Node)) {
+                setShowSpeed(false);
+            }
+            if (showPitch && pitchContainerRef.current && !pitchContainerRef.current.contains(event.target as Node)) {
+                setShowPitch(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showSpeed, showPitch]);
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -501,7 +525,7 @@ export default function MiniPlayerWindow() {
     // Dynamic Window Resizing based on Queue State
     useEffect(() => {
         if (showQueue) {
-            window.khelper?.miniPlayer?.resize(420, 440); // Taller window to robustly handle popup overlap
+            window.khelper?.miniPlayer?.resize(420, 420); // Taller window to robustly handle popup overlap
         } else {
             window.khelper?.miniPlayer?.resize(420, 220); // Base height increased for popup headroom
         }
@@ -549,7 +573,7 @@ export default function MiniPlayerWindow() {
                     onClick={() => window.khelper?.miniPlayer?.sendCommand('toggleMainWindow')}
                     style={{
                         position: 'relative',
-                        zIndex: 10,
+                        zIndex: 50,
                         width: `${circleSize}px`,
                         height: `${circleSize}px`,
                         flexShrink: 0,
@@ -564,7 +588,7 @@ export default function MiniPlayerWindow() {
                         marginTop: '68px', // Move up slightly
                         marginRight: '-84px', // Deep overlap to "emboss"
                         // @ts-ignore
-                        WebkitAppRegion: 'drag', // Visible "knob" is draggable
+                        WebkitAppRegion: 'no-drag', // Entire disk is clickable, NOT draggable
                     }}
                 >
                     {/* Progress SVG */}
@@ -582,11 +606,19 @@ export default function MiniPlayerWindow() {
                     </svg>
 
                     {/* Content */}
-                    <div style={{ width: `${circleSize - 20}px`, height: `${circleSize - 20}px`, borderRadius: '50%', backgroundColor: '#222', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    <div
+                        style={{
+                            width: `${circleSize - 20}px`, height: `${circleSize - 20}px`, borderRadius: '50%', backgroundColor: '#222', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                        }}
+                    >
                         {hovered ? (
                             <img src={LogoIcon} alt="Logo" style={{ width: '40px', height: '40px', opacity: 0.8 }} />
                         ) : (
-                            <div style={{ color: 'var(--primary-color)', fontSize: '24px' }}>♫</div>
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--primary-color, #00A3FF)' }}>
+                                <path d="M9 18V5l12-2v13" />
+                                <circle cx="6" cy="18" r="3" />
+                                <circle cx="18" cy="16" r="3" />
+                            </svg>
                         )}
                     </div>
                 </div>
@@ -596,6 +628,7 @@ export default function MiniPlayerWindow() {
                     id="mini-player-pill"
                     style={{
                         position: 'relative',
+                        zIndex: 1, // Ensure it is below Disk (50)
                         marginLeft: '0px',
                         // Align Vertically:
                         // Circle is at Top (0px local + 20px padding). Height 96. Center at 48.
@@ -693,14 +726,12 @@ export default function MiniPlayerWindow() {
                                 alignItems: 'center',
                                 justifyContent: 'flex-start', // Align left to reduce gap to disk
                                 gap: '4px', // Standardized compact gap
-                                // @ts-ignore
-                                WebkitAppRegion: 'no-drag'
                             }}>
                                 {/* Order: Speed, Pitch, Prev, Play, Next, Volumes, Playlist */}
 
                                 {/* Speed & Pitch */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    <div style={{ position: 'relative' }}>
+                                    <div style={{ position: 'relative' }} ref={speedContainerRef}>
                                         <ControlButton
                                             icon={SpeedIcon}
                                             title={`速度: ${state.speed}x`}
@@ -717,12 +748,11 @@ export default function MiniPlayerWindow() {
                                                 formatLabel={(val) => `${Math.round(val * 100)}%`}
                                                 onChange={(val) => window.khelper?.miniPlayer?.sendCommand('setSpeed', val)}
                                                 onReset={() => window.khelper?.miniPlayer?.sendCommand('setSpeed', 1.0)}
-                                                onClose={() => setShowSpeed(false)}
                                             />
                                         )}
                                     </div>
 
-                                    <div style={{ position: 'relative' }}>
+                                    <div style={{ position: 'relative' }} ref={pitchContainerRef}>
                                         <ControlButton
                                             icon={PitchIcon}
                                             title={`變調: ${state.pitch}`}
@@ -739,7 +769,6 @@ export default function MiniPlayerWindow() {
                                                 formatLabel={(val) => val > 0 ? `+${val}` : `${val}`}
                                                 onChange={(val) => window.khelper?.miniPlayer?.sendCommand('setPitch', val)}
                                                 onReset={() => window.khelper?.miniPlayer?.sendCommand('setPitch', 0)}
-                                                onClose={() => setShowPitch(false)}
                                             />
                                         )}
                                     </div>
@@ -795,10 +824,12 @@ export default function MiniPlayerWindow() {
                         <div
                             id="mini-player-playlist"
                             style={{
-                                height: '360px',
+                                height: '180px',
                                 overflowY: 'auto',
                                 padding: '10px',
                                 borderTop: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: '0 0 16px 16px',
+                                boxShadow: 'inset 0 10px 10px -10px rgba(0,0,0,0.5)',
                                 // @ts-ignore
                                 WebkitAppRegion: 'no-drag'
                             }}
