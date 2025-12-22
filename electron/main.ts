@@ -457,18 +457,31 @@ ipcMain.on('mini-player:toggle', () => {
     if (miniWin) {
       // @ts-ignore
       miniWin.show()
-      if (win) win.hide()
+      if (win) {
+        win.hide()
+        win.webContents.send('mini-player:visibility-change', true)
+      }
     }
     return
   }
   if (miniWin.isVisible()) {
     miniWin.hide()
-    if (win && !win.isVisible()) win.show()
+    if (win) {
+      if (!win.isVisible()) win.show()
+      win.webContents.send('mini-player:visibility-change', false)
+    }
   } else {
     miniWin.show()
     // Hide main window as requested
-    if (win) win.hide()
+    if (win) {
+      win.hide()
+      win.webContents.send('mini-player:visibility-change', true)
+    }
   }
+})
+
+ipcMain.handle('mini-player:get-visibility', () => {
+  return miniWin ? miniWin.isVisible() : false
 })
 
 ipcMain.on('mini-player:resize', (_event, width, height) => {

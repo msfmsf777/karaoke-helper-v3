@@ -174,6 +174,12 @@ electron.contextBridge.exposeInMainWorld("khelper", {
       const listener = (_event, pos) => callback(pos);
       electron.ipcRenderer.on("mini-player:cursor-poll", listener);
       return () => electron.ipcRenderer.removeListener("mini-player:cursor-poll", listener);
+    },
+    getVisibility: () => electron.ipcRenderer.invoke("mini-player:get-visibility"),
+    onVisibilityChange: (callback) => {
+      const listener = (_event, isVisible) => callback(isVisible);
+      electron.ipcRenderer.on("mini-player:visibility-change", listener);
+      return () => electron.ipcRenderer.removeListener("mini-player:visibility-change", listener);
     }
   }
 });
