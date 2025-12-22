@@ -196,6 +196,12 @@ contextBridge.exposeInMainWorld('khelper', {
       const listener = (_event: any, pos: { x: number, y: number }) => callback(pos)
       ipcRenderer.on('mini-player:cursor-poll', listener)
       return () => ipcRenderer.removeListener('mini-player:cursor-poll', listener)
+    },
+    getVisibility: (): Promise<boolean> => ipcRenderer.invoke('mini-player:get-visibility'),
+    onVisibilityChange: (callback: (isVisible: boolean) => void) => {
+      const listener = (_event: any, isVisible: boolean) => callback(isVisible)
+      ipcRenderer.on('mini-player:visibility-change', listener)
+      return () => ipcRenderer.removeListener('mini-player:visibility-change', listener)
     }
   }
 })

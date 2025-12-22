@@ -115,6 +115,8 @@ interface Window {
       setIgnoreMouseEvents?: (ignore: boolean, options?: { forward: boolean }) => void;
       onMousePresence?: (callback: (isOver: boolean) => void) => () => void;
       onCursorPoll?: (callback: (pos: { x: number, y: number }) => void) => () => void;
+      getVisibility: () => Promise<boolean>;
+      onVisibilityChange: (callback: (isVisible: boolean) => void) => () => void;
     };
   };
 }

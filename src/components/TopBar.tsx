@@ -6,6 +6,7 @@ import LogoImage from '../assets/images/logo.png';
 import TasksIcon from '../assets/icons/tasks.svg';
 import SettingsIcon from '../assets/icons/settings.svg';
 import AboutIcon from '../assets/icons/about.svg';
+import MiniPlayerIcon from '../assets/icons/mini_player.svg';
 import WindowControls from './WindowControls';
 
 interface TopBarProps {
@@ -82,6 +83,13 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
   const { songs } = useLibrary();
   const { playSongList } = useQueue();
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const [isMiniPlayerOpen, setIsMiniPlayerOpen] = useState(false);
+
+  useEffect(() => {
+    window.khelper?.miniPlayer?.getVisibility().then(setIsMiniPlayerOpen);
+    const cleanup = window.khelper?.miniPlayer?.onVisibilityChange?.(setIsMiniPlayerOpen);
+    return cleanup;
+  }, []);
 
 
 
@@ -405,8 +413,6 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
           <img src={AboutIcon} alt="About" style={{ width: '24px', height: '24px', display: 'block' }} />
         </button>
 
-        <div style={{ width: '1px', height: '24px', backgroundColor: '#3e3e3e', margin: '0 8px' }}></div>
-
         <button
           onClick={() => window.khelper?.miniPlayer?.toggle()}
           title="迷你播放器"
@@ -418,17 +424,26 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            opacity: 0.8,
+            opacity: isMiniPlayerOpen ? 1 : 0.8,
             transition: 'opacity 0.2s',
           }}
           onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-          onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
+          onMouseLeave={(e) => e.currentTarget.style.opacity = isMiniPlayerOpen ? '1' : '0.8'}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-            <rect x="11" y="11" width="8" height="8" fill="currentColor" stroke="none" rx="1" />
-          </svg>
+          <img
+            src={MiniPlayerIcon}
+            alt="Mini Player"
+            style={{
+              width: '26px',
+              height: '26px',
+              display: 'block',
+              filter: isMiniPlayerOpen ? 'brightness(0) saturate(100%) invert(86%) sepia(21%) saturate(958%) hue-rotate(69deg) brightness(97%) contrast(89%)' : 'none',
+              transition: 'filter 0.2s'
+            }}
+          />
         </button>
+
+        <div style={{ width: '1px', height: '24px', backgroundColor: '#3e3e3e', margin: '0 8px' }}></div>
 
         <WindowControls />
       </div>

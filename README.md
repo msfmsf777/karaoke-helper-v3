@@ -212,7 +212,7 @@ npm install
 npm run dev
 
 # 建置 Windows 安裝檔
-npm run build
+npm run build  
 # 產物位於 dist/ 目錄
 
 ```
