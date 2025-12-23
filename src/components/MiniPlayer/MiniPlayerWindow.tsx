@@ -13,36 +13,47 @@ import PlaylistIcon from '../../assets/icons/playlist.svg';
 import ScrollingText from '../ScrollingText';
 import CloseIcon from '../../assets/icons/cancel.svg';
 
-interface ControlProps {
+interface ControlButtonProps {
     icon: string;
     onClick: () => void;
     title?: string;
     active?: boolean;
+    disabled?: boolean;
+    size?: number;
 }
 
-const ControlButton: React.FC<ControlProps> = ({ icon, onClick, title, active }) => (
-    <button
-        onClick={onClick}
-        title={title}
-        style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '6px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: active ? 1 : 0.7,
-            transition: 'opacity 0.2s',
-            // @ts-ignore
-            WebkitAppRegion: 'no-drag',
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-        onMouseLeave={(e) => e.currentTarget.style.opacity = active ? '1' : '0.7'}
-    >
-        <img src={icon} alt={title} style={{ width: '20px', height: '20px', filter: active ? 'brightness(1.5)' : 'none' }} />
-    </button>
-);
+const ControlButton: React.FC<ControlButtonProps> = ({ icon, onClick, title, active, disabled, size = 24 }) => {
+    const [hovered, setHovered] = useState(false);
+
+    return (
+        <button
+            onClick={onClick}
+            title={title}
+            disabled={disabled}
+            style={{
+                background: (active && !disabled) ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: disabled ? 'not-allowed' : 'pointer',
+                padding: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: disabled ? 0.4 : (hovered || active ? 1 : 0.7),
+                filter: disabled ? 'grayscale(100%)' : 'none',
+                transition: 'all 0.2s',
+                width: '32px',
+                height: '32px',
+                // @ts-ignore
+                WebkitAppRegion: 'no-drag',
+            }}
+            onMouseEnter={() => !disabled && setHovered(true)}
+            onMouseLeave={() => !disabled && setHovered(false)}
+        >
+            <img src={icon} alt={title} style={{ width: `${size}px`, height: `${size}px`, display: 'block' }} />
+        </button>
+    );
+};
 
 const MergedVolumeControl: React.FC<{
     instVol: number;
@@ -737,6 +748,7 @@ export default function MiniPlayerWindow() {
                                             title={`速度: ${state.speed}x`}
                                             onClick={() => { setShowSpeed(!showSpeed); setShowPitch(false); }}
                                             active={showSpeed || state.speed !== 1}
+                                            disabled={!state.currentTrack}
                                         />
                                         {showSpeed && (
                                             <MiniPlaybackControl
@@ -758,6 +770,7 @@ export default function MiniPlayerWindow() {
                                             title={`變調: ${state.pitch}`}
                                             onClick={() => { setShowPitch(!showPitch); setShowSpeed(false); }}
                                             active={showPitch || state.pitch !== 0}
+                                            disabled={!state.currentTrack}
                                         />
                                         {showPitch && (
                                             <MiniPlaybackControl

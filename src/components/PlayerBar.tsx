@@ -538,12 +538,13 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
         <div style={{ position: 'relative', top: '-4px' }}>
           <button
             onClick={() => { setShowSpeedPopup(!showSpeedPopup); setShowPitchPopup(false); }}
+            title="變速 (Speed)"
             style={{
               background: showSpeedPopup ? '#333' : 'transparent',
               border: 'none',
               borderRadius: '4px',
               color: '#ccc',
-              cursor: 'pointer',
+              cursor: !currentSongId ? 'not-allowed' : 'pointer',
               width: '48px', // Slightly wider for comfort
               height: '48px',
               display: 'flex',
@@ -552,10 +553,10 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
               justifyContent: 'center',
               fontSize: '12px',
               transition: 'background-color 0.2s',
+              opacity: !currentSongId ? 0.4 : 1,
+              filter: !currentSongId ? 'grayscale(100%)' : 'none',
             }}
-            onMouseEnter={(e) => { if (!showSpeedPopup) e.currentTarget.style.backgroundColor = '#333'; }}
-            onMouseLeave={(e) => { if (!showSpeedPopup) e.currentTarget.style.backgroundColor = 'transparent'; }}
-            title="變速 (Speed)"
+            disabled={!currentSongId}
           >
             <img src={SpeedIcon} alt="Speed" style={{ width: '24px', height: '24px', marginBottom: '2px', display: 'block' }} />
             <span style={{ fontSize: '10px', lineHeight: 1 }}>變速</span>
@@ -579,12 +580,13 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
         <div style={{ position: 'relative', top: '-4px' }}>
           <button
             onClick={() => { setShowPitchPopup(!showPitchPopup); setShowSpeedPopup(false); }}
+            title="變調 (Pitch)"
             style={{
               background: showPitchPopup ? '#333' : 'transparent',
               border: 'none',
               borderRadius: '4px',
               color: '#ccc',
-              cursor: 'pointer',
+              cursor: !currentSongId ? 'not-allowed' : 'pointer',
               width: '48px',
               height: '48px',
               display: 'flex',
@@ -593,10 +595,10 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
               justifyContent: 'center',
               fontSize: '12px',
               transition: 'background-color 0.2s',
+              opacity: !currentSongId ? 0.4 : 1,
+              filter: !currentSongId ? 'grayscale(100%)' : 'none',
             }}
-            onMouseEnter={(e) => { if (!showPitchPopup) e.currentTarget.style.backgroundColor = '#333'; }}
-            onMouseLeave={(e) => { if (!showPitchPopup) e.currentTarget.style.backgroundColor = 'transparent'; }}
-            title="變調 (Pitch)"
+            disabled={!currentSongId}
           >
             <img src={PitchIcon} alt="Pitch" style={{ width: '24px', height: '24px', marginBottom: '2px', display: 'block' }} />
             <span style={{ fontSize: '10px', lineHeight: 1 }}>變調</span>
