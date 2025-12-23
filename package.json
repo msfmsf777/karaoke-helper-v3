@@ -56,6 +56,13 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "src/assets/icons",
+        "to": "icons",
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "publish": [

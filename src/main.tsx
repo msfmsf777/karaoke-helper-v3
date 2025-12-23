@@ -16,7 +16,7 @@ console.log('[Main] Routing Check:', { path, hash });
 const isSetlist = path === '/setlist' || path.startsWith('/obs/setlist') || hash.includes('/setlist');
 const isLyrics = path === '/lyrics' || path.startsWith('/obs/lyrics') || path === '/overlay' || hash.includes('/overlay');
 
-const isMiniPlayer = hash.includes('/mini-player');
+const isMiniPlayer = hash.includes('mini-player');
 
 // Priority: Setlist > Lyrics default
 const isOverlay = isSetlist || isLyrics;
