@@ -41,6 +41,7 @@
   "build": {
     "appId": "com.khelper.v3",
     "productName": "KHelperV3",
+    "icon": "src/assets/images/logo_outer.png",
     "directories": {
       "output": "release/${version}"
     },
@@ -85,7 +86,10 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "deleteAppDataOnUninstall": false
+      "deleteAppDataOnUninstall": false,
+      "installerLanguages": [
+        "zh_TW"
+      ]
     }
   }
 }
