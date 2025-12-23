@@ -82,12 +82,21 @@ function updateTrayMenu(updaterStatus?: string) {
   const updaterLabel = updaterStatus === 'checking' ? '檢查更新中...' : '檢查更新'
 
   // Icon Helpers
-  // Strict usage of src/assets/icons as requested.
   const getIcon = (name: string) => {
-    // process.env.APP_ROOT is Project Root
-    if (!process.env.APP_ROOT) return null
-    const iconPath = path.join(process.env.APP_ROOT, 'src/assets/icons', name)
-    if (fs.existsSync(iconPath)) return nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 })
+    let iconPath: string
+    if (app.isPackaged) {
+      // Production: resources/icons/[name]
+      // We mapped src/assets/icons -> icons in package.json extraResources
+      iconPath = path.join(process.resourcesPath, 'icons', name)
+    } else {
+      // Development: src/assets/icons/[name]
+      if (!process.env.APP_ROOT) return null
+      iconPath = path.join(process.env.APP_ROOT, 'src/assets/icons', name)
+    }
+
+    if (fs.existsSync(iconPath)) {
+      return nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 })
+    }
     return null
   }
 
@@ -404,7 +413,7 @@ function createMiniPlayerWindow() {
     // Hash routing for mini player
     miniWin.loadURL(`${VITE_DEV_SERVER_URL}#/mini-player`)
   } else {
-    miniWin.loadFile(path.join(RENDERER_DIST, 'index.html'), { hash: 'mini-player' })
+    miniWin.loadFile(path.join(RENDERER_DIST, 'index.html'), { hash: '/mini-player' })
   }
 
   // Mouse Polling for Robust Hover/Drag Detection
