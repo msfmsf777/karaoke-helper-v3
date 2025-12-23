@@ -1,5 +1,5 @@
 import React from 'react';
-import restoreIcon from '../assets/icons/restore.svg';
+
 
 interface WindowControlsProps {
     className?: string;
@@ -112,19 +112,11 @@ const WindowControls: React.FC<WindowControlsProps> = ({
             >
                 {isMaximized ? (
                     // Restore Icon (Custom SVG via mask for currentColor support)
-                    <div style={{
-                        width: 16,
-                        height: 16,
-                        backgroundColor: 'currentColor',
-                        maskImage: `url(${restoreIcon})`,
-                        maskSize: 'contain',
-                        maskRepeat: 'no-repeat',
-                        maskPosition: 'center',
-                        WebkitMaskImage: `url(${restoreIcon})`,
-                        WebkitMaskSize: 'contain',
-                        WebkitMaskRepeat: 'no-repeat',
-                        WebkitMaskPosition: 'center'
-                    }} />
+                    // Restore Icon (Inline SVG for reliability)
+                    <svg width="18" height="18" viewBox="0 0 36 36" fill="currentColor">
+                        <path d="M28,8H14a2,2,0,0,0-2,2v2h2V10H28V20H26v2h2a2,2,0,0,0,2-2V10A2,2,0,0,0,28,8Z" />
+                        <path d="M22,14H8a2,2,0,0,0-2,2V26a2,2,0,0,0,2,2H22a2,2,0,0,0,2-2V16A2,2,0,0,0,22,14ZM8,26V16H22V26Z" />
+                    </svg>
                 ) : (
                     // Maximize Icon (One square)
                     <svg width="12" height="12" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.2">
