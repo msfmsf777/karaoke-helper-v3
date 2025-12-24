@@ -712,16 +712,16 @@ export default function MiniPlayerWindow() {
                             transition: 'opacity 0.2s',
                             pointerEvents: 'none', // Let touches pass through to row if needed
                             zIndex: 0,
-                            transform: 'translateX(-15px)' // Direct Nudge Left
                         }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: '200px', paddingRight: '30px' }}>
                                 <ScrollingText
                                     text={state.displayTitle || '未播放'}
                                     style={{ fontSize: '14px', fontWeight: 600, color: '#fff', marginBottom: '2px', textAlign: 'center' }}
                                 />
-                                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center' }}>
-                                    {state.displayArtist || '迷你播放器'}
-                                </div>
+                                <ScrollingText
+                                    text={state.displayArtist || '迷你播放器'}
+                                    style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', textAlign: 'center' }}
+                                />
                             </div>
                         </div>
 
@@ -849,7 +849,7 @@ export default function MiniPlayerWindow() {
                         >
                             {state.queue.length === 0 ? (
                                 <div style={{ color: '#888', textAlign: 'center', fontSize: '12px', paddingTop: '20px' }}>
-                                    空空如也
+                                    請先添加歌曲至播放清單
                                 </div>
                             ) : (
                                 state.queue.map((item, idx) => {
