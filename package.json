@@ -64,6 +64,13 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "resources/separation",
+        "to": "separation",
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "publish": [

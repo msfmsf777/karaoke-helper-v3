@@ -212,9 +212,10 @@ npm install
 npm run dev
 
 # 建置 Windows 安裝檔
-npm run build  
-# 產物位於 dist/ 目錄
+npm run build
 
+# 產物位於 dist/ 目錄
+ 
 ```
 
 > 私有 Python runtime 的具體建置流程請參考 repo 內的說明文件`docs/python-runtime-setup.md` 。
