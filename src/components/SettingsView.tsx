@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useState, Suspense } from 'react';
 import audioEngine, { OutputRole } from '../audio/AudioEngine';
 import { useUserData } from '../contexts/UserDataContext';
-
 import CalibrationModal from './CalibrationModal';
-import { getAudioOffset } from '../settings/devicePreferences';
+import { getAudioOffset, loadOutputDevicePreferences, saveStreamEnabledPreference } from '../settings/devicePreferences';
 
 // Lazy loading DebugUpdaterUI
 const DebugUpdaterUI = React.lazy(() => import('./DebugUpdaterUI'));
@@ -31,6 +30,9 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     const [showCalibration, setShowCalibration] = useState(false);
     const [currentOffset, setCurrentOffset] = useState(0);
 
+    // Stream Toggle State
+    const [streamEnabled, setStreamEnabled] = useState(true);
+
     // Sample Rates
     const [streamSampleRate, setStreamSampleRate] = useState(0);
     const [headphoneSampleRate, setHeadphoneSampleRate] = useState(0);
@@ -54,9 +56,12 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 
     useEffect(() => {
         refreshDevices();
-        // Load initial offset
-        const saved = getAudioOffset(streamDeviceId, headphoneDeviceId);
-        setCurrentOffset(saved);
+        // Load initial offset & stream enabled state
+        const prefs = loadOutputDevicePreferences();
+        if (prefs) {
+            setCurrentOffset(getAudioOffset(streamDeviceId, headphoneDeviceId)); // refresh offset
+            setStreamEnabled(prefs.isStreamEnabled ?? true);
+        }
     }, []);
 
     // Update displayed offset and sample rates when devices change
@@ -69,6 +74,15 @@ const SettingsView: React.FC<SettingsViewProps> = ({
         setStreamSampleRate(audioEngine.getSampleRate('stream'));
         setHeadphoneSampleRate(audioEngine.getSampleRate('headphone'));
     }, [streamDeviceId, headphoneDeviceId]);
+
+    const handleToggleStream = (enabled: boolean) => {
+        setStreamEnabled(enabled);
+        saveStreamEnabledPreference(enabled);
+        // Mute or Unmute
+        // Default stream volume is usually 0.8 in AudioEngine init, but we can set to 1.0 or restore.
+        // For simplicity: ON = 1.0, OFF = 0.
+        audioEngine.setOutputVolume('stream', enabled ? 1.0 : 0);
+    };
 
     const deviceOptions = useMemo(() => {
         return [
@@ -170,11 +184,23 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                         </p>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+                            {/* Stream Device Block */}
                             <div style={{ background: '#2a2a2a', padding: '20px', borderRadius: '12px', border: '1px solid #333' }}>
+                                {/* Header with Toggle */}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                    <label style={{ display: 'block', color: '#ddd', fontSize: '14px', fontWeight: 'bold' }}>
-                                        觀眾輸出 (Stream)
-                                    </label>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <label style={{ display: 'block', color: '#ddd', fontSize: '14px', fontWeight: 'bold' }}>
+                                            觀眾輸出 (Stream)
+                                        </label>
+                                        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={streamEnabled}
+                                                onChange={(e) => handleToggleStream(e.target.checked)}
+                                                style={{ accentColor: 'var(--accent-color)', width: '16px', height: '16px', cursor: 'pointer' }}
+                                            />
+                                        </label>
+                                    </div>
                                     {streamSampleRate > 0 && (
                                         <div style={{
                                             fontSize: '11px',
@@ -188,26 +214,36 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                                         </div>
                                     )}
                                 </div>
-                                <select
-                                    value={streamDeviceId ?? ''}
-                                    onChange={(e) => onChangeDevice('stream', e.target.value || null)}
-                                    style={{
-                                        width: '100%',
-                                        padding: '12px',
-                                        background: '#1f1f1f',
-                                        color: '#fff',
-                                        border: '1px solid #444',
-                                        borderRadius: '8px',
-                                        fontSize: '14px',
-                                        outline: 'none'
-                                    }}
-                                >
-                                    {deviceOptions.map((opt) => (
-                                        <option key={opt.deviceId} value={opt.deviceId}>
-                                            {opt.label}
-                                        </option>
-                                    ))}
-                                </select>
+
+                                {/* Content: Select (Disabled if Stream OFF) */}
+                                <div style={{
+                                    opacity: streamEnabled ? 1 : 0.4,
+                                    pointerEvents: streamEnabled ? 'auto' : 'none',
+                                    transition: 'opacity 0.2s'
+                                }}>
+                                    <select
+                                        value={streamDeviceId ?? ''}
+                                        onChange={(e) => onChangeDevice('stream', e.target.value || null)}
+                                        disabled={!streamEnabled}
+                                        style={{
+                                            width: '100%',
+                                            padding: '12px',
+                                            background: '#1f1f1f',
+                                            color: '#fff',
+                                            border: '1px solid #444',
+                                            borderRadius: '8px',
+                                            fontSize: '14px',
+                                            outline: 'none',
+                                            cursor: !streamEnabled ? 'not-allowed' : 'pointer'
+                                        }}
+                                    >
+                                        {deviceOptions.map((opt) => (
+                                            <option key={opt.deviceId} value={opt.deviceId}>
+                                                {opt.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
 
                             <div style={{ background: '#2a2a2a', padding: '20px', borderRadius: '12px', border: '1px solid #333' }}>
@@ -251,7 +287,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                             </div>
                         </div>
 
-                        {/* Calibration Row */}
+                        {/* Calibration Row - Disabled if Stream OFF */}
                         <div style={{
                             background: '#2a2a2a',
                             padding: '16px 20px',
@@ -259,7 +295,10 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                             border: '1px solid #333',
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'space-between'
+                            justifyContent: 'space-between',
+                            opacity: streamEnabled ? 1 : 0.4,
+                            pointerEvents: streamEnabled ? 'auto' : 'none',
+                            transition: 'opacity 0.2s'
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <div style={{ fontSize: '14px', color: '#ddd', fontWeight: 'bold' }}>雙輸出同步偏移：</div>
@@ -274,13 +313,14 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 
                             <button
                                 onClick={() => setShowCalibration(true)}
+                                disabled={!streamEnabled}
                                 style={{
                                     padding: '8px 16px',
                                     backgroundColor: '#444',
                                     color: '#fff',
                                     borderRadius: '6px',
                                     border: 'none',
-                                    cursor: 'pointer',
+                                    cursor: !streamEnabled ? 'not-allowed' : 'pointer',
                                     fontSize: '13px'
                                 }}
                             >
