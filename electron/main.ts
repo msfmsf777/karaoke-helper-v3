@@ -223,6 +223,8 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.mjs'),
       // Allow loading local file:// resources from the renderer (needed for direct audio file playback in dev/HTTP origin).
       webSecurity: false,
+      // Fix for background throttling: Ensure lyrics/audio engine updates continue when window is hidden/minimized
+      backgroundThrottling: false,
     },
     show: false, // Don't show immediately to avoid flickering if maximizing
     frame: false, // Custom window controls
