@@ -109,9 +109,14 @@ function AppContent() {
       console.warn('[AudioEngine] Failed to apply saved headphone device', saved.headphoneDeviceId, err);
     });
 
+
     // Apply saved offset
     const savedOffset = getAudioOffset(saved.streamDeviceId ?? null, saved.headphoneDeviceId ?? null);
     audioEngine.setOffset(savedOffset);
+
+    // Apply saved stream enabled state
+    const streamEnabled = saved.isStreamEnabled ?? true;
+    audioEngine.setOutputVolume('stream', streamEnabled ? 1.0 : 0);
   }, []);
 
   // Always send update if state changes, even if no track is playing (e.g. waiting state)

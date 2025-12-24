@@ -5,6 +5,7 @@ export interface OutputDevicePreferences {
   headphoneDeviceId: string | null;
   // stored as "streamId_headphoneId": offsetMs
   deviceOffsets?: Record<string, number>;
+  isStreamEnabled?: boolean;
 }
 
 const STORAGE_KEY = 'khelper.audio.outputDevices';
@@ -18,6 +19,7 @@ export function loadOutputDevicePreferences(): OutputDevicePreferences | null {
       streamDeviceId: typeof parsed.streamDeviceId === 'string' ? parsed.streamDeviceId : null,
       headphoneDeviceId: typeof parsed.headphoneDeviceId === 'string' ? parsed.headphoneDeviceId : null,
       deviceOffsets: parsed.deviceOffsets || {},
+      isStreamEnabled: parsed.isStreamEnabled ?? true,
     };
   } catch (err) {
     console.warn('[Settings] Failed to load output device preferences', err);
@@ -34,13 +36,29 @@ export function saveOutputDevicePreferences(preferences: OutputDevicePreferences
 }
 
 export function updateOutputDevicePreference(role: OutputRole, deviceId: string | null): OutputDevicePreferences {
-  const current = loadOutputDevicePreferences() ?? { streamDeviceId: null, headphoneDeviceId: null, deviceOffsets: {} };
+  const current = loadOutputDevicePreferences() ?? {
+    streamDeviceId: null,
+    headphoneDeviceId: null,
+    deviceOffsets: {},
+    isStreamEnabled: true
+  };
   const next: OutputDevicePreferences =
     role === 'stream'
       ? { ...current, streamDeviceId: deviceId }
       : { ...current, headphoneDeviceId: deviceId };
   saveOutputDevicePreferences(next);
   return next;
+}
+
+export function saveStreamEnabledPreference(enabled: boolean): void {
+  const current = loadOutputDevicePreferences() ?? {
+    streamDeviceId: null,
+    headphoneDeviceId: null,
+    deviceOffsets: {},
+    isStreamEnabled: true
+  };
+  const next = { ...current, isStreamEnabled: enabled };
+  saveOutputDevicePreferences(next);
 }
 
 function getPairKey(streamId: string | null, headphoneId: string | null): string {
@@ -55,7 +73,12 @@ export function getAudioOffset(streamId: string | null, headphoneId: string | nu
 }
 
 export function saveAudioOffset(streamId: string | null, headphoneId: string | null, offsetMs: number): void {
-  const prefs = loadOutputDevicePreferences() || { streamDeviceId: null, headphoneDeviceId: null, deviceOffsets: {} };
+  const prefs = loadOutputDevicePreferences() || {
+    streamDeviceId: null,
+    headphoneDeviceId: null,
+    deviceOffsets: {},
+    isStreamEnabled: true
+  };
   if (!prefs.deviceOffsets) prefs.deviceOffsets = {};
 
   const key = getPairKey(streamId, headphoneId);
