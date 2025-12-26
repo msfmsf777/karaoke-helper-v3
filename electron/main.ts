@@ -778,24 +778,39 @@ ipcMain.on('downloads:unsubscribe', (event, subscriptionId: string) => {
   }
 })
 
-app.whenReady().then(async () => {
-  console.log('[App] userData path:', app.getPath('userData'))
+const gotTheLock = app.requestSingleInstanceLock()
 
-  // Initialize Updater
-  initUpdater()
-
-  // Initialize Tray
-  createTray()
-
-  // Subscribe to Updater Status for Tray Menu
-  onStatusChange((status) => {
-    updateTrayMenu(status.status)
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', (_event, _commandLine, _workingDirectory) => {
+    // Someone tried to run a second instance, we should focus our window.
+    if (win) {
+      if (win.isMinimized()) win.restore()
+      win.show()
+      win.focus()
+    }
   })
 
-  // Lazy load this too if needed, or just remove if not critical
-  // console.log('[Library] base songs dir:', getSongsBaseDir()) 
-  createWindow()
-})
+  app.whenReady().then(async () => {
+    console.log('[App] userData path:', app.getPath('userData'))
+
+    // Initialize Updater
+    initUpdater()
+
+    // Initialize Tray
+    createTray()
+
+    // Subscribe to Updater Status for Tray Menu
+    onStatusChange((status) => {
+      updateTrayMenu(status.status)
+    })
+
+    // Lazy load this too if needed, or just remove if not critical
+    // console.log('[Library] base songs dir:', getSongsBaseDir()) 
+    createWindow()
+  })
+}
 
 
 const clients: Set<Response> = new Set()
