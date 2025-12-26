@@ -28,7 +28,7 @@ export function isJapanese(text: string): boolean {
     if (totalCount === 0) return false;
 
     // Heuristic:
-    // 1. Must have at least some Kana (to distinguish from Chinese)
-    // 2. Japanese characters (Kana + Kanji) must make up a significant portion (> 15%)
-    return kanaCount > 0 && (japaneseCount / totalCount > 0.15);
+    // If the text contains ANY Hiragana or Katakana, it is likely Japanese.
+    // Kanji alone is insufficient (could be Chinese), but Kana is unique to Japanese.
+    return kanaCount > 0;
 }
