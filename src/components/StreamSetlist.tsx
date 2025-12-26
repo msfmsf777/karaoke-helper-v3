@@ -191,7 +191,7 @@ const StreamSetlist: React.FC = () => {
                                 >
                                     {upNextSongs.length === 0 ? (
                                         <div style={{ padding: '12px', color: '#444', fontSize: '13px', fontStyle: 'italic', textAlign: 'center' }}>
-                                            待播清單即將清空
+                                            請先將歌曲加入播放隊列
                                         </div>
                                     ) : (
                                         upNextSongs.map((songId, idx) => {
