@@ -11,6 +11,7 @@ import { useUserData } from '../contexts/UserDataContext';
 import { isJapanese } from '../utils/japaneseDetection';
 import WindowControls from './WindowControls';
 import StreamControlDropdown from './StreamControlDropdown';
+import audioEngine from '../audio/AudioEngine';
 
 interface StreamModeViewProps {
   currentTime: number;
@@ -382,6 +383,7 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
               onToggleRomaji={toggleRomaji}
               onScrollChange={handleScrollChange}
               showControls={true}
+              onLineClick={(time) => audioEngine.seek(time)}
             />
           )}
         </div>
