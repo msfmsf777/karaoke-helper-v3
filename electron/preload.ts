@@ -109,6 +109,7 @@ contextBridge.exposeInMainWorld('khelper', {
         ipcRenderer.off('downloads:updated', listener)
       }
     },
+    removeJob: (id: string) => ipcRenderer.invoke('downloads:remove', id)
   },
   lyrics: {
     readRawLyrics: (songId: string): Promise<{ path: string; content: string } | null> =>
