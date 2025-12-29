@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { SongMeta } from '../../shared/songTypes';
 import { useQueue } from '../contexts/QueueContext';
 import { useUserData } from '../contexts/UserDataContext';
@@ -110,7 +111,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
         border: '1px solid #3a3a3a',
         borderRadius: '8px',
         padding: '6px 0',
-        zIndex: 1000,
+        zIndex: 10000,
         boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
         minWidth: '200px',
         color: '#fff',
@@ -184,7 +185,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
         );
     }
 
-    return (
+    return createPortal(
         <div ref={menuRef} style={style} onClick={(e) => e.stopPropagation()}>
             <div
                 style={itemStyle}
@@ -280,7 +281,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                                         boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
                                         minWidth: '160px',
                                         marginLeft: '4px',
-                                        zIndex: 1001
+                                        zIndex: 10001
                                     }}>
                                         {[
                                             { id: 'fast', label: '快速 (Fast)', val: 1 },
@@ -354,7 +355,8 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                 <img src={DeleteIcon} alt="" style={{ ...iconStyle, filter: 'sepia(1) saturate(5) hue-rotate(-50deg)' }} />
                 <span>刪除歌曲</span>
             </div>
-        </div >
+        </div >,
+        document.body
     );
 };
 
