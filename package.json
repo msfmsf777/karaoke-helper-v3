@@ -59,6 +59,13 @@
         ]
       },
       {
+        "from": "resources/bin",
+        "to": "bin",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
         "from": "src/assets/icons",
         "to": "icons",
         "filter": [
@@ -68,6 +75,13 @@
       {
         "from": "resources/separation",
         "to": "separation",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "resources/lyrics",
+        "to": "lyrics",
         "filter": [
           "**/*"
         ]
@@ -94,6 +108,7 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "deleteAppDataOnUninstall": false,
+      "include": "build/installer.nsh",
       "installerLanguages": [
         "zh_TW"
       ]

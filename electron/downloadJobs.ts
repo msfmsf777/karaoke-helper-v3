@@ -38,6 +38,13 @@ function getYtDlpPath() {
 
 // --- Binary Management ---
 
+function getBundledBinDir() {
+    if (app.isPackaged) {
+        return path.join(process.resourcesPath, 'bin');
+    }
+    return path.join(process.cwd(), 'resources', 'bin');
+}
+
 async function ensureBinaries() {
     const binDir = getBinDir();
     await fs.mkdir(binDir, { recursive: true });
@@ -150,9 +157,14 @@ class DownloadJobManager {
     async validateUrl(url: string): Promise<{ videoId: string; title: string; duration?: number } | null> {
         await ensureBinaries();
         const ytDlp = getYtDlpPath();
+        const bundledBin = getBundledBinDir();
+        const ffmpegPath = bundledBin; // yt-dlp expects directory for --ffmpeg-location
+        const nodePath = path.join(bundledBin, 'node.exe');
 
         return new Promise((resolve) => {
             const proc = spawn(ytDlp, [
+                '--ffmpeg-location', ffmpegPath,
+                '--js-runtimes', `node:${nodePath}`,
                 '--dump-json',
                 '--no-playlist',
                 url
@@ -249,6 +261,9 @@ class DownloadJobManager {
         try {
             await ensureBinaries();
             const ytDlp = getYtDlpPath();
+            const bundledBin = getBundledBinDir();
+            const ffmpegPath = bundledBin;
+            const nodePath = path.join(bundledBin, 'node.exe');
 
             // Create song directory
             const songId = Date.now().toString(); // Or use library generator
@@ -265,6 +280,8 @@ class DownloadJobManager {
             if (job.quality === 'high') audioQuality = '2';
 
             const args = [
+                '--ffmpeg-location', ffmpegPath,
+                '--js-runtimes', `node:${nodePath}`,
                 '-f', 'bestaudio/best', // Download best source
                 '-x', // Extract audio
                 '--audio-format', 'mp3', // Convert to MP3

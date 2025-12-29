@@ -34,6 +34,19 @@ async function runDemucsSeparation(
     scriptPath = path.join(process.cwd(), 'resources', 'separation', 'separate.py');
   }
 
+  // Determine binaries path (ffmpeg)
+  let binDir: string;
+  if (app.isPackaged) {
+    binDir = path.join(process.resourcesPath, 'bin');
+  } else {
+    binDir = path.join(process.cwd(), 'resources', 'bin');
+  }
+
+  // Inject binDir into PATH for the child process so Demucs can find ffmpeg
+  const env = { ...process.env };
+  const pathKey = process.platform === 'win32' ? 'Path' : 'PATH';
+  env[pathKey] = `${binDir}${path.delimiter}${env[pathKey] || ''}`;
+
   return new Promise((resolve, reject) => {
     const python = spawn(pythonPath, [
       scriptPath,
@@ -43,7 +56,7 @@ async function runDemucsSeparation(
       '--model-dir', modelDir,
       '--output-format', 'mp3',
       '--bitrate', '320k'
-    ]);
+    ], { env });
 
     let result: { instrumental?: string; vocal?: string; error?: string } | null = null;
     let errorOutput = '';
