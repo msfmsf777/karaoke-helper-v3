@@ -13,7 +13,7 @@
 
 > ⚠️ 目前僅支援 **Windows (64-bit)**，其他平台暫不支援。
 
-【[直接下載連結](https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v3.0.0-beta/KHelperV3.Setup.3.0.0-beta.exe)】
+【[直接下載連結](https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v3.0.1-beta/KHelperV3.Setup.3.0.1-beta.exe)】
 
 
 ----------
@@ -61,13 +61,13 @@
 
 ### 一般使用者
 
-1.  前往 GitHub Releases或使用【[最新版本 (V3.0.0-beta) 下載連結](https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v3.0.0-beta/KHelperV3.Setup.3.0.0-beta.exe)】：  
+1.  前往 GitHub Releases或使用【[最新版本 (V3.0.1-beta) 下載連結](https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v3.0.1-beta/KHelperV3.Setup.3.0.1-beta.exe)】：  
     👉 `https://github.com/msfmsf777/karaoke-helper-v3/releases`
     
 2.  找到想要的版本。
     
 3.  下載 Windows 安裝檔，例如：  
-    `KHelperLive-Setup-3.0.0-beta.exe`
+    `KHelperLive-Setup-3.0.1-beta.exe`
     
 4.  執行安裝程式並依照步驟完成安裝。**若遇到 Windows SmartScreen（未簽章），點「更多資訊 → 仍要執行」**。
     

@@ -2,10 +2,10 @@ import "electron";
 import "node:url";
 import "node:path";
 import "node:fs";
-import { Z, _, Y } from "./main-C2BSxFuN.js";
+import { Z as _, _ as i, Y as D } from "./main-B5Qp3u83.js";
 import "node:http";
 export {
-  Z as MAIN_DIST,
-  _ as RENDERER_DIST,
-  Y as VITE_DEV_SERVER_URL
+  _ as MAIN_DIST,
+  i as RENDERER_DIST,
+  D as VITE_DEV_SERVER_URL
 };
