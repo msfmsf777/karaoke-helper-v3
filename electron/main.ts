@@ -748,6 +748,11 @@ ipcMain.handle('downloads:get-all', async () => {
   return dm.getAll()
 })
 
+ipcMain.handle('downloads:remove', async (_event, id: string) => {
+  const dm = getDownloadManager()
+  dm.removeJob(id)
+})
+
 ipcMain.on('downloads:subscribe', async (event, subscriptionId: string) => {
   const dm = getDownloadManager()
   const wc = event.sender
@@ -793,6 +798,11 @@ if (!gotTheLock) {
   })
 
   app.whenReady().then(async () => {
+    // Preserve User Data path before changing App Name for display
+    const userDataPath = app.getPath('userData')
+    app.setName('KHelper V3')
+    app.setPath('userData', userDataPath)
+
     console.log('[App] userData path:', app.getPath('userData'))
 
     // Initialize Updater

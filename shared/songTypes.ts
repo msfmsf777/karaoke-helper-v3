@@ -54,6 +54,8 @@ export interface DownloadJob {
   title: string;
   artist?: string;
   quality: 'best' | 'high' | 'normal';
+  type?: SongType;
+  lyricsText?: string;
   status: 'queued' | 'downloading' | 'processing' | 'completed' | 'failed';
   progress: number;
   error?: string;

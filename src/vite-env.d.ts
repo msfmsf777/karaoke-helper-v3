@@ -65,6 +65,7 @@ interface Window {
       subscribeUpdates: (
         callback: (jobs: import('../shared/songTypes').DownloadJob[]) => void
       ) => () => void;
+      removeJob: (id: string) => Promise<void>;
     };
     lyrics: {
       readRawLyrics: (songId: string) => Promise<{ path: string; content: string } | null>;

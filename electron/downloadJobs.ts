@@ -192,6 +192,14 @@ class DownloadJobManager {
         });
     }
 
+    removeJob(id: string) {
+        const initialLength = this.jobs.length;
+        this.jobs = this.jobs.filter(j => j.id !== id);
+        if (this.jobs.length !== initialLength) {
+            this.notify();
+        }
+    }
+
     async queueJob(
         url: string,
         quality: 'best' | 'high' | 'normal',
@@ -206,7 +214,15 @@ class DownloadJobManager {
 
         // 2. Check Duplicates in active jobs
         const existing = this.jobs.find(j => j.youtubeId === meta.videoId);
-        if (existing) throw new Error('Download already exists for this video');
+        if (existing) {
+            // Self-healing: If existing job failed, remove it and allow retry
+            if (existing.status === 'failed') {
+                console.log('[DownloadJobs] Found failed duplicate, removing old job for retry', existing.id);
+                this.removeJob(existing.id);
+            } else {
+                throw new Error('Download already exists for this video');
+            }
+        }
 
         // 3. Check library for duplicates
         const { loadAllSongs } = await import('./songLibrary');
