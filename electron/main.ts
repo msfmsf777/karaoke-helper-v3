@@ -9,7 +9,7 @@ import {
   addLocalSong, getOriginalSongFilePath,
   getSeparatedSongPaths,
   getSongFilePath, getSongsBaseDir, loadAllSongs,
-  deleteSong, updateSong
+  deleteSong, updateSong, getSongDirById
 } from './songLibrary'
 import { getAllJobs, queueSeparationJob, subscribeJobUpdates } from './separationJobs'
 import { downloadManager } from './downloadJobs'
@@ -599,6 +599,11 @@ ipcMain.handle('library:get-separated-song-paths', async (_event, id: string) =>
 
 ipcMain.handle('library:get-base-path', async () => {
   return getSongsBaseDir()
+})
+
+ipcMain.handle('library:open-song-folder', async (_event, id: string) => {
+  const songDir = getSongDirById(id)
+  await shell.openPath(songDir)
 })
 
 ipcMain.handle('library:delete-song', async (_event, id: string) => {

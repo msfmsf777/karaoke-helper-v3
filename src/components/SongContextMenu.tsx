@@ -17,6 +17,7 @@ import LyricsIcon from '../assets/icons/lyrics.svg';
 import EditIcon from '../assets/icons/edit.svg';
 import DeleteIcon from '../assets/icons/delete.svg';
 import SeparateIcon from '../assets/icons/separate.svg';
+import FolderOpenIcon from '../assets/icons/folder_open.svg';
 
 interface SongContextMenuProps {
     song: SongMeta;
@@ -345,6 +346,18 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
             >
                 <img src={EditIcon} alt="" style={iconStyle} />
                 <span>編輯詳情</span>
+            </div>
+            <div
+                style={itemStyle}
+                onClick={() => {
+                    window.khelper?.songLibrary.openSongFolder(song.id);
+                    onClose();
+                }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+                <img src={FolderOpenIcon} alt="" style={iconStyle} />
+                <span>開啟資料夾</span>
             </div>
             <div
                 style={{ ...itemStyle, color: '#ff8080' }}
