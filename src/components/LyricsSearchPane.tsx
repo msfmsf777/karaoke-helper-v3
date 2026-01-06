@@ -5,7 +5,7 @@ interface LyricsSearchPaneProps {
     isOpen: boolean;
     onClose: () => void;
     initialQuery: string;
-    onSelect: (content: string, type: 'lrc' | 'txt') => void;
+    onSelect: (content: string, type: 'lrc' | 'txt', name?: string, artist?: string) => void;
 }
 
 const LyricsSearchPane: React.FC<LyricsSearchPaneProps> = ({ isOpen, onClose, initialQuery, onSelect }) => {
@@ -178,8 +178,8 @@ const LyricsSearchPane: React.FC<LyricsSearchPaneProps> = ({ isOpen, onClose, in
                                 </button>
                                 <button
                                     onClick={() => {
-                                        if (track.syncedLyrics) onSelect(track.syncedLyrics, 'lrc');
-                                        else if (track.plainLyrics) onSelect(track.plainLyrics, 'txt');
+                                        if (track.syncedLyrics) onSelect(track.syncedLyrics, 'lrc', track.name, track.artistName);
+                                        else if (track.plainLyrics) onSelect(track.plainLyrics, 'txt', track.name, track.artistName);
                                     }}
                                     style={{
                                         flex: 2,

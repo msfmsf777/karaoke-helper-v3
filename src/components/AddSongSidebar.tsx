@@ -630,20 +630,45 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
 
                                     {(form.lyricsFilename || (form.lyricsFormat === 'lrc' ? form.lyricsLrc : form.lyricsText)) ? (
                                         <div style={{ fontSize: '12px', color: '#aaa', marginTop: '8px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                <span style={{
-                                                    background: form.lyricsFormat === 'lrc' ? 'var(--accent-color)' : '#444',
-                                                    color: form.lyricsFormat === 'lrc' ? '#000' : '#ccc',
-                                                    padding: '2px 4px',
-                                                    borderRadius: '3px',
-                                                    fontWeight: 'bold',
-                                                    fontSize: '10px'
-                                                }}>
-                                                    {form.lyricsFormat === 'lrc' ? 'LRC' : 'TXT'}
-                                                </span>
-                                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {form.lyricsFilename || '已載入內容'}
-                                                </span>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
+                                                    <span style={{
+                                                        background: form.lyricsFormat === 'lrc' ? 'var(--accent-color)' : '#444',
+                                                        color: form.lyricsFormat === 'lrc' ? '#000' : '#ccc',
+                                                        padding: '2px 4px',
+                                                        borderRadius: '3px',
+                                                        fontWeight: 'bold',
+                                                        fontSize: '10px',
+                                                        flexShrink: 0
+                                                    }}>
+                                                        {form.lyricsFormat === 'lrc' ? 'LRC' : 'TXT'}
+                                                    </span>
+                                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '12px' }} title={form.lyricsFilename}>
+                                                        {form.lyricsFilename || '已載入內容'}
+                                                    </span>
+                                                </div>
+                                                <button
+                                                    onClick={() => updateForm({
+                                                        lyricsFormat: 'txt',
+                                                        lyricsText: '',
+                                                        lyricsLrc: undefined,
+                                                        lyricsFilename: undefined
+                                                    })}
+                                                    style={{
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        color: '#888',
+                                                        cursor: 'pointer',
+                                                        padding: '4px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        marginLeft: '4px'
+                                                    }}
+                                                    title="清除歌詞"
+                                                >
+                                                    ×
+                                                </button>
                                             </div>
                                             {form.lyricsFormat === 'lrc' && (
                                                 <div style={{ marginTop: '4px', fontStyle: 'italic', opacity: 0.7 }}>
@@ -700,12 +725,12 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                 isOpen={showSearchPane}
                 onClose={() => setShowSearchPane(false)}
                 initialQuery={`${form.title} ${form.artist}`.trim()}
-                onSelect={(content, type) => {
+                onSelect={(content, type, name, artist) => {
                     updateForm({
                         lyricsFormat: type,
                         lyricsText: type === 'txt' ? content : '',
                         lyricsLrc: type === 'lrc' ? content : undefined,
-                        lyricsFilename: `From Search: ${form.title}`
+                        lyricsFilename: `搜尋結果: ${name || form.title} - ${artist || form.artist}`
                     });
                     setShowSearchPane(false);
                 }}
