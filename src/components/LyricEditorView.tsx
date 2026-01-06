@@ -17,6 +17,8 @@ import LyricsSearchPane from './LyricsSearchPane';
 
 import TapModeIcon from '../assets/icons/tap_mode.svg';
 import SaveLrcIcon from '../assets/icons/save_lrc.svg';
+import SmartAlignIcon from '../assets/icons/SmartAlign.svg';
+import PlayIcon from '../assets/icons/play.svg';
 
 const SearchIcon = (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -24,6 +26,7 @@ const SearchIcon = (
         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
     </svg>
 );
+
 
 interface LyricEditorViewProps {
     activeSongId?: string;
@@ -86,6 +89,13 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
     const [headerTitle, setHeaderTitle] = useState('歌詞編輯');
     const headerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const [showSearchPane, setShowSearchPane] = useState(false);
+
+    // Smart Align State
+    const [smartAlignStep, setSmartAlignStep] = useState<0 | 1 | 2>(0);
+    // Snapshot of lines before any alignment (to revert on cancel)
+    const [linesSnapshot, setLinesSnapshot] = useState<EditableLyricLine[]>([]);
+    // We only need to store the start time set in Step 1
+    const [smartAlignStartTime, setSmartAlignStartTime] = useState<number | null>(null);
 
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [savingRaw, setSavingRaw] = useState(false);
@@ -316,7 +326,9 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
         return firstUntimed;
     }, [currentTime, lines]);
 
+    // Auto-scroll logic (Standard)
     useEffect(() => {
+        if (smartAlignStep > 0) return; // Disable standard auto-scroll in smart align
         if (currentLineIndex < 0) return;
         const line = lines[currentLineIndex];
         if (!line) return;
@@ -324,7 +336,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
         if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-    }, [currentLineIndex, lines]);
+    }, [currentLineIndex, lines, smartAlignStep]);
 
     const handleResetAlignment = useCallback(() => {
         if (!window.confirm('確定要重設所有時間標記嗎？此動作無法復原。')) return;
@@ -454,6 +466,166 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
         }
     }, [selectedSongId, selectedSong, lines, updateSongMetaInList, showTempMessage, loadLyricsForSong]);
 
+    // Smart Alignment Logic
+    const startSmartAlign = useCallback(() => {
+        if (!selectedSong) return;
+        setLinesSnapshot(lines);
+        setSmartAlignStep(1);
+        setTapMode(false);
+
+        // Find first valid line to scroll to
+        const firstValidIdx = lines.findIndex(l => l.timeSeconds !== null);
+        const targetIdx = firstValidIdx >= 0 ? firstValidIdx : 0;
+
+        // Seek to it
+        const targetTime = lines[targetIdx]?.timeSeconds ?? 0;
+        onSeek(targetTime);
+
+        // Force scroll with timeout to ensure UI is ready
+        setTimeout(() => {
+            const id = lines[targetIdx]?.id;
+            if (id && lineRefs.current[id]) {
+                lineRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 100);
+
+    }, [lines, onSeek, selectedSong]);
+
+    const cancelSmartAlign = useCallback(() => {
+        setLines(linesSnapshot); // Revert
+        setSmartAlignStep(0);
+        setSmartAlignStartTime(null);
+        setTapMode(true);
+    }, [linesSnapshot]);
+
+    const confirmSmartAlignStep1 = useCallback(() => {
+        // 1. Find the Anchor (First Valid Line) in Snapshot
+        // We look up valid index from snapshot to be consistent with how we determine "first"
+        const firstValidIndex = linesSnapshot.findIndex(l => l.timeSeconds !== null);
+        if (firstValidIndex === -1) {
+            setErrorMessage("無法對齊：找不到任何有效的時間標記");
+            return;
+        }
+
+        const firstLineSnap = linesSnapshot[firstValidIndex];
+        const oldStartTime = firstLineSnap.timeSeconds!; // Safe due to check above
+
+        // 2. Determine Start Time -> ALWAYS from the visual line
+        // The user must set the time on the line itself (using 'Set to Current' or +/-)
+        // The "Confirm" button just commits what is on screen.
+        const currentLineTime = lines[firstValidIndex]?.timeSeconds;
+
+        // Fallback to currentTime ONLY if for some reason the line time is null (shouldn't happen given valid index logic)
+        const newStartTime = currentLineTime ?? currentTime;
+
+        setSmartAlignStartTime(newStartTime);
+
+        const offset = newStartTime - oldStartTime;
+
+        // 3. Apply Offset Visually
+        setLines(linesSnapshot.map(l => ({
+            ...l,
+            timeSeconds: l.timeSeconds !== null ? Math.max(0, l.timeSeconds + offset) : null
+        })));
+
+        setSmartAlignStep(2);
+
+        // 4. Find Last Anchor for Step 2
+        // Find last valid line
+        let lastValidIndex = -1;
+        for (let i = linesSnapshot.length - 1; i >= 0; i--) {
+            if (linesSnapshot[i].timeSeconds !== null) {
+                lastValidIndex = i;
+                break;
+            }
+        }
+
+        const lastLineSnap = linesSnapshot[lastValidIndex];
+
+        // Auto seek to last line (shifted)
+        if (lastLineSnap && lastLineSnap.timeSeconds !== null) {
+            const newLastLineTime = Math.max(0, lastLineSnap.timeSeconds + offset);
+            onSeek(newLastLineTime);
+
+            // Imperative Scroll to Bottom Logic
+            setTimeout(() => {
+                const id = lastLineSnap.id;
+                if (id && lineRefs.current[id]) {
+                    lineRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100);
+        } else {
+            onSeek(currentTime);
+        }
+    }, [currentTime, lines, linesSnapshot, onSeek]);
+
+
+    const confirmSmartAlignStep2 = useCallback(() => {
+        // Step 2: Set End (Stretch) and Apply Final
+        if (smartAlignStartTime === null) return;
+
+        // 1. Find Anchors in Snapshot
+        const firstValidIndex = linesSnapshot.findIndex(l => l.timeSeconds !== null);
+        let lastValidIndex = -1;
+        for (let i = linesSnapshot.length - 1; i >= 0; i--) {
+            if (linesSnapshot[i].timeSeconds !== null) {
+                lastValidIndex = i;
+                break;
+            }
+        }
+
+        if (firstValidIndex === -1 || lastValidIndex === -1 || firstValidIndex >= lastValidIndex) {
+            setErrorMessage('無法計算：時間軸標記不足或順序錯誤');
+            setSmartAlignStep(0);
+            return;
+        }
+
+        const firstLineOld = linesSnapshot[firstValidIndex];
+        const lastLineOld = linesSnapshot[lastValidIndex];
+
+        const oldStartTime = firstLineOld.timeSeconds!;
+        const oldEndTime = lastLineOld.timeSeconds!;
+        const oldDuration = oldEndTime - oldStartTime;
+
+
+
+        // 2. Determine End Time -> ALWAYS from the visual line
+        const currentLineTime = lines[lastValidIndex]?.timeSeconds;
+        const newEndTime = currentLineTime ?? currentTime;
+
+        const newDuration = newEndTime - smartAlignStartTime;
+
+        if (oldDuration <= 0.1) {
+            // Protect against zero division or extremely short songs
+            setSmartAlignStep(0);
+            return;
+        }
+
+        const ratio = newDuration / oldDuration;
+
+        console.log('[SmartAlign] Applying', {
+            oldStart: oldStartTime,
+            oldEnd: oldEndTime,
+            newStart: smartAlignStartTime,
+            newEnd: newEndTime,
+            ratio
+        });
+
+        // Apply Transform: t_new = t_new_start + (t_old - t_old_start) * ratio
+        // This ensures the first line is exactly t_new_start
+        setLines(linesSnapshot.map(line => {
+            if (line.timeSeconds === null) return line;
+            const offsetFromStart = line.timeSeconds - oldStartTime;
+            const newTime = smartAlignStartTime + (offsetFromStart * ratio);
+            return { ...line, timeSeconds: Math.max(0, newTime) };
+        }));
+
+        setSmartAlignStep(0);
+        showTempMessage('智慧對齊完成');
+        setTapMode(true);
+    }, [currentTime, lines, linesSnapshot, smartAlignStartTime, showTempMessage]);
+
+
     const isRawChanged = rawTextDraft !== lastSavedRawText;
 
     return (
@@ -509,14 +681,15 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                 return (
                                     <div
                                         key={song.id}
-                                        onClick={() => handleSelectSong(song)}
+                                        onClick={() => smartAlignStep === 0 && handleSelectSong(song)}
                                         style={{
                                             padding: '8px',
                                             borderRadius: '8px',
                                             background: active ? '#1f1f1f' : '#161616',
                                             border: active ? '1px solid var(--accent-color)' : '1px solid #222',
-                                            cursor: 'pointer',
-                                            overflow: 'hidden'
+                                            cursor: smartAlignStep > 0 ? 'not-allowed' : 'pointer',
+                                            overflow: 'hidden',
+                                            opacity: smartAlignStep > 0 && !active ? 0.3 : 1
                                         }}
                                     >
                                         <div
@@ -610,8 +783,8 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                             flexShrink: 0, // Prevent shrinking
                                             background: 'transparent',
                                             border: 'none',
-                                            color: 'var(--accent-color)',
-                                            cursor: 'pointer',
+                                            color: smartAlignStep > 0 ? '#555' : 'var(--accent-color)',
+                                            cursor: smartAlignStep > 0 ? 'not-allowed' : 'pointer',
                                             padding: '4px',
                                             display: 'flex',
                                             alignItems: 'center',
@@ -643,32 +816,46 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                 </div>
                             </div>
 
-                            {/* Alignment Control */}
-                            <div style={{ background: '#141414', borderRadius: '12px', border: '1px solid #222', padding: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1 }}>
-                                <div>
-                                    <div style={{ color: '#fff', fontWeight: 700, marginBottom: '4px' }}>對齊控制</div>
-                                    <div style={{ color: '#888', fontSize: '12px', lineHeight: 1.4 }}>
-                                        開啟敲擊模式後，按下 J 鍵可將當前播放時間套用到下一行歌詞。
+                            {/* Alignment Control / Smart Align Header */}
+                            {smartAlignStep > 0 ? (
+                                <div style={{ background: '#1e1e1e', borderRadius: '12px', border: '1px solid var(--accent-color)', padding: '12px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                    <div style={{ color: 'var(--accent-color)', fontWeight: 700, marginBottom: '8px', fontSize: '16px' }}>
+                                        {smartAlignStep === 1 ? '智慧對齊 - 設定起始' : '智慧對齊 - 設定結束'}
+                                    </div>
+                                    <div style={{ color: '#ccc', fontSize: '13px', lineHeight: 1.5 }}>
+                                        {smartAlignStep === 1
+                                            ? '請將播放器移動到第一句歌詞的正確開始時間，然後點擊下方「設定起始」按鈕。'
+                                            : '請將播放器移動到最後一句歌詞的正確開始時間，然後點擊下方「設定結束」按鈕。系統將自動調整中間所有歌詞的時間。'}
                                     </div>
                                 </div>
+                            ) : (
+                                /* Alignment Control */
+                                <div style={{ background: '#141414', borderRadius: '12px', border: '1px solid #222', padding: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1 }}>
+                                    <div>
+                                        <div style={{ color: '#fff', fontWeight: 700, marginBottom: '4px' }}>對齊控制</div>
+                                        <div style={{ color: '#888', fontSize: '12px', lineHeight: 1.4 }}>
+                                            開啟敲擊模式後，按下 J 鍵可將當前播放時間套用到下一行歌詞。
+                                        </div>
+                                    </div>
 
-                                <button
-                                    onClick={handleResetAlignment}
-                                    style={{
-                                        width: '100%',
-                                        padding: '4px 0',
-                                        background: '#3a1a1a',
-                                        color: '#ff6b6b',
-                                        border: '1px solid #5a2a2a',
-                                        borderRadius: '6px',
-                                        cursor: 'pointer',
-                                        fontSize: '12px',
-                                        marginTop: '8px'
-                                    }}
-                                >
-                                    重設所有時間
-                                </button>
-                            </div>
+                                    <button
+                                        onClick={handleResetAlignment}
+                                        style={{
+                                            width: '100%',
+                                            padding: '4px 0',
+                                            background: '#3a1a1a',
+                                            color: '#ff6b6b',
+                                            border: '1px solid #5a2a2a',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                            fontSize: '12px',
+                                            marginTop: '8px'
+                                        }}
+                                    >
+                                        重設所有時間
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         {/* Right Column: Raw Text Block (Full Height) */}
@@ -735,6 +922,8 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                     fontSize: '13px',
                                     lineHeight: 1.5,
                                     boxSizing: 'border-box',
+                                    opacity: smartAlignStep > 0 ? 0.5 : 1,
+                                    pointerEvents: smartAlignStep > 0 ? 'none' : 'auto'
                                 }}
                             />
                         </div>
@@ -757,14 +946,109 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                             <div style={{ color: '#777' }}>尚未有歌詞，請先貼上並儲存歌詞文字。</div>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+
                                 {lines.map((line, idx) => {
                                     const isCurrent = idx === currentLineIndex;
                                     const isNextTap = idx === tapIndex && tapMode;
+
+                                    // Smart Align Visibility Logic
+                                    let isDimmed = false;
+                                    let showControls = false;
+
+                                    if (smartAlignStep === 1) {
+                                        // Show controls for first VALID line
+                                        const firstValidIdx = lines.findIndex(l => l.timeSeconds !== null);
+                                        const targetIdx = firstValidIdx >= 0 ? firstValidIdx : 0;
+                                        if (idx === targetIdx) showControls = true;
+                                        else isDimmed = true;
+                                    } else if (smartAlignStep === 2) {
+                                        // Show controls for last VALID line
+                                        let lastValidIdx = -1;
+                                        for (let i = lines.length - 1; i >= 0; i--) {
+                                            if (lines[i].timeSeconds !== null) {
+                                                lastValidIdx = i;
+                                                break;
+                                            }
+                                        }
+                                        if (lastValidIdx === -1) lastValidIdx = lines.length - 1;
+                                        if (idx === lastValidIdx) showControls = true;
+                                        else isDimmed = true;
+                                    }
+
+                                    if (showControls) {
+                                        // Render Highlighted Control Row for Smart Align
+                                        return (
+                                            <div
+                                                key={line.id}
+                                                style={{
+                                                    display: 'grid',
+                                                    gridTemplateColumns: '40px 1fr auto', // Play, Text+Controls, Time
+                                                    gap: '12px',
+                                                    padding: '16px',
+                                                    borderRadius: '12px',
+                                                    background: '#2a2a2a',
+                                                    border: '2px solid var(--accent-color)',
+                                                    boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                                                    alignItems: 'center',
+                                                    zIndex: 10
+                                                }}
+                                                ref={(el) => (lineRefs.current[line.id] = el)}
+                                            >
+                                                {/* Play Button */}
+                                                <button
+                                                    onClick={() => {
+                                                        onSeek(line.timeSeconds ?? 0);
+                                                        if (!isPlaying) onPlayPause();
+                                                    }}
+                                                    style={{
+                                                        width: '48px', height: '48px', borderRadius: '50%',
+                                                        background: 'var(--accent-color)', border: 'none',
+                                                        color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    <img src={PlayIcon} alt="Play" style={{ width: '18px', height: '18px', filter: 'brightness(0)' }} />
+                                                </button>
+
+                                                {/* Text and Time Controls */}
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    <div style={{ color: '#fff', fontSize: '16px', fontWeight: 700 }}>{line.text}</div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <button
+                                                            onClick={() => adjustLineTime(idx, -0.1)}
+                                                            style={{ padding: '4px 10px', background: '#333', border: '1px solid #444', color: '#fff', borderRadius: '6px', cursor: 'pointer' }}
+                                                        >
+                                                            -0.1s
+                                                        </button>
+                                                        <button
+                                                            onClick={() => updateLineTime(idx, currentTime)}
+                                                            style={{ padding: '4px 12px', background: 'var(--accent-color)', border: 'none', color: '#000', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+                                                        >
+                                                            設定為當前播放時間
+                                                        </button>
+                                                        <button
+                                                            onClick={() => adjustLineTime(idx, 0.1)}
+                                                            style={{ padding: '4px 10px', background: '#333', border: '1px solid #444', color: '#fff', borderRadius: '6px', cursor: 'pointer' }}
+                                                        >
+                                                            +0.1s
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Time Display */}
+                                                <div style={{ fontSize: '20px', fontFamily: 'monospace', color: '#fff', fontWeight: 700 }}>
+                                                    {formatDisplayTime(line.timeSeconds)}
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+
                                     return (
                                         <div
                                             key={line.id}
                                             ref={(el) => (lineRefs.current[line.id] = el)}
                                             onClick={(e) => {
+                                                if (smartAlignStep > 0) return; // Disable seek click in smart align
                                                 const target = e.target as HTMLElement;
                                                 if (target.tagName === 'INPUT' || target.tagName === 'BUTTON') return;
                                                 if (line.timeSeconds !== null) {
@@ -779,7 +1063,10 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                                 borderRadius: '10px',
                                                 background: isCurrent ? '#1e1e1e' : '#151515',
                                                 border: isCurrent ? '1px solid var(--accent-color)' : '1px solid #1f1f1f',
-                                                cursor: line.timeSeconds !== null ? 'pointer' : 'default',
+                                                cursor: (line.timeSeconds !== null && smartAlignStep === 0) ? 'pointer' : 'default',
+                                                opacity: isDimmed ? 0.2 : 1,
+                                                pointerEvents: isDimmed ? 'none' : 'auto',
+                                                transition: 'opacity 0.3s'
                                             }}
                                         >
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fff' }}>
@@ -827,6 +1114,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                                     </button>
                                                 </div>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+
                                                     <button
                                                         onClick={() => adjustLineTime(idx, -0.05)}
                                                         disabled={line.timeSeconds === null}
@@ -903,7 +1191,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                             {formatDisplayTime(currentTime)}
                         </div>
 
-                        {/* Center: Tap Button (Centered) and Toggle (Left of it) */}
+                        {/* Center: Tap Button / Smart Align Action */}
                         <div style={{
                             position: 'absolute',
                             left: '50%',
@@ -911,97 +1199,186 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                             display: 'flex',
                             alignItems: 'center'
                         }}>
-                            {/* Toggle (Absolute relative to this centered container) */}
-                            <div style={{
-                                position: 'absolute',
-                                right: '100%',
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                paddingRight: '12px',
-                                display: 'flex',
-                                alignItems: 'center'
-                            }}>
-                                <div
-                                    onClick={() => setTapMode(p => !p)}
-                                    style={{
-                                        cursor: 'pointer',
-                                        color: tapMode ? 'var(--accent-color)' : '#444',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        padding: '2px 6px', // Smaller padding
-                                        borderRadius: '8px',
-                                        background: tapMode ? 'rgba(var(--accent-color-rgb), 0.1)' : 'transparent',
-                                        transition: 'all 0.2s',
-                                        border: tapMode ? '1px solid rgba(var(--accent-color-rgb), 0.3)' : '1px solid transparent',
-                                        whiteSpace: 'nowrap'
-                                    }}
-                                    title="敲擊模式 (J)"
-                                >
-                                    <img src={TapModeIcon} alt="Tap Mode" style={{ width: '20px', height: '20px', filter: tapMode ? 'none' : 'grayscale(100%) opacity(0.3)' }} />
-                                    <span style={{ fontSize: '9px', fontWeight: 600, marginTop: '2px' }}>敲擊模式</span>
-                                </div>
-                            </div>
-
-                            {/* Big Tap Button */}
-                            <button
-                                onClick={handleTap}
-                                disabled={!tapMode || !selectedSong}
-                                style={{
-                                    padding: '8px 32px', // Wider
-                                    background: tapMode ? 'var(--accent-color)' : '#333',
-                                    color: tapMode ? '#000' : '#888',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    fontSize: '14px',
-                                    fontWeight: 800,
-                                    cursor: tapMode ? 'pointer' : 'not-allowed',
-                                    transition: 'transform 0.1s',
-                                    opacity: tapMode ? 1 : 0.5,
-                                    height: '40px',
+                            {/* Toggle (Absolute relative to this centered container) - Hidden in Smart Align */}
+                            {smartAlignStep === 0 && (
+                                <div style={{
+                                    position: 'absolute',
+                                    right: '100%',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    paddingRight: '12px',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    justifyContent: 'center',
                                     gap: '8px'
-                                }}
-                                onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
-                                onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                            >
-                                <span>敲擊</span>
-                                <span style={{
-                                    background: 'rgba(0,0,0,0.2)',
-                                    color: tapMode ? '#000' : '#888',
-                                    padding: '2px 6px',
-                                    borderRadius: '4px',
-                                    fontSize: '11px',
-                                    fontWeight: 700
-                                }}>J</span>
-                            </button>
+                                }}>
+                                    <div
+                                        onClick={() => setTapMode(p => !p)}
+                                        style={{
+                                            cursor: 'pointer',
+                                            color: tapMode ? 'var(--accent-color)' : '#444',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            padding: '2px 6px',
+                                            borderRadius: '8px',
+                                            background: tapMode ? 'rgba(var(--accent-color-rgb), 0.1)' : 'transparent',
+                                            transition: 'all 0.2s',
+                                            border: tapMode ? '1px solid rgba(var(--accent-color-rgb), 0.3)' : '1px solid transparent',
+                                            whiteSpace: 'nowrap'
+                                        }}
+                                        title="敲擊模式 (J)"
+                                    >
+                                        <img src={TapModeIcon} alt="Tap Mode" style={{ width: '20px', height: '20px', filter: tapMode ? 'none' : 'grayscale(100%) opacity(0.3)' }} />
+                                        <span style={{ fontSize: '9px', fontWeight: 600, marginTop: '2px' }}>敲擊模式</span>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Smart Align Icon - Moved to Right of Tap Button */}
+                            {smartAlignStep === 0 && lines.length > 1 && (
+                                <div style={{
+                                    position: 'absolute',
+                                    left: '100%',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    paddingLeft: '12px',
+                                }}>
+                                    <button
+                                        onClick={startSmartAlign}
+                                        style={{
+                                            background: 'transparent',
+                                            border: '1px solid #333',
+                                            borderRadius: '8px',
+                                            padding: '2px 12px', /* Increased horizontal padding */
+                                            minWidth: '60px', /* Minimum width to ensure text fits */
+                                            color: '#aaa',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            transition: 'all 0.2s',
+                                        }}
+                                        title="智慧對齊：設定起始與結束時間，自動調整中間的歌詞"
+                                        onMouseEnter={e => {
+                                            e.currentTarget.style.color = '#fff';
+                                            e.currentTarget.style.borderColor = '#666';
+                                        }}
+                                        onMouseLeave={e => {
+                                            e.currentTarget.style.color = '#aaa';
+                                            e.currentTarget.style.borderColor = '#333';
+                                        }}
+                                    >
+                                        <img src={SmartAlignIcon} alt="Smart Align" style={{ width: '20px', height: '20px' }} />
+                                        <span style={{ fontSize: '9px', fontWeight: 600, marginTop: '2px', whiteSpace: 'nowrap' }}>智慧對齊</span>
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Big Action Button */}
+                            {smartAlignStep === 0 ? (
+                                <button
+                                    onClick={handleTap}
+                                    disabled={!tapMode || !selectedSong}
+                                    style={{
+                                        padding: '8px 32px',
+                                        background: tapMode ? 'var(--accent-color)' : '#333',
+                                        color: tapMode ? '#000' : '#888',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        fontSize: '14px',
+                                        fontWeight: 800,
+                                        cursor: tapMode ? 'pointer' : 'not-allowed',
+                                        transition: 'transform 0.1s',
+                                        opacity: tapMode ? 1 : 0.5,
+                                        height: '40px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px'
+                                    }}
+                                    onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+                                    onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                >
+                                    <span>敲擊</span>
+                                    <span style={{
+                                        background: 'rgba(0,0,0,0.2)',
+                                        color: tapMode ? '#000' : '#888',
+                                        padding: '2px 6px',
+                                        borderRadius: '4px',
+                                        fontSize: '11px',
+                                        fontWeight: 700
+                                    }}>J</span>
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={smartAlignStep === 1 ? confirmSmartAlignStep1 : confirmSmartAlignStep2}
+                                    style={{
+                                        padding: '8px 32px',
+                                        background: 'var(--accent-color)',
+                                        color: '#000',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        fontSize: '14px',
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        height: '40px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px',
+                                        boxShadow: '0 0 15px rgba(var(--accent-color-rgb), 0.4)'
+                                    }}
+                                >
+                                    {smartAlignStep === 1 ? '設定起始 (Offset)' : '設定結束 (Scale)'}
+                                </button>
+                            )}
                         </div>
 
-                        {/* Right: Save Button */}
-                        <button
-                            onClick={handleSaveLrc}
-                            disabled={savingLrc}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '8px 16px',
-                                background: '#2a2a2a',
-                                border: '1px solid #333',
-                                borderRadius: '8px',
-                                color: '#fff',
-                                cursor: 'pointer',
-                                fontSize: '13px',
-                                fontWeight: 600
-                            }}
-                        >
-                            <img src={SaveLrcIcon} alt="Save" style={{ width: '16px', height: '16px' }} />
-                            {savingLrc ? '儲存中...' : '儲存 LRC'}
-                        </button>
+                        {/* Right: Save / Cancel Button */}
+                        {smartAlignStep > 0 ? (
+                            <button
+                                onClick={cancelSmartAlign}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '8px 16px',
+                                    background: '#333',
+                                    border: '1px solid #444',
+                                    borderRadius: '8px',
+                                    color: '#fff',
+                                    cursor: 'pointer',
+                                    fontSize: '13px',
+                                    fontWeight: 600
+                                }}
+                            >
+                                取消
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleSaveLrc}
+                                disabled={savingLrc}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '8px 16px',
+                                    background: '#2a2a2a',
+                                    border: '1px solid #333',
+                                    borderRadius: '8px',
+                                    color: '#fff',
+                                    cursor: 'pointer',
+                                    fontSize: '13px',
+                                    fontWeight: 600
+                                }}
+                            >
+                                <img src={SaveLrcIcon} alt="Save" style={{ width: '16px', height: '16px' }} />
+                                {savingLrc ? '儲存中...' : '儲存 LRC'}
+                            </button>
+                        )}
                     </div>
 
                     {errorMessage && <div style={{ color: '#ff8b8b', fontSize: '13px' }}>{errorMessage}</div>}
