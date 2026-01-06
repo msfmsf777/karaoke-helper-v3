@@ -6,9 +6,10 @@ interface LyricsSearchPaneProps {
     onClose: () => void;
     initialQuery: string;
     onSelect: (content: string, type: 'lrc' | 'txt', name?: string, artist?: string) => void;
+    mode?: 'sidebar' | 'overlay'; // sidebar: left of sidebar (default), overlay: right edge
 }
 
-const LyricsSearchPane: React.FC<LyricsSearchPaneProps> = ({ isOpen, onClose, initialQuery, onSelect }) => {
+const LyricsSearchPane: React.FC<LyricsSearchPaneProps> = ({ isOpen, onClose, initialQuery, onSelect, mode = 'sidebar' }) => {
     const [query, setQuery] = useState(initialQuery);
     const [results, setResults] = useState<LrcLibTrack[]>([]);
     const [searching, setSearching] = useState(false);
@@ -43,24 +44,29 @@ const LyricsSearchPane: React.FC<LyricsSearchPaneProps> = ({ isOpen, onClose, in
 
     if (!isOpen) return null;
 
+    const positionStyles: React.CSSProperties = mode === 'sidebar' ? {
+        right: '400px', // Sticks to the left of the main sidebar
+        borderRight: '1px solid #333', // Border between panes
+    } : {
+        right: 0,
+        borderLeft: '1px solid #333',
+        zIndex: 1000 // Higher z-index for overlay
+    };
+
     return (
         <div style={{
             position: 'absolute',
             top: 0,
-            right: '400px', // Sticks to the left of the main sidebar
             bottom: 0,
             width: '400px',
             backgroundColor: '#1a1a1a', // Slightly darker to distinguish
-            borderLeft: '1px solid #333',
-            borderRight: '1px solid #333', // Border between panes
-            zIndex: 250, // Same level as sidebar but behind if overlapping? actually below main sidebar backdrop? 
-            // Wait, main sidebar is 251. This should be 251 as well to sit on top of backdrop.
-            // But we want it side-by-side. 
-            // If main sidebar is 251, this should be 251.
+            borderLeft: mode === 'sidebar' ? '1px solid #333' : undefined,
+            zIndex: 250, // Base z-index
             boxShadow: '-5px 0 30px rgba(0,0,0,0.5)',
             display: 'flex',
             flexDirection: 'column',
-            animation: 'slideInRight 0.3s ease-out'
+            animation: 'slideInRight 0.3s ease-out',
+            ...positionStyles
         }}>
             {/* Header */}
             <div style={{

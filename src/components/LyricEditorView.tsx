@@ -13,8 +13,17 @@ import {
     writeSyncedLyrics,
 } from '../library/lyrics';
 
+import LyricsSearchPane from './LyricsSearchPane';
+
 import TapModeIcon from '../assets/icons/tap_mode.svg';
 import SaveLrcIcon from '../assets/icons/save_lrc.svg';
+
+const SearchIcon = (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+);
 
 interface LyricEditorViewProps {
     activeSongId?: string;
@@ -76,6 +85,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
 
     const [headerTitle, setHeaderTitle] = useState('歌詞編輯');
     const headerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const [showSearchPane, setShowSearchPane] = useState(false);
 
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [savingRaw, setSavingRaw] = useState(false);
@@ -407,6 +417,43 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
         }
     }, [lines, selectedSong, selectedSongId, updateSongMetaInList, showTempMessage]);
 
+    const handleLyricsImport = useCallback(async (content: string, type: 'lrc' | 'txt') => {
+        if (!selectedSongId || !selectedSong) return;
+
+        // Check if current song has lyrics
+        const hasExistingLyrics = selectedSong.lyrics_status !== 'none' || lines.length > 1 || (lines.length === 1 && lines[0].text.trim().length > 0);
+
+        if (hasExistingLyrics) {
+            if (!window.confirm('此歌曲已有歌詞，是否要覆蓋原本的歌詞檔案？')) {
+                return;
+            }
+        }
+
+        try {
+            setLoadingLyrics(true);
+            let result;
+            if (type === 'lrc') {
+                result = await writeSyncedLyrics(selectedSongId, content);
+                updateSongMetaInList({ ...result.meta, lyrics_status: 'synced' });
+                showTempMessage('已匯入 LRC');
+            } else {
+                result = await writeRawLyrics(selectedSongId, content);
+                updateSongMetaInList({ ...result.meta, lyrics_status: 'text_only' });
+                showTempMessage('已匯入純文字');
+            }
+            setShowSearchPane(false);
+
+            // Reload lyrics
+            await loadLyricsForSong(selectedSong);
+
+        } catch (err) {
+            console.error('[Lyrics] Failed to import lyrics', err);
+            setErrorMessage('匯入失敗');
+        } finally {
+            setLoadingLyrics(false);
+        }
+    }, [selectedSongId, selectedSong, lines, updateSongMetaInList, showTempMessage, loadLyricsForSong]);
+
     const isRawChanged = rawTextDraft !== lastSavedRawText;
 
     return (
@@ -541,12 +588,42 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                         color: '#fff',
                                         fontSize: '18px',
                                         fontWeight: 800,
-                                        whiteSpace: 'nowrap',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis'
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        width: '100%' // Ensure full width
                                     }}
                                 >
-                                    {selectedSong.title}
+                                    <div style={{
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        flex: 1, // Take remaining space
+                                        minWidth: 0 // Allow shrinking below content size
+                                    }}>
+                                        {selectedSong.title}
+                                    </div>
+                                    <button
+                                        onClick={() => setShowSearchPane(true)}
+                                        title="搜尋歌詞"
+                                        style={{
+                                            flexShrink: 0, // Prevent shrinking
+                                            background: 'transparent',
+                                            border: 'none',
+                                            color: 'var(--accent-color)',
+                                            cursor: 'pointer',
+                                            padding: '4px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            opacity: 0.7,
+                                            transition: 'opacity 0.2s',
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                                        onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
+                                    >
+                                        {SearchIcon}
+                                    </button>
                                 </div>
                                 <div
                                     title={`${selectedSong.artist || '未知歌手'} ・ ${selectedSong.type || '—'}`}
@@ -929,6 +1006,16 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
 
                     {errorMessage && <div style={{ color: '#ff8b8b', fontSize: '13px' }}>{errorMessage}</div>}
                 </div>
+            )}
+
+            {showSearchPane && selectedSong && (
+                <LyricsSearchPane
+                    isOpen={showSearchPane}
+                    onClose={() => setShowSearchPane(false)}
+                    initialQuery={`${selectedSong.title} ${selectedSong.artist || ''}`.trim()}
+                    onSelect={handleLyricsImport}
+                    mode="overlay"
+                />
             )}
         </div>
     );
