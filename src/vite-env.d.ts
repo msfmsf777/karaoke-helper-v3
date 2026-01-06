@@ -36,6 +36,7 @@ interface Window {
         artist?: string;
         type: import('../shared/songTypes').SongType;
         lyricsText?: string;
+        lyricsLrc?: string;
       }) => Promise<import('../shared/songTypes').SongMeta>;
       loadAllSongs: () => Promise<import('../shared/songTypes').SongMeta[]>;
       getSongFilePath: (id: string) => Promise<string | null>;
@@ -61,7 +62,7 @@ interface Window {
     };
     downloads: {
       validateUrl: (url: string) => Promise<{ videoId: string; title: string; duration?: number } | null>;
-      queueDownload: (url: string, quality: 'best' | 'high' | 'normal', title?: string, artist?: string, type?: import('../shared/songTypes').SongType, lyricsText?: string) => Promise<import('../shared/songTypes').DownloadJob>;
+      queueDownload: (url: string, quality: 'best' | 'high' | 'normal', title?: string, artist?: string, type?: import('../shared/songTypes').SongType, lyricsText?: string, lyricsLrc?: string) => Promise<import('../shared/songTypes').DownloadJob>;
       getAllJobs: () => Promise<import('../shared/songTypes').DownloadJob[]>;
       subscribeUpdates: (
         callback: (jobs: import('../shared/songTypes').DownloadJob[]) => void

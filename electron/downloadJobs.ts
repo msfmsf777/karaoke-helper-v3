@@ -15,6 +15,7 @@ export interface DownloadJob {
     quality: 'best' | 'high' | 'normal';
     type: SongType;
     lyricsText?: string;
+    lyricsLrc?: string;
     status: 'queued' | 'downloading' | 'processing' | 'completed' | 'failed';
     progress: number;
     error?: string;
@@ -206,7 +207,8 @@ class DownloadJobManager {
         titleOverride?: string,
         artistOverride?: string,
         type: SongType = '原曲',
-        lyricsText?: string
+        lyricsText?: string,
+        lyricsLrc?: string
     ) {
         // 1. Validate & Get Metadata
         const meta = await this.validateUrl(url);
@@ -243,6 +245,7 @@ class DownloadJobManager {
             quality,
             type,
             lyricsText,
+            lyricsLrc,
             status: 'queued',
             progress: 0,
             createdAt: new Date().toISOString(),
@@ -357,15 +360,28 @@ class DownloadJobManager {
                 await fs.writeFile(lyricsRawPath, content, 'utf-8');
             }
 
+            let lyricsLrcPath: string | undefined;
+            if (job.lyricsLrc && job.lyricsLrc.trim().length > 0) {
+                const { SYNCED_LYRICS_FILENAME } = await import('./songLibrary');
+                lyricsLrcPath = path.join(songDir, SYNCED_LYRICS_FILENAME);
+                const content = job.lyricsLrc.replace(/\r\n/g, '\n');
+                await fs.writeFile(lyricsLrcPath, content, 'utf-8');
+            }
+
+            // Determine lyrics status
+            let lyricsStatus: 'none' | 'text_only' | 'synced' = 'none';
+            if (lyricsLrcPath) lyricsStatus = 'synced';
+            else if (lyricsRawPath) lyricsStatus = 'text_only';
+
             const meta: SongMeta = {
                 id: songId,
                 title: job.title,
                 artist: job.artist,
                 type: job.type || '原曲', // type from job
                 audio_status: 'original_only',
-                lyrics_status: lyricsRawPath ? 'text_only' : 'none', // Set based on lyrics presence
+                lyrics_status: lyricsStatus,
                 lyrics_raw_path: lyricsRawPath,
-                lyrics_lrc_path: undefined,
+                lyrics_lrc_path: lyricsLrcPath,
                 source: {
                     kind: 'youtube',
                     youtubeId: job.youtubeId,

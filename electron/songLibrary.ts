@@ -122,8 +122,9 @@ export async function addLocalSong(params: {
   artist?: string;
   type: SongType;
   lyricsText?: string;
+  lyricsLrc?: string;
 }): Promise<SongMeta> {
-  const { sourcePath, title, artist, type, lyricsText } = params;
+  const { sourcePath, title, artist, type, lyricsText, lyricsLrc } = params;
   if (!sourcePath || !title) {
     throw new Error('sourcePath and title are required');
   }
@@ -144,11 +145,23 @@ export async function addLocalSong(params: {
   const duration = await getAudioDuration(targetPath);
 
   const rawLyrics = (lyricsText ?? '').replace(/\r\n/g, '\n');
-  const hasLyrics = rawLyrics.trim().length > 0;
-  const lyricsRawPath = hasLyrics ? path.join(songDir, RAW_LYRICS_FILENAME) : undefined;
-  if (hasLyrics && lyricsRawPath) {
+  const hasRawLyrics = rawLyrics.trim().length > 0;
+  const lyricsRawPath = hasRawLyrics ? path.join(songDir, RAW_LYRICS_FILENAME) : undefined;
+  if (hasRawLyrics && lyricsRawPath) {
     await fs.writeFile(lyricsRawPath, rawLyrics, 'utf-8');
   }
+
+  const lrcContent = (lyricsLrc ?? '').replace(/\r\n/g, '\n');
+  const hasLrc = lrcContent.trim().length > 0;
+  const lyricsLrcPath = hasLrc ? path.join(songDir, SYNCED_LYRICS_FILENAME) : undefined;
+  if (hasLrc && lyricsLrcPath) {
+    await fs.writeFile(lyricsLrcPath, lrcContent, 'utf-8');
+  }
+
+  // Determine lyrics status: 'synced' > 'text_only' > 'none'
+  let lyricsStatus: LyricsStatus = 'none';
+  if (hasLrc) lyricsStatus = 'synced';
+  else if (hasRawLyrics) lyricsStatus = 'text_only';
 
   const now = new Date().toISOString();
   const meta: SongMeta = {
@@ -157,9 +170,9 @@ export async function addLocalSong(params: {
     artist: artist?.trim() || undefined,
     type,
     audio_status: DEFAULT_AUDIO_STATUS,
-    lyrics_status: hasLyrics ? 'text_only' : DEFAULT_LYRICS_STATUS,
+    lyrics_status: lyricsStatus,
     lyrics_raw_path: lyricsRawPath,
-    lyrics_lrc_path: undefined,
+    lyrics_lrc_path: lyricsLrcPath,
     source: {
       kind: 'file',
       originalPath: sourcePath,

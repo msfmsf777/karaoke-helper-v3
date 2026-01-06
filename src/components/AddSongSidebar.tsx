@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { addLocalSong, pickAudioFile, SongType } from '../library/songLibrary';
 import { useLibrary } from '../contexts/LibraryContext';
+import LyricsSearchPane from './LyricsSearchPane';
 
 interface AddSongSidebarProps {
     isOpen: boolean;
@@ -15,8 +16,11 @@ interface AddSongFormState {
     title: string;
     artist: string;
     type: SongType;
-    lyricsMode: 'none' | 'paste';
+    lyricsMode: 'none' | 'paste' | 'import_search';
     lyricsText: string;
+    lyricsLrc?: string;
+    lyricsFormat?: 'txt' | 'lrc';
+    lyricsFilename?: string;
 }
 
 const defaultForm: AddSongFormState = {
@@ -29,6 +33,7 @@ const defaultForm: AddSongFormState = {
     type: '原曲',
     lyricsMode: 'none',
     lyricsText: '',
+    lyricsFormat: 'txt'
 };
 
 const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
@@ -37,6 +42,8 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
     const [error, setError] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
     const [validating, setValidating] = useState(false);
+    const [showSearchPane, setShowSearchPane] = useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     // Reset form when opened
     useEffect(() => {
@@ -45,6 +52,7 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
             setError(null);
             setBusy(false);
             setValidating(false);
+            setShowSearchPane(false);
         }
     }, [isOpen]);
 
@@ -123,7 +131,8 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                     title: form.title.trim(),
                     artist: form.artist.trim(),
                     type: form.type,
-                    lyricsText: form.lyricsMode === 'paste' ? form.lyricsText : undefined,
+                    lyricsText: form.lyricsMode === 'paste' ? form.lyricsText : (form.lyricsMode === 'import_search' && form.lyricsFormat === 'txt' ? form.lyricsText : undefined),
+                    lyricsLrc: form.lyricsMode === 'import_search' && form.lyricsFormat === 'lrc' ? form.lyricsLrc : undefined
                 });
                 await refreshSongs();
             } else {
@@ -133,7 +142,8 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                     form.title.trim(),
                     form.artist.trim(),
                     form.type,
-                    form.lyricsMode === 'paste' ? form.lyricsText : undefined
+                    form.lyricsMode === 'paste' ? form.lyricsText : (form.lyricsMode === 'import_search' && form.lyricsFormat === 'txt' ? form.lyricsText : undefined),
+                    form.lyricsMode === 'import_search' && form.lyricsFormat === 'lrc' ? form.lyricsLrc : undefined
                 );
             }
             onClose();
@@ -500,6 +510,7 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                                 {([
                                     { value: 'none', label: '無歌詞' },
                                     { value: 'paste', label: '貼上文字' },
+                                    { value: 'import_search', label: '上傳/搜尋' },
                                 ] as const).map((option) => (
                                     <label
                                         key={option.value}
@@ -546,6 +557,107 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                                     }}
                                 />
                             )}
+
+                            {form.lyricsMode === 'import_search' && (
+                                <div style={{
+                                    border: '1px solid #3a3a3a',
+                                    borderRadius: '8px',
+                                    padding: '12px',
+                                    background: '#202020'
+                                }}>
+                                    <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                                        <button
+                                            onClick={() => fileInputRef.current?.click()}
+                                            style={{
+                                                flex: 1,
+                                                padding: '8px',
+                                                background: '#333',
+                                                border: '1px solid #444',
+                                                color: '#fff',
+                                                borderRadius: '6px',
+                                                cursor: 'pointer',
+                                                fontSize: '13px'
+                                            }}
+                                        >
+                                            上傳檔案 (.lrc/.txt)
+                                        </button>
+                                        <button
+                                            onClick={() => setShowSearchPane(true)}
+                                            style={{
+                                                flex: 1,
+                                                padding: '8px',
+                                                background: '#333',
+                                                border: '1px solid #444',
+                                                color: '#fff',
+                                                borderRadius: '6px',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '6px',
+                                                fontSize: '13px'
+                                            }}
+                                        >
+                                            <span style={{ fontSize: '14px' }}>🔍</span> 搜尋線上歌詞
+                                        </button>
+                                    </div>
+
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        accept=".lrc,.txt"
+                                        style={{ display: 'none' }}
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                const reader = new FileReader();
+                                                reader.onload = (ev) => {
+                                                    const content = ev.target?.result as string;
+                                                    const isLrc = file.name.toLowerCase().endsWith('.lrc');
+                                                    updateForm({
+                                                        lyricsFormat: isLrc ? 'lrc' : 'txt',
+                                                        lyricsText: isLrc ? '' : content,
+                                                        lyricsLrc: isLrc ? content : undefined,
+                                                        lyricsFilename: file.name
+                                                    });
+                                                };
+                                                reader.readAsText(file);
+                                            }
+                                            // Reset value to allow re-selection
+                                            e.target.value = '';
+                                        }}
+                                    />
+
+                                    {(form.lyricsFilename || (form.lyricsFormat === 'lrc' ? form.lyricsLrc : form.lyricsText)) ? (
+                                        <div style={{ fontSize: '12px', color: '#aaa', marginTop: '8px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <span style={{
+                                                    background: form.lyricsFormat === 'lrc' ? 'var(--accent-color)' : '#444',
+                                                    color: form.lyricsFormat === 'lrc' ? '#000' : '#ccc',
+                                                    padding: '2px 4px',
+                                                    borderRadius: '3px',
+                                                    fontWeight: 'bold',
+                                                    fontSize: '10px'
+                                                }}>
+                                                    {form.lyricsFormat === 'lrc' ? 'LRC' : 'TXT'}
+                                                </span>
+                                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {form.lyricsFilename || '已載入內容'}
+                                                </span>
+                                            </div>
+                                            {form.lyricsFormat === 'lrc' && (
+                                                <div style={{ marginTop: '4px', fontStyle: 'italic', opacity: 0.7 }}>
+                                                    Synced Lyrics available
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div style={{ fontSize: '12px', color: '#666', marginTop: '8px', textAlign: 'center', fontStyle: 'italic' }}>
+                                            未選擇歌詞
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                     </div>
@@ -584,6 +696,20 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                     </button>
                 </div>
             </div>
+            <LyricsSearchPane
+                isOpen={showSearchPane}
+                onClose={() => setShowSearchPane(false)}
+                initialQuery={`${form.title} ${form.artist}`.trim()}
+                onSelect={(content, type) => {
+                    updateForm({
+                        lyricsFormat: type,
+                        lyricsText: type === 'txt' ? content : '',
+                        lyricsLrc: type === 'lrc' ? content : undefined,
+                        lyricsFilename: `From Search: ${form.title}`
+                    });
+                    setShowSearchPane(false);
+                }}
+            />
         </>
     );
 };

@@ -68,6 +68,7 @@ contextBridge.exposeInMainWorld('khelper', {
       artist?: string
       type: SongType
       lyricsText?: string
+      lyricsLrc?: string
     }): Promise<SongMeta> => ipcRenderer.invoke('library:add-local-song', payload),
     loadAllSongs: (): Promise<SongMeta[]> => ipcRenderer.invoke('library:load-all'),
     getSongFilePath: (id: string) => ipcRenderer.invoke('library:get-song-file-path', id),
@@ -97,8 +98,8 @@ contextBridge.exposeInMainWorld('khelper', {
   downloads: {
     validateUrl: (url: string): Promise<{ videoId: string; title: string; duration?: number } | null> =>
       ipcRenderer.invoke('downloads:validate', url),
-    queueDownload: (url: string, quality: 'best' | 'high' | 'normal', title?: string, artist?: string, type?: SongType, lyricsText?: string): Promise<DownloadJob> =>
-      ipcRenderer.invoke('downloads:queue', url, quality, title, artist, type, lyricsText),
+    queueDownload: (url: string, quality: 'best' | 'high' | 'normal', title?: string, artist?: string, type?: SongType, lyricsText?: string, lyricsLrc?: string): Promise<DownloadJob> =>
+      ipcRenderer.invoke('downloads:queue', url, quality, title, artist, type, lyricsText, lyricsLrc),
     getAllJobs: (): Promise<DownloadJob[]> => ipcRenderer.invoke('downloads:get-all'),
     subscribeUpdates: (callback: (jobs: DownloadJob[]) => void) => {
       const listener = (_event: Electron.IpcRendererEvent, jobs: DownloadJob[]) => callback(jobs)

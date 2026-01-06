@@ -743,9 +743,9 @@ ipcMain.handle('downloads:validate', async (_event, url: string) => {
   return dm.validateUrl(url)
 })
 
-ipcMain.handle('downloads:queue', async (_event, url: string, quality: 'best' | 'high' | 'normal', title?: string, artist?: string, type?: import('../shared/songTypes').SongType, lyricsText?: string) => {
+ipcMain.handle('downloads:queue', async (_event, url: string, quality: 'best' | 'high' | 'normal', title?: string, artist?: string, type?: import('../shared/songTypes').SongType, lyricsText?: string, lyricsLrc?: string) => {
   const dm = getDownloadManager()
-  return dm.queueJob(url, quality, title, artist, type, lyricsText)
+  return dm.queueJob(url, quality, title, artist, type, lyricsText, lyricsLrc)
 })
 
 ipcMain.handle('downloads:get-all', async () => {

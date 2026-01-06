@@ -26,6 +26,7 @@ export async function addLocalSong(params: {
   artist?: string;
   type: SongType;
   lyricsText?: string;
+  lyricsLrc?: string;
 }): Promise<SongMeta> {
   const api = getApi();
   const meta = await api.addLocalSong(params);
