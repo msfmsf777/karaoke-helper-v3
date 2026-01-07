@@ -45,6 +45,10 @@ function AppContent() {
     headphoneDeviceId: null as string | null,
   });
   const [lyricsEditorSongId, setLyricsEditorSongId] = useState<string | null>(null);
+  // Navigation Blocking State
+  const [isLyricsDirty, setIsLyricsDirty] = useState(false);
+  const [pendingView, setPendingView] = useState<View | null>(null);
+
   const mainContentRef = useRef<HTMLDivElement>(null);
 
   const { currentSongId, playNext, queue, currentIndex, isStreamWaiting } = useQueue();
@@ -186,7 +190,13 @@ function AppContent() {
     }
   }, [isStreamMode]);
 
-  const handleViewChange = (newView: View) => {
+  const handleViewChange = (newView: View, force = false) => {
+    // Intercept navigation if lyrics are dirty
+    if (!force && currentView === 'lyrics' && isLyricsDirty && newView !== 'lyrics') {
+      setPendingView(newView);
+      return;
+    }
+
     if (newView === 'stream') {
       setRenderStreamView(true);
       // Small delay to allow render before fading in
@@ -204,6 +214,18 @@ function AppContent() {
       }
       setCurrentView(newView);
     }
+    setPendingView(null);
+  };
+
+  const handleConfirmLeave = () => {
+    if (pendingView) {
+      setIsLyricsDirty(false); // Clear dirty flag
+      handleViewChange(pendingView, true); // Force navigation
+    }
+  };
+
+  const handleCancelLeave = () => {
+    setPendingView(null);
   };
 
   const handleOpenSettings = () => {
@@ -272,6 +294,11 @@ function AppContent() {
                   duration={duration}
                   onPlayPause={handlePlayPause}
                   onSeek={handleSeek}
+                  // Navigation Blocking Props
+                  pendingView={pendingView}
+                  setIsDirty={setIsLyricsDirty}
+                  onConfirmLeave={handleConfirmLeave}
+                  onCancelLeave={handleCancelLeave}
                 />
               );
             case 'settings':

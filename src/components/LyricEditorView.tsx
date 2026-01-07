@@ -19,6 +19,8 @@ import TapModeIcon from '../assets/icons/tap_mode.svg';
 import SaveLrcIcon from '../assets/icons/save_lrc.svg';
 import SmartAlignIcon from '../assets/icons/SmartAlign.svg';
 import PlayIcon from '../assets/icons/play.svg';
+import AddIcon from '../assets/icons/add.svg';
+import DeleteIcon from '../assets/icons/delete.svg';
 
 const SearchIcon = (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -37,6 +39,11 @@ interface LyricEditorViewProps {
     duration: number;
     onPlayPause: () => void;
     onSeek: (seconds: number) => void;
+    // Navigation Blocking Props
+    pendingView: string | null;
+    setIsDirty: (dirty: boolean) => void;
+    onConfirmLeave: () => void;
+    onCancelLeave: () => void;
 }
 
 const formatDisplayTime = (seconds: number | null) => {
@@ -74,6 +81,10 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
     duration,
     onPlayPause,
     onSeek,
+    pendingView,
+    setIsDirty,
+    onConfirmLeave,
+    onCancelLeave,
 }) => {
     const [songs, setSongs] = useState<SongMeta[]>([]);
     const [loadingSongs, setLoadingSongs] = useState(false);
@@ -103,6 +114,26 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
     const initialSelectDone = useRef(false);
     const lineRefs = useRef<Record<string, HTMLDivElement | null>>({});
     const queue = useQueue();
+
+    // UX Enhancements
+    const [hoveredLineIndex, setHoveredLineIndex] = useState<number | null>(null);
+    const [originalLinesSnapshot, setOriginalLinesSnapshot] = useState<string>(JSON.stringify([]));
+
+    // Round 2 Enhancements
+    const [pendingSongId, setPendingSongId] = useState<string | null>(null);
+    const [deleteConfirmLineId, setDeleteConfirmLineId] = useState<string | null>(null);
+    const deleteConfirmTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Dirty Check State - Exposed for internal logic
+    const [isDirtyInternal, setIsDirtyInternal] = useState(false);
+
+    // Dirty Check Effect
+    useEffect(() => {
+        const currentSnapshot = JSON.stringify(lines.map(l => ({ text: l.text, timeSeconds: l.timeSeconds })));
+        const isDirty = currentSnapshot !== originalLinesSnapshot;
+        setIsDirty(isDirty);
+        setIsDirtyInternal(isDirty);
+    }, [lines, originalLinesSnapshot, setIsDirty]);
 
     const selectedSong = useMemo(() => songs.find((s) => s.id === selectedSongId) ?? null, [songs, selectedSongId]);
 
@@ -182,6 +213,9 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
             setRawTextDraft(nextLines.map((l) => l.text).join('\n'));
             setLastSavedRawText(nextLines.map((l) => l.text).join('\n'));
 
+            // Take snapshot for dirty check
+            setOriginalLinesSnapshot(JSON.stringify(nextLines.map(l => ({ text: l.text, timeSeconds: l.timeSeconds }))));
+
             showTempMessage(synced ? '已載入 LRC' : raw ? '已載入純文字' : '無歌詞');
 
         } catch (err) {
@@ -195,24 +229,39 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
         }
     }, [updateSongMetaInList, showTempMessage]);
 
+    const performSongSelection = useCallback(async (songId: string) => {
+        const song = songs.find(s => s.id === songId);
+        if (!song) return;
+
+        setSelectedSongId(songId);
+        onSongSelectedChange?.(songId);
+        setErrorMessage(null);
+        setTapMode(true);
+        setPendingSongId(null);
+        setDeleteConfirmLineId(null); // Reset delete state
+
+        try {
+            // Use queue.loadImmediate to load but NOT play
+            await queue.loadImmediate(songId);
+
+            await loadLyricsForSong(song);
+        } catch (err) {
+            console.error('[Lyrics] Failed to load song for lyrics', songId, err);
+            setErrorMessage('載入錯誤');
+        }
+    }, [songs, onSongSelectedChange, queue, loadLyricsForSong]);
+
     const handleSelectSong = useCallback(
         async (song: SongMeta) => {
-            setSelectedSongId(song.id);
-            onSongSelectedChange?.(song.id);
-            setErrorMessage(null);
-            setTapMode(true);
-
-            try {
-                // Use queue.loadImmediate to load but NOT play
-                await queue.loadImmediate(song.id);
-
-                await loadLyricsForSong(song);
-            } catch (err) {
-                console.error('[Lyrics] Failed to load song for lyrics', song.id, err);
-                setErrorMessage('載入錯誤');
+            // Unsaved Changes Interception
+            if (isDirtyInternal && song.id !== selectedSongId) {
+                setPendingSongId(song.id);
+                return;
             }
+            // Proceed if not dirty or same song (or confirmed via modal logic below)
+            performSongSelection(song.id);
         },
-        [loadLyricsForSong, onSongSelectedChange, queue],
+        [isDirtyInternal, selectedSongId, performSongSelection]
     );
 
     // Initial selection logic: Select active song if available, otherwise do nothing (show placeholder)
@@ -419,8 +468,17 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
         try {
             const lrcText = formatLrc(lines, { title: selectedSong.title, artist: selectedSong.artist });
             const result = await writeSyncedLyrics(selectedSongId, lrcText);
-            showTempMessage('已儲存 LRC');
+
+            // Auto-sync TXT file
+            const rawText = lines.map(l => l.text).join('\n');
+            await writeRawLyrics(selectedSongId, rawText);
+
+            showTempMessage('已儲存 LRC (同步 TXT)');
             updateSongMetaInList({ ...result.meta, lyrics_status: 'synced' });
+
+            // Update snapshot
+            setOriginalLinesSnapshot(JSON.stringify(lines.map(l => ({ text: l.text, timeSeconds: l.timeSeconds }))));
+            setLastSavedRawText(rawText);
         } catch (err) {
             console.error('[Lyrics] Failed to save synced lyrics', err);
             setErrorMessage('儲存失敗');
@@ -1047,6 +1105,8 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                         <div
                                             key={line.id}
                                             ref={(el) => (lineRefs.current[line.id] = el)}
+                                            onMouseEnter={() => setHoveredLineIndex(idx)}
+                                            onMouseLeave={() => setHoveredLineIndex(null)}
                                             onClick={(e) => {
                                                 if (smartAlignStep > 0) return; // Disable seek click in smart align
                                                 const target = e.target as HTMLElement;
@@ -1057,7 +1117,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                             }}
                                             style={{
                                                 display: 'grid',
-                                                gridTemplateColumns: '140px 1fr',
+                                                gridTemplateColumns: '140px 1fr', // Reverted to 2 columns
                                                 gap: '10px',
                                                 padding: '10px',
                                                 borderRadius: '10px',
@@ -1147,7 +1207,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                                     </button>
                                                 </div>
                                             </div>
-                                            <div style={{ minWidth: 0 }}>
+                                            <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                                 <input
                                                     value={line.text}
                                                     onChange={(e) => updateLineText(line.id, e.target.value)}
@@ -1161,9 +1221,112 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                                         boxSizing: 'border-box',
                                                     }}
                                                 />
-                                                {isNextTap && (
-                                                    <div style={{ color: '#f0c36b', fontSize: '12px', marginTop: '4px' }}>下一次敲擊會套用到此行</div>
-                                                )}
+                                                {/* Line 2: Instruction & Icons Row */}
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between', // Push instruction to left, icons to right
+                                                    alignItems: 'center',
+                                                    height: '24px', // Fixed height
+                                                    opacity: hoveredLineIndex === idx || deleteConfirmLineId === line.id || (isNextTap && hoveredLineIndex === idx) ? 1 : (isNextTap ? 1 : 0),
+                                                    // Show if hovered OR confirming delete OR isNextTap (for instruction). 
+                                                    // But we only want 'isNextTap' text to be visible always? 
+                                                    // User requirement: "display in the same line". 
+                                                    // If we hide the container, instruction hides.
+                                                    // So opacity logic needs to be per-item or container always visible if isNextTap?
+                                                    // Let's make container visible if isNextTap is true, but icons only if hovered.
+                                                    transition: 'opacity 0.2s',
+                                                    marginTop: '4px'
+                                                }}>
+                                                    {/* Left: Instruction */}
+                                                    <div style={{ flex: 1 }}>
+                                                        {isNextTap && (
+                                                            <div style={{ color: '#f0c36b', fontSize: '12px' }}>下一次敲擊會套用到此行</div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Right: Icons */}
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        gap: '8px',
+                                                        opacity: hoveredLineIndex === idx || deleteConfirmLineId === line.id ? 1 : 0,
+                                                        pointerEvents: hoveredLineIndex === idx || deleteConfirmLineId === line.id ? 'auto' : 'none',
+                                                        transition: 'opacity 0.2s',
+                                                    }}>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                const newLines = [...lines];
+                                                                newLines.splice(idx + 1, 0, { id: `line-${Date.now()}`, text: '', timeSeconds: null });
+                                                                setLines(newLines);
+                                                            }}
+                                                            style={{
+                                                                padding: '4px', background: 'transparent', border: 'none', cursor: 'pointer',
+                                                                display: 'flex', alignItems: 'center',
+                                                                borderRadius: '4px',
+                                                                transition: 'opacity 0.2s',
+                                                                opacity: 0.6 // Initial opacity
+                                                            }}
+                                                            onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                                                            onMouseLeave={(e) => e.currentTarget.style.opacity = '0.6'}
+                                                            title="向下新增一行"
+                                                        >
+                                                            <img src={AddIcon} style={{ width: '16px', height: '16px' }} />
+                                                        </button>
+
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (deleteConfirmLineId === line.id) {
+                                                                    // Confirmed Delete
+                                                                    const newLines = [...lines];
+                                                                    newLines.splice(idx, 1);
+                                                                    setLines(newLines);
+                                                                    setDeleteConfirmLineId(null);
+                                                                    if (deleteConfirmTimeoutRef.current) clearTimeout(deleteConfirmTimeoutRef.current);
+                                                                } else {
+                                                                    // First Click
+                                                                    setDeleteConfirmLineId(line.id);
+                                                                    if (deleteConfirmTimeoutRef.current) clearTimeout(deleteConfirmTimeoutRef.current);
+                                                                    deleteConfirmTimeoutRef.current = setTimeout(() => {
+                                                                        setDeleteConfirmLineId(null);
+                                                                    }, 3000); // 3s timeout
+                                                                }
+                                                            }}
+                                                            style={{
+                                                                padding: '4px 8px',
+                                                                background: 'transparent', // No background change
+                                                                border: 'none',
+                                                                borderRadius: '4px',
+                                                                cursor: 'pointer',
+                                                                display: 'flex', alignItems: 'center',
+                                                                color: deleteConfirmLineId === line.id ? '#ff4444' : '#ffffff', // White for trash icon, Red for text
+                                                                fontSize: '12px',
+                                                                fontWeight: 600,
+                                                                transition: 'all 0.2s',
+                                                                opacity: deleteConfirmLineId === line.id ? 1 : 0.6 // Full opacity for confirm, partial for trash
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.opacity = '1';
+                                                                if (deleteConfirmLineId === line.id) {
+                                                                    e.currentTarget.style.color = '#ff6666'; // Brighter red
+                                                                }
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.opacity = deleteConfirmLineId === line.id ? '1' : '0.6';
+                                                                if (deleteConfirmLineId === line.id) {
+                                                                    e.currentTarget.style.color = '#ff4444'; // Normal red
+                                                                }
+                                                            }}
+                                                            title={deleteConfirmLineId === line.id ? "再次點擊以刪除" : "刪除"}
+                                                        >
+                                                            {deleteConfirmLineId === line.id ? (
+                                                                <span>確認？</span>
+                                                            ) : (
+                                                                <img src={DeleteIcon} style={{ width: '16px', height: '16px' }} />
+                                                            )}
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     );
@@ -1382,6 +1545,110 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                     </div>
 
                     {errorMessage && <div style={{ color: '#ff8b8b', fontSize: '13px' }}>{errorMessage}</div>}
+                </div>
+            )}
+
+            {/* Unsaved Changes Modal */}
+            {(pendingView || pendingSongId) && (
+                <div
+                    onClick={() => {
+                        // Click outside to cancel
+                        onCancelLeave();
+                        setPendingSongId(null);
+                    }}
+                    style={{
+                        position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+                        background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}
+                >
+                    <div
+                        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking content
+                        style={{
+                            background: '#2a2a2a', padding: '20px', borderRadius: '12px',
+                            border: '1px solid #444',
+                            minWidth: '320px', // Reduced width
+                            maxWidth: '90vw',
+                            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                            position: 'relative'
+                        }}
+                    >
+                        {/* Cross Button */}
+                        <button
+                            onClick={() => {
+                                onCancelLeave();
+                                setPendingSongId(null);
+                            }}
+                            style={{
+                                position: 'absolute', top: '12px', right: '12px',
+                                background: 'transparent', border: 'none', color: '#888',
+                                fontSize: '16px', cursor: 'pointer', padding: '4px'
+                            }}
+                        >
+                            ✕
+                        </button>
+
+                        <h3 style={{ margin: '0 0 12px', color: '#fff', fontSize: '16px' }}>未儲存的變更</h3>
+                        <p style={{ color: '#aaa', marginBottom: '20px', fontSize: '13px' }}>
+                            {pendingSongId ? '切換歌曲' : '離開頁面'}將會導致未儲存的變更遺失。
+                        </p>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {/* Left Aligned Cancel */}
+                            <button
+                                onClick={() => {
+                                    onCancelLeave();
+                                    setPendingSongId(null);
+                                }}
+                                style={{
+                                    padding: '6px 12px', background: 'transparent', border: '1px solid #555',
+                                    color: '#ccc', borderRadius: '6px', cursor: 'pointer', fontSize: '13px',
+                                    marginRight: 'auto' // Push other buttons to right
+                                }}
+                            >
+                                取消
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    if (pendingSongId) {
+                                        // Internal Switch - Don't Save
+                                        setIsDirtyInternal(false); // Reset dirty so interceptor doesn't block again
+                                        // Wait a tick for state update
+                                        setTimeout(() => performSongSelection(pendingSongId), 0);
+                                    } else {
+                                        // External Navigation
+                                        onConfirmLeave(); // App.tsx handles clearing dirty
+                                    }
+                                }}
+                                style={{
+                                    padding: '6px 12px', background: '#d32f2f', border: 'none',
+                                    color: '#fff', borderRadius: '6px', cursor: 'pointer', fontSize: '13px'
+                                }}
+                            >
+                                不儲存
+                            </button>
+                            <button
+                                onClick={() => {
+                                    handleSaveLrc().then(() => {
+                                        if (pendingSongId) {
+                                            // Internal Switch - Save Done
+                                            setIsDirtyInternal(false);
+                                            setTimeout(() => performSongSelection(pendingSongId), 0);
+                                        } else {
+                                            // External Navigation
+                                            onConfirmLeave();
+                                        }
+                                    });
+                                }}
+                                style={{
+                                    padding: '6px 12px', background: 'var(--accent-color)', border: 'none',
+                                    color: '#000', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '13px'
+                                }}
+                            >
+                                儲存並繼續
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 
