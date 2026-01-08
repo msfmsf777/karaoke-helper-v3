@@ -162,11 +162,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
         refreshSongs();
     }, [refreshSongs]);
 
-    useEffect(() => {
-        if (initialSongId) {
-            setSelectedSongId(initialSongId);
-        }
-    }, [initialSongId]);
+    // Unified logic moved to bottom effect
 
     useEffect(() => {
         if (activeSongId && !selectedSongId) {
@@ -264,26 +260,35 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
         [isDirtyInternal, selectedSongId, performSongSelection]
     );
 
-    // Initial selection logic: Select active song if available, otherwise do nothing (show placeholder)
+    // Unified selection logic: Handle external requests (initialSongId) or default to active song
     useEffect(() => {
-        if (initialSelectDone.current) return;
         if (!songs.length) return;
 
-        // If there is an active song (playing or paused), select it.
-        // If not, we leave selectedSongId as null.
-        if (activeSongId) {
-            const target = songs.find((s) => s.id === activeSongId);
+        // Priority 1: External 'initialSongId' matches a known song and differs from current selection
+        // This handles "Edit Lyrics" from context menu or manual navigation
+        if (initialSongId && initialSongId !== selectedSongId) {
+            const target = songs.find((s) => s.id === initialSongId);
             if (target) {
+                // Use performSongSelection to fully load the song context
+                performSongSelection(target.id);
                 initialSelectDone.current = true;
-                // Just set ID and load lyrics, don't trigger audio load since it's already active
-                setSelectedSongId(target.id);
-                void loadLyricsForSong(target);
+                return;
             }
-        } else {
-            // Mark as done so we don't keep trying
+        }
+
+        // Priority 2: Initial Mount - Default to Active Song if nothing specified
+        if (!initialSelectDone.current && !selectedSongId) {
+            if (activeSongId) {
+                const target = songs.find((s) => s.id === activeSongId);
+                if (target) {
+                    // For active song, we just bind to it without forcing audio reload
+                    setSelectedSongId(target.id);
+                    void loadLyricsForSong(target);
+                }
+            }
             initialSelectDone.current = true;
         }
-    }, [activeSongId, songs, loadLyricsForSong]);
+    }, [songs, initialSongId, selectedSongId, activeSongId, performSongSelection, loadLyricsForSong]);
 
     const applyDraftToLines = useCallback(
         (resetTimes = false) => {
