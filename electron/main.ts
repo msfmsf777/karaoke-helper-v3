@@ -231,6 +231,36 @@ function createWindow() {
     // autoHideMenuBar: true, // Not needed with frame: false
   })
 
+  // Windows-specific behavior for robust "Click vs Drag" on Title Bar
+  if (process.platform === 'win32') {
+    const WM_NCLBUTTONDOWN = 0x00A1
+    const WM_NCLBUTTONUP = 0x00A2
+    let isMoving = false
+    let downTime = 0
+
+    const WM_ENTERSIZEMOVE = 0x0231
+
+    // Detect start of potential drag or click
+    win.hookWindowMessage(WM_NCLBUTTONDOWN, () => {
+      isMoving = false
+      downTime = Date.now()
+    })
+
+    // Detect actual modal move/size loop
+    win.hookWindowMessage(WM_ENTERSIZEMOVE, () => {
+      isMoving = true
+    })
+
+    // Detect release
+    win.hookWindowMessage(WM_NCLBUTTONUP, () => {
+      // If we haven't moved and it was a short press, count as click
+      // We check !isMoving.
+      if (!isMoving && (Date.now() - downTime < 500)) {
+        win?.webContents.send('window:title-bar-click')
+      }
+    })
+  }
+
   if (state.isMaximized) {
     win.maximize()
   }

@@ -96,8 +96,10 @@ async function readMeta(songDir: string): Promise<SongMeta | null> {
     const metaRaw = await fs.readFile(path.join(songDir, 'meta.json'), 'utf-8');
     const parsed = JSON.parse(metaRaw) as SongMeta;
     return normalizeMeta(parsed);
-  } catch (err) {
-    console.warn('[Library] Failed to read meta.json from', songDir, err);
+  } catch (err: any) {
+    if (err.code !== 'ENOENT') {
+      console.warn('[Library] Failed to read meta.json from', songDir, err);
+    }
     return null;
   }
 }

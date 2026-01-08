@@ -165,6 +165,11 @@ contextBridge.exposeInMainWorld('khelper', {
       const subscription = (_event: any) => callback()
       ipcRenderer.on('window:unmaximized', subscription)
       return () => ipcRenderer.removeListener('window:unmaximized', subscription)
+    },
+    onTitleBarClick: (callback: () => void) => {
+      const listener = () => callback()
+      ipcRenderer.on('window:title-bar-click', listener)
+      return () => ipcRenderer.removeListener('window:title-bar-click', listener)
     }
   },
   navigation: {

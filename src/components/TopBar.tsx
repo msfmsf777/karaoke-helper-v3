@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useUserData } from '../contexts/UserDataContext';
+import { SongMeta } from '../../shared/songTypes';
 import { useLibrary } from '../contexts/LibraryContext';
 import { useQueue } from '../contexts/QueueContext';
 import LogoImage from '../assets/images/logo.png';
@@ -20,6 +21,133 @@ import { useUpdater } from '../contexts/UpdaterContext';
 import UpdatePopup from './UpdatePopup';
 
 import UpdateIconBase from '../assets/icons/update_base.svg';
+
+import SongContextMenu from './SongContextMenu';
+import AddToPlaylistMenu from './AddToPlaylistMenu';
+import AddIcon from '../assets/icons/add.svg';
+import MoreIcon from '../assets/icons/more.svg';
+
+// Search Result Item Component
+const SearchResultItem: React.FC<{
+  song: SongMeta;
+  isActive: boolean;
+  onPlay: () => void;
+  onContextMenu: (e: React.MouseEvent, song: SongMeta) => void;
+  onAddToPlaylist: (e: React.MouseEvent, song: SongMeta) => void;
+  onMore: (e: React.MouseEvent, song: SongMeta) => void;
+}> = ({ song, isActive, onPlay, onContextMenu, onAddToPlaylist, onMore }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <div
+      onClick={onPlay}
+      onContextMenu={(e) => onContextMenu(e, song)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{
+        padding: '8px 12px',
+        cursor: 'pointer',
+        backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : (isHovered ? 'rgba(255, 255, 255, 0.05)' : 'transparent'),
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
+      }}
+    >
+      {/* Removed placeholder box to left align text */
+        /* Text Container with Smart Truncation */
+      }
+
+      {/* Text Container with Smart Truncation */}
+      <div style={{
+        flex: 1,
+        minWidth: 0, // Critical for flex truncation
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center'
+      }}>
+        <div style={{
+          fontSize: '14px',
+          fontWeight: 500,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          color: isActive ? 'var(--accent-color)' : '#fff'
+        }}>
+          {song.title}
+        </div>
+        <div style={{
+          fontSize: '12px',
+          color: 'rgba(255, 255, 255, 0.6)',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis'
+        }}>
+          {song.artist}
+        </div>
+      </div>
+
+      {/* Hover Actions */}
+      {isHovered && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
+          paddingLeft: '8px', // Visual separation
+          backgroundColor: 'transparent',
+          flexShrink: 0
+        }}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddToPlaylist(e, song);
+            }}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '4px',
+              opacity: 0.6,
+              transition: 'opacity 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '0.6'}
+            title="加入歌單"
+          >
+            <img src={AddIcon} alt="Add" style={{ width: '16px', height: '16px', filter: 'brightness(0) invert(1)' }} />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onMore(e, song);
+            }}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '4px',
+              opacity: 0.6,
+              transition: 'opacity 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '0.6'}
+            title="更多"
+          >
+            <img src={MoreIcon} alt="More" style={{ width: '16px', height: '16px', filter: 'brightness(0) invert(1)' }} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const UpdateIndicator: React.FC = () => {
   const { status } = useUpdater();
@@ -83,13 +211,27 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
   const [isFocused, setIsFocused] = useState(false);
   const { recentSearches, addRecentSearch, clearRecentSearches } = useUserData();
   const { songs } = useLibrary();
-  const { playSongList } = useQueue();
+  const { playSongList, currentSongId } = useQueue();
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [isMiniPlayerOpen, setIsMiniPlayerOpen] = useState(false);
+
+  // Context Menu States
+  const [contextMenu, setContextMenu] = useState<{ song: SongMeta; position: { x: number; y: number } } | null>(null);
+  const [addToPlaylistMenu, setAddToPlaylistMenu] = useState<{ songId: string; position: { x: number; y: number } } | null>(null);
 
   useEffect(() => {
     window.khelper?.miniPlayer?.getVisibility().then(setIsMiniPlayerOpen);
     const cleanup = window.khelper?.miniPlayer?.onVisibilityChange?.(setIsMiniPlayerOpen);
+    return cleanup;
+  }, []);
+
+  // Listen for backend Title Bar clicks (Windows Only)
+  useEffect(() => {
+    // @ts-ignore
+    const cleanup = window.khelper?.windowOps?.onTitleBarClick?.(() => {
+      setIsFocused(false);
+    });
     return cleanup;
   }, []);
 
@@ -108,6 +250,13 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  // Force blur when isFocused becomes false (e.g. caused by Top Bar click)
+  useEffect(() => {
+    if (!isFocused && inputRef.current) {
+      inputRef.current.blur();
+    }
+  }, [isFocused]);
 
   const handleSearch = (term: string) => {
     if (!term.trim()) return;
@@ -146,7 +295,7 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
         flexShrink: 0,
         zIndex: 100, // Ensure dropdown is on top
         // @ts-ignore
-        WebkitAppRegion: isFocused ? 'no-drag' : 'drag',
+        WebkitAppRegion: 'drag',
       }}
     >
       {/* Left: Logo (Fixed Width to match Sidebar) */}
@@ -193,6 +342,7 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
           }}
         >
           <input
+            ref={inputRef}
             type="text"
             placeholder="搜尋歌曲 / 歌手"
             value={searchTerm}
@@ -314,32 +464,35 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
                   </div>
                   {liveResults.length > 0 ? (
                     liveResults.map(song => (
-                      <div
+                      <SearchResultItem
                         key={song.id}
-                        onClick={() => {
+                        song={song}
+                        isActive={currentSongId === song.id}
+                        onPlay={() => {
                           // Play this song immediately or add to queue? 
                           // User said "replace... with results". 
                           // Usually quick result click -> play.
                           // Let's play it as a single song list.
                           playSongList([song.id]);
+                          // Or use queue.playImmediate(song)?
+                          // queue context usually has playImmediate.
                           addRecentSearch(searchTerm); // Also save term
                           setSearchTerm(''); // Clear after action
                           setIsFocused(false);
                         }}
-                        style={{
-                          padding: '8px 12px',
-                          cursor: 'pointer',
-                          fontSize: '13px',
-                          color: '#eee',
-                          display: 'flex',
-                          flexDirection: 'column'
+                        onContextMenu={(e, song) => {
+                          e.preventDefault();
+                          setContextMenu({ song, position: { x: e.clientX, y: e.clientY } });
                         }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#3e3e3e'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                      >
-                        <div style={{ fontWeight: '500' }}>{song.title}</div>
-                        <div style={{ fontSize: '11px', color: '#aaa' }}>{song.artist || 'Unknown Artist'}</div>
-                      </div>
+                        onAddToPlaylist={(e, song) => {
+                          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                          setAddToPlaylistMenu({ songId: song.id, position: { x: rect.left, y: rect.bottom + 5 } });
+                        }}
+                        onMore={(e, song) => {
+                          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                          setContextMenu({ song, position: { x: rect.left, y: rect.bottom + 5 } });
+                        }}
+                      />
                     ))
                   ) : (
                     <div style={{ padding: '12px', textAlign: 'center', color: '#666', fontSize: '13px' }}>
@@ -460,6 +613,25 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
 
         <WindowControls />
       </div>
+      {/* Menus */}
+      {contextMenu && (
+        <SongContextMenu
+          song={contextMenu.song}
+          position={contextMenu.position}
+          onClose={() => setContextMenu(null)}
+          onEditLyrics={() => {
+            setContextMenu(null);
+            setIsFocused(false); // Close search logic handled via navigation usually
+          }}
+        />
+      )}
+      {addToPlaylistMenu && (
+        <AddToPlaylistMenu
+          songId={addToPlaylistMenu.songId}
+          position={addToPlaylistMenu.position}
+          onClose={() => setAddToPlaylistMenu(null)}
+        />
+      )}
     </div >
   );
 };
