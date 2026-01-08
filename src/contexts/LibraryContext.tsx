@@ -8,7 +8,7 @@ interface LibraryContextType {
     loading: boolean;
     refreshSongs: () => Promise<void>;
     getSongById: (id: string) => SongMeta | undefined;
-    deleteSong: (id: string) => Promise<void>;
+    deleteSong: (id: string) => Promise<boolean>;
     updateSong: (id: string, updates: Partial<SongMeta>) => Promise<void>;
 }
 
@@ -102,12 +102,16 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const deleteSong = useCallback(async (id: string) => {
         if (!window.khelper?.songLibrary?.deleteSong) {
             console.error('deleteSong API not available');
-            return;
+            return false;
         }
         try {
-            await window.khelper.songLibrary.deleteSong(id);
-            // Optimistic update or refresh
-            setSongs(prev => prev.filter(s => s.id !== id));
+            const success = await window.khelper.songLibrary.deleteSong(id);
+            if (success) {
+                // Optimistic update or refresh
+                setSongs(prev => prev.filter(s => s.id !== id));
+                return true;
+            }
+            return false;
         } catch (err) {
             console.error('Failed to delete song', err);
             throw err;

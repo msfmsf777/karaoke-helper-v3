@@ -76,7 +76,7 @@ contextBridge.exposeInMainWorld('khelper', {
     getSeparatedSongPaths: (id: string) => ipcRenderer.invoke('library:get-separated-song-paths', id),
     openSongFolder: (id: string) => ipcRenderer.invoke('library:open-song-folder', id),
     getBasePath: (): Promise<string> => ipcRenderer.invoke('library:get-base-path'),
-    deleteSong: (id: string): Promise<void> => ipcRenderer.invoke('library:delete-song', id),
+    deleteSong: (id: string): Promise<boolean> => ipcRenderer.invoke('library:delete-song', id),
     updateSong: (id: string, updates: Partial<SongMeta>): Promise<SongMeta | null> =>
       ipcRenderer.invoke('library:update-song', { id, updates }),
   },

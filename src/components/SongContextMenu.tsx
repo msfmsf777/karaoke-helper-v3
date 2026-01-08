@@ -161,14 +161,21 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
     };
 
     const handleDeleteSong = async () => {
+        // Close menu immediately so it doesn't block the confirmation dialog
+        onClose();
+
         try {
-            const index = queue.indexOf(song.id);
-            if (index !== -1) {
-                removeFromQueue(index);
+            // Confirm and delete in library
+            const success = await deleteSong(song.id);
+
+            // Only cleanup if deletion was confirmed and successful
+            if (success) {
+                const index = queue.indexOf(song.id);
+                if (index !== -1) {
+                    removeFromQueue(index);
+                }
+                cleanupSong(song.id);
             }
-            cleanupSong(song.id);
-            await deleteSong(song.id);
-            onClose();
         } catch (err) {
             console.error('Failed to delete song', err);
         }

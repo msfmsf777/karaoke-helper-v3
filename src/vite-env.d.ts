@@ -44,7 +44,7 @@ interface Window {
       getSeparatedSongPaths: (id: string) => Promise<{ instrumental: string; vocal: string | null }>;
       openSongFolder: (id: string) => Promise<void>;
       getBasePath: () => Promise<string>;
-      deleteSong: (id: string) => Promise<void>;
+      deleteSong: (id: string) => Promise<boolean>;
       updateSong: (id: string, updates: Partial<import('../shared/songTypes').SongMeta>) => Promise<import('../shared/songTypes').SongMeta | null>;
     };
     jobs: {
