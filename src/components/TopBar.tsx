@@ -48,7 +48,9 @@ const UpdateIndicator: React.FC = () => {
           opacity: status === 'error' ? 1 : 0.8, // Full opacity for error
           transition: 'opacity 0.2s',
           position: 'relative',
-          gap: '0px'
+          gap: '0px',
+          // @ts-ignore
+          WebkitAppRegion: 'no-drag',
         }}
         onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
         onMouseLeave={(e) => e.currentTarget.style.opacity = status === 'error' ? '1' : '0.8'}
@@ -144,7 +146,7 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
         flexShrink: 0,
         zIndex: 100, // Ensure dropdown is on top
         // @ts-ignore
-        WebkitAppRegion: 'drag',
+        WebkitAppRegion: isFocused ? 'no-drag' : 'drag',
       }}
     >
       {/* Left: Logo (Fixed Width to match Sidebar) */}
@@ -173,18 +175,23 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
 
       {/* Center: Search Bar */}
       <div
-        ref={searchContainerRef}
         style={{
           flex: 1,
           display: 'flex',
           alignItems: 'center',
           paddingLeft: '16px',
           position: 'relative',
-          // @ts-ignore
-          WebkitAppRegion: 'no-drag'
         }}
       >
-        <div style={{ position: 'relative', width: '300px' }}>
+        <div
+          ref={searchContainerRef}
+          style={{
+            position: 'relative',
+            width: '300px',
+            // @ts-ignore
+            WebkitAppRegion: 'no-drag'
+          }}
+        >
           <input
             type="text"
             placeholder="搜尋歌曲 / 歌手"
@@ -351,8 +358,6 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
-        // @ts-ignore
-        WebkitAppRegion: 'no-drag'
       }}>
         <UpdateIndicator />
         <button
@@ -368,6 +373,8 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
             justifyContent: 'center',
             opacity: 0.8,
             transition: 'opacity 0.2s',
+            // @ts-ignore
+            WebkitAppRegion: 'no-drag',
           }}
           onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
           onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
@@ -387,6 +394,8 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
             justifyContent: 'center',
             opacity: 0.8,
             transition: 'opacity 0.2s',
+            // @ts-ignore
+            WebkitAppRegion: 'no-drag',
           }}
           onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
           onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
@@ -406,6 +415,8 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
             justifyContent: 'center',
             opacity: 0.8,
             transition: 'opacity 0.2s',
+            // @ts-ignore
+            WebkitAppRegion: 'no-drag',
           }}
           onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
           onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
@@ -426,6 +437,8 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
             justifyContent: 'center',
             opacity: isMiniPlayerOpen ? 1 : 0.8,
             transition: 'opacity 0.2s',
+            // @ts-ignore
+            WebkitAppRegion: 'no-drag',
           }}
           onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
           onMouseLeave={(e) => e.currentTarget.style.opacity = isMiniPlayerOpen ? '1' : '0.8'}
@@ -447,7 +460,7 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
 
         <WindowControls />
       </div>
-    </div>
+    </div >
   );
 };
 
