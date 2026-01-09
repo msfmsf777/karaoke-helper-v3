@@ -590,7 +590,7 @@ app.on('activate', () => {
 ipcMain.handle('dialog:open-audio-file', async () => {
   const browserWindow = BrowserWindow.getFocusedWindow() ?? win
   const options = {
-    properties: ['openFile'] as 'openFile'[],
+    properties: ['openFile', 'multiSelections'] as ('openFile' | 'multiSelections')[],
     filters: [
       { name: 'Audio Files', extensions: ['mp3', 'wav', 'flac', 'aac', 'm4a', 'ogg'] },
       { name: 'All Files', extensions: ['*'] },
@@ -604,7 +604,7 @@ ipcMain.handle('dialog:open-audio-file', async () => {
     return null
   }
 
-  return filePaths[0]
+  return filePaths
 })
 
 ipcMain.handle('library:add-local-song', async (_event, payload) => {

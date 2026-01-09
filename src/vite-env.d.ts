@@ -27,7 +27,7 @@ interface Window {
   };
   khelper?: {
     dialogs: {
-      pickAudioFile: () => Promise<string | null>;
+      pickAudioFile: () => Promise<string[] | null>;
     };
     songLibrary: {
       addLocalSong: (payload: {

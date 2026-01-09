@@ -7,16 +7,10 @@ const getApi = () => {
 
 const getDialogs = () => {
   if (window.khelper?.dialogs) return window.khelper.dialogs;
-  if (window.api && !!window.api.openAudioFileDialog) {
-    // Backward compatibility for Phase 1
-    return {
-      pickAudioFile: () => window.api!.openAudioFileDialog(),
-    };
-  }
   throw new Error('Dialog API is not available');
 };
 
-export async function pickAudioFile(): Promise<string | null> {
+export async function pickAudioFile(): Promise<string[] | null> {
   return getDialogs().pickAudioFile();
 }
 
