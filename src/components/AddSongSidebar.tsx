@@ -276,6 +276,27 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
         return '#fff'; // Default
     };
 
+    const handleSafeClose = () => {
+        const hasUnsavedContent = entries.length > 0 || youtubeInput.trim().length > 0;
+        if (hasUnsavedContent) {
+            if (window.confirm('還有未儲存的變更，確定要關閉嗎？')) {
+                onClose();
+            }
+        } else {
+            onClose();
+        }
+    };
+
+    const handleYoutubeInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setYoutubeInput(e.target.value);
+        setValidationStatus('idle'); // Reset color logic on edit
+    };
+
+    const handleClearYoutubeInput = () => {
+        setYoutubeInput('');
+        setValidationStatus('idle');
+    };
+
     return (
         <>
             {/* Backdrop */}
@@ -284,7 +305,7 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                     position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(5px)',
                     zIndex: 250, opacity: isOpen ? 1 : 0, pointerEvents: isOpen ? 'auto' : 'none', transition: 'opacity 0.3s ease',
                 }}
-                onClick={onClose}
+                onClick={handleSafeClose}
             />
 
             {/* Sidebar */}
@@ -297,7 +318,7 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                 {/* Header */}
                 <div style={{ padding: '20px', borderBottom: '1px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#252525' }}>
                     <h2 style={{ margin: 0, fontSize: '18px', color: '#fff' }}>大量新增歌曲</h2>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '20px', padding: '4px' }}>×</button>
+                    <button onClick={handleSafeClose} style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '20px', padding: '4px' }}>×</button>
                 </div>
 
                 {/* Content */}
@@ -338,7 +359,7 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                             <div style={{ position: 'relative' }}>
                                 <textarea
                                     value={youtubeInput}
-                                    onChange={(e) => setYoutubeInput(e.target.value)}
+                                    onChange={handleYoutubeInputChange}
                                     placeholder="貼上 YouTube 連結..."
                                     rows={5}
                                     style={{ width: '100%', padding: '10px 12px', background: '#252525', color: getInputColor(), border: '1px solid #3a3a3a', borderRadius: '8px', resize: 'vertical', fontSize: '13px', lineHeight: '1.5', boxSizing: 'border-box', transition: 'color 0.2s' }}
@@ -346,7 +367,10 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                                 <button
                                     onClick={async () => {
                                         const text = await navigator.clipboard.readText();
-                                        if (text) setYoutubeInput(prev => prev + (prev ? '\n' : '') + text);
+                                        if (text) {
+                                            setYoutubeInput(prev => prev + (prev ? '\n' : '') + text);
+                                            setValidationStatus('idle');
+                                        }
                                     }}
                                     style={{ position: 'absolute', top: '8px', right: '8px', padding: '4px 8px', background: '#333', color: '#fff', border: '1px solid #444', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
                                 >
@@ -354,12 +378,19 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                                 </button>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
-                                <span style={{ fontSize: '12px', color: '#666' }}>
+                                <span style={{ fontSize: '12px', color: '#666', display: 'flex', alignItems: 'center' }}>
                                     {youtubeInput.split('\n').filter(l => l.trim()).length} 個連結
                                 </span>
-                                <button onClick={handleCheckYoutube} disabled={validating} style={{ padding: '6px 12px', background: validating ? '#444' : 'var(--accent-color)', color: validating ? '#aaa' : '#000', border: 'none', borderRadius: '6px', cursor: validating ? 'wait' : 'pointer', fontSize: '13px', fontWeight: 'bold' }}>
-                                    {validating ? '解析中...' : '檢查並匯入'}
-                                </button>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    {youtubeInput.length > 0 && (
+                                        <button onClick={handleClearYoutubeInput} style={{ padding: '6px 12px', background: '#333', color: '#ccc', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                                            清空
+                                        </button>
+                                    )}
+                                    <button onClick={handleCheckYoutube} disabled={validating} style={{ padding: '6px 12px', background: validating ? '#444' : 'var(--accent-color)', color: validating ? '#aaa' : '#000', border: 'none', borderRadius: '6px', cursor: validating ? 'wait' : 'pointer', fontSize: '13px', fontWeight: 'bold' }}>
+                                        {validating ? '解析中...' : '檢查並匯入'}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     )}

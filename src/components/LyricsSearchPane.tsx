@@ -61,7 +61,7 @@ const LyricsSearchPane: React.FC<LyricsSearchPaneProps> = ({ isOpen, onClose, in
             width: '400px',
             backgroundColor: '#1a1a1a', // Slightly darker to distinguish
             borderLeft: mode === 'sidebar' ? '1px solid #333' : undefined,
-            zIndex: 250, // Base z-index
+            zIndex: 300, // Ensure above sidebar (251)
             boxShadow: '-5px 0 30px rgba(0,0,0,0.5)',
             display: 'flex',
             flexDirection: 'column',
@@ -75,7 +75,9 @@ const LyricsSearchPane: React.FC<LyricsSearchPaneProps> = ({ isOpen, onClose, in
                 backgroundColor: '#252525',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px'
+                gap: '12px',
+                // @ts-ignore
+                WebkitAppRegion: 'no-drag'
             }}>
                 <div style={{ flex: 1, position: 'relative' }}>
                     <input
