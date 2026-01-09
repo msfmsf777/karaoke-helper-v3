@@ -4,9 +4,10 @@ import SongList from './SongList';
 
 interface SearchResultsViewProps {
     searchTerm: string;
+    onOpenLyrics?: (song: any) => void;
 }
 
-const SearchResultsView: React.FC<SearchResultsViewProps> = ({ searchTerm }) => {
+const SearchResultsView: React.FC<SearchResultsViewProps> = ({ searchTerm, onOpenLyrics }) => {
     const { songs } = useLibrary();
 
     const filteredSongs = useMemo(() => {
@@ -35,7 +36,7 @@ const SearchResultsView: React.FC<SearchResultsViewProps> = ({ searchTerm }) => 
 
             <div style={{ flex: 1, overflow: 'hidden', padding: '0 24px' }}>
                 {filteredSongs.length > 0 ? (
-                    <SongList songs={filteredSongs} context="library" />
+                    <SongList songs={filteredSongs} context="library" onEditLyrics={onOpenLyrics} />
                 ) : (
                     <div style={{
                         display: 'flex',

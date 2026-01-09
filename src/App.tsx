@@ -252,6 +252,11 @@ function AppContent() {
     return () => removeListener?.();
   }, [currentView]);
 
+  const handleOpenLyrics = (song: any) => {
+    setLyricsEditorSongId(song.id);
+    handleViewChange('lyrics');
+  };
+
   const renderContent = () => {
     return (
       <Suspense fallback={
@@ -262,27 +267,24 @@ function AppContent() {
         {(() => {
           if (currentView.startsWith('playlist:')) {
             const playlistId = currentView.split(':')[1];
-            return <PlaylistView playlistId={playlistId} />;
+            return <PlaylistView playlistId={playlistId} onOpenLyrics={handleOpenLyrics} />;
           }
 
           if (currentView.startsWith('search-results:')) {
             const term = currentView.split(':')[1];
-            return <SearchResultsView searchTerm={decodeURIComponent(term)} />;
+            return <SearchResultsView searchTerm={decodeURIComponent(term)} onOpenLyrics={handleOpenLyrics} />;
           }
 
           switch (currentView) {
             case 'library':
               return (
                 <LibraryView
-                  onOpenLyrics={(song) => {
-                    setLyricsEditorSongId(song.id);
-                    handleViewChange('lyrics');
-                  }}
+                  onOpenLyrics={handleOpenLyrics}
                   onOpenAddSong={() => setShowAddSongWizard(true)}
                 />
               );
             case 'download-manager':
-              return <DownloadManagerView />;
+              return <DownloadManagerView onOpenLyrics={handleOpenLyrics} />;
             case 'lyrics':
               return (
                 <LyricEditorView
@@ -311,9 +313,9 @@ function AppContent() {
                 />
               );
             case 'favorites':
-              return <FavoritesView />;
+              return <FavoritesView onOpenLyrics={handleOpenLyrics} />;
             case 'history':
-              return <HistoryView />;
+              return <HistoryView onOpenLyrics={handleOpenLyrics} />;
             default:
               return <LibraryView onOpenAddSong={() => setShowAddSongWizard(true)} />;
           }
@@ -349,6 +351,7 @@ function AppContent() {
             onOpenProcessing={() => setShowProcessingList(true)}
             onOpenAbout={() => setShowAboutPopup(true)}
             onSearch={(term) => handleViewChange(`search-results:${encodeURIComponent(term)}`)}
+            onOpenLyrics={handleOpenLyrics}
           />
 
           <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>

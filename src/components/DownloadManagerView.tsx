@@ -3,7 +3,11 @@ import { DownloadJob, SongMeta } from '../../shared/songTypes';
 import SongList from './SongList';
 import { useLibrary } from '../contexts/LibraryContext';
 
-const DownloadManagerView: React.FC = () => {
+interface DownloadManagerViewProps {
+    onOpenLyrics?: (song: any) => void;
+}
+
+const DownloadManagerView: React.FC<DownloadManagerViewProps> = ({ onOpenLyrics }) => {
     const [jobs, setJobs] = useState<DownloadJob[]>([]);
     const { songs } = useLibrary();
 
@@ -193,6 +197,7 @@ const DownloadManagerView: React.FC = () => {
                         emptyMessage="尚無下載紀錄"
                         showType={true}
                         showAudioStatus={true}
+                        onEditLyrics={onOpenLyrics}
                     />
                 </div>
             </div>

@@ -68,13 +68,17 @@ textarea {
   transition: border-color 0.2s, background-color 0.2s;
 }
 
+input:focus,
 input[type="text"]:focus,
 input[type="search"]:focus,
 input[type="password"]:focus,
 input[type="email"]:focus,
+input[type="number"]:focus,
 textarea:focus {
-  border-color: var(--accent-color);
-  background-color: #3a3a3a;
+  border-color: var(--accent-color) !important;
+  background-color: #3b3b3b;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.25) !important;
 }
 
 input::placeholder,

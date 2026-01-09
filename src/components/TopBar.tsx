@@ -15,6 +15,7 @@ interface TopBarProps {
   onOpenProcessing?: () => void;
   onOpenAbout?: () => void;
   onSearch?: (term: string) => void;
+  onOpenLyrics?: (song: SongMeta) => void;
 }
 
 import { useUpdater } from '../contexts/UpdaterContext';
@@ -206,7 +207,7 @@ const UpdateIndicator: React.FC = () => {
 };
 
 
-const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpenAbout, onSearch }) => {
+const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpenAbout, onSearch, onOpenLyrics }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const { recentSearches, addRecentSearch, clearRecentSearches } = useUserData();
@@ -620,6 +621,9 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
           position={contextMenu.position}
           onClose={() => setContextMenu(null)}
           onEditLyrics={() => {
+            if (onOpenLyrics) {
+              onOpenLyrics(contextMenu.song);
+            }
             setContextMenu(null);
             setIsFocused(false); // Close search logic handled via navigation usually
           }}
