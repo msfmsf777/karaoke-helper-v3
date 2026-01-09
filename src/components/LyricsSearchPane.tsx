@@ -45,7 +45,7 @@ const LyricsSearchPane: React.FC<LyricsSearchPaneProps> = ({ isOpen, onClose, in
     if (!isOpen) return null;
 
     const positionStyles: React.CSSProperties = mode === 'sidebar' ? {
-        right: '400px', // Sticks to the left of the main sidebar
+        right: '450px', // Sticks to the left of the main sidebar
         borderRight: '1px solid #333', // Border between panes
     } : {
         right: 0,

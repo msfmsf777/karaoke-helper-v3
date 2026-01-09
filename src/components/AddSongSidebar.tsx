@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { addLocalSong, pickAudioFile, SongType } from '../library/songLibrary';
+import { addLocalSong, pickAudioFile, SongType, SongMeta } from '../library/songLibrary';
 import { useLibrary } from '../contexts/LibraryContext';
 import LyricsSearchPane from './LyricsSearchPane';
 
@@ -39,6 +39,7 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
     const [youtubeInput, setYoutubeInput] = useState('');
     const [youtubeQuality, setYoutubeQuality] = useState<'best' | 'high' | 'normal'>('high');
     const [validating, setValidating] = useState(false);
+    const [validationStatus, setValidationStatus] = useState<'idle' | 'has_error' | 'has_duplicate'>('idle');
 
     const [busy, setBusy] = useState(false);
 
@@ -55,6 +56,10 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
             setYoutubeInput('');
             setBusy(false);
             setValidating(false);
+            setValidationStatus('idle');
+            setSource('file');
+            setShowSearchPane(false);
+            setActiveEntryId(null);
         }
     }, [isOpen]);
 
@@ -86,15 +91,28 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
     const handleCheckYoutube = async () => {
         if (!youtubeInput.trim()) return;
         setValidating(true);
+        setValidationStatus('idle'); // Reset color during check (white)
+
+        let existingSongs: SongMeta[] = [];
+        try {
+            existingSongs = await window.khelper?.songLibrary.loadAllSongs() || [];
+        } catch (e) {
+            console.warn('Failed to load existing songs for check', e);
+        }
+
         const lines = youtubeInput.split('\n').map(l => l.trim()).filter(l => l);
         const newEntries: BatchSongEntry[] = [];
         const invalidLines: string[] = [];
+
+        let hasDuplicate = false;
+        let hasInvalid = false;
 
         // We process sequentially or parallel? Parallel is faster.
         await Promise.all(lines.map(async (line) => {
             // Basic check first
             if (!line.includes('youtube.com') && !line.includes('youtu.be')) {
                 invalidLines.push(line);
+                hasInvalid = true;
                 return;
             }
 
@@ -102,27 +120,45 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                 // Validate via backend
                 const meta = await window.khelper?.downloads.validateUrl(line);
                 if (meta) {
-                    newEntries.push({
-                        id: Math.random().toString(36).substr(2, 9),
-                        sourceType: 'youtube',
-                        youtubeUrl: line,
-                        title: meta.title,
-                        artist: '', // Can't reliably get artist from YT title usually
-                        type: '原曲',
-                        lyricsMode: 'none',
-                        lyricsText: '',
-                        status: 'pending'
-                    });
+                    // Duplicate Check
+                    const isDuplicate = existingSongs.some(s =>
+                        s.source.kind === 'youtube' && s.source.youtubeId === meta.videoId
+                    );
+
+                    if (isDuplicate) {
+                        invalidLines.push(line);
+                        hasDuplicate = true;
+                    } else {
+                        // Creating Entry
+                        newEntries.push({
+                            id: Math.random().toString(36).substr(2, 9),
+                            sourceType: 'youtube',
+                            youtubeUrl: line,
+                            title: meta.title,
+                            artist: '', // Can't reliably get artist from YT title usually
+                            type: '原曲',
+                            lyricsMode: 'none',
+                            lyricsText: '',
+                            status: 'pending'
+                        });
+                    }
                 } else {
                     invalidLines.push(line);
+                    hasInvalid = true;
                 }
             } catch (e) {
                 invalidLines.push(line);
+                hasInvalid = true;
             }
         }));
 
         setEntries(prev => [...prev, ...newEntries]);
-        setYoutubeInput(invalidLines.join('\n')); // Keep invalid ones
+        setYoutubeInput(invalidLines.join('\n'));
+
+        if (hasDuplicate) setValidationStatus('has_duplicate');
+        else if (hasInvalid) setValidationStatus('has_error');
+        else setValidationStatus('idle');
+
         setValidating(false);
     };
 
@@ -200,6 +236,18 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
         }
     };
 
+    const toggleSearch = (entryId: string) => {
+        if (activeEntryId === entryId && showSearchPane) {
+            // If clicking the same button and pane is allowed -> Close it
+            setShowSearchPane(false);
+            setActiveEntryId(null);
+        } else {
+            // Open new
+            setActiveEntryId(entryId);
+            setShowSearchPane(true);
+        }
+    };
+
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file && activeFileInputEntryId) {
@@ -218,6 +266,14 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
             setActiveFileInputEntryId(null);
         }
         e.target.value = '';
+    };
+
+    // Determine input color
+    const getInputColor = () => {
+        if (validating) return '#fff'; // White while checking
+        if (validationStatus === 'has_duplicate') return '#ffaa00'; // Orange for duplicates
+        if (validationStatus === 'has_error') return '#ff4444'; // Red for errors
+        return '#fff'; // Default
     };
 
     return (
@@ -285,7 +341,7 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                                     onChange={(e) => setYoutubeInput(e.target.value)}
                                     placeholder="貼上 YouTube 連結..."
                                     rows={5}
-                                    style={{ width: '100%', padding: '10px 12px', background: '#252525', color: validating ? '#ff8080' : '#fff', border: '1px solid #3a3a3a', borderRadius: '8px', resize: 'vertical', fontSize: '13px', lineHeight: '1.5', boxSizing: 'border-box' }}
+                                    style={{ width: '100%', padding: '10px 12px', background: '#252525', color: getInputColor(), border: '1px solid #3a3a3a', borderRadius: '8px', resize: 'vertical', fontSize: '13px', lineHeight: '1.5', boxSizing: 'border-box', transition: 'color 0.2s' }}
                                 />
                                 <button
                                     onClick={async () => {
@@ -364,8 +420,16 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                                             {/* Contextual Action */}
                                             {entry.lyricsMode === 'import_search' && (
                                                 <button
-                                                    onClick={() => { setActiveEntryId(entry.id); setShowSearchPane(true); }}
-                                                    style={{ padding: '0 6px', background: '#333', border: '1px solid #444', borderRadius: '4px', cursor: 'pointer' }}
+                                                    onClick={() => toggleSearch(entry.id)}
+                                                    style={{
+                                                        padding: '0 6px',
+                                                        background: '#333',
+                                                        border: activeEntryId === entry.id ? '1px solid var(--accent-color)' : '1px solid #444',
+                                                        borderRadius: '4px',
+                                                        cursor: 'pointer',
+                                                        boxShadow: activeEntryId === entry.id ? '0 0 5px var(--accent-color)' : 'none',
+                                                        transition: 'all 0.2s'
+                                                    }}
                                                     title="搜尋歌詞"
                                                 >
                                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
