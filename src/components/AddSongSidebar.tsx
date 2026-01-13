@@ -317,7 +317,7 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
             }}>
                 {/* Header */}
                 <div style={{ padding: '20px', borderBottom: '1px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#252525' }}>
-                    <h2 style={{ margin: 0, fontSize: '18px', color: '#fff' }}>大量新增歌曲</h2>
+                    <h2 style={{ margin: 0, fontSize: '18px', color: '#fff' }}>新增歌曲</h2>
                     <button onClick={handleSafeClose} style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '20px', padding: '4px' }}>×</button>
                 </div>
 

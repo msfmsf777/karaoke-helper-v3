@@ -13,7 +13,7 @@
 
 > ⚠️ 目前僅支援 **Windows (64-bit)**，其他平台暫不支援。
 
-【[直接下載連結](https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v3.0.1-beta/KHelperV3.Setup.3.0.1-beta.exe)】
+【[直接下載連結](https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v3.1.0-beta/KHelperV3.Setup.3.1.0-beta.exe)】
 
 
 ----------
@@ -22,9 +22,9 @@
 
 ### 🎵 全方位歌曲管理
 
--  **本地歌曲匯入**：支援 MP3, WAV 等多種音訊格式。
+-  **本地歌曲匯入**：支援批量匯入 MP3, WAV 等多種音訊檔案。
 
--  **YouTube 下載**：內建下載管理器，可直接貼上 YouTube 連結下載歌曲並自動匯入。**請自行確認您擁有從 YouTube 下載所選歌曲的權限， 本工具不負擔任何法律責任。**
+-  **YouTube 下載**：內建下載管理器，可直接批量貼上 YouTube 連結下載歌曲並自動匯入。**請自行確認您擁有從 YouTube 下載所選歌曲的使用權限， 本工具不負擔任何法律責任。**
 
 -  **歌曲分類**：支援「原曲」與「伴奏」分類，原曲可以進行人聲分離，請注意添加歌曲後分類不能修改。
 
@@ -42,6 +42,8 @@
 
 -  **歌詞編輯器**：內建視覺化歌詞編輯與對齊工具。
 
+-  **歌詞搜尋**：內建歌詞搜尋功能，可快速從網路搜尋歌詞。
+
 -  **敲擊對齊 (Tap Sync)**：直覺的敲擊模式，輕鬆製作精準的 LRC 動態滾動歌詞。
 
 -  **日文輔助**：自動為日文歌詞標註平假名 (Furigana) 與羅馬拼音 (Romaji)。
@@ -55,19 +57,20 @@
 -  **觀衆體驗++**：提供透明背景瀏覽器來源 (Browser Source) 連結，輕鬆將動態歌詞、歌曲資訊美觀地整合至 OBS 直播畫面。
 
 -  **高度客製化字幕**：字幕大小、顏色、邊框皆可即時調整。
+
 ----------
 
 ## 📥 下載與安裝 (Downloads & Install)
 
 ### 一般使用者
 
-1.  前往 GitHub Releases或使用【[最新版本 (V3.0.1-beta) 下載連結](https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v3.0.1-beta/KHelperV3.Setup.3.0.1-beta.exe)】：  
+1.  前往 GitHub Releases或使用【[最新版本 (V3.1.0-beta) 下載連結](https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v3.1.0-beta/KHelperV3.Setup.3.1.0-beta.exe)】：  
     👉 `https://github.com/msfmsf777/karaoke-helper-v3/releases`
     
 2.  找到想要的版本。
     
 3.  下載 Windows 安裝檔，例如：  
-    `KHelperLive-Setup-3.0.1-beta.exe`
+    `KHelperLive-Setup-3.1.0-beta.exe`
     
 4.  執行安裝程式並依照步驟完成安裝。**若遇到 Windows SmartScreen（未簽章），點「更多資訊 → 仍要執行」**。
     
@@ -198,7 +201,47 @@
     -   [GitHub Issues](https://github.com/msfmsf777/karaoke-helper-v3/issues/new)
 
 感謝你願意幫忙測試 KHelper V3，  
-希望它能讓你的歌回與直播變得更輕鬆、更好玩 🎤✨
+希望它能讓你的歌回直播變得更輕鬆、更好玩 🎤✨
+
+----------
+
+## 🛠️ 技術棧 (Tech Stack)
+
+-   **Frontend**
+    -   **Electron** (Cross-platform desktop application framework)
+    -   **React** (UI Library) + **TypeScript**
+    -   **Vite** (Build tool)
+    -   **TailwindCSS** (Styling)
+        
+-   **Backend / Runtime**
+    -   **Node.js** (Electron Main Process)
+    -   **Python 3.10** (AI & Audio Processing Runtime)
+        
+-   **Audio / AI Core**
+    -   **UVR (Ultimate Vocal Remover)** / **MDX-Net** / **Demucs** (Vocal Separation)
+    -   **yt-dlp** (Media Downloader)
+    -   **FFmpeg** (Audio Conversion & Processing)
+        
+-   **Natural Language Processing**
+    -   **Mecab** / **Cutlet** / **Kakasi** (Japanese Tokenization & Romaji Conversion)
+
+----------
+
+## ❤️ 致謝 (Acknowledgements)
+
+KHelper V3 的誕生離不開這些強大開源專案與社群的貢獻：
+
+*   **[Ultimate Vocal Remover](https://github.com/Anjok07/ultimatevocalremovergui)** & **[audio-separator](https://github.com/karaokenerds/python-audio-separator)**:  
+    提供世界頂尖的 AI 人聲分離核心與模型參考。
+*   **[yt-dlp](https://github.com/yt-dlp/yt-dlp)**:  
+    強大且持續更新的媒體下載工具。
+*   **[FFmpeg](https://ffmpeg.org/)**:  
+    音訊處理的瑞士軍刀。
+*   **[Electron](https://www.electronjs.org/)** & **[React](https://reactjs.org/)** & **[Vite](https://vitejs.dev/)**:  
+    現代且高效的應用程式開發框架。
+*   **[Cutlet](https://github.com/polm/cutlet)** & **[Mecab](https://taku910.github.io/mecab/)**:  
+    精準的日文分詞與拼音轉換支援。
+*   以及所有參與測試、提供建議與使用的 VTuber 與實況主們！
 
 ----------
 
@@ -239,34 +282,3 @@ npm run build
 ```
 
 > 私有 Python runtime 的具體建置流程請參考 repo 內的說明文件`docs/python-runtime-setup.md` 。
-
-----------
-
-## 🛠️ 技術棧 (Tech Stack)
-
--   **Frontend**
-    
-    -   Electron
-        
-    -   React + TypeScript + Vite
-        
-    -   TailwindCSS / 自訂樣式
-        
--   **Backend / Runtime**
-    
-    -   Electron Main Process (Node.js)
-        
-    -   Bundled Private Python Runtime（隨安裝包一起提供）
-        
--   **Audio / AI**
-    
-    -   UVR / MDX-based vocal separation
-        
-    -   其他音訊處理工具（變速、變調等）
-        
--   **Lyrics / NLP (Japanese)**
-    
-    -   Python 日文解析與讀音工具（例如斷詞、假名 / Romaji 轉換）
-        
-
-
