@@ -80,6 +80,74 @@ async function downloadYtDlp() {
     console.log('[DownloadJobs] yt-dlp downloaded to', dest);
 }
 
+// --- Auto Update Logic ---
+
+let lastUpdateCheck = 0;
+const UPDATE_CHECK_INTERVAL = 60 * 60 * 1000; // 1 hour
+
+async function checkYtDlpUpdate() {
+    // 1. Throttle checks
+    if (Date.now() - lastUpdateCheck < UPDATE_CHECK_INTERVAL) {
+        return;
+    }
+
+    console.log('[DownloadJobs] Checking for yt-dlp updates...');
+    lastUpdateCheck = Date.now();
+
+    const ytDlpPath = getYtDlpPath();
+
+    try {
+        // 2. Get Local Version
+        // If file doesn't exist, ensureBinaries will handle it, so we can skip
+        try {
+            await fs.access(ytDlpPath);
+        } catch {
+            return;
+        }
+
+        const localVersion = await new Promise<string | null>((resolve) => {
+            const proc = spawn(ytDlpPath, ['--version']);
+            let stdout = '';
+            proc.stdout.on('data', d => stdout += d.toString());
+            proc.on('close', code => {
+                if (code === 0) resolve(stdout.trim());
+                else resolve(null);
+            });
+            proc.on('error', () => resolve(null));
+        });
+
+        if (!localVersion) return;
+
+        // 3. Get Remote Version (Latest Release)
+        // GitHub API: https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest
+        const response = await fetch('https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest');
+        if (!response.ok) return;
+
+        const data: any = await response.json();
+        const startIdx = data.tag_name.lastIndexOf('20');
+        const remoteVersion = data.tag_name.substring(startIdx); // e.g., "2023.11.16"
+
+        // 4. Compare
+        // yt-dlp versions are dates (YYYY.MM.DD), so lexicographical comparison works for standard format
+        // We remove dots to treat as numbers for safety or just string compare if format is strict
+        if (isNewer(remoteVersion, localVersion)) {
+            console.log(`[DownloadJobs] Update found: ${localVersion} -> ${remoteVersion}. Downloading...`);
+            await downloadYtDlp(); // Reuse existing download function
+        } else {
+            console.log('[DownloadJobs] yt-dlp is up to date.');
+        }
+
+    } catch (err) {
+        console.error('[DownloadJobs] Update check failed:', err);
+    }
+}
+
+function isNewer(remote: string, local: string) {
+    // Simple string compare for YYYY.MM.DD format
+    // 2023.11.16 > 2023.10.01
+    return remote > local;
+}
+
 // --- Job Management ---
 
 class DownloadJobManager {
@@ -278,6 +346,8 @@ class DownloadJobManager {
         this.updateJob(job.id, { status: 'downloading', progress: 0 });
 
         try {
+            // Check for updates before ensuring binaries (max once per hour)
+            await checkYtDlpUpdate();
             await ensureBinaries();
             const ytDlp = getYtDlpPath();
             const bundledBin = getBundledBinDir();
