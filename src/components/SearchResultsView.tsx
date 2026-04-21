@@ -101,7 +101,7 @@ const SearchResultsView: React.FC<SearchResultsViewProps> = ({ searchTerm, onOpe
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#aaaaaa' }}>本地庫相符歌曲 <span style={{ fontSize: '14px', fontWeight: 'normal', opacity: 0.6 }}>({filteredSongs.length})</span></div>
                     {filteredSongs.length > 0 ? (
-                        <div className="local-scroll" style={{ maxHeight: '350px', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '8px' }}>
+                        <div className="local-scroll" style={{ height: Math.min(filteredSongs.length * 55 + 160, 230) + 'px', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '8px' }}>
                             <style>{`.local-scroll::-webkit-scrollbar { width: 6px; } .local-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }`}</style>
                             <SongList songs={filteredSongs} context="library" onEditLyrics={onOpenLyrics} />
                         </div>

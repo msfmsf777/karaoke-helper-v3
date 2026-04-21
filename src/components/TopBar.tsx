@@ -227,6 +227,7 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
     return cleanup;
   }, []);
 
+
   // Listen for backend Title Bar clicks (Windows Only)
   useEffect(() => {
     // @ts-ignore
@@ -280,12 +281,30 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
     return songs.filter(song =>
       song.title.toLowerCase().includes(lowerTerm) ||
       (song.artist && song.artist.toLowerCase().includes(lowerTerm))
-    ).slice(0, 3);
+    );
   }, [searchTerm, songs]);
 
   const [querySuggestions, setQuerySuggestions] = useState<string[]>([]);
   const [youtubeResults, setYoutubeResults] = useState<any[]>([]);
   const [isSearchingOnline, setIsSearchingOnline] = useState(false);
+  
+  const ytHorizontalScrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollYtRight, setCanScrollYtRight] = useState(false);
+  const [canScrollYtLeft, setCanScrollYtLeft] = useState(false);
+
+  useEffect(() => {
+    if (ytHorizontalScrollRef.current) {
+        setCanScrollYtRight(ytHorizontalScrollRef.current.scrollWidth > ytHorizontalScrollRef.current.clientWidth);
+    }
+  }, [youtubeResults]);
+
+  const handleYtScroll = () => {
+    if (ytHorizontalScrollRef.current) {
+        const el = ytHorizontalScrollRef.current;
+        setCanScrollYtRight(Math.ceil(el.scrollLeft + el.clientWidth) < el.scrollWidth - 5);
+        setCanScrollYtLeft(el.scrollLeft > 5);
+    }
+  };
 
   useEffect(() => {
     if (!searchTerm.trim()) {
@@ -523,33 +542,45 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
                 // Merged Results
                 <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
                   {/* Local Results */}
-                  <div style={{ padding: '8px 12px', fontSize: '12px', color: '#aaaaaa' }}>本地庫相符歌曲</div>
+                  <div style={{ padding: '8px 12px', fontSize: '12px', color: '#aaaaaa', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>本地庫相符歌曲</span>
+                    {liveResults.length > 3 && (
+                      <span 
+                        onClick={() => { handleSearch(searchTerm); setSearchTerm(''); }}
+                        style={{ color: 'var(--accent-color)', cursor: 'pointer', fontWeight: 600 }}
+                      >
+                         查看全部 ➔
+                      </span>
+                    )}
+                  </div>
                   {liveResults.length > 0 ? (
-                    liveResults.map(song => (
-                      <SearchResultItem
-                        key={song.id}
-                        song={song}
-                        isActive={currentSongId === song.id}
-                        onPlay={() => {
-                          playSongList([song.id]);
-                          addRecentSearch(searchTerm);
-                          setSearchTerm('');
-                          setIsFocused(false);
-                        }}
-                        onContextMenu={(e, song) => {
-                          e.preventDefault();
-                          setContextMenu({ song, position: { x: e.clientX, y: e.clientY } });
-                        }}
-                        onAddToPlaylist={(e, song) => {
-                          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                          setAddToPlaylistMenu({ songId: song.id, position: { x: rect.left, y: rect.bottom + 5 } });
-                        }}
-                        onMore={(e, song) => {
-                          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                          setContextMenu({ song, position: { x: rect.left, y: rect.bottom + 5 } });
-                        }}
-                      />
-                    ))
+                    <>
+                      {liveResults.slice(0, 3).map(song => (
+                        <SearchResultItem
+                          key={song.id}
+                          song={song}
+                          isActive={currentSongId === song.id}
+                          onPlay={() => {
+                            playSongList([song.id]);
+                            addRecentSearch(searchTerm);
+                            setSearchTerm('');
+                            setIsFocused(false);
+                          }}
+                          onContextMenu={(e, song) => {
+                            e.preventDefault();
+                            setContextMenu({ song, position: { x: e.clientX, y: e.clientY } });
+                          }}
+                          onAddToPlaylist={(e, song) => {
+                            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                            setAddToPlaylistMenu({ songId: song.id, position: { x: rect.left, y: rect.bottom + 5 } });
+                          }}
+                          onMore={(e, song) => {
+                            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                            setContextMenu({ song, position: { x: rect.left, y: rect.bottom + 5 } });
+                          }}
+                        />
+                      ))}
+                    </>
                   ) : (
                     <div style={{ padding: '8px 12px', color: '#666', fontSize: '13px' }}>找不到相符本地歌曲</div>
                   )}
@@ -563,46 +594,78 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
                       <div style={{ padding: '8px 12px', color: '#666', fontSize: '13px' }}>找不到相關結果</div>
                   )}
                   {youtubeResults.length > 0 && (
-                    <div className="top-bar-yt-scroll" style={{
-                      display: 'flex', gap: '12px', padding: '8px 12px', overflowX: 'auto',
-                      width: '100%', boxSizing: 'border-box'
-                    }}>
-                      <style>{`.top-bar-yt-scroll::-webkit-scrollbar { display: none; } .top-bar-yt-scroll { -ms-overflow-style: none; scrollbar-width: none; }`}</style>
-                      {youtubeResults.slice(0, 6).map(yt => (
-                        <div
-                          key={yt.videoId}
-                          onClick={() => handleOnlineSongClick(yt)}
+                    <div style={{ position: 'relative', width: '100%' }}>
+                      <div ref={ytHorizontalScrollRef} onScroll={handleYtScroll} className="top-bar-yt-scroll" style={{
+                        display: 'flex', gap: '12px', padding: '8px 12px', overflowX: 'auto',
+                        width: '100%', boxSizing: 'border-box'
+                      }}>
+                        <style>{`.top-bar-yt-scroll::-webkit-scrollbar { display: none; } .top-bar-yt-scroll { -ms-overflow-style: none; scrollbar-width: none; }`}</style>
+                        {youtubeResults.slice(0, 6).map(yt => (
+                          <div
+                            key={yt.videoId}
+                            onClick={() => handleOnlineSongClick(yt)}
+                            style={{
+                              width: '110px', flexShrink: 0, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '6px',
+                              padding: '8px', borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.02)'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'}
+                          >
+                            <img src={yt.thumbnailUrl} alt="thumb" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: '4px', opacity: 0.8 }} />
+                            <div style={{ fontSize: '12px', fontWeight: 500, color: '#fff', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '16px', maxHeight: '32px' }}>
+                              {yt.title}
+                            </div>
+                            <div style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.6)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {yt.artist}
+                            </div>
+                          </div>
+                        ))}
+                        {youtubeResults.length > 6 && (
+                          <div
+                            onClick={() => {
+                              handleSearch(searchTerm);
+                              setSearchTerm('');
+                            }}
+                            style={{
+                              width: '90px', flexShrink: 0, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                              padding: '8px', borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.02)', color: 'var(--accent-color)'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'}
+                          >
+                            <div style={{ fontSize: '24px' }}>➔</div>
+                            <div style={{ fontSize: '12px', fontWeight: 500 }}>查看更多</div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Fade left arrow for horizontal overflow */}
+                      {canScrollYtLeft && (
+                        <div 
+                          onClick={() => ytHorizontalScrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })}
                           style={{
-                            width: '110px', flexShrink: 0, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '6px',
-                            padding: '8px', borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.02)'
+                            position: 'absolute', top: 0, left: 0, bottom: 0, width: '40px',
+                            background: 'linear-gradient(to left, rgba(20,20,20,0), rgba(20,20,20,0.6))',
+                            display: 'flex', alignItems: 'center', justifyContent: 'flex-start',
+                            paddingLeft: '8px', cursor: 'pointer', zIndex: 10
                           }}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'}
-                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'}
                         >
-                          <img src={yt.thumbnailUrl} alt="thumb" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: '4px', opacity: 0.8 }} />
-                          <div style={{ fontSize: '12px', fontWeight: 500, color: '#fff', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '16px', maxHeight: '32px' }}>
-                            {yt.title}
-                          </div>
-                          <div style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.6)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {yt.artist}
-                          </div>
+                          <span style={{ fontSize: '16px', color: '#fff', opacity: 0.6 }}>❮</span>
                         </div>
-                      ))}
-                      {youtubeResults.length > 6 && (
-                        <div
-                          onClick={() => {
-                            handleSearch(searchTerm);
-                            setSearchTerm('');
-                          }}
+                      )}
+
+                      {/* Fade right arrow for horizontal overflow */}
+                      {canScrollYtRight && (
+                        <div 
+                          onClick={() => ytHorizontalScrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' })}
                           style={{
-                            width: '90px', flexShrink: 0, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                            padding: '8px', borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.02)', color: 'var(--accent-color)'
+                            position: 'absolute', top: 0, right: 0, bottom: 0, width: '40px',
+                            background: 'linear-gradient(to right, rgba(20,20,20,0), rgba(20,20,20,0.6))',
+                            display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+                            paddingRight: '8px', cursor: 'pointer', zIndex: 10
                           }}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'}
-                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'}
                         >
-                          <div style={{ fontSize: '24px' }}>➔</div>
-                          <div style={{ fontSize: '12px', fontWeight: 500 }}>查看更多</div>
+                          <span style={{ fontSize: '16px', color: '#fff', opacity: 0.6 }}>❯</span>
                         </div>
                       )}
                     </div>
