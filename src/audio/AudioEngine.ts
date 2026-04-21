@@ -18,6 +18,7 @@ export interface PlaybackTransform {
 
 export interface AudioEngine {
   loadFile(paths: string | { instrumental: string; vocal: string | null }): Promise<void>;
+  loadStream(url: string): Promise<void>;
   play(): Promise<void> | void;
   pause(): void;
   stop(): void;
@@ -256,9 +257,59 @@ class AudioPlayer {
   }
 }
 
+export class NativeAudioPlayer {
+  private el: SinkableAudioElement;
+  private role: OutputRole;
+  public onEnded?: () => void;
+  public loop = false;
+
+  constructor(role: OutputRole) {
+    this.role = role;
+    this.el = new Audio();
+    this.el.crossOrigin = 'anonymous';
+    this.el.onended = () => {
+      if (this.loop) {
+        this.el.currentTime = 0;
+        this.el.play().catch(() => {});
+      } else {
+        this.onEnded?.();
+      }
+    };
+  }
+
+  async loadUrl(url: string) {
+    this.el.src = url;
+    this.el.load();
+  }
+
+  async setSinkId(deviceId: string | null) {
+      if (this.el.setSinkId) {
+          try {
+            await this.el.setSinkId(deviceId || '');
+          } catch(e) { }
+      }
+  }
+
+  play() { this.el.play().catch(()=>{}); }
+  pause() { this.el.pause(); }
+  stop() { this.pause(); this.el.currentTime = 0; }
+  seek(time: number) { this.el.currentTime = time; }
+  setVolume(vol: number) { this.el.volume = Math.min(Math.max(vol, 0), 1); }
+  get currentTime() { return this.el.currentTime; }
+  get duration() { return this.el.duration || 0; }
+  get isPlaying() { return !this.el.paused; }
+  get volume() { return this.el.volume; }
+  get sampleRate() { return 44100; } // Fallback sample rate for native
+  dispose() { this.stop(); this.el.src = ''; }
+}
+
 export class DualAudioEngine implements AudioEngine {
   private streamPlayer: AudioPlayer;
   private headphonePlayer: AudioPlayer;
+  
+  private nativeStreamPlayer: NativeAudioPlayer;
+  private nativeHeadphonePlayer: NativeAudioPlayer;
+  private activeMode: 'soundtouch' | 'native' = 'soundtouch';
 
   private timeUpdateSubscribers = new Set<(timeSeconds: number) => void>();
   private endedSubscribers = new Set<() => void>();
@@ -276,14 +327,27 @@ export class DualAudioEngine implements AudioEngine {
     console.log('[AudioEngine] Initializing SoundTouch-based Dual Engine...');
     this.streamPlayer = new AudioPlayer('stream');
     this.headphonePlayer = new AudioPlayer('headphone');
+    
+    this.nativeStreamPlayer = new NativeAudioPlayer('stream');
+    this.nativeHeadphonePlayer = new NativeAudioPlayer('headphone');
 
     // Wire up event-based ended detection to avoid race conditions in the render loop
     this.headphonePlayer.onEnded = () => {
-      this.handleEnded();
+      if (this.activeMode === 'soundtouch') {
+          this.handleEnded();
+      }
+    };
+    
+    this.nativeHeadphonePlayer.onEnded = () => {
+        if (this.activeMode === 'native') {
+            this.handleEnded();
+        }
     };
 
     this.streamPlayer.setVolume(0.8);
     this.headphonePlayer.setVolume(1.0);
+    this.nativeStreamPlayer.setVolume(0.8);
+    this.nativeHeadphonePlayer.setVolume(1.0);
   }
 
   private toFileUrl(filePath: string): string {
@@ -298,7 +362,16 @@ export class DualAudioEngine implements AudioEngine {
     if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
     const loop = () => {
       if (this.isPlaying()) {
-        const time = this.headphonePlayer.currentTime;
+        const time = this.getCurrentTime();
+        
+        // Sync native stream player if drifting
+        if (this.activeMode === 'native' && this.nativeStreamPlayer.isPlaying) {
+             const diff = Math.abs(this.nativeStreamPlayer.currentTime - this.nativeHeadphonePlayer.currentTime);
+             if (diff > 0.15) {     // 150ms drift threshold
+                 this.nativeStreamPlayer.seek(this.nativeHeadphonePlayer.currentTime);
+             }
+        }
+
         this.timeUpdateSubscribers.forEach((cb) => cb(time));
         this.animationFrameId = requestAnimationFrame(loop);
       }
@@ -320,8 +393,20 @@ export class DualAudioEngine implements AudioEngine {
 
   // --- Public API ---
 
+  async loadStream(url: string): Promise<void> {
+    this.stop();
+    this.activeMode = 'native';
+    console.log('[AudioEngine] Loading Native Stream:', url);
+    await Promise.all([
+      this.nativeStreamPlayer.loadUrl(url),
+      this.nativeHeadphonePlayer.loadUrl(url)
+    ]);
+    this.applyTrackVolumes();
+  }
+
   async loadFile(paths: string | { instrumental: string; vocal: string | null }): Promise<void> {
     this.stop();
+    this.activeMode = 'soundtouch';
 
     let instrPath: string;
     let vocalPath: string | null;
@@ -375,48 +460,71 @@ export class DualAudioEngine implements AudioEngine {
 
     // Stream Player
     this.streamPlayer.setTrackVolumes(this.instrVolume, 0);
+    this.nativeStreamPlayer.setVolume(this.instrVolume);
 
     // Headphone Player
     this.headphonePlayer.setTrackVolumes(this.instrVolume, this.vocalVolume);
+    // For native mode (unseparated streaming), we map the entire track to the "instrumental" control
+    this.nativeHeadphonePlayer.setVolume(this.instrVolume);
   }
 
   play(): void {
-    this.streamPlayer.play();
-    this.headphonePlayer.play();
+    if (this.activeMode === 'native') {
+        this.nativeStreamPlayer.play();
+        this.nativeHeadphonePlayer.play();
+    } else {
+        this.streamPlayer.play();
+        this.headphonePlayer.play();
+    }
     this.startTimer();
   }
 
   pause(): void {
-    this.streamPlayer.pause();
-    this.headphonePlayer.pause();
+    if (this.activeMode === 'native') {
+        this.nativeStreamPlayer.pause();
+        this.nativeHeadphonePlayer.pause();
+    } else {
+        this.streamPlayer.pause();
+        this.headphonePlayer.pause();
+    }
     this.stopTimer();
-    const time = this.headphonePlayer.currentTime;
+    const time = this.getCurrentTime();
     this.timeUpdateSubscribers.forEach(cb => cb(time));
   }
 
   stop(): void {
-    this.streamPlayer.stop();
-    this.headphonePlayer.stop();
+    if (this.activeMode === 'native') {
+        this.nativeStreamPlayer.stop();
+        this.nativeHeadphonePlayer.stop();
+    } else {
+        this.streamPlayer.stop();
+        this.headphonePlayer.stop();
+    }
     this.stopTimer();
     this.timeUpdateSubscribers.forEach(cb => cb(0));
   }
 
   seek(positionSeconds: number): void {
-    this.streamPlayer.seek(positionSeconds);
-    this.headphonePlayer.seek(positionSeconds);
+    if (this.activeMode === 'native') {
+        this.nativeStreamPlayer.seek(positionSeconds);
+        this.nativeHeadphonePlayer.seek(positionSeconds);
+    } else {
+        this.streamPlayer.seek(positionSeconds);
+        this.headphonePlayer.seek(positionSeconds);
+    }
     this.timeUpdateSubscribers.forEach(cb => cb(positionSeconds));
   }
 
   getCurrentTime(): number {
-    return this.headphonePlayer.currentTime;
+    return this.activeMode === 'native' ? this.nativeHeadphonePlayer.currentTime : this.headphonePlayer.currentTime;
   }
 
   getDuration(): number {
-    return this.headphonePlayer.duration;
+    return this.activeMode === 'native' ? this.nativeHeadphonePlayer.duration : this.headphonePlayer.duration;
   }
 
   isPlaying(): boolean {
-    return this.headphonePlayer.isPlaying;
+    return this.activeMode === 'native' ? this.nativeHeadphonePlayer.isPlaying : this.headphonePlayer.isPlaying;
   }
 
   onTimeUpdate(callback: (timeSeconds: number) => void): () => void {
@@ -447,16 +555,20 @@ export class DualAudioEngine implements AudioEngine {
   async setOutputDevice(role: OutputRole, deviceId: string | null): Promise<void> {
     if (role === 'stream') {
       await this.streamPlayer.setSinkId(deviceId);
+      await this.nativeStreamPlayer.setSinkId(deviceId);
     } else {
       await this.headphonePlayer.setSinkId(deviceId);
+      await this.nativeHeadphonePlayer.setSinkId(deviceId);
     }
   }
 
   setOutputVolume(role: OutputRole, volume: number): void {
     if (role === 'stream') {
       this.streamPlayer.setVolume(volume);
+      this.nativeStreamPlayer.setVolume(volume);
     } else {
       this.headphonePlayer.setVolume(volume);
+      this.nativeHeadphonePlayer.setVolume(volume);
     }
   }
 
@@ -495,6 +607,8 @@ export class DualAudioEngine implements AudioEngine {
   setLoop(loop: boolean): void {
     this.streamPlayer.loop = loop;
     this.headphonePlayer.loop = loop;
+    this.nativeStreamPlayer.loop = loop;
+    this.nativeHeadphonePlayer.loop = loop;
   }
 
   getPlaybackTransform(): PlaybackTransform {
@@ -504,23 +618,20 @@ export class DualAudioEngine implements AudioEngine {
   dispose() {
     this.streamPlayer.dispose();
     this.headphonePlayer.dispose();
+    this.nativeStreamPlayer.dispose();
+    this.nativeHeadphonePlayer.dispose();
   }
 
   getSampleRate(role: OutputRole): number {
-    return role === 'stream' ? this.streamPlayer.sampleRate : this.headphonePlayer.sampleRate;
+    return this.activeMode === 'native'
+        ? (role === 'stream' ? this.nativeStreamPlayer.sampleRate : this.nativeHeadphonePlayer.sampleRate)
+        : (role === 'stream' ? this.streamPlayer.sampleRate : this.headphonePlayer.sampleRate);
   }
 
   getVolume(role: OutputRole): number {
-    // Note: AudioPlayer doesn't expose gain value directly in previous code, 
-    // but we can access the private gainNode if we changed AudioPlayer or just store it.
-    // For now, let's assume we can access it or we should store it.
-    // Re-reading AudioPlayer code... it has `setVolume` which sets `gainNode.gain.value`.
-    // It does NOT expose getter.
-    // I need to update AudioPlayer to expose volume getter first?
-    // Actually, I can just return the local var if I tracked it, but safely accessing the node is better.
-    // Let's modify AudioPlayer class first in next step or use 'any' cast as hotfix? No.
-    // I'll update AudioPlayer to add 'volume' getter.
-    return role === 'stream' ? this.streamPlayer.volume : this.headphonePlayer.volume;
+    return this.activeMode === 'native'
+        ? (role === 'stream' ? this.nativeStreamPlayer.volume : this.nativeHeadphonePlayer.volume)
+        : (role === 'stream' ? this.streamPlayer.volume : this.headphonePlayer.volume);
   }
 
   getTrackVolume(track: TrackType): number {

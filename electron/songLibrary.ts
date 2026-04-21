@@ -6,7 +6,7 @@ import type { AudioStatus, LyricsStatus, SongMeta, SongType } from '../shared/so
 
 const APP_FOLDER_NAME = 'KHelperLive';
 const SONGS_FOLDER_NAME = 'songs';
-const AUDIO_STATUS_VALUES: AudioStatus[] = ['original_only', 'separation_pending', 'separating', 'separation_failed', 'separated'];
+const AUDIO_STATUS_VALUES: AudioStatus[] = ['streaming', 'original_only', 'separation_pending', 'separating', 'separation_failed', 'separated'];
 const DEFAULT_AUDIO_STATUS: AudioStatus = 'original_only';
 const LYRICS_STATUS_VALUES: LyricsStatus[] = ['none', 'text_only', 'synced'];
 const DEFAULT_LYRICS_STATUS: LyricsStatus = 'none';
@@ -83,6 +83,7 @@ function normalizeMeta(meta: SongMeta): SongMeta {
     last_separation_error: meta.last_separation_error ?? null,
     separation_quality: meta.separation_quality ?? undefined,
     duration: meta.duration ?? undefined,
+    thumbnailUrl: meta.thumbnailUrl ?? undefined,
   };
   return normalized;
 }
@@ -191,6 +192,56 @@ export async function addLocalSong(params: {
 
   await writeMeta(songDir, meta);
   console.log('[Library] Saved meta.json', { id, path: path.join(songDir, 'meta.json') });
+
+  invalidateCache();
+  return meta;
+}
+
+export async function addOnlineSong(params: {
+  youtubeId: string;
+  title: string;
+  artist?: string;
+  thumbnailUrl?: string;
+  duration?: number;
+}): Promise<SongMeta> {
+  const { youtubeId, title, artist, thumbnailUrl, duration } = params;
+  
+  // Use a predictable ID for online songs based on youtubeId
+  const id = `yt-${youtubeId}`;
+  
+  // Check if it already exists to avoid overwriting a downloaded version
+  const existing = await getSongMeta(id);
+  if (existing) {
+    return existing;
+  }
+
+  const songsDir = await ensureSongsDir();
+  const songDir = path.join(songsDir, id);
+  await fs.mkdir(songDir, { recursive: true });
+
+  const now = new Date().toISOString();
+  const meta: SongMeta = {
+    id,
+    title: title || 'Unknown YouTube Song',
+    artist: artist?.trim() || undefined,
+    type: '原曲',
+    audio_status: 'streaming',
+    lyrics_status: 'none',
+    source: {
+      kind: 'youtube',
+      youtubeId,
+      originalPath: '', // No local file yet
+    },
+    stored_filename: '',
+    duration,
+    thumbnailUrl,
+    last_separation_error: null,
+    created_at: now,
+    updated_at: now,
+  };
+
+  await writeMeta(songDir, meta);
+  console.log('[Library] Saved online ghost meta.json', { id, path: path.join(songDir, 'meta.json') });
 
   invalidateCache();
   return meta;

@@ -9,10 +9,10 @@ import {
   addLocalSong, getOriginalSongFilePath,
   getSeparatedSongPaths,
   getSongFilePath, getSongsBaseDir, loadAllSongs,
-  deleteSong, updateSong, getSongDirById
+  deleteSong, updateSong, getSongDirById, addOnlineSong
 } from './songLibrary'
 import { getAllJobs, queueSeparationJob, subscribeJobUpdates } from './separationJobs'
-import { downloadManager } from './downloadJobs'
+import { downloadManager, searchYouTube, getYouTubeStreamUrl, getYouTubeSuggestions } from './downloadJobs'
 import { readRawLyrics, readSyncedLyrics, writeRawLyrics, writeSyncedLyrics } from './lyrics'
 import { loadQueue, saveQueue } from './queue'
 import { enrichLyrics } from './lyricEnrichment'
@@ -611,6 +611,10 @@ ipcMain.handle('library:add-local-song', async (_event, payload) => {
   return addLocalSong(payload)
 })
 
+ipcMain.handle('library:add-online-song', async (_event, payload) => {
+  return addOnlineSong(payload)
+})
+
 ipcMain.handle('library:load-all', async () => {
   return loadAllSongs()
 })
@@ -786,6 +790,18 @@ ipcMain.handle('downloads:get-all', async () => {
 ipcMain.handle('downloads:remove', async (_event, id: string) => {
   const dm = getDownloadManager()
   dm.removeJob(id)
+})
+
+ipcMain.handle('youtube:search', async (_event, query: string) => {
+  return searchYouTube(query)
+})
+
+ipcMain.handle('youtube:get-stream-url', async (_event, videoId: string) => {
+  return getYouTubeStreamUrl(videoId)
+})
+
+ipcMain.handle('youtube:get-suggestions', async (_event, query: string) => {
+  return getYouTubeSuggestions(query)
 })
 
 ipcMain.on('downloads:subscribe', async (event, subscriptionId: string) => {

@@ -70,6 +70,13 @@ contextBridge.exposeInMainWorld('khelper', {
       lyricsText?: string
       lyricsLrc?: string
     }): Promise<SongMeta> => ipcRenderer.invoke('library:add-local-song', payload),
+    addOnlineSong: (payload: {
+      youtubeId: string
+      title: string
+      artist?: string
+      thumbnailUrl?: string
+      duration?: number
+    }): Promise<SongMeta> => ipcRenderer.invoke('library:add-online-song', payload),
     loadAllSongs: (): Promise<SongMeta[]> => ipcRenderer.invoke('library:load-all'),
     getSongFilePath: (id: string) => ipcRenderer.invoke('library:get-song-file-path', id),
     getOriginalSongFilePath: (id: string) => ipcRenderer.invoke('library:get-original-song-file-path', id),
@@ -112,6 +119,11 @@ contextBridge.exposeInMainWorld('khelper', {
       }
     },
     removeJob: (id: string) => ipcRenderer.invoke('downloads:remove', id)
+  },
+  youtube: {
+    search: (query: string): Promise<any[]> => ipcRenderer.invoke('youtube:search', query),
+    getStreamUrl: (videoId: string): Promise<string | null> => ipcRenderer.invoke('youtube:get-stream-url', videoId),
+    getSuggestions: (query: string): Promise<string[]> => ipcRenderer.invoke('youtube:get-suggestions', query),
   },
   lyrics: {
     readRawLyrics: (songId: string): Promise<{ path: string; content: string } | null> =>

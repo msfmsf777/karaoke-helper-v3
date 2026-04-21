@@ -18,7 +18,8 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-virtuoso": "^4.14.1",
-    "soundtouchjs": "^0.2.1"
+    "soundtouchjs": "^0.2.1",
+    "yt-search": "^2.13.1"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

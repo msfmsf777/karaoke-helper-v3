@@ -114,27 +114,30 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
 
         try {
-            const paths = await getSeparatedSongPaths(songId);
+            if (song.audio_status === 'streaming') {
+                const youtubeId = (song.source as any).youtubeId;
+                const url = await window.khelper?.youtube.getStreamUrl(youtubeId);
+                
+                if (!url) throw new Error('Failed to fetch YouTube stream URL');
+                
+                await audioEngine.loadStream(url);
+                audioEngine.setPlaybackTransform({ speed: 1.0, transpose: 0 });
+            } else {
+                const paths = await getSeparatedSongPaths(songId);
 
-            if (!paths.instrumental) {
-                throw new Error('File path not found');
+                if (!paths.instrumental) {
+                    throw new Error('File path not found');
+                }
+
+                await audioEngine.loadFile(paths);
+
+                // Apply saved playback transform or defaults
+                const transform = {
+                    speed: Number(song.playback?.speed ?? 1.0),
+                    transpose: Number(song.playback?.transpose ?? 0)
+                };
+                audioEngine.setPlaybackTransform(transform);
             }
-            // paths.instrumental = Instrumental Stem (if sep) OR Original (if not)
-            // paths.vocal = Vocal Stem (if sep) OR null (if not)
-
-            // If vocal is null, AudioEngine will play silence for vocal channel.
-            // Since instrumental is Original in that case, we get:
-            // Stream: Original (Instr Vol)
-            // Headphone: Original (Instr Vol) + Silence (Vocal Vol) -> Original
-
-            await audioEngine.loadFile(paths);
-
-            // Apply saved playback transform or defaults
-            const transform = {
-                speed: Number(song.playback?.speed ?? 1.0),
-                transpose: Number(song.playback?.transpose ?? 0)
-            };
-            audioEngine.setPlaybackTransform(transform);
 
             // Force seek to 0 to ensure SoundTouch filter is cleared/primed with new settings
             // This fixes the desync issue on start

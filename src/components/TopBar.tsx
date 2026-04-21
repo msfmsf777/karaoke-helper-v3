@@ -280,8 +280,70 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
     return songs.filter(song =>
       song.title.toLowerCase().includes(lowerTerm) ||
       (song.artist && song.artist.toLowerCase().includes(lowerTerm))
-    ).slice(0, 5);
+    ).slice(0, 3);
   }, [searchTerm, songs]);
+
+  const [querySuggestions, setQuerySuggestions] = useState<string[]>([]);
+  const [youtubeResults, setYoutubeResults] = useState<any[]>([]);
+  const [isSearchingOnline, setIsSearchingOnline] = useState(false);
+
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setQuerySuggestions([]);
+      setYoutubeResults([]);
+      setIsSearchingOnline(false);
+      return;
+    }
+
+    const abortController = new AbortController();
+
+    const fetchOnline = async () => {
+      // 1. Fetch suggestions quickly
+      setTimeout(async () => {
+          if (abortController.signal.aborted) return;
+          const sugs = await window.khelper?.youtube.getSuggestions(searchTerm);
+          if (!abortController.signal.aborted) setQuerySuggestions(sugs || []);
+      }, 300);
+
+      // 2. Full search for direct results
+      setTimeout(async () => {
+          if (abortController.signal.aborted) return;
+          setIsSearchingOnline(true);
+          const results = await window.khelper?.youtube.search(searchTerm);
+          if (!abortController.signal.aborted) {
+              setYoutubeResults((results || []).slice(0, 7));
+              setIsSearchingOnline(false);
+          }
+      }, 300); // 300ms debounce
+    };
+
+    fetchOnline();
+
+    return () => {
+      abortController.abort();
+    };
+  }, [searchTerm]);
+
+  const handleOnlineSongClick = async (yt: any) => {
+      try {
+          const meta = await window.khelper?.songLibrary.addOnlineSong({
+              youtubeId: yt.videoId,
+              title: yt.title,
+              artist: yt.artist,
+              thumbnailUrl: yt.thumbnailUrl,
+              duration: yt.duration
+          });
+          if (meta) {
+              // Same as local song: add to queue directly and play
+              playSongList([meta.id]);
+              addRecentSearch(searchTerm);
+              setSearchTerm('');
+              setIsFocused(false);
+          }
+      } catch(e) {
+          console.error(e);
+      }
+  };
 
   return (
     <div
@@ -458,11 +520,10 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
                   )}
                 </div>
               ) : (
-                // Live Results
-                <div>
-                  <div style={{ padding: '8px 12px', fontSize: '12px', color: '#aaa' }}>
-                    搜尋結果
-                  </div>
+                // Merged Results
+                <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+                  {/* Local Results */}
+                  <div style={{ padding: '8px 12px', fontSize: '12px', color: '#aaaaaa' }}>本地庫相符歌曲</div>
                   {liveResults.length > 0 ? (
                     liveResults.map(song => (
                       <SearchResultItem
@@ -470,15 +531,9 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
                         song={song}
                         isActive={currentSongId === song.id}
                         onPlay={() => {
-                          // Play this song immediately or add to queue? 
-                          // User said "replace... with results". 
-                          // Usually quick result click -> play.
-                          // Let's play it as a single song list.
                           playSongList([song.id]);
-                          // Or use queue.playImmediate(song)?
-                          // queue context usually has playImmediate.
-                          addRecentSearch(searchTerm); // Also save term
-                          setSearchTerm(''); // Clear after action
+                          addRecentSearch(searchTerm);
+                          setSearchTerm('');
                           setIsFocused(false);
                         }}
                         onContextMenu={(e, song) => {
@@ -496,10 +551,99 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
                       />
                     ))
                   ) : (
-                    <div style={{ padding: '12px', textAlign: 'center', color: '#666', fontSize: '13px' }}>
-                      找不到相符歌曲
+                    <div style={{ padding: '8px 12px', color: '#666', fontSize: '13px' }}>找不到相符本地歌曲</div>
+                  )}
+
+                  {/* YouTube Quick Results (Horizontal) */}
+                  <div style={{ padding: '8px 12px', fontSize: '12px', color: '#aaaaaa', borderTop: '1px solid #3e3e3e', marginTop: '4px', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>YouTube 串流結果</span>
+                    {isSearchingOnline && <span style={{fontSize:'10px', color:'#666'}}>搜尋中...</span>}
+                  </div>
+                  {!isSearchingOnline && youtubeResults.length === 0 && (
+                      <div style={{ padding: '8px 12px', color: '#666', fontSize: '13px' }}>找不到相關結果</div>
+                  )}
+                  {youtubeResults.length > 0 && (
+                    <div className="top-bar-yt-scroll" style={{
+                      display: 'flex', gap: '12px', padding: '8px 12px', overflowX: 'auto',
+                      width: '100%', boxSizing: 'border-box'
+                    }}>
+                      <style>{`.top-bar-yt-scroll::-webkit-scrollbar { display: none; } .top-bar-yt-scroll { -ms-overflow-style: none; scrollbar-width: none; }`}</style>
+                      {youtubeResults.slice(0, 6).map(yt => (
+                        <div
+                          key={yt.videoId}
+                          onClick={() => handleOnlineSongClick(yt)}
+                          style={{
+                            width: '110px', flexShrink: 0, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '6px',
+                            padding: '8px', borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.02)'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'}
+                        >
+                          <img src={yt.thumbnailUrl} alt="thumb" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: '4px', opacity: 0.8 }} />
+                          <div style={{ fontSize: '12px', fontWeight: 500, color: '#fff', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '16px', maxHeight: '32px' }}>
+                            {yt.title}
+                          </div>
+                          <div style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.6)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {yt.artist}
+                          </div>
+                        </div>
+                      ))}
+                      {youtubeResults.length > 6 && (
+                        <div
+                          onClick={() => {
+                            handleSearch(searchTerm);
+                            setSearchTerm('');
+                          }}
+                          style={{
+                            width: '90px', flexShrink: 0, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                            padding: '8px', borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.02)', color: 'var(--accent-color)'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'}
+                        >
+                          <div style={{ fontSize: '24px' }}>➔</div>
+                          <div style={{ fontSize: '12px', fontWeight: 500 }}>查看更多</div>
+                        </div>
+                      )}
                     </div>
                   )}
+
+                  {/* Query Suggestions */}
+                  {querySuggestions.length > 0 && (
+                    <>
+                      <div style={{ padding: '8px 12px', fontSize: '12px', color: '#aaaaaa', borderTop: '1px solid #3e3e3e', marginTop: '4px' }}>搜尋建議</div>
+                      {querySuggestions.slice(0, 5).map((sug, i) => (
+                        <div
+                          key={i}
+                          onClick={() => {
+                            setSearchTerm(sug);
+                            handleSearch(sug);
+                            setSearchTerm('');
+                          }}
+                          style={{
+                            padding: '8px 12px',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            color: '#eee',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#3e3e3e'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          <span style={{ color: '#aaa', display: 'flex', alignItems: 'center' }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="11" cy="11" r="8"></circle>
+                              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                          </span> 
+                          {sug}
+                        </div>
+                      ))}
+                    </>
+                  )}
+
                 </div>
               )}
             </div>

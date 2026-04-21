@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { app } from 'electron';
 import { spawn } from 'node:child_process';
+import yts from 'yt-search';
 import { getSongsBaseDir } from './songLibrary';
 import type { SongMeta, SongType } from '../shared/songTypes';
 
@@ -301,8 +302,14 @@ class DownloadJobManager {
             s.source.kind === 'youtube' && (s.source as any).youtubeId === meta.videoId
         );
 
+        let targetSongId: string | undefined;
+
         if (existingSong) {
-            throw new Error(`Song already exists in library: "${existingSong.title}"`);
+            if (existingSong.audio_status === 'streaming') {
+                 targetSongId = existingSong.id;
+            } else {
+                 throw new Error(`Song already exists in library: "${existingSong.title}"`);
+            }
         }
 
         const job: DownloadJob = {
@@ -317,7 +324,8 @@ class DownloadJobManager {
             status: 'queued',
             progress: 0,
             createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
+            songId: targetSongId
         };
 
         this.jobs.unshift(job);
@@ -355,7 +363,7 @@ class DownloadJobManager {
             const nodePath = path.join(bundledBin, 'node.exe');
 
             // Create song directory
-            const songId = Date.now().toString(); // Or use library generator
+            const songId = job.songId || Date.now().toString(); 
             const songsDir = getSongsBaseDir();
             const songDir = path.join(songsDir, songId);
             await fs.mkdir(songDir, { recursive: true });
@@ -443,28 +451,48 @@ class DownloadJobManager {
             if (lyricsLrcPath) lyricsStatus = 'synced';
             else if (lyricsRawPath) lyricsStatus = 'text_only';
 
-            const meta: SongMeta = {
-                id: songId,
-                title: job.title,
-                artist: job.artist,
-                type: job.type || '原曲', // type from job
-                audio_status: 'original_only',
-                lyrics_status: lyricsStatus,
-                lyrics_raw_path: lyricsRawPath,
-                lyrics_lrc_path: lyricsLrcPath,
-                source: {
-                    kind: 'youtube',
-                    youtubeId: job.youtubeId,
-                    originalPath: finalPath
-                },
-                stored_filename: 'Original.mp3',
-                created_at: now,
-                updated_at: now,
-                last_separation_error: null,
-                duration
-            };
+            // Create or Upgrade Meta
+            const metaFile = path.join(songDir, 'meta.json');
+            let meta: SongMeta;
 
-            await fs.writeFile(path.join(songDir, 'meta.json'), JSON.stringify(meta, null, 2));
+            try {
+                 const existingMeta = JSON.parse(await fs.readFile(metaFile, 'utf-8'));
+                 meta = {
+                     ...existingMeta,
+                     title: job.title,
+                     artist: job.artist || existingMeta.artist,
+                     audio_status: 'original_only',
+                     lyrics_status: lyricsStatus !== 'none' ? lyricsStatus : existingMeta.lyrics_status,
+                     lyrics_raw_path: lyricsRawPath || existingMeta.lyrics_raw_path,
+                     lyrics_lrc_path: lyricsLrcPath || existingMeta.lyrics_lrc_path,
+                     updated_at: now,
+                     duration: duration || existingMeta.duration
+                 };
+            } catch {
+                 // Create new meta
+                 meta = {
+                     id: songId,
+                     title: job.title,
+                     artist: job.artist,
+                     type: job.type || '原曲', // type from job
+                     audio_status: 'original_only',
+                     lyrics_status: lyricsStatus,
+                     lyrics_raw_path: lyricsRawPath,
+                     lyrics_lrc_path: lyricsLrcPath,
+                     source: {
+                         kind: 'youtube',
+                         youtubeId: job.youtubeId,
+                         originalPath: finalPath
+                     },
+                     stored_filename: 'Original.mp3',
+                     created_at: now,
+                     updated_at: now,
+                     last_separation_error: null,
+                     duration
+                 };
+            }
+
+            await fs.writeFile(metaFile, JSON.stringify(meta, null, 2));
 
             this.updateJob(job.id, { status: 'completed', progress: 100, songId });
 
@@ -483,3 +511,62 @@ class DownloadJobManager {
 }
 
 export const downloadManager = new DownloadJobManager();
+
+// --- YouTube Native IPC Implementations ---
+
+export async function searchYouTube(query: string): Promise<any[]> {
+    try {
+        const r = await yts(query);
+        const results = r.videos.slice(0, 30).map((v: any) => ({
+            videoId: v.videoId,
+            title: v.title,
+            artist: v.author.name,
+            duration: v.seconds,
+            thumbnailUrl: v.thumbnail
+        }));
+        return results;
+    } catch (e) {
+        console.error("yt-search error:", e);
+        return [];
+    }
+}
+
+export async function getYouTubeStreamUrl(videoId: string): Promise<string | null> {
+    await ensureBinaries();
+    const ytDlp = getYtDlpPath();
+    const bundledBin = getBundledBinDir();
+    const ffmpegPath = bundledBin;
+    const nodePath = path.join(bundledBin, 'node.exe');
+
+    return new Promise((resolve) => {
+        const proc = spawn(ytDlp, [
+            '--ffmpeg-location', ffmpegPath,
+            '--js-runtimes', `node:${nodePath}`,
+            '-g', 
+            '-f', 'bestaudio', 
+            `https://www.youtube.com/watch?v=${videoId}`
+        ]);
+
+        let stdout = '';
+        proc.stdout.on('data', d => stdout += d.toString());
+
+        proc.on('close', code => {
+            if (code === 0 && stdout.trim()) {
+                resolve(stdout.trim());
+            } else {
+                resolve(null);
+            }
+        });
+    });
+}
+
+export async function getYouTubeSuggestions(query: string): Promise<string[]> {
+    try {
+        const res = await fetch(`https://suggestqueries.google.com/complete/search?client=youtube&ds=yt&client=firefox&q=${encodeURIComponent(query)}`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data[1] || [];
+    } catch {
+        return [];
+    }
+}

@@ -1,6 +1,7 @@
 export type SongType = '伴奏' | '原曲';
 
 export type AudioStatus =
+  | 'streaming'
   | 'original_only'
   | 'separation_pending'
   | 'separating'
@@ -46,6 +47,7 @@ export interface SongMeta {
     transpose: number;  // -12 - +12
   };
   duration?: number;
+  thumbnailUrl?: string;
 }
 
 export interface DownloadJob {

@@ -39,6 +39,13 @@ interface Window {
         type: import('../shared/songTypes').SongType
         lyricsText?: string
       }) => Promise<import('../shared/songTypes').SongMeta>
+      addOnlineSong: (payload: {
+        youtubeId: string
+        title: string
+        artist?: string
+        thumbnailUrl?: string
+        duration?: number
+      }) => Promise<import('../shared/songTypes').SongMeta>
       loadAllSongs: () => Promise<import('../shared/songTypes').SongMeta[]>
       getSongFilePath: (id: string) => Promise<string | null>
       getOriginalSongFilePath: (id: string) => Promise<string | null>
@@ -63,5 +70,11 @@ interface Window {
         meta: import('../shared/songTypes').SongMeta
       }>
     }
+    youtube: {
+      search: (query: string) => Promise<any[]>
+      getStreamUrl: (videoId: string) => Promise<string | null>
+      getSuggestions: (query: string) => Promise<string[]>
+    }
   }
 }
+

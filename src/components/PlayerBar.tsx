@@ -57,10 +57,13 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   const { getSongById, updateSong } = useLibrary();
   const initialVolumes = loadVolumePreferences() ?? { streamVolume: 0.8, headphoneVolume: 1 };
 
-  // Logic to determine display text
   let displayText = currentTrackName || '尚未選擇歌曲';
   let isWaiting = false;
   let nextSongTitle = '';
+  
+  const currentSong = currentSongId ? getSongById(currentSongId) : null;
+  const isStreaming = currentSong?.audio_status === 'streaming';
+  const isControlsDisabled = !currentSongId || isStreaming;
 
   if (playbackMode === 'stream' && isStreamWaiting) {
     isWaiting = true;
@@ -317,6 +320,19 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', height: '20px' }}>
             {currentSongId ? (
               <>
+                {isStreaming && (
+                  <div
+                    title="線上串流 - 未下載前無法使用變調/變速與伴奏分離功能"
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      backgroundColor: 'rgba(68, 102, 170, 0.2)', color: '#88aaff',
+                      fontSize: '10px', fontWeight: 600, padding: '2px 6px',
+                      borderRadius: '4px', border: '1px solid rgba(68, 102, 170, 0.5)'
+                    }}
+                  >
+                    雲端串流
+                  </div>
+                )}
                 <img
                   src={isFavorite(currentSongId) ? FavoritesFilledIcon : FavoritesIcon}
                   alt="Favorite"
@@ -538,13 +554,13 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
         <div style={{ position: 'relative', top: '-4px' }}>
           <button
             onClick={() => { setShowSpeedPopup(!showSpeedPopup); setShowPitchPopup(false); }}
-            title="變速 (Speed)"
+            title={isStreaming ? "變速 (線上串流無法使用)" : "變速 (Speed)"}
             style={{
               background: showSpeedPopup ? '#333' : 'transparent',
               border: 'none',
               borderRadius: '4px',
               color: '#ccc',
-              cursor: !currentSongId ? 'not-allowed' : 'pointer',
+              cursor: isControlsDisabled ? 'not-allowed' : 'pointer',
               width: '48px', // Slightly wider for comfort
               height: '48px',
               display: 'flex',
@@ -553,10 +569,10 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
               justifyContent: 'center',
               fontSize: '12px',
               transition: 'background-color 0.2s',
-              opacity: !currentSongId ? 0.4 : 1,
-              filter: !currentSongId ? 'grayscale(100%)' : 'none',
+              opacity: isControlsDisabled ? 0.4 : 1,
+              filter: isControlsDisabled ? 'grayscale(100%)' : 'none',
             }}
-            disabled={!currentSongId}
+            disabled={isControlsDisabled}
           >
             <img src={SpeedIcon} alt="Speed" style={{ width: '24px', height: '24px', marginBottom: '2px', display: 'block' }} />
             <span style={{ fontSize: '10px', lineHeight: 1 }}>變速</span>
@@ -580,13 +596,13 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
         <div style={{ position: 'relative', top: '-4px' }}>
           <button
             onClick={() => { setShowPitchPopup(!showPitchPopup); setShowSpeedPopup(false); }}
-            title="變調 (Pitch)"
+            title={isStreaming ? "變調 (線上串流無法使用)" : "變調 (Pitch)"}
             style={{
               background: showPitchPopup ? '#333' : 'transparent',
               border: 'none',
               borderRadius: '4px',
               color: '#ccc',
-              cursor: !currentSongId ? 'not-allowed' : 'pointer',
+              cursor: isControlsDisabled ? 'not-allowed' : 'pointer',
               width: '48px',
               height: '48px',
               display: 'flex',
@@ -595,10 +611,10 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
               justifyContent: 'center',
               fontSize: '12px',
               transition: 'background-color 0.2s',
-              opacity: !currentSongId ? 0.4 : 1,
-              filter: !currentSongId ? 'grayscale(100%)' : 'none',
+              opacity: isControlsDisabled ? 0.4 : 1,
+              filter: isControlsDisabled ? 'grayscale(100%)' : 'none',
             }}
-            disabled={!currentSongId}
+            disabled={isControlsDisabled}
           >
             <img src={PitchIcon} alt="Pitch" style={{ width: '24px', height: '24px', marginBottom: '2px', display: 'block' }} />
             <span style={{ fontSize: '10px', lineHeight: 1 }}>變調</span>
