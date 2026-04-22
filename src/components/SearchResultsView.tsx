@@ -197,7 +197,13 @@ const SearchResultsView: React.FC<SearchResultsViewProps> = ({ searchTerm, onOpe
 
                 {/* YouTube Section */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                    <div style={{ 
+                        display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap',
+                        position: 'sticky', top: '-24px', zIndex: 5,
+                        backgroundColor: 'var(--bg-sidebar)',
+                        padding: '16px 24px',
+                        margin: '-16px -24px 0 -24px'
+                    }}>
                         <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#88aaff' }}>YouTube 串流結果</div>
                         
                         <div style={{ flex: 1 }} />
