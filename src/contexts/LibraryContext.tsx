@@ -15,15 +15,20 @@ interface LibraryContextType {
 const LibraryContext = createContext<LibraryContextType | null>(null);
 
 export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [songs, setSongs] = useState<SongMeta[]>([]);
+    const [allSongs, setAllSongs] = useState<SongMeta[]>([]);
     const [loading, setLoading] = useState(false);
     const processedDownloadIds = React.useRef<Set<string>>(new Set());
+
+    // The UI library view only sees non-streaming (local/downloaded) songs
+    const librarySongs = React.useMemo(() => {
+        return allSongs.filter(s => s.audio_status !== 'streaming');
+    }, [allSongs]);
 
     const fetchSongs = useCallback(async () => {
         setLoading(true);
         try {
             const list = await loadAllSongs();
-            setSongs(list);
+            setAllSongs(list);
             console.log('[LibraryContext] Loaded library list', list.length);
         } catch (err) {
             console.error('[LibraryContext] Failed to load songs', err);
@@ -96,8 +101,8 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }, [fetchSongs]);
 
     const getSongById = useCallback((id: string) => {
-        return songs.find((s) => s.id === id);
-    }, [songs]);
+        return allSongs.find((s) => s.id === id);
+    }, [allSongs]);
 
     const deleteSong = useCallback(async (id: string) => {
         if (!window.khelper?.songLibrary?.deleteSong) {
@@ -108,7 +113,7 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
             const success = await window.khelper.songLibrary.deleteSong(id);
             if (success) {
                 // Optimistic update or refresh
-                setSongs(prev => prev.filter(s => s.id !== id));
+                setAllSongs(prev => prev.filter(s => s.id !== id));
                 return true;
             }
             return false;
@@ -126,7 +131,7 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
         try {
             const updated = await window.khelper.songLibrary.updateSong(id, updates);
             if (updated) {
-                setSongs(prev => prev.map(s => s.id === id ? updated : s));
+                setAllSongs(prev => prev.map(s => s.id === id ? updated : s));
             }
         } catch (err) {
             console.error('Failed to update song', err);
@@ -135,7 +140,7 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }, []);
 
     return (
-        <LibraryContext.Provider value={{ songs, loading, refreshSongs: fetchSongs, getSongById, deleteSong, updateSong }}>
+        <LibraryContext.Provider value={{ songs: librarySongs, loading, refreshSongs: fetchSongs, getSongById, deleteSong, updateSong }}>
             {children}
         </LibraryContext.Provider>
     );
