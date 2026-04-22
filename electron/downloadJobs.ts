@@ -2,7 +2,6 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { app } from 'electron';
 import { spawn } from 'node:child_process';
-import yts from 'yt-search';
 import { getSongsBaseDir } from './songLibrary';
 import type { SongMeta, SongType } from '../shared/songTypes';
 
@@ -514,19 +513,68 @@ export const downloadManager = new DownloadJobManager();
 
 // --- YouTube Native IPC Implementations ---
 
+import { Innertube } from 'youtubei.js';
+
+let ytSession: Innertube | null = null;
+let lastSearchData: any = null;
+let searchResultQueue: any[] = [];
+
+function mapYtVideo(v: any) {
+    const viewsMatch = v.view_count?.text?.replace(/\D/g, '');
+    const views = viewsMatch ? parseInt(viewsMatch, 10) : 0;
+    return {
+        videoId: v.id,
+        title: v.title?.text || '',
+        artist: v.author?.name || '',
+        duration: { seconds: v.duration?.seconds || 0, timestamp: v.length_text?.text || '' },
+        thumbnailUrl: v.thumbnails?.[0]?.url || '',
+        views: views,
+        ago: v.published?.text || ''
+    };
+}
+
 export async function searchYouTube(query: string): Promise<any[]> {
     try {
-        const r = await yts(query);
-        const results = r.videos.slice(0, 30).map((v: any) => ({
-            videoId: v.videoId,
-            title: v.title,
-            artist: v.author.name,
-            duration: v.seconds,
-            thumbnailUrl: v.thumbnail
-        }));
-        return results;
+        if (!ytSession) {
+            ytSession = await Innertube.create();
+        }
+        lastSearchData = await ytSession.search(query, { type: 'video' });
+        
+        const allVideos = lastSearchData.videos
+            .filter((v: any) => v.type === 'Video')
+            .map(mapYtVideo);
+
+        const chunk = allVideos.slice(0, 20);
+        searchResultQueue = allVideos.slice(20);
+        
+        return chunk;
     } catch (e) {
-        console.error("yt-search error:", e);
+        console.error("youtubei.js error:", e);
+        return [];
+    }
+}
+
+export async function searchYouTubeMore(): Promise<any[]> {
+    try {
+        if (searchResultQueue.length > 0) {
+            const chunk = searchResultQueue.slice(0, 20);
+            searchResultQueue = searchResultQueue.slice(20);
+            return chunk;
+        }
+
+        if (!lastSearchData || !lastSearchData.has_continuation) return [];
+        lastSearchData = await lastSearchData.getContinuation();
+        
+        const vids = lastSearchData.videos || lastSearchData.items || lastSearchData.contents || [];
+        const allVideos = vids
+            .filter((v: any) => v.type === 'Video')
+            .map(mapYtVideo);
+            
+        const chunk = allVideos.slice(0, 20);
+        searchResultQueue = allVideos.slice(20);
+        return chunk;
+    } catch (e) {
+        console.error("youtubei.js continuation error:", e);
         return [];
     }
 }

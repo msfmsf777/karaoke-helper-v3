@@ -122,6 +122,7 @@ contextBridge.exposeInMainWorld('khelper', {
   },
   youtube: {
     search: (query: string): Promise<any[]> => ipcRenderer.invoke('youtube:search', query),
+    searchMore: (): Promise<any[]> => ipcRenderer.invoke('youtube:search-more'),
     getStreamUrl: (videoId: string): Promise<string | null> => ipcRenderer.invoke('youtube:get-stream-url', videoId),
     getSuggestions: (query: string): Promise<string[]> => ipcRenderer.invoke('youtube:get-suggestions', query),
   },

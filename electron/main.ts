@@ -12,7 +12,7 @@ import {
   deleteSong, updateSong, getSongDirById, addOnlineSong
 } from './songLibrary'
 import { getAllJobs, queueSeparationJob, subscribeJobUpdates } from './separationJobs'
-import { downloadManager, searchYouTube, getYouTubeStreamUrl, getYouTubeSuggestions } from './downloadJobs'
+import { downloadManager, searchYouTube, searchYouTubeMore, getYouTubeStreamUrl, getYouTubeSuggestions } from './downloadJobs'
 import { readRawLyrics, readSyncedLyrics, writeRawLyrics, writeSyncedLyrics } from './lyrics'
 import { loadQueue, saveQueue } from './queue'
 import { enrichLyrics } from './lyricEnrichment'
@@ -794,6 +794,10 @@ ipcMain.handle('downloads:remove', async (_event, id: string) => {
 
 ipcMain.handle('youtube:search', async (_event, query: string) => {
   return searchYouTube(query)
+})
+
+ipcMain.handle('youtube:search-more', async () => {
+  return searchYouTubeMore()
 })
 
 ipcMain.handle('youtube:get-stream-url', async (_event, videoId: string) => {
