@@ -23,9 +23,10 @@ interface NavItemProps {
   onClick: () => void;
   onContextMenu?: (e: React.MouseEvent) => void;
   children: React.ReactNode;
+  badge?: number;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ isActive, onClick, onContextMenu, children }) => {
+const NavItem: React.FC<NavItemProps> = ({ isActive, onClick, onContextMenu, children, badge }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -49,12 +50,27 @@ const NavItem: React.FC<NavItemProps> = ({ isActive, onClick, onContextMenu, chi
       }}
     >
       {children}
+      {typeof badge === 'number' && badge >= 0 && (
+        <span style={{
+          marginLeft: 'auto',
+          padding: '1px 6px',
+          fontSize: '11px',
+          fontWeight: 500,
+          color: badge === 0 ? '#555' : '#888',
+          background: 'rgba(255, 255, 255, 0.06)',
+          borderRadius: '10px',
+          textAlign: 'center',
+          flexShrink: 0,
+        }}>
+          {badge}
+        </span>
+      )}
     </div>
   );
 };
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
-  const { playlists, createPlaylist, renamePlaylist, deletePlaylist } = useUserData();
+  const { playlists, createPlaylist, renamePlaylist, deletePlaylist, favorites, history } = useUserData();
   const { playSongList } = useQueue();
   const [isCreating, setIsCreating] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
@@ -178,11 +194,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
         <div style={{ height: '1px', backgroundColor: '#282828', margin: '16px 8px' }}></div>
 
         <div style={sectionTitleStyle}>我的音樂</div>
-        <NavItem isActive={currentView === 'favorites'} onClick={() => onViewChange('favorites')}>
+        <NavItem isActive={currentView === 'favorites'} onClick={() => onViewChange('favorites')} badge={favorites.length}>
           <img src={FavoritesIcon} alt="Favorites" style={{ width: '20px', height: '20px', marginRight: '12px', flexShrink: 0 }} />
           我的最愛
         </NavItem>
-        <NavItem isActive={currentView === 'history'} onClick={() => onViewChange('history')}>
+        <NavItem isActive={currentView === 'history'} onClick={() => onViewChange('history')} badge={history.length}>
           <img src={HistoryIcon} alt="History" style={{ width: '20px', height: '20px', marginRight: '12px', flexShrink: 0 }} />
           最近播放
         </NavItem>
@@ -326,6 +342,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
               isActive={currentView === `playlist:${playlist.id}`}
               onClick={() => onViewChange(`playlist:${playlist.id}`)}
               onContextMenu={(e) => handleContextMenu(e, playlist.id)}
+              badge={playlist.songIds.length}
             >
               <img src={PlaylistItemIcon} alt="Playlist" style={{ width: '20px', height: '20px', marginRight: '12px', flexShrink: 0 }} />
               <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={playlist.name}>

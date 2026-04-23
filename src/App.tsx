@@ -18,7 +18,7 @@ import SkeletonSongList from './components/skeletons/SkeletonSongList';
 const LyricEditorView = lazy(() => import('./components/LyricEditorView'));
 const StreamModeView = lazy(() => import('./components/StreamModeView'));
 const SettingsView = lazy(() => import('./components/SettingsView'));
-const ProcessingListModal = lazy(() => import('./components/ProcessingListModal'));
+
 const FavoritesView = lazy(() => import('./components/FavoritesView'));
 const HistoryView = lazy(() => import('./components/HistoryView'));
 const PlaylistView = lazy(() => import('./components/PlaylistView'));
@@ -36,7 +36,6 @@ function AppContent() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [showProcessingList, setShowProcessingList] = useState(false);
   const [showQueuePanel, setShowQueuePanel] = useState(false);
   const [showAddSongWizard, setShowAddSongWizard] = useState(false);
   const [showAboutPopup, setShowAboutPopup] = useState(false);
@@ -348,10 +347,10 @@ function AppContent() {
         >
           <TopBar
             onOpenSettings={handleOpenSettings}
-            onOpenProcessing={() => setShowProcessingList(true)}
             onOpenAbout={() => setShowAboutPopup(true)}
             onSearch={(term) => handleViewChange(`search-results:${encodeURIComponent(term)}`)}
             onOpenLyrics={handleOpenLyrics}
+            onNavigate={handleViewChange}
           />
 
           <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
@@ -414,9 +413,7 @@ function AppContent() {
       )}
       <Suspense fallback={null}>
         <MiniPlayerSync />
-        {showProcessingList && (
-          <ProcessingListModal open={showProcessingList} onClose={() => setShowProcessingList(false)} />
-        )}
+
         {showAboutPopup && (
           <AboutPopup open={showAboutPopup} onClose={() => setShowAboutPopup(false)} />
         )}

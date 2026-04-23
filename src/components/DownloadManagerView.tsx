@@ -188,7 +188,7 @@ const DownloadManagerView: React.FC<DownloadManagerViewProps> = ({ onOpenLyrics 
 
             {/* Completed / History Section - Using SongList */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, padding: '0 32px 32px' }}>
-                <h2 style={{ fontSize: '18px', color: '#fff', marginBottom: '16px' }}>已下載</h2>
+                <h2 style={{ fontSize: '18px', color: '#fff', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>已下載 <span style={{ fontSize: '12px', color: '#888', background: '#222', padding: '2px 8px', borderRadius: '12px' }}>{historySongs.length}</span></h2>
 
                 <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
                     <SongList

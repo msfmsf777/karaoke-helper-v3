@@ -278,43 +278,12 @@ class DownloadJobManager {
         lyricsText?: string,
         lyricsLrc?: string
     ) {
-        // 1. Validate & Get Metadata
-        const meta = await this.validateUrl(url);
-        if (!meta) throw new Error('Invalid YouTube URL');
-
-        // 2. Check Duplicates in active jobs
-        const existing = this.jobs.find(j => j.youtubeId === meta.videoId);
-        if (existing) {
-            // Self-healing: If existing job failed, remove it and allow retry
-            if (existing.status === 'failed') {
-                console.log('[DownloadJobs] Found failed duplicate, removing old job for retry', existing.id);
-                this.removeJob(existing.id);
-            } else {
-                throw new Error('Download already exists for this video');
-            }
-        }
-
-        // 3. Check library for duplicates
-        const { loadAllSongs } = await import('./songLibrary');
-        const allSongs = await loadAllSongs();
-        const existingSong = allSongs.find(s =>
-            s.source.kind === 'youtube' && (s.source as any).youtubeId === meta.videoId
-        );
-
-        let targetSongId: string | undefined;
-
-        if (existingSong) {
-            if (existingSong.audio_status === 'streaming') {
-                 targetSongId = existingSong.id;
-            } else {
-                 throw new Error(`Song already exists in library: "${existingSong.title}"`);
-            }
-        }
-
-        const job: DownloadJob = {
-            id: Date.now().toString(),
-            youtubeId: meta.videoId,
-            title: titleOverride || meta.title,
+        // 1. Create preliminary job IMMEDIATELY so UI sees it right away
+        const preliminaryId = Date.now().toString();
+        const preliminaryJob: DownloadJob = {
+            id: preliminaryId,
+            youtubeId: '',
+            title: titleOverride || '正在驗證...',
             artist: artistOverride,
             quality,
             type,
@@ -324,18 +293,66 @@ class DownloadJobManager {
             progress: 0,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            songId: targetSongId
         };
+        this.jobs.unshift(preliminaryJob);
+        this.notify(); // UI sees job instantly as "排隊中..."
 
-        this.jobs.unshift(job);
-        this.notify();
-        this.processQueue();
-        return job;
+        try {
+            // 2. Validate & Get Metadata (5-15s — UI already shows the job)
+            const meta = await this.validateUrl(url);
+            if (!meta) throw new Error('Invalid YouTube URL');
+
+            // 3. Check Duplicates in active jobs
+            const existing = this.jobs.find(j => j.id !== preliminaryId && j.youtubeId === meta.videoId);
+            if (existing) {
+                // Self-healing: If existing job failed, remove it and allow retry
+                if (existing.status === 'failed') {
+                    console.log('[DownloadJobs] Found failed duplicate, removing old job for retry', existing.id);
+                    this.removeJob(existing.id);
+                } else {
+                    throw new Error('Download already exists for this video');
+                }
+            }
+
+            // 4. Check library for duplicates
+            const { loadAllSongs } = await import('./songLibrary');
+            const allSongs = await loadAllSongs();
+            const existingSong = allSongs.find(s =>
+                s.source.kind === 'youtube' && (s.source as any).youtubeId === meta.videoId
+            );
+
+            let targetSongId: string | undefined;
+
+            if (existingSong) {
+                if (existingSong.audio_status === 'streaming') {
+                     targetSongId = existingSong.id;
+                } else {
+                     throw new Error(`Song already exists in library: "${existingSong.title}"`);
+                }
+            }
+
+            // 5. Update preliminary job with validated data
+            this.updateJob(preliminaryId, {
+                youtubeId: meta.videoId,
+                title: titleOverride || meta.title,
+                songId: targetSongId,
+            });
+
+            this.processQueue();
+            return this.jobs.find(j => j.id === preliminaryId)!;
+
+        } catch (err) {
+            // Remove preliminary job and re-throw (preserves caller error contract)
+            this.jobs = this.jobs.filter(j => j.id !== preliminaryId);
+            this.notify();
+            throw err;
+        }
     }
+
 
     private async processQueue() {
         if (this.activeJobId) return;
-        const next = this.jobs.find(j => j.status === 'queued');
+        const next = this.jobs.find(j => j.status === 'queued' && j.youtubeId !== '');
         if (!next) return;
 
         this.activeJobId = next.id;

@@ -9,13 +9,15 @@ import SettingsIcon from '../assets/icons/settings.svg';
 import AboutIcon from '../assets/icons/about.svg';
 import MiniPlayerIcon from '../assets/icons/mini_player.svg';
 import WindowControls from './WindowControls';
+import TaskPaneDropdown from './TaskPaneDropdown';
+import { useTaskCounts } from '../hooks/useTaskCounts';
 
 interface TopBarProps {
   onOpenSettings?: () => void;
-  onOpenProcessing?: () => void;
   onOpenAbout?: () => void;
   onSearch?: (term: string) => void;
   onOpenLyrics?: (song: SongMeta) => void;
+  onNavigate?: (view: string) => void;
 }
 
 import { useUpdater } from '../contexts/UpdaterContext';
@@ -207,7 +209,7 @@ const UpdateIndicator: React.FC = () => {
 };
 
 
-const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpenAbout, onSearch, onOpenLyrics }) => {
+const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenAbout, onSearch, onOpenLyrics, onNavigate }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const { recentSearches, addRecentSearch, clearRecentSearches } = useUserData();
@@ -216,6 +218,10 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [isMiniPlayerOpen, setIsMiniPlayerOpen] = useState(false);
+  const [showTaskPane, setShowTaskPane] = useState(false);
+  const taskPaneRef = useRef<HTMLDivElement>(null);
+  const { activeCount, failedCount, hasFailures, showCompletionCheck, dismissCompletion, badgeJustUpdated } = useTaskCounts();
+  const totalBadge = activeCount + failedCount;
 
   // Context Menu States
   const [contextMenu, setContextMenu] = useState<{ song: SongMeta; position: { x: number; y: number } } | null>(null);
@@ -248,8 +254,17 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
     };
 
     document.addEventListener('mousedown', handleClickOutside);
+    // Close task pane on click outside
+    const handleTaskPaneClickOutside = (event: MouseEvent) => {
+      if (taskPaneRef.current && !taskPaneRef.current.contains(event.target as Node)) {
+        setShowTaskPane(false);
+      }
+    };
+    document.addEventListener('mousedown', handleTaskPaneClickOutside);
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('mousedown', handleTaskPaneClickOutside);
     };
   }, []);
 
@@ -721,27 +736,75 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenProcessing, onOpe
         gap: '8px',
       }}>
         <UpdateIndicator />
-        <button
-          onClick={onOpenProcessing}
-          title="處理中任務"
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: 0.8,
-            transition: 'opacity 0.2s',
-            // @ts-ignore
-            WebkitAppRegion: 'no-drag',
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-          onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
-        >
-          <img src={TasksIcon} alt="Tasks" style={{ width: '24px', height: '24px', display: 'block' }} />
-        </button>
+        <div ref={taskPaneRef} style={{ position: 'relative' }}>
+          <button
+            onClick={() => {
+              setShowTaskPane(prev => {
+                const next = !prev;
+                if (next) dismissCompletion();
+                return next;
+              });
+            }}
+            title="處理中任務"
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              opacity: showTaskPane ? 1 : 0.8,
+              transition: 'opacity 0.2s',
+              position: 'relative',
+              // @ts-ignore
+              WebkitAppRegion: 'no-drag',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+            onMouseLeave={(e) => { if (!showTaskPane) e.currentTarget.style.opacity = '0.8'; }}
+          >
+            <img src={TasksIcon} alt="Tasks" style={{ width: '24px', height: '24px', display: 'block' }} />
+            {(totalBadge > 0 || showCompletionCheck) && (
+              <>
+                <style>{`
+                  @keyframes badgePulse {
+                    0% { transform: scale(1); }
+                    50% { transform: scale(1.25); }
+                    100% { transform: scale(1); }
+                  }
+                `}</style>
+                <span style={{
+                  position: 'absolute',
+                  top: '4px',
+                  right: '3px',
+                  minWidth: '12px',
+                  height: '12px',
+                  borderRadius: '6px',
+                  background: hasFailures ? '#ff5555' : showCompletionCheck ? '#8be28b' : '#e0a040',
+                  color: '#fff',
+                  fontSize: '8px',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0 2px',
+                  lineHeight: 1,
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
+                  animation: badgeJustUpdated ? 'badgePulse 0.3s ease' : 'none',
+                  pointerEvents: 'none',
+                }}>
+                  {showCompletionCheck ? '✓' : (hasFailures ? totalBadge : activeCount)}
+                </span>
+              </>
+            )}
+          </button>
+          {showTaskPane && (
+            <TaskPaneDropdown
+              onClose={() => setShowTaskPane(false)}
+              onNavigate={onNavigate}
+            />
+          )}
+        </div>
         <button
           onClick={onOpenSettings}
           title="設定"
