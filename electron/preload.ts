@@ -91,6 +91,9 @@ contextBridge.exposeInMainWorld('khelper', {
     queueSeparationJob: (songId: string, quality?: 'high' | 'normal' | 'fast'): Promise<SeparationJob> =>
       ipcRenderer.invoke('jobs:queue-separation', songId, quality),
     getAllJobs: (): Promise<SeparationJob[]> => ipcRenderer.invoke('jobs:get-all'),
+    cancelJob: (jobId: string): Promise<void> => ipcRenderer.invoke('jobs:cancel', jobId),
+    retryJob: (jobId: string): Promise<void> => ipcRenderer.invoke('jobs:retry', jobId),
+    removeJob: (jobId: string): Promise<void> => ipcRenderer.invoke('jobs:remove', jobId),
     subscribeJobUpdates: (callback: (jobs: SeparationJob[]) => void) => {
       const listener = (_event: Electron.IpcRendererEvent, jobs: SeparationJob[]) => callback(jobs)
       const subscriptionId = `jobs-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`

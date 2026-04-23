@@ -56,6 +56,9 @@ interface Window {
     jobs: {
       queueSeparationJob: (songId: string, quality?: 'high' | 'normal' | 'fast') => Promise<import('../shared/separationTypes').SeparationJob>;
       getAllJobs: () => Promise<import('../shared/separationTypes').SeparationJob[]>;
+      cancelJob: (jobId: string) => Promise<void>;
+      retryJob: (jobId: string) => Promise<void>;
+      removeJob: (jobId: string) => Promise<void>;
       subscribeJobUpdates: (
         callback: (jobs: import('../shared/separationTypes').SeparationJob[]) => void
       ) => () => void;

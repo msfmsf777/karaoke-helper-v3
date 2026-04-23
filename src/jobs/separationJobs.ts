@@ -20,4 +20,19 @@ export function subscribeJobUpdates(callback: (jobs: SeparationJob[]) => void): 
   return getApi().subscribeJobUpdates(callback);
 }
 
+export async function cancelSeparationJob(jobId: string): Promise<void> {
+  await getApi().cancelJob(jobId);
+  console.log('[Jobs] Cancelled separation job', jobId);
+}
+
+export async function retrySeparationJob(jobId: string): Promise<void> {
+  await getApi().retryJob(jobId);
+  console.log('[Jobs] Retried separation job', jobId);
+}
+
+export async function removeSeparationJob(jobId: string): Promise<void> {
+  await getApi().removeJob(jobId);
+  console.log('[Jobs] Removed separation job', jobId);
+}
+
 export type { SeparationJob };

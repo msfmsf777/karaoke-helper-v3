@@ -11,7 +11,7 @@ import {
   getSongFilePath, getSongsBaseDir, loadAllSongs,
   deleteSong, updateSong, getSongDirById, addOnlineSong
 } from './songLibrary'
-import { getAllJobs, queueSeparationJob, subscribeJobUpdates } from './separationJobs'
+import { getAllJobs, queueSeparationJob, subscribeJobUpdates, cancelSeparationJob, retrySeparationJob, removeSeparationJob, killActiveSeparation } from './separationJobs'
 import { downloadManager, searchYouTube, searchYouTubeMore, getYouTubeStreamUrl, getYouTubeSuggestions } from './downloadJobs'
 import { readRawLyrics, readSyncedLyrics, writeRawLyrics, writeSyncedLyrics } from './lyrics'
 import { loadQueue, saveQueue } from './queue'
@@ -580,6 +580,10 @@ app.on('window-all-closed', () => {
   } */
 })
 
+app.on('before-quit', () => {
+  killActiveSeparation()
+})
+
 
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
@@ -670,6 +674,18 @@ ipcMain.handle('jobs:queue-separation', async (_event, songId: string, quality?:
 
 ipcMain.handle('jobs:get-all', async () => {
   return getAllJobs()
+})
+
+ipcMain.handle('jobs:cancel', async (_event, jobId: string) => {
+  return cancelSeparationJob(jobId)
+})
+
+ipcMain.handle('jobs:retry', async (_event, jobId: string) => {
+  return retrySeparationJob(jobId)
+})
+
+ipcMain.handle('jobs:remove', async (_event, jobId: string) => {
+  return removeSeparationJob(jobId)
 })
 
 ipcMain.handle('lyrics:read-raw', async (_event, songId: string) => {

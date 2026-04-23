@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import type { SeparationJob } from '../jobs/separationJobs';
-import { getAllJobs, subscribeJobUpdates } from '../jobs/separationJobs';
+import { getAllJobs, subscribeJobUpdates, cancelSeparationJob, retrySeparationJob, removeSeparationJob } from '../jobs/separationJobs';
 import { loadAllSongs, SongMeta } from '../library/songLibrary';
 import { DownloadJob } from '../../shared/songTypes';
 
@@ -200,7 +200,26 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
   }, [dlJobs]);
 
   const hasDownloadSection = activeDownloads.length > 0 || failedDownloads.length > 0 || recentlyCompleted.length > 0;
-  const isEmpty = sepJobs.length === 0 && !hasDownloadSection;
+
+  // Separation: recently completed (30-min window, max 5)
+  const activeSepJobs = useMemo(() =>
+    sepJobs.filter(j => j.status === 'queued' || j.status === 'running'),
+    [sepJobs]
+  );
+  const failedSepJobs = useMemo(() =>
+    sepJobs.filter(j => j.status === 'failed'),
+    [sepJobs]
+  );
+  const recentlyCompletedSep = useMemo(() => {
+    const thirtyMinAgo = Date.now() - 30 * 60 * 1000;
+    return sepJobs
+      .filter(j => j.status === 'succeeded' && new Date(j.updatedAt).getTime() > thirtyMinAgo)
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      .slice(0, 5);
+  }, [sepJobs]);
+  const hasSepSection = activeSepJobs.length > 0 || failedSepJobs.length > 0 || recentlyCompletedSep.length > 0;
+
+  const isEmpty = !hasSepSection && !hasDownloadSection;
 
   const getSongName = (songId: string) => {
     const song = songs[songId];
@@ -421,7 +440,7 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
         )}
 
         {/* ── Separation Jobs Section ───────────────────────── */}
-        {sepJobs.length > 0 && (
+        {hasSepSection && (
           <div>
             <div style={{
               padding: '10px 16px 6px',
@@ -433,16 +452,19 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
               gap: '6px',
             }}>
               歌曲分離
-              <span style={{
-                fontSize: '11px',
-                color: '#888',
-                background: '#282828',
-                padding: '1px 6px',
-                borderRadius: '8px',
-              }}>{sepJobs.length}</span>
+              {activeSepJobs.length > 0 && (
+                <span style={{
+                  fontSize: '11px',
+                  color: '#888',
+                  background: '#282828',
+                  padding: '1px 6px',
+                  borderRadius: '8px',
+                }}>{activeSepJobs.length}</span>
+              )}
             </div>
 
-            {sepJobs.map((job, idx) => (
+            {/* Active + Failed separation jobs */}
+            {[...activeSepJobs, ...failedSepJobs].map((job, idx) => (
               <div key={job.id} style={{
                 padding: '8px 16px',
                 borderTop: '1px solid #252525',
@@ -485,9 +507,67 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
                   </div>
                 </div>
 
-                {/* Quality badge */}
-                <div style={{ fontSize: '11px', color: '#666', marginTop: '2px' }}>
-                  {job.quality === 'high' ? 'HQ' : job.quality === 'fast' ? '快速' : '標準'}
+                {/* Quality badge + action buttons */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
+                  <div style={{ fontSize: '11px', color: '#666' }}>
+                    {job.quality === 'high' ? 'HQ' : job.quality === 'fast' ? '快速' : '標準'}
+                  </div>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    {/* Cancel button for queued/running */}
+                    {(job.status === 'queued' || job.status === 'running') && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); cancelSeparationJob(job.id); }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#ff8888',
+                          cursor: 'pointer',
+                          fontSize: '11px',
+                          padding: '1px 6px',
+                          borderRadius: '4px',
+                          transition: 'background 0.15s',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,80,80,0.1)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                      >取消</button>
+                    )}
+                    {/* Retry button for failed */}
+                    {job.status === 'failed' && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); retrySeparationJob(job.id); }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#e0a040',
+                          cursor: 'pointer',
+                          fontSize: '11px',
+                          padding: '1px 6px',
+                          borderRadius: '4px',
+                          transition: 'background 0.15s',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(224,160,64,0.1)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                      >重試</button>
+                    )}
+                    {/* Remove button for failed */}
+                    {job.status === 'failed' && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); removeSeparationJob(job.id); }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#888',
+                          cursor: 'pointer',
+                          fontSize: '11px',
+                          padding: '1px 6px',
+                          borderRadius: '4px',
+                          transition: 'background 0.15s',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                      >移除</button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Progress bar for running */}
@@ -499,6 +579,57 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
                 {job.status === 'failed' && job.errorMessage && (
                   <ErrorBlock message={job.errorMessage} defaultExpanded={idx === 0} />
                 )}
+              </div>
+            ))}
+
+            {/* Recently completed separations */}
+            {recentlyCompletedSep.map(job => (
+              <div key={job.id} style={{ padding: '8px 16px', borderTop: '1px solid #252525' }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}>
+                  <div style={{
+                    fontSize: '13px',
+                    color: '#aaa',
+                    fontWeight: 500,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    flex: 1,
+                    minWidth: 0,
+                  }}>
+                    {getSongName(job.songId)}
+                  </div>
+                  <div style={{
+                    fontSize: '11px',
+                    color: '#8be28b',
+                    marginLeft: '8px',
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#8be28b', display: 'inline-block' }} />
+                    已完成
+                    <button
+                      onClick={(e) => { e.stopPropagation(); removeSeparationJob(job.id); }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#666',
+                        cursor: 'pointer',
+                        fontSize: '11px',
+                        padding: '0 2px',
+                        marginLeft: '2px',
+                      }}
+                    >×</button>
+                  </div>
+                </div>
+                <div style={{ fontSize: '11px', color: '#555', marginTop: '2px' }}>
+                  {job.quality === 'high' ? 'HQ' : job.quality === 'fast' ? '快速' : '標準'}
+                </div>
               </div>
             ))}
           </div>
