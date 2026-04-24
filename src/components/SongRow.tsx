@@ -2,12 +2,17 @@ import React, { useState } from 'react';
 import { SongMeta } from '../../shared/songTypes';
 import { useQueue } from '../contexts/QueueContext';
 import { useUserData } from '../contexts/UserDataContext';
+import { useLibrary } from '../contexts/LibraryContext';
+import { useDownloadJobs } from '../hooks/useDownloadJobs';
 import SongContextMenu from './SongContextMenu';
+import OnlineSongContextMenu from './OnlineSongContextMenu';
 import AddToPlaylistMenu from './AddToPlaylistMenu';
+import YouTubeDownloadControl from './YouTubeDownloadControl';
 import FavoritesIcon from '../assets/icons/favorites.svg';
 import FavoritesFilledIcon from '../assets/icons/favorites_filled.svg';
 import AddIcon from '../assets/icons/add.svg';
 import MoreIcon from '../assets/icons/more.svg';
+import { getDownloadState, getSongYoutubeId } from '../utils/onlineSongs';
 
 interface SongRowProps {
     song: SongMeta;
@@ -23,6 +28,7 @@ interface SongRowProps {
 }
 
 const audioStatusLabels: Record<SongMeta['audio_status'], string> = {
+    streaming: '線上',
     original_only: '未分離',
     separation_pending: '等待分離',
     separating: '分離中',
@@ -65,9 +71,13 @@ const SongRow: React.FC<SongRowProps> = ({
 }) => {
     const { playImmediate } = useQueue();
     const { isFavorite, toggleFavorite } = useUserData();
+    const { allSongs, refreshSongs } = useLibrary();
+    const downloadJobs = useDownloadJobs();
     const [isHovered, setIsHovered] = useState(false);
     const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
     const [showAddToPlaylistMenu, setShowAddToPlaylistMenu] = useState<{ x: number; y: number } | null>(null);
+    const isStreaming = song.audio_status === 'streaming';
+    const youtubeId = getSongYoutubeId(song);
 
     const handleDoubleClick = () => {
         playImmediate(song.id);
@@ -208,13 +218,20 @@ const SongRow: React.FC<SongRowProps> = ({
 
                 {/* Type */}
                 <div style={{ color: '#b3b3b3', fontSize: '13px', textAlign: 'center' }}>
-                    {showType && song.type}
+                    {showType && (isStreaming ? '-' : song.type)}
                 </div>
 
                 {/* Audio Status */}
                 <div style={{ color: audioColor, fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} title={song.last_separation_error || undefined}>
                     {showAudioStatus && (
-                        song.type === '伴奏' ? (
+                        isStreaming && youtubeId ? (
+                            <YouTubeDownloadControl
+                                target={{ youtubeId, title: song.title, artist: song.artist }}
+                                state={getDownloadState(allSongs, downloadJobs, youtubeId)}
+                                variant="status"
+                                onQueued={refreshSongs}
+                            />
+                        ) : song.type === '伴奏' ? (
                             <span>-</span>
                         ) : (
                             <>
@@ -287,12 +304,22 @@ const SongRow: React.FC<SongRowProps> = ({
             </div>
 
             {contextMenuPosition && (
-                <SongContextMenu
-                    song={song}
-                    position={contextMenuPosition}
-                    onClose={() => setContextMenuPosition(null)}
-                    onEditLyrics={onEditLyrics}
-                />
+                isStreaming ? (
+                    <OnlineSongContextMenu
+                        song={song}
+                        position={contextMenuPosition}
+                        onClose={() => setContextMenuPosition(null)}
+                        onEditLyrics={onEditLyrics}
+                        onDownloadQueued={refreshSongs}
+                    />
+                ) : (
+                    <SongContextMenu
+                        song={song}
+                        position={contextMenuPosition}
+                        onClose={() => setContextMenuPosition(null)}
+                        onEditLyrics={onEditLyrics}
+                    />
+                )
             )}
 
             {showAddToPlaylistMenu && (

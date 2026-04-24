@@ -29,6 +29,7 @@ import SongContextMenu from './SongContextMenu';
 import AddToPlaylistMenu from './AddToPlaylistMenu';
 import AddIcon from '../assets/icons/add.svg';
 import MoreIcon from '../assets/icons/more.svg';
+import { getYtDurationSeconds } from '../utils/onlineSongs';
 
 // Search Result Item Component
 const SearchResultItem: React.FC<{
@@ -365,7 +366,7 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenAbout, onSearch, 
               title: yt.title,
               artist: yt.artist,
               thumbnailUrl: yt.thumbnailUrl,
-              duration: yt.duration
+              duration: getYtDurationSeconds(yt)
           });
           if (meta) {
               // Same as local song: add to queue directly and play

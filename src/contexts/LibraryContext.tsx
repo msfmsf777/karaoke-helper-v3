@@ -5,9 +5,11 @@ import { DownloadJob } from '../../shared/songTypes';
 
 interface LibraryContextType {
     songs: SongMeta[];
+    allSongs: SongMeta[];
     loading: boolean;
     refreshSongs: () => Promise<void>;
     getSongById: (id: string) => SongMeta | undefined;
+    findSongByYoutubeId: (youtubeId: string) => SongMeta | undefined;
     deleteSong: (id: string) => Promise<boolean>;
     updateSong: (id: string, updates: Partial<SongMeta>) => Promise<void>;
 }
@@ -108,6 +110,10 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return allSongs.find((s) => s.id === id);
     }, [allSongs]);
 
+    const findSongByYoutubeId = useCallback((youtubeId: string) => {
+        return allSongs.find((s) => s.source.kind === 'youtube' && s.source.youtubeId === youtubeId);
+    }, [allSongs]);
+
     const deleteSong = useCallback(async (id: string) => {
         if (!window.khelper?.songLibrary?.deleteSong) {
             console.error('deleteSong API not available');
@@ -144,7 +150,7 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }, []);
 
     return (
-        <LibraryContext.Provider value={{ songs: librarySongs, loading, refreshSongs: fetchSongs, getSongById, deleteSong, updateSong }}>
+        <LibraryContext.Provider value={{ songs: librarySongs, allSongs, loading, refreshSongs: fetchSongs, getSongById, findSongByYoutubeId, deleteSong, updateSong }}>
             {children}
         </LibraryContext.Provider>
     );

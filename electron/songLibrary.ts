@@ -215,6 +215,13 @@ export async function addOnlineSong(params: {
     return existing;
   }
 
+  const existingByYoutubeId = (await loadAllSongs()).find(song =>
+    song.source.kind === 'youtube' && song.source.youtubeId === youtubeId
+  );
+  if (existingByYoutubeId) {
+    return existingByYoutubeId;
+  }
+
   const songsDir = await ensureSongsDir();
   const songDir = path.join(songsDir, id);
   await fs.mkdir(songDir, { recursive: true });

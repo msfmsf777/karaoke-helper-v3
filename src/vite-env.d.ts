@@ -38,20 +38,27 @@ interface Window {
         lyricsText?: string;
         lyricsLrc?: string;
       }) => Promise<import('../shared/songTypes').SongMeta>;
+      addOnlineSong: (payload: {
+        youtubeId: string;
+        title: string;
+        artist?: string;
+        thumbnailUrl?: string;
+        duration?: number;
+      }) => Promise<import('../shared/songTypes').SongMeta>;
       loadAllSongs: () => Promise<import('../shared/songTypes').SongMeta[]>;
       getSongFilePath: (id: string) => Promise<string | null>;
       getOriginalSongFilePath: (id: string) => Promise<string | null>;
       getSeparatedSongPaths: (id: string) => Promise<{ instrumental: string; vocal: string | null }>;
-      youtube: {
-        search: (query: string) => Promise<any[]>;
-        searchMore: () => Promise<any[]>;
-        getStreamUrl: (videoId: string) => Promise<string | null>;
-        getSuggestions: (query: string) => Promise<string[]>;
-      };
       openSongFolder: (id: string) => Promise<void>;
       getBasePath: () => Promise<string>;
       deleteSong: (id: string) => Promise<boolean>;
       updateSong: (id: string, updates: Partial<import('../shared/songTypes').SongMeta>) => Promise<import('../shared/songTypes').SongMeta | null>;
+    };
+    youtube: {
+      search: (query: string) => Promise<any[]>;
+      searchMore: () => Promise<any[]>;
+      getStreamUrl: (videoId: string) => Promise<string | null>;
+      getSuggestions: (query: string) => Promise<string[]>;
     };
     jobs: {
       queueSeparationJob: (songId: string, quality?: 'high' | 'normal' | 'fast') => Promise<import('../shared/separationTypes').SeparationJob>;

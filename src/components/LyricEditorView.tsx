@@ -62,6 +62,7 @@ const formatDisplayTime = (seconds: number | null) => {
 };
 
 const audioStatusLabels: Record<SongMeta['audio_status'], string> = {
+    streaming: '線上',
     original_only: '未分離',
     separation_pending: '等待分離',
     separating: '分離中',

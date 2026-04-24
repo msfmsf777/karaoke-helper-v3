@@ -171,6 +171,10 @@ class AudioPlayer {
     }
   }
 
+  get outputRole() {
+    return this.role;
+  }
+
   async loadBuffers(instrBuffer: AudioBuffer | null, vocalBuffer: AudioBuffer | null) {
     if (!this.isReady || !this.workletNode) await this.initWorklet();
     if (this.audioContext.state === 'suspended') await this.audioContext.resume();
@@ -300,6 +304,7 @@ export class NativeAudioPlayer {
   get isPlaying() { return !this.el.paused; }
   get volume() { return this.el.volume; }
   get sampleRate() { return 44100; } // Fallback sample rate for native
+  get outputRole() { return this.role; }
   dispose() { this.stop(); this.el.src = ''; }
 }
 
