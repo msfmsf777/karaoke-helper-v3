@@ -183,7 +183,7 @@ const YouTubeSearchRow: React.FC<YouTubeRowProps> = ({
 
 const SearchResultsView: React.FC<SearchResultsViewProps> = ({ searchTerm, onOpenLyrics }) => {
     const { songs, allSongs, refreshSongs } = useLibrary();
-    const { playSongList, currentSongId } = useQueue();
+    const { playAtFront, currentSongId } = useQueue();
     const { toggleFavorite } = useUserData();
     const downloadJobs = useDownloadJobs();
     const [ytResults, setYtResults] = useState<YouTubeResultLike[]>([]);
@@ -307,7 +307,7 @@ const SearchResultsView: React.FC<SearchResultsViewProps> = ({ searchTerm, onOpe
     const handlePlayYt = async (yt: YouTubeResultLike) => {
         const meta = await getExistingOrEnsure(yt);
         if (meta) {
-            playSongList([meta.id]);
+            playAtFront(meta.id);
         }
     };
 

@@ -8,6 +8,7 @@ import TasksIcon from '../assets/icons/tasks.svg';
 import SettingsIcon from '../assets/icons/settings.svg';
 import AboutIcon from '../assets/icons/about.svg';
 import MiniPlayerIcon from '../assets/icons/mini_player.svg';
+import HistoryIcon from '../assets/icons/history.svg';
 import WindowControls from './WindowControls';
 import TaskPaneDropdown from './TaskPaneDropdown';
 import { useTaskCounts } from '../hooks/useTaskCounts';
@@ -214,8 +215,8 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenAbout, onSearch, 
   const [searchTerm, setSearchTerm] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const { recentSearches, addRecentSearch, clearRecentSearches } = useUserData();
-  const { songs } = useLibrary();
-  const { playSongList, currentSongId } = useQueue();
+  const { songs, refreshSongs } = useLibrary();
+  const { playSongList, playAtFront, currentSongId } = useQueue();
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [isMiniPlayerOpen, setIsMiniPlayerOpen] = useState(false);
@@ -369,8 +370,8 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenAbout, onSearch, 
               duration: getYtDurationSeconds(yt)
           });
           if (meta) {
-              // Same as local song: add to queue directly and play
-              playSongList([meta.id]);
+              await refreshSongs();
+              playAtFront(meta.id);
               addRecentSearch(searchTerm);
               setSearchTerm('');
               setIsFocused(false);
@@ -544,7 +545,7 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenAbout, onSearch, 
                         onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#3e3e3e'}
                         onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                       >
-                        <span style={{ color: '#aaa' }}>🕒</span>
+                        <img src={HistoryIcon} alt="" style={{ width: '14px', height: '14px', opacity: 0.72, display: 'block' }} />
                         {term}
                       </div>
                     ))

@@ -19,6 +19,7 @@ interface QueueContextType {
     moveQueueItem: (fromIndex: number, toIndex: number) => void;
     playSongList: (songIds: string[]) => void;
     playImmediate: (songId: string) => void;
+    playAtFront: (songId: string) => void;
     loadImmediate: (songId: string) => void;
     clearQueue: () => void;
     replaceQueue: (songIds: string[]) => void;
@@ -409,6 +410,16 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
     }, [queue, currentIndex]);
 
+    const playAtFront = useCallback(async (songId: string) => {
+        await audioEngine.stop();
+        shouldAutoPlay.current = true;
+        lastPlayedIndex.current = -1;
+        lastPlayedSongId.current = null;
+        setIsStreamWaiting(false);
+        setQueue((prev) => [songId, ...prev.filter(id => id !== songId)]);
+        setCurrentIndex(0);
+    }, []);
+
     const loadImmediate = useCallback(async (songId: string) => {
         // Stop any currently playing song first
         await audioEngine.stop();
@@ -497,6 +508,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 moveQueueItem,
                 playSongList,
                 playImmediate,
+                playAtFront,
                 loadImmediate,
                 clearQueue,
                 replaceQueue,
