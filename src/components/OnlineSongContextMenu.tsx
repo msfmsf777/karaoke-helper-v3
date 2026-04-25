@@ -5,7 +5,7 @@ import { useQueue } from '../contexts/QueueContext';
 import { useUserData } from '../contexts/UserDataContext';
 import AddToPlaylistMenu from './AddToPlaylistMenu';
 import type { YouTubeDownloadTarget } from './YouTubeDownloadControl';
-import { queueYouTubeDownload, youtubeIdToUrl } from '../utils/onlineSongs';
+import { DownloadState, queueYouTubeDownload, youtubeIdToUrl } from '../utils/onlineSongs';
 
 import PlayMenuIcon from '../assets/icons/play_menu.svg';
 import QueueAddIcon from '../assets/icons/queue_add.svg';
@@ -14,8 +14,9 @@ import FavoritesFilledIcon from '../assets/icons/favorites_filled.svg';
 import PlaylistItemIcon from '../assets/icons/playlist_item.svg';
 import LyricsIcon from '../assets/icons/lyrics.svg';
 import DownloadIcon from '../assets/icons/download.svg';
+import SeparateIcon from '../assets/icons/separate.svg';
 import LinkIcon from '../assets/icons/link.svg';
-import OpenIcon from '../assets/icons/open.png';
+import OpenExternalIcon from '../assets/icons/open_external.svg';
 
 interface OnlineSongContextMenuProps {
     song: SongMeta;
@@ -24,6 +25,7 @@ interface OnlineSongContextMenuProps {
     onEditLyrics?: (song: SongMeta) => void;
     onDownloadQueued?: () => void;
     onCustomDownload: (target: YouTubeDownloadTarget) => void;
+    downloadState?: DownloadState;
 }
 
 const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
@@ -33,6 +35,7 @@ const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
     onEditLyrics,
     onDownloadQueued,
     onCustomDownload,
+    downloadState = { kind: 'none' },
 }) => {
     const menuRef = useRef<HTMLDivElement>(null);
     const playlistItemRef = useRef<HTMLDivElement>(null);
@@ -40,7 +43,7 @@ const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
     const { playImmediate, addToQueue } = useQueue();
     const { isFavorite, toggleFavorite } = useUserData();
     const [adjustedPosition, setAdjustedPosition] = useState(position);
-    const [activeSubmenu, setActiveSubmenu] = useState<'playlist' | 'download' | null>(null);
+    const [activeSubmenu, setActiveSubmenu] = useState<'playlist' | 'download' | 'separation' | null>(null);
     const [playlistMenuPosition, setPlaylistMenuPosition] = useState({ x: 0, y: 0 });
 
     const youtubeId = song.source.kind === 'youtube' ? song.source.youtubeId : '';
@@ -50,6 +53,9 @@ const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
         title: song.title,
         artist: song.artist,
     };
+    const isDownloaded = downloadState.kind === 'downloaded' || song.audio_status !== 'streaming';
+    const isDownloading = downloadState.kind === 'active';
+    const canSeparate = isDownloaded && song.type === '原曲';
 
     useLayoutEffect(() => {
         if (!menuRef.current) return;
@@ -114,6 +120,13 @@ const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
         onClose();
     };
 
+    const getActiveDownloadLabel = () => {
+        if (downloadState.kind !== 'active') return '';
+        if (downloadState.job.status === 'queued') return '佇列中';
+        if (downloadState.job.status === 'processing') return '處理中';
+        return `下載中 ${Math.round(downloadState.job.progress || 0)}%`;
+    };
+
     return createPortal(
         <>
             <div
@@ -176,40 +189,120 @@ const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
 
                 <div style={separatorStyle} />
 
-                <div
-                    ref={downloadItemRef}
-                    style={itemStyle}
-                    onMouseEnter={(e) => {
-                        hoverIn(e);
-                        setActiveSubmenu('download');
-                    }}
-                    onMouseLeave={hoverOut}
-                >
-                    <img src={DownloadIcon} alt="" style={iconStyle} />
-                    <span style={{ flex: 1 }}>下載...</span>
-                    <span style={{ fontSize: '10px', opacity: 0.5 }}>▶</span>
-                    {activeSubmenu === 'download' && (
-                        <div
-                            style={{
-                                position: 'absolute',
-                                left: '100%',
-                                top: -4,
-                                backgroundColor: '#2d2d2d',
-                                border: '1px solid #3a3a3a',
-                                borderRadius: '8px',
-                                padding: '6px 0',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                                minWidth: '150px',
-                                marginLeft: '4px',
-                                zIndex: 10001,
-                            }}
-                        >
-                            <div style={itemStyle} onClick={() => queueDownload('原曲')} onMouseOver={hoverIn} onMouseOut={hoverOut}>下載為原曲</div>
-                            <div style={itemStyle} onClick={() => queueDownload('伴奏')} onMouseOver={hoverIn} onMouseOut={hoverOut}>下載為伴奏</div>
-                            <div style={itemStyle} onClick={openCustomDownload} onMouseOver={hoverIn} onMouseOut={hoverOut}>自訂下載...</div>
-                        </div>
-                    )}
-                </div>
+                {isDownloading ? (
+                    <div style={{ ...itemStyle, color: '#777', cursor: 'not-allowed' }}>
+                        <img src={DownloadIcon} alt="" style={{ ...iconStyle, opacity: 0.35 }} />
+                        <span style={{ flex: 1 }}>{getActiveDownloadLabel()}</span>
+                    </div>
+                ) : isDownloaded ? (
+                    canSeparate && (() => {
+                        const isSeparated = song.audio_status === 'separated';
+                        const isSeparating = song.audio_status === 'separating' || song.audio_status === 'separation_pending';
+                        const qualityValue = { fast: 1, normal: 2, high: 3 };
+                        const currentQuality = song.separation_quality;
+                        const currentVal = currentQuality ? qualityValue[currentQuality] : 0;
+
+                        if (isSeparating || (isSeparated && currentVal === 3)) return null;
+
+                        return (
+                            <div
+                                style={itemStyle}
+                                onMouseEnter={(e) => {
+                                    hoverIn(e);
+                                    setActiveSubmenu('separation');
+                                }}
+                                onMouseLeave={hoverOut}
+                            >
+                                <img src={SeparateIcon} alt="" style={iconStyle} />
+                                <span style={{ flex: 1 }}>{isSeparated ? '重新分離' : '開始分離'}</span>
+                                <span style={{ fontSize: '10px', opacity: 0.5 }}>▶</span>
+                                {activeSubmenu === 'separation' && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        left: '100%',
+                                        top: -4,
+                                        backgroundColor: '#2d2d2d',
+                                        border: '1px solid #3a3a3a',
+                                        borderRadius: '8px',
+                                        padding: '6px 0',
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                                        minWidth: '160px',
+                                        marginLeft: '4px',
+                                        zIndex: 10001,
+                                    }}>
+                                        {[
+                                            { id: 'fast', label: '快速 (Fast)', val: 1 },
+                                            { id: 'normal', label: '標準 (Normal)', val: 2 },
+                                            { id: 'high', label: '高品質 (High)', val: 3 },
+                                        ].map((option) => {
+                                            const isDisabled = isSeparated && option.val <= currentVal;
+                                            return (
+                                                <div
+                                                    key={option.id}
+                                                    onClick={async (e) => {
+                                                        e.stopPropagation();
+                                                        if (isDisabled) return;
+                                                        try {
+                                                            const { queueSeparationJob } = await import('../jobs/separationJobs');
+                                                            await queueSeparationJob(song.id, option.id as 'high' | 'normal' | 'fast');
+                                                            onClose();
+                                                        } catch (err) {
+                                                            console.error('Failed to queue separation', err);
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        ...itemStyle,
+                                                        color: isDisabled ? '#666' : '#fff',
+                                                        cursor: isDisabled ? 'not-allowed' : 'pointer',
+                                                    }}
+                                                    onMouseOver={(e) => !isDisabled && (e.currentTarget.style.backgroundColor = '#3d3d3d')}
+                                                    onMouseOut={(e) => !isDisabled && (e.currentTarget.style.backgroundColor = 'transparent')}
+                                                >
+                                                    {option.label}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })()
+                ) : (
+                    <div
+                        ref={downloadItemRef}
+                        style={itemStyle}
+                        onMouseEnter={(e) => {
+                            hoverIn(e);
+                            setActiveSubmenu('download');
+                        }}
+                        onMouseLeave={hoverOut}
+                    >
+                        <img src={DownloadIcon} alt="" style={iconStyle} />
+                        <span style={{ flex: 1 }}>下載...</span>
+                        <span style={{ fontSize: '10px', opacity: 0.5 }}>▶</span>
+                        {activeSubmenu === 'download' && (
+                            <div
+                                style={{
+                                    position: 'absolute',
+                                    left: '100%',
+                                    top: -4,
+                                    backgroundColor: '#2d2d2d',
+                                    border: '1px solid #3a3a3a',
+                                    borderRadius: '8px',
+                                    padding: '6px 0',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                                    minWidth: '150px',
+                                    marginLeft: '4px',
+                                    zIndex: 10001,
+                                }}
+                            >
+                                <div style={itemStyle} onClick={() => queueDownload('原曲')} onMouseOver={hoverIn} onMouseOut={hoverOut}>下載為原曲</div>
+                                <div style={itemStyle} onClick={() => queueDownload('伴奏')} onMouseOver={hoverIn} onMouseOut={hoverOut}>下載為伴奏</div>
+                                <div style={itemStyle} onClick={openCustomDownload} onMouseOver={hoverIn} onMouseOut={hoverOut}>自訂下載...</div>
+                            </div>
+                        )}
+                    </div>
+                )}
                 <div style={itemStyle} onClick={() => { onEditLyrics?.(song); onClose(); }} onMouseOver={hoverIn} onMouseOut={hoverOut}>
                     <img src={LyricsIcon} alt="" style={iconStyle} />
                     <span>編輯歌詞</span>
@@ -249,7 +342,7 @@ const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
                             height: '22px',
                         }}
                     >
-                        <img src={OpenIcon} alt="" style={{ width: '14px', height: '14px', display: 'block' }} />
+                        <img src={OpenExternalIcon} alt="" style={{ width: '14px', height: '14px', display: 'block' }} />
                     </button>
                 </div>
             </div>

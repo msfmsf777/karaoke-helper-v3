@@ -196,7 +196,7 @@ const SearchResultsView: React.FC<SearchResultsViewProps> = ({ searchTerm, onOpe
     const [durationFilter, setDurationFilter] = useState<DurationFilter>('any');
     const [dateFilter, setDateFilter] = useState<DateFilter>('any');
     const [sortFilter, setSortFilter] = useState<SortFilter>('relevance');
-    const [contextMenu, setContextMenu] = useState<{ song: SongMeta; position: { x: number; y: number } } | null>(null);
+    const [contextMenu, setContextMenu] = useState<{ song: SongMeta; position: { x: number; y: number }; downloadState: DownloadState } | null>(null);
     const [addToPlaylistMenu, setAddToPlaylistMenu] = useState<{ songId: string; position: { x: number; y: number } } | null>(null);
     const [customDownloadTarget, setCustomDownloadTarget] = useState<YouTubeDownloadTarget | null>(null);
 
@@ -327,7 +327,11 @@ const SearchResultsView: React.FC<SearchResultsViewProps> = ({ searchTerm, onOpe
     const openOnlineContextMenu = async (position: { x: number; y: number }, yt: YouTubeResultLike) => {
         const meta = await getExistingOrEnsure(yt);
         if (!meta) return;
-        setContextMenu({ song: meta, position });
+        setContextMenu({
+            song: meta,
+            position,
+            downloadState: getDownloadState(allSongs, downloadJobs, yt.videoId),
+        });
     };
 
     const visibleRows = filteredYtResults.slice(0, visibleYtLimit);
@@ -485,6 +489,7 @@ const SearchResultsView: React.FC<SearchResultsViewProps> = ({ searchTerm, onOpe
                     }}
                     onDownloadQueued={refreshSongs}
                     onCustomDownload={setCustomDownloadTarget}
+                    downloadState={contextMenu.downloadState}
                 />
             )}
 

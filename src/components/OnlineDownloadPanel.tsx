@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { SongType } from '../../shared/songTypes';
 import LyricsSearchPane from './LyricsSearchPane';
 import type { YouTubeDownloadTarget } from './YouTubeDownloadControl';
 import { queueYouTubeDownload, youtubeIdToUrl } from '../utils/onlineSongs';
+import SearchIcon from '../assets/icons/search.svg';
 
 interface OnlineDownloadPanelProps {
     target: YouTubeDownloadTarget;
@@ -40,6 +41,7 @@ const OnlineDownloadPanel: React.FC<OnlineDownloadPanelProps> = ({ target, onClo
     const [lyricsFormat, setLyricsFormat] = useState<'txt' | 'lrc' | undefined>();
     const [lyricsFilename, setLyricsFilename] = useState('');
     const [showSearchPane, setShowSearchPane] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         setTitle(target.title);
@@ -60,6 +62,23 @@ const OnlineDownloadPanel: React.FC<OnlineDownloadPanelProps> = ({ target, onClo
         setLyricsLrc(format === 'lrc' ? content : '');
         setLyricsFilename(`搜尋結果: ${name || title} - ${selectedArtist || artist || ''}`);
         setShowSearchPane(false);
+    };
+
+    const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (readerEvent) => {
+            const content = String(readerEvent.target?.result || '');
+            const format = file.name.toLowerCase().endsWith('.lrc') ? 'lrc' : 'txt';
+            setLyricsFormat(format);
+            setLyricsText(format === 'txt' ? content : '');
+            setLyricsLrc(format === 'lrc' ? content : '');
+            setLyricsFilename(file.name);
+        };
+        reader.readAsText(file);
+        event.target.value = '';
     };
 
     const handleSubmit = () => {
@@ -177,14 +196,8 @@ const OnlineDownloadPanel: React.FC<OnlineDownloadPanelProps> = ({ target, onClo
                     )}
 
                     {lyricsMode === 'import_search' && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <button
-                                onClick={() => setShowSearchPane(true)}
-                                style={{ padding: '8px 12px', background: '#333', border: showSearchPane ? '1px solid var(--accent-color)' : '1px solid #444', color: '#fff', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', textAlign: 'left' }}
-                            >
-                                搜尋歌詞
-                            </button>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#888', background: '#1a1a1a', padding: '6px', borderRadius: '4px' }}>
+                        <div style={{ display: 'flex', alignItems: 'stretch', gap: '8px' }}>
+                            <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#888', background: '#1a1a1a', padding: '7px 8px', border: '1px solid #333', borderRadius: '4px' }}>
                                 {lyricsFilename ? (
                                     <>
                                         <span style={{ background: lyricsFormat === 'lrc' ? 'var(--accent-color)' : '#444', color: lyricsFormat === 'lrc' ? '#000' : '#ccc', padding: '1px 4px', borderRadius: '2px', fontSize: '10px' }}>{lyricsFormat?.toUpperCase()}</span>
@@ -194,6 +207,19 @@ const OnlineDownloadPanel: React.FC<OnlineDownloadPanelProps> = ({ target, onClo
                                     <span style={{ flex: 1, fontStyle: 'italic' }}>未選擇歌詞</span>
                                 )}
                             </div>
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                style={{ padding: '0 10px', background: '#333', border: '1px solid #444', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                            >
+                                匯入
+                            </button>
+                            <button
+                                onClick={() => setShowSearchPane(true)}
+                                title="搜尋歌詞"
+                                style={{ width: '34px', background: '#333', border: showSearchPane ? '1px solid var(--accent-color)' : '1px solid #444', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+                            >
+                                <img src={SearchIcon} alt="" style={{ width: '15px', height: '15px', display: 'block' }} />
+                            </button>
                         </div>
                     )}
                 </div>
@@ -223,6 +249,13 @@ const OnlineDownloadPanel: React.FC<OnlineDownloadPanelProps> = ({ target, onClo
                         加入下載佇列
                     </button>
                 </div>
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".lrc,.txt"
+                    style={{ display: 'none' }}
+                    onChange={handleFileImport}
+                />
             </div>
         </div>,
         document.body

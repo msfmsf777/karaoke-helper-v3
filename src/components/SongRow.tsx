@@ -82,6 +82,7 @@ const SongRow: React.FC<SongRowProps> = ({
     const [customDownloadTarget, setCustomDownloadTarget] = useState<YouTubeDownloadTarget | null>(null);
     const isStreaming = song.audio_status === 'streaming';
     const youtubeId = getSongYoutubeId(song);
+    const downloadState = youtubeId ? getDownloadState(allSongs, downloadJobs, youtubeId) : { kind: 'none' as const };
 
     const handleDoubleClick = () => {
         playImmediate(song.id);
@@ -231,7 +232,7 @@ const SongRow: React.FC<SongRowProps> = ({
                         isStreaming && youtubeId ? (
                             <YouTubeDownloadControl
                                 target={{ youtubeId, title: song.title, artist: song.artist }}
-                                state={getDownloadState(allSongs, downloadJobs, youtubeId)}
+                                state={downloadState}
                                 variant="status"
                                 rowHovered={isHovered}
                                 onQueued={refreshSongs}
@@ -318,6 +319,7 @@ const SongRow: React.FC<SongRowProps> = ({
                         onEditLyrics={onEditLyrics}
                         onDownloadQueued={refreshSongs}
                         onCustomDownload={setCustomDownloadTarget}
+                        downloadState={downloadState}
                     />
                 ) : (
                     <SongContextMenu
