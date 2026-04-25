@@ -4,7 +4,7 @@ import type { SongMeta } from '../../shared/songTypes';
 import { useQueue } from '../contexts/QueueContext';
 import { useUserData } from '../contexts/UserDataContext';
 import AddToPlaylistMenu from './AddToPlaylistMenu';
-import { CustomDownloadDialog, YouTubeDownloadTarget } from './YouTubeDownloadControl';
+import type { YouTubeDownloadTarget } from './YouTubeDownloadControl';
 import { queueYouTubeDownload, youtubeIdToUrl } from '../utils/onlineSongs';
 
 import PlayMenuIcon from '../assets/icons/play_menu.svg';
@@ -14,7 +14,8 @@ import FavoritesFilledIcon from '../assets/icons/favorites_filled.svg';
 import PlaylistItemIcon from '../assets/icons/playlist_item.svg';
 import LyricsIcon from '../assets/icons/lyrics.svg';
 import DownloadIcon from '../assets/icons/download.svg';
-import WebIcon from '../assets/icons/web.svg';
+import LinkIcon from '../assets/icons/link.svg';
+import OpenIcon from '../assets/icons/open.png';
 
 interface OnlineSongContextMenuProps {
     song: SongMeta;
@@ -22,6 +23,7 @@ interface OnlineSongContextMenuProps {
     onClose: () => void;
     onEditLyrics?: (song: SongMeta) => void;
     onDownloadQueued?: () => void;
+    onCustomDownload: (target: YouTubeDownloadTarget) => void;
 }
 
 const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
@@ -30,6 +32,7 @@ const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
     onClose,
     onEditLyrics,
     onDownloadQueued,
+    onCustomDownload,
 }) => {
     const menuRef = useRef<HTMLDivElement>(null);
     const playlistItemRef = useRef<HTMLDivElement>(null);
@@ -39,7 +42,6 @@ const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
     const [adjustedPosition, setAdjustedPosition] = useState(position);
     const [activeSubmenu, setActiveSubmenu] = useState<'playlist' | 'download' | null>(null);
     const [playlistMenuPosition, setPlaylistMenuPosition] = useState({ x: 0, y: 0 });
-    const [customPosition, setCustomPosition] = useState<{ x: number; y: number } | null>(null);
 
     const youtubeId = song.source.kind === 'youtube' ? song.source.youtubeId : '';
     const videoUrl = youtubeIdToUrl(youtubeId);
@@ -61,9 +63,6 @@ const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             const targetNode = event.target as Node;
-            if ((event.target as Element | null)?.closest?.('[data-online-download-dialog="true"]')) {
-                return;
-            }
             if (menuRef.current && !menuRef.current.contains(targetNode)) {
                 onClose();
             }
@@ -111,9 +110,8 @@ const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
     };
 
     const openCustomDownload = () => {
-        const rect = downloadItemRef.current?.getBoundingClientRect();
-        setCustomPosition({ x: rect ? rect.right + 8 : adjustedPosition.x + 210, y: rect ? rect.top : adjustedPosition.y });
-        setActiveSubmenu(null);
+        onCustomDownload(target);
+        onClose();
     };
 
     return createPortal(
@@ -228,7 +226,7 @@ const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
                     onMouseOver={hoverIn}
                     onMouseOut={hoverOut}
                 >
-                    <img src={WebIcon} alt="" style={iconStyle} />
+                    <img src={LinkIcon} alt="" style={iconStyle} />
                     <span style={{ flex: 1 }}>複製影片連結</span>
                     <button
                         onClick={(e) => {
@@ -236,29 +234,25 @@ const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
                             window.api.openExternal(videoUrl);
                             onClose();
                         }}
-                        title="在瀏覽器開啟"
+                        title="在預設瀏覽器開啟"
                         style={{
                             border: '1px solid #555',
                             background: '#333',
                             color: '#ddd',
                             borderRadius: '4px',
                             cursor: 'pointer',
-                            padding: '2px 6px',
-                            fontSize: '11px',
+                            padding: '2px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '22px',
+                            height: '22px',
                         }}
                     >
-                        開啟
+                        <img src={OpenIcon} alt="" style={{ width: '14px', height: '14px', display: 'block' }} />
                     </button>
                 </div>
             </div>
-            {customPosition && (
-                <CustomDownloadDialog
-                    target={target}
-                    position={customPosition}
-                    onQueued={onDownloadQueued}
-                    onClose={() => setCustomPosition(null)}
-                />
-            )}
         </>,
         document.body
     );

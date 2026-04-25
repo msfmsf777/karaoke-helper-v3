@@ -7,7 +7,8 @@ import { useDownloadJobs } from '../hooks/useDownloadJobs';
 import SongList from './SongList';
 import AddToPlaylistMenu from './AddToPlaylistMenu';
 import OnlineSongContextMenu from './OnlineSongContextMenu';
-import YouTubeDownloadControl from './YouTubeDownloadControl';
+import OnlineDownloadPanel from './OnlineDownloadPanel';
+import YouTubeDownloadControl, { YouTubeDownloadTarget } from './YouTubeDownloadControl';
 import FavoritesIcon from '../assets/icons/favorites.svg';
 import FavoritesFilledIcon from '../assets/icons/favorites_filled.svg';
 import AddIcon from '../assets/icons/add.svg';
@@ -46,6 +47,7 @@ interface YouTubeRowProps {
     onMore: (event: React.MouseEvent, yt: YouTubeResultLike) => void;
     onContextMenu: (event: React.MouseEvent, yt: YouTubeResultLike) => void;
     onDownloadQueued: () => void;
+    onCustomDownload: (target: YouTubeDownloadTarget) => void;
 }
 
 const YouTubeSearchRow: React.FC<YouTubeRowProps> = ({
@@ -59,6 +61,7 @@ const YouTubeSearchRow: React.FC<YouTubeRowProps> = ({
     onMore,
     onContextMenu,
     onDownloadQueued,
+    onCustomDownload,
 }) => {
     const [isHovered, setIsHovered] = useState(false);
     const { isFavorite } = useUserData();
@@ -161,7 +164,9 @@ const YouTubeSearchRow: React.FC<YouTubeRowProps> = ({
                     target={{ youtubeId: yt.videoId, title: yt.title, artist: yt.artist }}
                     state={downloadState}
                     variant="search"
+                    rowHovered={isHovered}
                     onQueued={onDownloadQueued}
+                    onCustomDownload={onCustomDownload}
                 />
             </div>
 
@@ -193,6 +198,7 @@ const SearchResultsView: React.FC<SearchResultsViewProps> = ({ searchTerm, onOpe
     const [sortFilter, setSortFilter] = useState<SortFilter>('relevance');
     const [contextMenu, setContextMenu] = useState<{ song: SongMeta; position: { x: number; y: number } } | null>(null);
     const [addToPlaylistMenu, setAddToPlaylistMenu] = useState<{ songId: string; position: { x: number; y: number } } | null>(null);
+    const [customDownloadTarget, setCustomDownloadTarget] = useState<YouTubeDownloadTarget | null>(null);
 
     const filteredSongs = useMemo(() => {
         if (!searchTerm.trim()) return [];
@@ -437,6 +443,7 @@ const SearchResultsView: React.FC<SearchResultsViewProps> = ({ searchTerm, onOpe
                                             openOnlineContextMenu({ x: event.clientX, y: event.clientY }, item);
                                         }}
                                         onDownloadQueued={refreshSongs}
+                                        onCustomDownload={setCustomDownloadTarget}
                                     />
                                 );
                             })}
@@ -477,6 +484,15 @@ const SearchResultsView: React.FC<SearchResultsViewProps> = ({ searchTerm, onOpe
                         setContextMenu(null);
                     }}
                     onDownloadQueued={refreshSongs}
+                    onCustomDownload={setCustomDownloadTarget}
+                />
+            )}
+
+            {customDownloadTarget && (
+                <OnlineDownloadPanel
+                    target={customDownloadTarget}
+                    onClose={() => setCustomDownloadTarget(null)}
+                    onQueued={refreshSongs}
                 />
             )}
 

@@ -70,6 +70,19 @@ function getOriginalPath(meta: SongMeta, songDir: string) {
   return path.join(songDir, getOriginalFilename(meta));
 }
 
+function normalizeDuration(duration: unknown): number | undefined {
+  if (typeof duration === 'number' && Number.isFinite(duration)) {
+    return duration;
+  }
+  if (duration && typeof duration === 'object') {
+    const seconds = (duration as { seconds?: unknown }).seconds;
+    if (typeof seconds === 'number' && Number.isFinite(seconds)) {
+      return seconds;
+    }
+  }
+  return undefined;
+}
+
 function normalizeMeta(meta: SongMeta): SongMeta {
   const normalized: SongMeta = {
     ...meta,
@@ -82,7 +95,7 @@ function normalizeMeta(meta: SongMeta): SongMeta {
     vocal_path: meta.vocal_path ?? undefined,
     last_separation_error: meta.last_separation_error ?? null,
     separation_quality: meta.separation_quality ?? undefined,
-    duration: meta.duration ?? undefined,
+    duration: normalizeDuration((meta as { duration?: unknown }).duration),
     thumbnailUrl: meta.thumbnailUrl ?? undefined,
   };
   return normalized;
@@ -96,7 +109,11 @@ async function readMeta(songDir: string): Promise<SongMeta | null> {
   try {
     const metaRaw = await fs.readFile(path.join(songDir, 'meta.json'), 'utf-8');
     const parsed = JSON.parse(metaRaw) as SongMeta;
-    return normalizeMeta(parsed);
+    const normalized = normalizeMeta(parsed);
+    if (!Object.is((parsed as { duration?: unknown }).duration, normalized.duration)) {
+      await writeMeta(songDir, normalized);
+    }
+    return normalized;
   } catch (err: any) {
     if (err.code !== 'ENOENT') {
       console.warn('[Library] Failed to read meta.json from', songDir, err);

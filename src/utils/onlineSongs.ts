@@ -16,6 +16,15 @@ export type DownloadState =
     | { kind: 'failed'; job: DownloadJob }
     | { kind: 'none' };
 
+export const coerceDurationSeconds = (duration: unknown): number | undefined => {
+    if (typeof duration === 'number' && Number.isFinite(duration)) return duration;
+    if (duration && typeof duration === 'object') {
+        const seconds = (duration as { seconds?: unknown }).seconds;
+        if (typeof seconds === 'number' && Number.isFinite(seconds)) return seconds;
+    }
+    return undefined;
+};
+
 export const youtubeIdToUrl = (videoId: string) => `https://www.youtube.com/watch?v=${videoId}`;
 
 export const getSongYoutubeId = (song: SongMeta): string | null => {
@@ -23,13 +32,13 @@ export const getSongYoutubeId = (song: SongMeta): string | null => {
 };
 
 export const getYtDurationSeconds = (yt: YouTubeResultLike): number | undefined => {
-    if (typeof yt.duration === 'number') return yt.duration;
-    return yt.duration?.seconds;
+    return coerceDurationSeconds(yt.duration);
 };
 
 export const getYtDurationTimestamp = (yt: YouTubeResultLike): string => {
-    if (typeof yt.duration === 'number') return formatDuration(yt.duration);
-    return yt.duration?.timestamp || (yt.duration?.seconds ? formatDuration(yt.duration.seconds) : '--:--');
+    const seconds = coerceDurationSeconds(yt.duration);
+    if (seconds !== undefined) return formatDuration(seconds);
+    return typeof yt.duration === 'object' ? yt.duration?.timestamp || '--:--' : '--:--';
 };
 
 export const findSongByYoutubeId = (songs: SongMeta[], youtubeId: string): SongMeta | undefined => {
@@ -96,10 +105,11 @@ export const queueYouTubeDownload = async (params: {
     );
 };
 
-export const formatDuration = (seconds?: number): string => {
-    if (!seconds || !Number.isFinite(seconds)) return '--:--';
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
+export const formatDuration = (seconds?: unknown): string => {
+    const value = coerceDurationSeconds(seconds);
+    if (value === undefined) return '--:--';
+    const mins = Math.floor(value / 60);
+    const secs = Math.floor(value % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 

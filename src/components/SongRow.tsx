@@ -7,12 +7,13 @@ import { useDownloadJobs } from '../hooks/useDownloadJobs';
 import SongContextMenu from './SongContextMenu';
 import OnlineSongContextMenu from './OnlineSongContextMenu';
 import AddToPlaylistMenu from './AddToPlaylistMenu';
-import YouTubeDownloadControl from './YouTubeDownloadControl';
+import OnlineDownloadPanel from './OnlineDownloadPanel';
+import YouTubeDownloadControl, { YouTubeDownloadTarget } from './YouTubeDownloadControl';
 import FavoritesIcon from '../assets/icons/favorites.svg';
 import FavoritesFilledIcon from '../assets/icons/favorites_filled.svg';
 import AddIcon from '../assets/icons/add.svg';
 import MoreIcon from '../assets/icons/more.svg';
-import { getDownloadState, getSongYoutubeId } from '../utils/onlineSongs';
+import { coerceDurationSeconds, getDownloadState, getSongYoutubeId } from '../utils/onlineSongs';
 
 interface SongRowProps {
     song: SongMeta;
@@ -51,9 +52,11 @@ const lyricsLabel = (status?: SongMeta['lyrics_status']) => {
     }
 };
 
-const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
+const formatDuration = (seconds?: unknown) => {
+    const value = coerceDurationSeconds(seconds);
+    if (value === undefined) return '--:--';
+    const mins = Math.floor(value / 60);
+    const secs = Math.floor(value % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
@@ -76,6 +79,7 @@ const SongRow: React.FC<SongRowProps> = ({
     const [isHovered, setIsHovered] = useState(false);
     const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
     const [showAddToPlaylistMenu, setShowAddToPlaylistMenu] = useState<{ x: number; y: number } | null>(null);
+    const [customDownloadTarget, setCustomDownloadTarget] = useState<YouTubeDownloadTarget | null>(null);
     const isStreaming = song.audio_status === 'streaming';
     const youtubeId = getSongYoutubeId(song);
 
@@ -229,7 +233,9 @@ const SongRow: React.FC<SongRowProps> = ({
                                 target={{ youtubeId, title: song.title, artist: song.artist }}
                                 state={getDownloadState(allSongs, downloadJobs, youtubeId)}
                                 variant="status"
+                                rowHovered={isHovered}
                                 onQueued={refreshSongs}
+                                onCustomDownload={setCustomDownloadTarget}
                             />
                         ) : song.type === '伴奏' ? (
                             <span>-</span>
@@ -299,7 +305,7 @@ const SongRow: React.FC<SongRowProps> = ({
 
                 {/* Duration */}
                 <div style={{ color: '#b3b3b3', fontSize: '13px', textAlign: 'center' }}>
-                    {showDuration && (song.duration ? formatDuration(song.duration) : '--:--')}
+                    {showDuration && formatDuration(song.duration)}
                 </div>
             </div>
 
@@ -311,6 +317,7 @@ const SongRow: React.FC<SongRowProps> = ({
                         onClose={() => setContextMenuPosition(null)}
                         onEditLyrics={onEditLyrics}
                         onDownloadQueued={refreshSongs}
+                        onCustomDownload={setCustomDownloadTarget}
                     />
                 ) : (
                     <SongContextMenu
@@ -327,6 +334,14 @@ const SongRow: React.FC<SongRowProps> = ({
                     songId={song.id}
                     position={showAddToPlaylistMenu}
                     onClose={() => setShowAddToPlaylistMenu(null)}
+                />
+            )}
+
+            {customDownloadTarget && (
+                <OnlineDownloadPanel
+                    target={customDownloadTarget}
+                    onClose={() => setCustomDownloadTarget(null)}
+                    onQueued={refreshSongs}
                 />
             )}
         </>
