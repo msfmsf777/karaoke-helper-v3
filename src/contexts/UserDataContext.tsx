@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useQueue } from './QueueContext';
+import { HotkeyConfig, mergeHotkeyConfig } from '../../shared/hotkeys';
 // import { useLibrary } from './LibraryContext';
 
 export interface Playlist {
@@ -50,6 +51,8 @@ interface UserDataContextType {
     setLyricStyles: (styles: LyricStyleConfig) => void;
     songPreferences: Record<string, { furigana?: boolean; romaji?: boolean }>;
     setSongPreference: (songId: string, prefs: { furigana?: boolean; romaji?: boolean }) => void;
+    hotkeys: HotkeyConfig;
+    setHotkeys: (hotkeys: HotkeyConfig) => void;
 }
 
 const UserDataContext = createContext<UserDataContextType | null>(null);
@@ -66,6 +69,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [recentSearches, setRecentSearches] = useState<string[]>([]);
     const [lyricStyles, setLyricStyles] = useState<LyricStyleConfig>(DEFAULT_LYRIC_STYLES);
     const [songPreferences, setSongPreferences] = useState<Record<string, { furigana?: boolean; romaji?: boolean }>>({});
+    const [hotkeys, setHotkeys] = useState<HotkeyConfig>(() => mergeHotkeyConfig());
 
     // Load data on startup
     useEffect(() => {
@@ -81,6 +85,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                         separationQuality: 'high' | 'normal' | 'fast';
                         lyricStyles?: LyricStyleConfig;
                         songPreferences?: Record<string, { furigana?: boolean; romaji?: boolean }>;
+                        hotkeys?: HotkeyConfig;
                     }>
                 ]);
                 setFavorites(Array.from(new Set(favs)));
@@ -94,6 +99,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 if (settingsWithStyles.songPreferences) {
                     setSongPreferences(settingsWithStyles.songPreferences);
                 }
+                setHotkeys(mergeHotkeyConfig(settings.hotkeys));
 
                 // Load recent searches from localStorage
                 const savedRecent = localStorage.getItem('khelper_recent_searches');
@@ -139,10 +145,10 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         );
     }, [playlists]);
 
-    // Save settings (quality + styles + songPrefs) on change
+    // Save settings (quality + styles + songPrefs + hotkeys) on change
     useEffect(() => {
         if (!isInitialized.current) return;
-        window.khelper?.userData.saveSettings({ separationQuality, lyricStyles, songPreferences }).catch(err =>
+        window.khelper?.userData.saveSettings({ separationQuality, lyricStyles, songPreferences, hotkeys }).catch(err =>
             console.error('[UserData] Failed to save settings', err)
         );
 
@@ -154,7 +160,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             window.api?.sendOverlayStyleUpdate(lyricStyles);
         }, 500);
 
-    }, [separationQuality, lyricStyles, songPreferences]);
+    }, [separationQuality, lyricStyles, songPreferences, hotkeys]);
 
     // Save recent searches on change
     useEffect(() => {
@@ -281,7 +287,9 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             lyricStyles,
             setLyricStyles,
             songPreferences,
-            setSongPreference
+            setSongPreference,
+            hotkeys,
+            setHotkeys
         }}>
             {children}
         </UserDataContext.Provider>

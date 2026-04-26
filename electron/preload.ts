@@ -1,6 +1,7 @@
 import { ipcRenderer, contextBridge, type IpcRendererEvent } from 'electron'
 import type { SongMeta, SongType, DownloadJob } from '../shared/songTypes'
 import type { SeparationJob } from '../shared/separationTypes'
+import type { HotkeyAction, HotkeyRegistrationStatus } from '../shared/hotkeys'
 
 // --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld('ipcRenderer', {
@@ -172,6 +173,19 @@ contextBridge.exposeInMainWorld('khelper', {
       const listener = (_event: Electron.IpcRendererEvent, payload: any) => callback(payload)
       ipcRenderer.on('updater:status', listener)
       return () => ipcRenderer.off('updater:status', listener)
+    },
+  },
+  hotkeys: {
+    getStatus: (): Promise<HotkeyRegistrationStatus> => ipcRenderer.invoke('hotkeys:get-status'),
+    onStatus: (callback: (status: HotkeyRegistrationStatus) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, status: HotkeyRegistrationStatus) => callback(status)
+      ipcRenderer.on('hotkeys:status', listener)
+      return () => ipcRenderer.off('hotkeys:status', listener)
+    },
+    onAction: (callback: (action: HotkeyAction) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, action: HotkeyAction) => callback(action)
+      ipcRenderer.on('hotkeys:action', listener)
+      return () => ipcRenderer.off('hotkeys:action', listener)
     },
   },
   windowOps: {

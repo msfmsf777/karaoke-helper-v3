@@ -3,6 +3,7 @@ import audioEngine, { OutputRole } from '../audio/AudioEngine';
 import { useUserData } from '../contexts/UserDataContext';
 import CalibrationModal from './CalibrationModal';
 import { getAudioOffset, loadOutputDevicePreferences, saveStreamEnabledPreference } from '../settings/devicePreferences';
+import HotkeysSettingsSection from './HotkeysSettingsSection';
 
 // Lazy loading DebugUpdaterUI
 const DebugUpdaterUI = React.lazy(() => import('./DebugUpdaterUI'));
@@ -330,6 +331,8 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 
                         {error && <div style={{ color: '#ff6666', marginTop: '12px', fontSize: '14px' }}>{error}</div>}
                     </section>
+
+                    <HotkeysSettingsSection />
 
                     {/* Section: Processing */}
                     <section style={{ marginBottom: '40px' }}>

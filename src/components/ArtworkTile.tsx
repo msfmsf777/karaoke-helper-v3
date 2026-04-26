@@ -3,6 +3,7 @@ import { localPathToFileUrl } from '../utils/localFileUrl';
 
 interface ArtworkTileProps {
     thumbnailPath?: string;
+    remoteUrl?: string;
     size: number;
     title?: string;
     onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -26,6 +27,7 @@ const MusicNote = () => (
 
 const ArtworkTile: React.FC<ArtworkTileProps> = ({
     thumbnailPath,
+    remoteUrl,
     size,
     title,
     onClick,
@@ -40,13 +42,14 @@ const ArtworkTile: React.FC<ArtworkTileProps> = ({
 }) => {
     const [failed, setFailed] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
-    const src = failed ? undefined : localPathToFileUrl(thumbnailPath);
+    const localSrc = localPathToFileUrl(thumbnailPath);
+    const src = failed ? undefined : (localSrc || remoteUrl);
     const showOverlay = overlayVisible ?? isHovered;
     const shouldDim = dimmed ?? showOverlay;
 
     useEffect(() => {
         setFailed(false);
-    }, [thumbnailPath]);
+    }, [thumbnailPath, remoteUrl]);
 
     return (
         <button

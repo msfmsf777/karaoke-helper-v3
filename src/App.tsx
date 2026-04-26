@@ -10,9 +10,10 @@ import { loadOutputDevicePreferences, saveOutputDevicePreferences, getAudioOffse
 import './App.css';
 import { LibraryProvider, useLibrary } from './contexts/LibraryContext';
 import { QueueProvider, useQueue } from './contexts/QueueContext';
-import { UserDataProvider } from './contexts/UserDataContext';
+import { UserDataProvider, useUserData } from './contexts/UserDataContext';
 import { UpdaterProvider } from './contexts/UpdaterContext';
 import SkeletonSongList from './components/skeletons/SkeletonSongList';
+import { acceleratorFromKeyboardEvent, HOTKEY_ACTIONS, HotkeyAction, normalizeAccelerator } from '../shared/hotkeys';
 
 // Lazy load heavy components
 const LyricEditorView = lazy(() => import('./components/LyricEditorView'));
@@ -50,8 +51,10 @@ function AppContent() {
 
   const mainContentRef = useRef<HTMLDivElement>(null);
 
-  const { currentSongId, playNext, queue, currentIndex, isStreamWaiting } = useQueue();
+  const { currentSongId, playNext, playPrev, queue, currentIndex, isStreamWaiting } = useQueue();
   const { getSongById } = useLibrary();
+  const { hotkeys } = useUserData();
+  const [focusSearchRequest, setFocusSearchRequest] = useState(0);
 
   const currentTrack = useMemo(() => {
     if (!currentSongId) return null;
@@ -151,6 +154,60 @@ function AppContent() {
     }
   };
 
+  const isEditableHotkeyTarget = (target: EventTarget | null) => {
+    if (!(target instanceof HTMLElement)) return false;
+    const tagName = target.tagName.toLowerCase();
+    return target.isContentEditable || tagName === 'input' || tagName === 'textarea' || tagName === 'select';
+  };
+
+  const adjustTrackVolume = (track: 'instrumental' | 'vocal', delta: number) => {
+    const currentVolume = audioEngine.getTrackVolume(track);
+    const nextVolume = Math.max(0, Math.min(1, currentVolume + delta));
+    audioEngine.setTrackVolume(track, nextVolume);
+  };
+
+  const runHotkeyAction = (action: HotkeyAction) => {
+    switch (action) {
+      case 'playPause':
+        if (isStreamWaiting) {
+          playNext(false);
+        } else {
+          handlePlayPause();
+        }
+        break;
+      case 'nextTrack':
+        playNext(false);
+        break;
+      case 'previousTrack':
+        playPrev();
+        break;
+      case 'toggleMiniPlayer':
+        window.khelper?.miniPlayer?.toggle();
+        break;
+      case 'focusSearch':
+        if (isStreamMode) {
+          handleViewChange('library');
+        }
+        setFocusSearchRequest((value) => value + 1);
+        break;
+      case 'toggleStreamMode':
+        handleViewChange(isStreamMode ? 'library' : 'stream');
+        break;
+      case 'instrumentalVolumeUp':
+        adjustTrackVolume('instrumental', 0.05);
+        break;
+      case 'instrumentalVolumeDown':
+        adjustTrackVolume('instrumental', -0.05);
+        break;
+      case 'vocalVolumeUp':
+        adjustTrackVolume('vocal', 0.05);
+        break;
+      case 'vocalVolumeDown':
+        adjustTrackVolume('vocal', -0.05);
+        break;
+    }
+  };
+
   const handleSeek = (seconds: number) => {
     audioEngine.seek(seconds);
     setCurrentTime(seconds);
@@ -215,6 +272,34 @@ function AppContent() {
     }
     setPendingView(null);
   };
+
+  useEffect(() => {
+    const cleanup = window.khelper?.hotkeys?.onAction?.((action) => {
+      runHotkeyAction(action);
+    });
+    return cleanup;
+  }, [runHotkeyAction]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || isEditableHotkeyTarget(event.target)) return;
+
+      const accelerator = normalizeAccelerator(acceleratorFromKeyboardEvent(event));
+      if (!accelerator) return;
+
+      const matchedAction = HOTKEY_ACTIONS.find(({ action }) => (
+        normalizeAccelerator(hotkeys.bindings[action].local) === accelerator
+      ))?.action;
+
+      if (!matchedAction) return;
+      event.preventDefault();
+      event.stopPropagation();
+      runHotkeyAction(matchedAction);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [hotkeys, runHotkeyAction]);
 
   const handleConfirmLeave = () => {
     if (pendingView) {
@@ -351,6 +436,7 @@ function AppContent() {
             onSearch={(term) => handleViewChange(`search-results:${encodeURIComponent(term)}`)}
             onOpenLyrics={handleOpenLyrics}
             onNavigate={handleViewChange}
+            focusSearchRequest={focusSearchRequest}
           />
 
           <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>

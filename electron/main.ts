@@ -21,6 +21,8 @@ import {
   saveFavorites, saveHistory, savePlaylists, saveSettings
 } from './userData'
 import { initUpdater, checkForUpdates, onStatusChange } from './updater'
+import type { HotkeyAction, HotkeyConfig } from '../shared/hotkeys'
+import { applyGlobalHotkeys, getHotkeyRegistrationStatus, unregisterGlobalHotkeys } from './hotkeys'
 
 // Disable native swipe navigation (fixes sidebar drag sliding the screen)
 app.commandLine.appendSwitch('disable-features', 'OverscrollHistoryNavigation')
@@ -45,6 +47,31 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 
 let win: BrowserWindow | null
 const jobSubscriptions = new Map<number, Map<string, () => void>>()
 const downloadSubscriptions = new Map<number, Map<string, () => void>>()
+
+function broadcastHotkeyStatus() {
+  const status = getHotkeyRegistrationStatus()
+  BrowserWindow.getAllWindows().forEach((window) => {
+    window.webContents.send('hotkeys:status', status)
+  })
+}
+
+function dispatchHotkeyAction(action: HotkeyAction) {
+  if (!win || win.isDestroyed()) return
+
+  if (action === 'focusSearch') {
+    if (win.isMinimized()) win.restore()
+    if (!win.isVisible()) win.show()
+    win.focus()
+  }
+
+  win.webContents.send('hotkeys:action', action)
+}
+
+function applyHotkeysFromSettings(hotkeys?: Partial<HotkeyConfig> | null) {
+  const status = applyGlobalHotkeys(hotkeys, dispatchHotkeyAction)
+  broadcastHotkeyStatus()
+  return status
+}
 
 // Tray & Lifecycle
 let tray: Tray | null = null
@@ -582,6 +609,7 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   killActiveSeparation()
+  unregisterGlobalHotkeys()
 })
 
 
@@ -751,11 +779,16 @@ ipcMain.handle('userData:load-playlists', async () => {
 })
 
 ipcMain.handle('userData:save-settings', async (_event, settings: any) => {
-  return saveSettings(settings)
+  await saveSettings(settings)
+  applyHotkeysFromSettings(settings?.hotkeys)
 })
 
 ipcMain.handle('userData:load-settings', async () => {
   return loadSettings()
+})
+
+ipcMain.handle('hotkeys:get-status', async () => {
+  return getHotkeyRegistrationStatus()
 })
 
 ipcMain.on('jobs:subscribe', async (event, subscriptionId: string) => {
@@ -900,6 +933,8 @@ if (!gotTheLock) {
     // Lazy load this too if needed, or just remove if not critical
     // console.log('[Library] base songs dir:', getSongsBaseDir()) 
     createWindow()
+    const settings = await loadSettings()
+    applyHotkeysFromSettings(settings.hotkeys)
   })
 }
 

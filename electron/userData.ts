@@ -1,6 +1,7 @@
 import { app } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs/promises';
+import { HotkeyConfig, mergeHotkeyConfig } from '../shared/hotkeys';
 
 export interface UserData {
     favorites: string[];
@@ -84,11 +85,16 @@ export interface UserSettings {
     separationQuality: 'high' | 'normal' | 'fast';
     ignoredVersion?: string;
     lyricStyles?: LyricStyleConfig;
+    songPreferences?: Record<string, { furigana?: boolean; romaji?: boolean }>;
+    hotkeys?: HotkeyConfig;
 }
 
 export async function saveSettings(settings: UserSettings): Promise<void> {
     try {
-        await writeAtomic(SETTINGS_FILE, settings);
+        await writeAtomic(SETTINGS_FILE, {
+            ...settings,
+            hotkeys: mergeHotkeyConfig(settings.hotkeys),
+        });
     } catch (err) {
         console.error('[UserData] Failed to save settings', err);
     }
@@ -98,12 +104,17 @@ export async function loadSettings(): Promise<UserSettings> {
     try {
         const filePath = getUserDataPath(SETTINGS_FILE);
         const content = await fs.readFile(filePath, 'utf-8');
-        return JSON.parse(content);
+        const parsed = JSON.parse(content) as UserSettings;
+        return {
+            ...parsed,
+            separationQuality: parsed.separationQuality || 'normal',
+            hotkeys: mergeHotkeyConfig(parsed.hotkeys),
+        };
     } catch (err: any) {
         if (err.code !== 'ENOENT' && !(err instanceof SyntaxError) && !err.message.includes('JSON')) {
             console.error('[UserData] Failed to load settings', err);
         }
-        return { separationQuality: 'normal' };
+        return { separationQuality: 'normal', hotkeys: mergeHotkeyConfig() };
     }
 }
 

@@ -66,6 +66,10 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   const currentSong = currentSongId ? getSongById(currentSongId) : null;
   const isStreaming = currentSong?.audio_status === 'streaming';
   const isControlsDisabled = !currentSongId || isStreaming;
+  const remoteArtworkUrl = (() => {
+    if (!isStreaming || currentSong?.source.kind !== 'youtube') return undefined;
+    return currentSong.thumbnailUrl || `https://i.ytimg.com/vi/${currentSong.source.youtubeId}/hqdefault.jpg`;
+  })();
   useEnsureYoutubeThumbnail(currentSong);
 
   if (playbackMode === 'stream' && isStreamWaiting) {
@@ -261,6 +265,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
       <div style={{ display: 'flex', alignItems: 'center', width: '30%', minWidth: 0 }}>
         <ArtworkTile
           thumbnailPath={currentSong?.thumbnail_path}
+          remoteUrl={remoteArtworkUrl}
           size={56}
           title={currentView === 'stream' ? '關閉直播模式' : '進入直播模式'}
           onClick={handleLiveToggle}

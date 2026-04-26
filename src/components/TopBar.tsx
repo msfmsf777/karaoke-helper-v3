@@ -19,6 +19,7 @@ interface TopBarProps {
   onSearch?: (term: string) => void;
   onOpenLyrics?: (song: SongMeta) => void;
   onNavigate?: (view: string) => void;
+  focusSearchRequest?: number;
 }
 
 import { useUpdater } from '../contexts/UpdaterContext';
@@ -211,7 +212,7 @@ const UpdateIndicator: React.FC = () => {
 };
 
 
-const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenAbout, onSearch, onOpenLyrics, onNavigate }) => {
+const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenAbout, onSearch, onOpenLyrics, onNavigate, focusSearchRequest }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const { recentSearches, addRecentSearch, clearRecentSearches } = useUserData();
@@ -234,6 +235,15 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenAbout, onSearch, 
     const cleanup = window.khelper?.miniPlayer?.onVisibilityChange?.(setIsMiniPlayerOpen);
     return cleanup;
   }, []);
+
+  useEffect(() => {
+    if (!focusSearchRequest) return;
+    setIsFocused(true);
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    });
+  }, [focusSearchRequest]);
 
 
   // Listen for backend Title Bar clicks (Windows Only)

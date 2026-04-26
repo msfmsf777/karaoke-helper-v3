@@ -123,6 +123,11 @@ interface Window {
       getStatus: () => Promise<any>;
       onStatus: (callback: (status: any) => void) => () => void;
     };
+    hotkeys: {
+      getStatus: () => Promise<import('../shared/hotkeys').HotkeyRegistrationStatus>;
+      onStatus: (callback: (status: import('../shared/hotkeys').HotkeyRegistrationStatus) => void) => () => void;
+      onAction: (callback: (action: import('../shared/hotkeys').HotkeyAction) => void) => () => void;
+    };
     navigation: {
       onNavigate: (callback: (view: string) => void) => () => void;
     };
