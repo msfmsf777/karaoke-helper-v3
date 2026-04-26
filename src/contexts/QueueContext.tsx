@@ -19,6 +19,8 @@ interface QueueContextType {
     removeFromQueue: (index: number) => void;
     moveQueueItem: (fromIndex: number, toIndex: number) => void;
     playSongList: (songIds: string[]) => void;
+    playVisibleList: (songIds: string[], startIndex?: number) => void;
+    addSongsToQueue: (songIds: string[]) => void;
     playImmediate: (songId: string) => void;
     playAtFront: (songId: string) => void;
     loadImmediate: (songId: string) => void;
@@ -409,6 +411,30 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setCurrentIndex(newIndex);
     }, [queue]);
 
+    const playVisibleList = useCallback((songIds: string[], startIndex = 0) => {
+        const uniqueIds = Array.from(new Set(songIds));
+        if (uniqueIds.length === 0) return;
+
+        const safeIndex = Math.max(0, Math.min(startIndex, uniqueIds.length - 1));
+        shouldAutoPlay.current = true;
+        lastPlayedIndex.current = -1;
+        lastPlayedSongId.current = null;
+        setIsStreamWaiting(false);
+        setQueue(uniqueIds);
+        setCurrentIndex(safeIndex);
+    }, []);
+
+    const addSongsToQueue = useCallback((songIds: string[]) => {
+        const uniqueIds = Array.from(new Set(songIds));
+        if (uniqueIds.length === 0) return;
+
+        setQueue(prev => {
+            const existing = new Set(prev);
+            const additions = uniqueIds.filter(id => !existing.has(id));
+            return additions.length ? [...prev, ...additions] : prev;
+        });
+    }, []);
+
     const playImmediate = useCallback(async (songId: string) => {
         // Stop any currently playing song first
         await audioEngine.stop();
@@ -535,6 +561,8 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 removeFromQueue,
                 moveQueueItem,
                 playSongList,
+                playVisibleList,
+                addSongsToQueue,
                 playImmediate,
                 playAtFront,
                 loadImmediate,

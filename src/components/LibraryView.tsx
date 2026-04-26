@@ -3,6 +3,7 @@ import { SongMeta } from '../library/songLibrary';
 import { useLibrary } from '../contexts/LibraryContext';
 import SongList from './SongList';
 import SkeletonSongList from './skeletons/SkeletonSongList';
+import LibraryIcon from '../assets/icons/library.svg';
 
 interface LibraryViewProps {
   onOpenLyrics?: (song: SongMeta) => void;
@@ -17,7 +18,15 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics, onOpenAddSong }
   return (
     <div style={{ padding: '32px', height: '100%', overflowY: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexShrink: 0 }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 'bold', margin: 0 }}>歌曲庫</h1>
+        <div>
+          <h1 style={{ fontSize: '28px', fontWeight: 'bold', margin: '0 0 10px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <img src={LibraryIcon} alt="" style={pageTitleIconStyle} />
+            歌曲庫
+          </h1>
+          <div style={{ fontSize: '14px', color: '#888' }}>
+            所有已加入的歌曲會顯示在這裡，可直接篩選、排序並播放。
+          </div>
+        </div>
         <button
           onClick={onOpenAddSong}
           style={{
@@ -45,10 +54,6 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics, onOpenAddSong }
         </button>
       </div>
 
-      <div style={{ color: '#b3b3b3', marginBottom: '12px', fontSize: '14px', flexShrink: 0 }}>
-        支援原曲與伴奏，原曲可排入分離任務；點擊列可以直接載入播放器。
-      </div>
-
       <div style={{ flex: 1, overflow: 'hidden' }}>
         {loading ? (
           <div style={{ padding: '0' }}>
@@ -58,6 +63,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics, onOpenAddSong }
           <SongList
             songs={currentSongs}
             context="library"
+            listKey="library"
             onEditLyrics={onOpenLyrics}
             emptyMessage="尚未有歌曲，點右上角「＋ 新增歌曲」開始建立你的歌單。"
           />
@@ -65,6 +71,14 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics, onOpenAddSong }
       </div>
     </div>
   );
+};
+
+const pageTitleIconStyle: React.CSSProperties = {
+  width: '26px',
+  height: '26px',
+  filter: 'brightness(0) invert(1)',
+  opacity: 0.9,
+  flexShrink: 0,
 };
 
 export default LibraryView;

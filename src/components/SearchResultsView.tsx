@@ -408,7 +408,7 @@ const SearchResultsView: React.FC<SearchResultsViewProps> = ({ searchTerm, onOpe
                             <div style={{
                                 display: 'grid',
                                 gridTemplateColumns: '56px minmax(220px, 1fr) 60px 120px 118px 75px 80px',
-                                padding: '8px 24px 8px 16px',
+                                padding: '8px 16px',
                                 borderBottom: '1px solid #333',
                                 color: '#888',
                                 fontSize: '12px',

@@ -17,6 +17,7 @@ import AddIcon from '../assets/icons/add.svg';
 import MoreIcon from '../assets/icons/more.svg';
 import PlayIcon from '../assets/icons/play.svg';
 import { coerceDurationSeconds, getDownloadState, getSongYoutubeId } from '../utils/onlineSongs';
+import { SONG_TABLE_GRID, SONG_TABLE_ROW_PADDING } from './songTableLayout';
 
 interface SongRowProps {
     song: SongMeta;
@@ -29,6 +30,8 @@ interface SongRowProps {
     showLyricStatus?: boolean;
     showDuration?: boolean;
     customActions?: React.ReactNode;
+    playContextSongIds?: string[];
+    playContextIndex?: number;
 }
 
 const audioStatusLabels: Record<SongMeta['audio_status'], string> = {
@@ -72,9 +75,11 @@ const SongRow: React.FC<SongRowProps> = ({
     showAudioStatus = true,
     showLyricStatus = true,
     showDuration = true,
-    customActions
+    customActions,
+    playContextSongIds,
+    playContextIndex
 }) => {
-    const { playImmediate } = useQueue();
+    const { playImmediate, playVisibleList } = useQueue();
     const { isFavorite, toggleFavorite } = useUserData();
     const { allSongs, refreshSongs } = useLibrary();
     const downloadJobs = useDownloadJobs();
@@ -88,12 +93,20 @@ const SongRow: React.FC<SongRowProps> = ({
     useEnsureYoutubeThumbnail(song);
 
     const handleDoubleClick = () => {
-        playImmediate(song.id);
+        if (playContextSongIds && playContextIndex !== undefined) {
+            playVisibleList(playContextSongIds, playContextIndex);
+        } else {
+            playImmediate(song.id);
+        }
     };
 
     const handleArtworkClick = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.stopPropagation();
-        playImmediate(song.id);
+        if (playContextSongIds && playContextIndex !== undefined) {
+            playVisibleList(playContextSongIds, playContextIndex);
+        } else {
+            playImmediate(song.id);
+        }
     };
 
     const handleContextMenu = (e: React.MouseEvent) => {
@@ -119,8 +132,8 @@ const SongRow: React.FC<SongRowProps> = ({
             <div
                 style={{
                     display: 'grid',
-                    gridTemplateColumns: '42px minmax(0, 1fr) 44px 124px 68px 112px 60px 60px',
-                    padding: '10px 24px 10px 12px',
+                    gridTemplateColumns: SONG_TABLE_GRID,
+                    padding: SONG_TABLE_ROW_PADDING,
                     borderBottom: '1px solid #252525',
                     color: '#fff',
                     fontSize: '14px',

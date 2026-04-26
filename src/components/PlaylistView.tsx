@@ -1,19 +1,19 @@
 import React, { useMemo, useState } from 'react';
 import { useLibrary } from '../contexts/LibraryContext';
 import { useUserData } from '../contexts/UserDataContext';
-import { useQueue } from '../contexts/QueueContext';
 import SongList from './SongList';
 import RemoveIcon from '../assets/icons/remove.svg';
+import PlaylistIcon from '../assets/icons/playlist_item.svg';
+import { SongMeta } from '../../shared/songTypes';
 
 interface PlaylistViewProps {
     playlistId: string;
-    onOpenLyrics?: (song: any) => void; // Using any to match SongMeta if needed, or just SongMeta
+    onOpenLyrics?: (song: SongMeta) => void;
 }
 
 const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId, onOpenLyrics }) => {
     const { getSongById } = useLibrary();
     const { playlists, renamePlaylist, deletePlaylist, removeSongFromPlaylist } = useUserData();
-    const { playSongList, replaceQueue } = useQueue();
     const [isRenaming, setIsRenaming] = useState(false);
     const [newName, setNewName] = useState('');
 
@@ -23,22 +23,12 @@ const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId, onOpenLyrics })
         if (!playlist) return [];
         return playlist.songIds
             .map(id => getSongById(id))
-            .filter(song => song !== undefined) as any[];
+            .filter(song => song !== undefined) as SongMeta[];
     }, [playlist, getSongById]);
 
     if (!playlist) {
         return <div style={{ padding: '20px', color: '#fff' }}>Playlist not found</div>;
     }
-
-    const handlePlayAll = () => {
-        if (playlistSongs.length === 0) return;
-        playSongList(playlistSongs.map(s => s.id));
-    };
-
-    const handleReplaceAndPlay = () => {
-        if (playlistSongs.length === 0) return;
-        replaceQueue(playlistSongs.map(s => s.id));
-    };
 
     const handleDeletePlaylist = () => {
         if (window.confirm(`確定要刪除歌單「${playlist.name}」嗎？`)) {
@@ -62,6 +52,7 @@ const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId, onOpenLyrics })
         <div style={{ height: '100%', display: 'flex', flexDirection: 'column', color: '#fff', padding: '32px' }}>
             <div style={{ marginBottom: '20px', flexShrink: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                    <img src={PlaylistIcon} alt="" style={pageTitleIconStyle} />
                     {isRenaming ? (
                         <input
                             autoFocus
@@ -94,51 +85,8 @@ const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId, onOpenLyrics })
                     <span style={{ fontSize: '16px', color: '#666', cursor: 'pointer' }} onClick={startRename}>✎</span>
                 </div>
 
-                <div style={{ fontSize: '14px', color: '#888', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>共 {playlistSongs.length} 首歌曲</span>
-                    <button
-                        onClick={handleDeletePlaylist}
-                        style={{
-                            backgroundColor: 'transparent',
-                            border: '1px solid #d32f2f',
-                            color: '#d32f2f',
-                            padding: '4px 8px',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px'
-                        }}
-                    >
-                        刪除此歌單
-                    </button>
-                </div>
-
-                <div style={{ display: 'flex', gap: '10px' }}>
-                    <button
-                        onClick={handlePlayAll}
-                        style={{
-                            padding: '8px 16px',
-                            backgroundColor: '#333',
-                            border: 'none',
-                            borderRadius: '4px',
-                            color: '#fff',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        全部加入播放隊列 (追加)
-                    </button>
-                    <button
-                        onClick={handleReplaceAndPlay}
-                        style={{
-                            padding: '8px 16px',
-                            backgroundColor: 'var(--primary-color)',
-                            border: 'none',
-                            borderRadius: '4px',
-                            color: '#fff',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        取代播放隊列並播放
-                    </button>
+                <div style={{ fontSize: '14px', color: '#888' }}>
+                    此歌單的排序與篩選只改變目前顯示，不會改寫歌單原始順序。
                 </div>
             </div>
 
@@ -146,8 +94,16 @@ const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId, onOpenLyrics })
                 <SongList
                     songs={playlistSongs}
                     context="playlist"
+                    listKey={`playlist:${playlistId}`}
                     onEditLyrics={onOpenLyrics}
                     emptyMessage="此歌單目前沒有歌曲，可從歌曲庫或其他列表使用「加入歌單…」新增。"
+                    moreActions={[
+                        {
+                            label: '刪除此歌單',
+                            danger: true,
+                            onClick: handleDeletePlaylist,
+                        },
+                    ]}
                     renderCustomActions={(song) => (
                         <button
                             onClick={(e) => {
@@ -175,6 +131,14 @@ const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId, onOpenLyrics })
             </div>
         </div>
     );
+};
+
+const pageTitleIconStyle: React.CSSProperties = {
+    width: '26px',
+    height: '26px',
+    filter: 'brightness(0) invert(1)',
+    opacity: 0.9,
+    flexShrink: 0,
 };
 
 export default PlaylistView;

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { DownloadJob, SongMeta } from '../../shared/songTypes';
 import SongList from './SongList';
 import { useLibrary } from '../contexts/LibraryContext';
+import DownloadIcon from '../assets/icons/download.svg';
 
 interface DownloadManagerViewProps {
     onOpenLyrics?: (song: any) => void;
@@ -94,7 +95,10 @@ const DownloadManagerView: React.FC<DownloadManagerViewProps> = ({ onOpenLyrics 
     return (
         <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ padding: '32px 32px 0' }}>
-                <h1 style={{ fontSize: '28px', fontWeight: 'bold', margin: '0 0 24px' }}>下載管理</h1>
+                <h1 style={{ fontSize: '28px', fontWeight: 'bold', margin: '0 0 24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <img src={DownloadIcon} alt="" style={pageTitleIconStyle} />
+                    下載管理
+                </h1>
 
                 {/* Active Downloads Section */}
                 <section style={{ marginBottom: '24px' }}>
@@ -203,6 +207,14 @@ const DownloadManagerView: React.FC<DownloadManagerViewProps> = ({ onOpenLyrics 
             </div>
         </div>
     );
+};
+
+const pageTitleIconStyle: React.CSSProperties = {
+    width: '26px',
+    height: '26px',
+    filter: 'brightness(0) invert(1)',
+    opacity: 0.9,
+    flexShrink: 0,
 };
 
 export default DownloadManagerView;
