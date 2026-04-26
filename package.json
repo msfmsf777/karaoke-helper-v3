@@ -3,11 +3,11 @@
   "description": "Karaoke Helper Application - Designed for VTubers and Singing Streamers",
   "author": "msfmsf777",
   "private": true,
-  "version": "3.1.1-beta",
+  "version": "3.2.0-beta",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && electron-builder --win",
+    "build": "node scripts/clean-build.mjs && tsc && vite build && electron-builder --win",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
