@@ -387,6 +387,100 @@ const MiniPlaybackControl: React.FC<{
     );
 };
 
+const MusicNoteIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 18V5l12-2v13" />
+        <circle cx="6" cy="18" r="3" />
+        <circle cx="18" cy="16" r="3" />
+    </svg>
+);
+
+const QueueArtworkButton: React.FC<{
+    thumbnailPath?: string;
+    onPlay: () => void;
+}> = ({ thumbnailPath, onPlay }) => {
+    const [hovered, setHovered] = useState(false);
+    const [failed, setFailed] = useState(false);
+    const thumbnailSrc = failed ? undefined : localPathToFileUrl(thumbnailPath);
+
+    useEffect(() => {
+        setFailed(false);
+    }, [thumbnailPath]);
+
+    return (
+        <button
+            type="button"
+            title="播放"
+            onClick={(e) => {
+                e.stopPropagation();
+                onPlay();
+            }}
+            onDoubleClick={(e) => e.stopPropagation()}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            style={{
+                width: '30px',
+                height: '30px',
+                borderRadius: '5px',
+                border: '1px solid rgba(255,255,255,0.12)',
+                background: '#252525',
+                color: '#aaa',
+                padding: 0,
+                overflow: 'hidden',
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0,
+                // @ts-ignore
+                WebkitAppRegion: 'no-drag',
+            }}
+        >
+            {thumbnailSrc ? (
+                <img
+                    src={thumbnailSrc}
+                    alt=""
+                    draggable={false}
+                    onError={() => setFailed(true)}
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block',
+                        opacity: hovered ? 0.42 : 1,
+                        transition: 'opacity 0.14s ease',
+                    }}
+                />
+            ) : (
+                <div style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: hovered ? 0.42 : 1,
+                    transition: 'opacity 0.14s ease',
+                }}>
+                    <MusicNoteIcon />
+                </div>
+            )}
+            {hovered && (
+                <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'rgba(0,0,0,0.24)',
+                }}>
+                    <img src={PlayIcon} alt="" style={{ width: '12px', height: '12px', filter: 'brightness(0) invert(1)' }} />
+                </div>
+            )}
+        </button>
+    );
+};
+
 export default function MiniPlayerWindow() {
     const [state, setState] = useState({
         currentTrack: null as { title: string; artist: string; duration: number; thumbnailPath?: string } | null,
@@ -395,7 +489,7 @@ export default function MiniPlayerWindow() {
         volume: { instrumental: 1, vocal: 1, instrumentalMuted: false, vocalMuted: false },
         speed: 1,
         pitch: 0,
-        queue: [] as { id: string; title: string; artist: string }[],
+        queue: [] as { id: string; title: string; artist: string; thumbnailPath?: string }[],
         currentIndex: 0,
         isFavorite: false,
         displayTitle: '',
@@ -687,7 +781,7 @@ export default function MiniPlayerWindow() {
                         // paddingLeft moved to children for flexible layout
                         paddingRight: '20px',
                         minWidth: '320px',
-                        width: 'auto', // Allow dynamic width
+                        width: '320px',
                         backgroundColor: 'rgba(20, 20, 20, 0.95)',
                         borderRadius: showQueue ? '30px 30px 16px 16px' : '30px',
                         boxShadow: '0 4px 20px rgba(0,0,0,0.6)',
@@ -698,9 +792,21 @@ export default function MiniPlayerWindow() {
                         flexDirection: 'column',
                         justifyContent: 'flex-start', // Top align content
                         // @ts-ignore
-                        WebkitAppRegion: 'drag',
+                        WebkitAppRegion: 'no-drag',
                         transition: 'border-radius 0.2s'
                     }}>
+                    <div
+                        style={{
+                            position: 'absolute',
+                            left: '84px',
+                            right: 0,
+                            top: 0,
+                            height: '60px',
+                            zIndex: 0,
+                            // @ts-ignore
+                            WebkitAppRegion: 'drag',
+                        }}
+                    />
 
                     {/* Close Button */}
                     <div style={{
@@ -732,6 +838,7 @@ export default function MiniPlayerWindow() {
                             position: 'relative', // Scope absolute children (Controls) to this row!
                             display: 'flex',
                             alignItems: 'center',
+                            zIndex: 1,
                         }}>
                         {/* Song Info - ABOSLUTE CENTERED for perfect geometric alignment */}
                         <div style={{
@@ -876,9 +983,13 @@ export default function MiniPlayerWindow() {
                                 height: '180px',
                                 overflowY: 'auto',
                                 padding: '10px',
+                                width: '100%',
+                                boxSizing: 'border-box',
                                 borderTop: '1px solid rgba(255,255,255,0.1)',
                                 borderRadius: '0 0 16px 16px',
                                 boxShadow: 'inset 0 10px 10px -10px rgba(0,0,0,0.5)',
+                                position: 'relative',
+                                zIndex: 1,
                                 // @ts-ignore
                                 WebkitAppRegion: 'no-drag'
                             }}
@@ -893,14 +1004,19 @@ export default function MiniPlayerWindow() {
                                     return (
                                         <div
                                             key={item.id + idx}
-                                            onClick={() => window.khelper?.miniPlayer?.sendCommand('playQueueItem', idx)}
+                                            onDoubleClick={() => window.khelper?.miniPlayer?.sendCommand('playQueueIndex', idx)}
                                             style={{
-                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                padding: '6px 8px', borderRadius: '4px',
+                                                display: 'grid',
+                                                gridTemplateColumns: '30px minmax(0, 1fr) 24px',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                padding: '5px 8px',
+                                                borderRadius: '4px',
                                                 cursor: 'pointer',
                                                 fontSize: '12px',
                                                 backgroundColor: isCurrent ? 'rgba(255,255,255,0.1)' : 'transparent',
-                                                marginBottom: '2px'
+                                                marginBottom: '2px',
+                                                minWidth: 0,
                                             }}
                                             onMouseEnter={(e) => {
                                                 if (!isCurrent) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'
@@ -913,20 +1029,31 @@ export default function MiniPlayerWindow() {
                                                 if (rmBtn) rmBtn.style.opacity = '0';
                                             }}
                                         >
-                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                            <QueueArtworkButton
+                                                thumbnailPath={item.thumbnailPath}
+                                                onPlay={() => window.khelper?.miniPlayer?.sendCommand('playQueueIndex', idx)}
+                                            />
+                                            <div style={{ minWidth: 0, overflow: 'hidden' }}>
                                                 <div style={{
                                                     color: isCurrent ? 'var(--accent-color, #646cff)' : '#eee',
                                                     fontWeight: isCurrent ? 600 : 400,
                                                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
                                                 }}>{item.title}</div>
-                                                <div style={{ color: '#888', fontSize: '10px', marginTop: '1px' }}>{item.artist || 'Unknown'}</div>
+                                                <div style={{ color: '#888', fontSize: '10px', marginTop: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.artist || 'Unknown'}</div>
                                             </div>
                                             <button
                                                 className="remove-btn"
                                                 onClick={(e) => { e.stopPropagation(); window.khelper?.miniPlayer?.sendCommand('removeFromQueue', idx); }}
                                                 style={{
                                                     background: 'none', border: 'none', color: '#666', cursor: 'pointer',
-                                                    fontSize: '16px', opacity: 0, transition: 'opacity 0.2s', padding: '4px'
+                                                    fontSize: '16px', opacity: 0, transition: 'opacity 0.2s', padding: '4px',
+                                                    width: '24px',
+                                                    height: '24px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    // @ts-ignore
+                                                    WebkitAppRegion: 'no-drag',
                                                 }}
                                             >
                                                 &times;

@@ -25,6 +25,7 @@ interface MiniPlayerState {
         id: string;
         title: string;
         artist: string;
+        thumbnailPath?: string;
     }[];
     currentIndex: number;
     isFavorite: boolean;
@@ -231,7 +232,7 @@ export default function MiniPlayerSync() {
             pitch: tf.transpose,
             queue: queue.slice(0, 20).map(id => {
                 const s = getSongById(id);
-                return { id, title: s?.title || 'Unknown', artist: s?.artist || '' };
+                return { id, title: s?.title || 'Unknown', artist: s?.artist || '', thumbnailPath: s?.thumbnail_path };
             }),
             currentIndex: currentIndex,
             isFavorite: currentSongId ? isFavorite(currentSongId) : false,

@@ -38,9 +38,6 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
     const [adjustedPosition, setAdjustedPosition] = useState(position);
     const [playlistMenuPosition, setPlaylistMenuPosition] = useState({ x: 0, y: 0 });
 
-    const openTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
     // Smart Positioning
     useLayoutEffect(() => {
         if (menuRef.current) {
@@ -75,33 +72,20 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
         document.addEventListener('mousedown', handleClickOutside);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
-            if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
-            if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
         };
     }, [onClose, showEditDialog]);
 
     const handleSubmenuEnter = (menu: 'playlist' | 'separation') => {
-        if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
-        if (activeSubmenu === menu) return;
-
         if (menu === 'playlist' && playlistItemRef.current) {
             const rect = playlistItemRef.current.getBoundingClientRect();
             setPlaylistMenuPosition({ x: rect.right - 5, y: rect.top });
         }
 
-        if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
-        openTimeoutRef.current = setTimeout(() => {
-            setActiveSubmenu(menu);
-        }, 250);
+        setActiveSubmenu(menu);
     };
 
-    const handleSubmenuLeave = () => {
-        if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
-
-        if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
-        closeTimeoutRef.current = setTimeout(() => {
-            setActiveSubmenu(null);
-        }, 300);
+    const clearSubmenu = () => {
+        setActiveSubmenu(null);
     };
 
     const style: React.CSSProperties = {
@@ -198,6 +182,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
             <div
                 style={itemStyle}
                 onClick={handlePlay}
+                onMouseEnter={clearSubmenu}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
@@ -207,6 +192,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
             <div
                 style={itemStyle}
                 onClick={handleAddToQueue}
+                onMouseEnter={clearSubmenu}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
@@ -219,6 +205,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
             <div
                 style={itemStyle}
                 onClick={handleToggleFavorite}
+                onMouseEnter={clearSubmenu}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
@@ -230,7 +217,6 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                 ref={playlistItemRef}
                 style={itemStyle}
                 onMouseEnter={() => handleSubmenuEnter('playlist')}
-                onMouseLeave={handleSubmenuLeave}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
@@ -269,7 +255,6 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                             <div
                                 style={itemStyle}
                                 onMouseEnter={() => handleSubmenuEnter('separation')}
-                                onMouseLeave={handleSubmenuLeave}
                                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
                                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                             >
@@ -288,7 +273,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                                         padding: '6px 0',
                                         boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
                                         minWidth: '160px',
-                                        marginLeft: '4px',
+                                        marginLeft: 0,
                                         zIndex: 10001
                                     }}>
                                         {[
@@ -339,6 +324,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                         onClose();
                     }
                 }}
+                onMouseEnter={clearSubmenu}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
@@ -348,6 +334,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
             <div
                 style={itemStyle}
                 onClick={handleEditDetails}
+                onMouseEnter={clearSubmenu}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
@@ -360,6 +347,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                     window.khelper?.songLibrary.openSongFolder(song.id);
                     onClose();
                 }}
+                onMouseEnter={clearSubmenu}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
@@ -369,6 +357,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
             <div
                 style={{ ...itemStyle, color: '#ff8080' }}
                 onClick={handleDeleteSong}
+                onMouseEnter={clearSubmenu}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3d3d3d'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
