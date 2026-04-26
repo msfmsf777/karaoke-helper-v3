@@ -51,7 +51,7 @@ function AppContent() {
 
   const mainContentRef = useRef<HTMLDivElement>(null);
 
-  const { currentSongId, playNext, playPrev, queue, currentIndex, isStreamWaiting } = useQueue();
+  const { currentSongId, playNext, playPrev, queue, currentIndex, isStreamWaiting, isPlaybackLoading } = useQueue();
   const { getSongById } = useLibrary();
   const { hotkeys } = useUserData();
   const [focusSearchRequest, setFocusSearchRequest] = useState(0);
@@ -169,6 +169,9 @@ function AppContent() {
   const runHotkeyAction = (action: HotkeyAction) => {
     switch (action) {
       case 'playPause':
+        if (isPlaybackLoading) {
+          break;
+        }
         if (isStreamWaiting) {
           playNext(false);
         } else {

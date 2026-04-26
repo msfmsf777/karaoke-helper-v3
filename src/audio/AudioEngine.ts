@@ -319,6 +319,7 @@ export class DualAudioEngine implements AudioEngine {
   private timeUpdateSubscribers = new Set<(timeSeconds: number) => void>();
   private endedSubscribers = new Set<() => void>();
   private animationFrameId: number | null = null;
+  private loadGeneration = 0;
 
   private transform: PlaybackTransform = { speed: 1.0, transpose: 0 };
 
@@ -400,17 +401,20 @@ export class DualAudioEngine implements AudioEngine {
 
   async loadStream(url: string): Promise<void> {
     this.stop();
+    const generation = ++this.loadGeneration;
     this.activeMode = 'native';
     console.log('[AudioEngine] Loading Native Stream:', url);
     await Promise.all([
       this.nativeStreamPlayer.loadUrl(url),
       this.nativeHeadphonePlayer.loadUrl(url)
     ]);
+    if (generation !== this.loadGeneration) return;
     this.applyTrackVolumes();
   }
 
   async loadFile(paths: string | { instrumental: string; vocal: string | null }): Promise<void> {
     this.stop();
+    const generation = ++this.loadGeneration;
     this.activeMode = 'soundtouch';
 
     let instrPath: string;
@@ -434,6 +438,7 @@ export class DualAudioEngine implements AudioEngine {
       fetch(instrUrl).then(r => r.arrayBuffer()),
       vocalUrl ? fetch(vocalUrl).then(r => r.arrayBuffer()) : Promise.resolve(null)
     ]);
+    if (generation !== this.loadGeneration) return;
 
     const decode = async (ctx: AudioContext, buf: ArrayBuffer | null) => {
       if (!buf || buf.byteLength === 0) return null;
@@ -441,18 +446,23 @@ export class DualAudioEngine implements AudioEngine {
     };
 
     // Parallel decode for both engines
-    await Promise.all([
-      (async () => {
-        const i = await decode(this.streamPlayer.audioContext, instrBuf);
-        const v = await decode(this.streamPlayer.audioContext, vocalBuf);
-        await this.streamPlayer.loadBuffers(i, v);
-      })(),
-      (async () => {
-        const i = await decode(this.headphonePlayer.audioContext, instrBuf);
-        const v = await decode(this.headphonePlayer.audioContext, vocalBuf);
-        await this.headphonePlayer.loadBuffers(i, v);
-      })()
+    const [streamBuffers, headphoneBuffers] = await Promise.all([
+      (async () => ({
+        instrumental: await decode(this.streamPlayer.audioContext, instrBuf),
+        vocal: await decode(this.streamPlayer.audioContext, vocalBuf),
+      }))(),
+      (async () => ({
+        instrumental: await decode(this.headphonePlayer.audioContext, instrBuf),
+        vocal: await decode(this.headphonePlayer.audioContext, vocalBuf),
+      }))()
     ]);
+    if (generation !== this.loadGeneration) return;
+
+    await Promise.all([
+      this.streamPlayer.loadBuffers(streamBuffers.instrumental, streamBuffers.vocal),
+      this.headphonePlayer.loadBuffers(headphoneBuffers.instrumental, headphoneBuffers.vocal)
+    ]);
+    if (generation !== this.loadGeneration) return;
 
     // Reset transform - REMOVED to allow external control and avoid race/redundancy
     // this.setPlaybackTransform({ speed: 1.0, transpose: 0 });

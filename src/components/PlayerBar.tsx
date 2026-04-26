@@ -55,7 +55,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   currentTrackName,
   onToggleQueue,
 }) => {
-  const { playNext, playPrev, currentSongId, playbackMode, setPlaybackMode, isStreamWaiting, queue, currentIndex } = useQueue();
+  const { playNext, playPrev, currentSongId, playbackMode, setPlaybackMode, isStreamWaiting, isPlaybackLoading, queue, currentIndex } = useQueue();
   const { getSongById, updateSong } = useLibrary();
   const initialVolumes = loadVolumePreferences() ?? { streamVolume: 0.8, headphoneVolume: 1 };
 
@@ -94,6 +94,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
 
   // Play Button Handler
   const handlePlayClick = () => {
+    if (isPlaybackLoading) return;
     if (isWaiting) {
       // In Waiting State, Play button acts as "Start Next Song"
       playNext(false);
@@ -190,8 +191,8 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
     return `${minutes}:${seconds}`;
   };
 
-  const progressValue = duration > 0 ? Math.min(currentTime, duration) : 0;
-  const progressMax = duration > 0 ? duration : 0;
+  const progressValue = isPlaybackLoading ? 0 : (duration > 0 ? Math.min(currentTime, duration) : 0);
+  const progressMax = isPlaybackLoading ? 0 : (duration > 0 ? duration : 0);
 
   const handleLiveToggle = () => {
     if (currentView === 'stream') {
@@ -261,6 +262,12 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
         zIndex: 100,
       }}
     >
+      <style>{`
+        @keyframes khelperPlaybackLoadingRing {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
       {/* Left: Song Info & Live Toggle */}
       <div style={{ display: 'flex', alignItems: 'center', width: '30%', minWidth: 0 }}>
         <ArtworkTile
@@ -474,31 +481,50 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
             >
               <img src={PrevIcon} alt="Previous" style={{ width: '24px', height: '24px', display: 'block' }} />
             </button>
-            <button
-              onClick={handlePlayClick}
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '18px', // Circle
-                backgroundColor: '#fff',
-                border: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                color: '#1e1e1e', // Soft black (matches app bg)
-                transition: 'transform 0.1s',
-              }}
-              onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
-              onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              {isPlaying ? (
-                <img src={PauseIcon} alt="Pause" style={{ width: '16px', height: '16px', display: 'block' }} />
-              ) : (
-                <img src={PlayIcon} alt="Play" style={{ width: '16px', height: '16px', display: 'block', marginLeft: '1px' }} />
+            <div style={{ position: 'relative', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {isPlaybackLoading && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: '1px',
+                    borderRadius: '50%',
+                    border: '2px solid rgba(255,255,255,0.16)',
+                    borderTopColor: 'var(--accent-color)',
+                    borderRightColor: 'rgba(255,255,255,0.45)',
+                    animation: 'khelperPlaybackLoadingRing 0.8s linear infinite',
+                    pointerEvents: 'none',
+                  }}
+                />
               )}
-            </button>
+              <button
+                onClick={handlePlayClick}
+                disabled={isPlaybackLoading}
+                title={isPlaybackLoading ? '載入中' : undefined}
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '18px', // Circle
+                  backgroundColor: '#fff',
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: isPlaybackLoading ? 'wait' : 'pointer',
+                  color: '#1e1e1e', // Soft black (matches app bg)
+                  transition: 'transform 0.1s',
+                  opacity: isPlaybackLoading ? 0.94 : 1,
+                }}
+                onMouseDown={(e) => { if (!isPlaybackLoading) e.currentTarget.style.transform = 'scale(0.95)'; }}
+                onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                {isPlaying ? (
+                  <img src={PauseIcon} alt="Pause" style={{ width: '16px', height: '16px', display: 'block' }} />
+                ) : (
+                  <img src={PlayIcon} alt="Play" style={{ width: '16px', height: '16px', display: 'block', marginLeft: '1px' }} />
+                )}
+              </button>
+            </div>
             <button
               onClick={() => playNext(false)}
               title="下一首"

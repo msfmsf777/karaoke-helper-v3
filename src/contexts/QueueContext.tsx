@@ -9,6 +9,7 @@ interface QueueContextType {
     currentSongId: string | null;
     playbackMode: PlaybackMode;
     isStreamWaiting: boolean;
+    isPlaybackLoading: boolean;
     setPlaybackMode: (mode: PlaybackMode) => void;
     playSong: (songId: string) => Promise<void>;
     addToQueue: (songId: string) => void;
@@ -36,10 +37,12 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [currentIndex, setCurrentIndex] = useState<number>(-1);
     const [, setHistoryStack] = useState<number[]>([]);
     const [isStreamWaiting, setIsStreamWaiting] = useState(false);
+    const [loadingSongId, setLoadingSongId] = useState<string | null>(null);
     const { getSongById, loading: libraryLoading } = useLibrary();
     const isInitialized = useRef(false);
     const shouldAutoPlay = useRef(true);
     const shouldEnterStreamWait = useRef(false);
+    const loadTokenRef = useRef(0);
 
     const [playbackModeState, setPlaybackModeState] = useState<PlaybackMode>(() => {
         try {
@@ -106,11 +109,17 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, [queue, currentIndex]);
 
     const playSongInternal = async (songId: string, autoPlay = true) => {
+        const loadToken = ++loadTokenRef.current;
+        const isCurrentLoad = () => loadToken === loadTokenRef.current;
+
         setIsStreamWaiting(false); // Reset waiting state explicitly
+        setLoadingSongId(songId);
+        audioEngine.stop();
         console.debug('[QueueContext] playSongInternal', songId);
         const song = getSongById(songId);
         if (!song) {
             console.warn('[QueueContext] Song not found in library', songId);
+            if (isCurrentLoad()) setLoadingSongId(null);
             return;
         }
 
@@ -118,19 +127,25 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             if (song.audio_status === 'streaming') {
                 const youtubeId = (song.source as any).youtubeId;
                 const url = await window.khelper?.youtube.getStreamUrl(youtubeId);
+
+                if (!isCurrentLoad()) return;
                 
                 if (!url) throw new Error('Failed to fetch YouTube stream URL');
                 
                 await audioEngine.loadStream(url);
+                if (!isCurrentLoad()) return;
                 audioEngine.setPlaybackTransform({ speed: 1.0, transpose: 0 });
             } else {
                 const paths = await getSeparatedSongPaths(songId);
+
+                if (!isCurrentLoad()) return;
 
                 if (!paths.instrumental) {
                     throw new Error('File path not found');
                 }
 
                 await audioEngine.loadFile(paths);
+                if (!isCurrentLoad()) return;
 
                 // Apply saved playback transform or defaults
                 const transform = {
@@ -142,16 +157,24 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
             // Force seek to 0 to ensure SoundTouch filter is cleared/primed with new settings
             // This fixes the desync issue on start
+            if (!isCurrentLoad()) return;
             audioEngine.seek(0);
 
             // Wait for seek/clear to propagate and stabilize
             await new Promise(resolve => setTimeout(resolve, 100));
+            if (!isCurrentLoad()) return;
 
             if (autoPlay) {
                 await audioEngine.play();
             }
         } catch (err) {
-            console.error('[QueueContext] Failed to play song', songId, err);
+            if (isCurrentLoad()) {
+                console.error('[QueueContext] Failed to play song', songId, err);
+            }
+        } finally {
+            if (isCurrentLoad()) {
+                setLoadingSongId(null);
+            }
         }
     };
 
@@ -182,12 +205,16 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             if (!isStreamWaiting) setIsStreamWaiting(true); // Ensure state catches up
             // Update references so we don't trigger playback later
             // logic removed to fix resumption issue
+            loadTokenRef.current += 1;
+            setLoadingSongId(null);
             audioEngine.stop();
             return;
         }
 
         if (isStreamWaiting) {
             // If waiting, ensure player is stopped
+            loadTokenRef.current += 1;
+            setLoadingSongId(null);
             audioEngine.stop();
             return;
         }
@@ -498,6 +525,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 currentSongId: isStreamWaiting ? null : (queue[currentIndex] || null),
                 playbackMode,
                 isStreamWaiting,
+                isPlaybackLoading: loadingSongId !== null,
                 setPlaybackMode,
                 playSong,
                 addToQueue,

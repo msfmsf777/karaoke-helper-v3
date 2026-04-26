@@ -485,6 +485,7 @@ export default function MiniPlayerWindow() {
     const [state, setState] = useState({
         currentTrack: null as { title: string; artist: string; duration: number; thumbnailPath?: string } | null,
         isPlaying: false,
+        isPlaybackLoading: false,
         currentTime: 0,
         volume: { instrumental: 1, vocal: 1, instrumentalMuted: false, vocalMuted: false },
         speed: 1,
@@ -669,6 +670,12 @@ export default function MiniPlayerWindow() {
                 WebkitAppRegion: 'no-drag' // Global no-drag
             }}
         >
+            <style>{`
+                @keyframes khelperMiniPlaybackLoadingRing {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+            `}</style>
             <div
                 ref={containerRef}
                 style={{
@@ -933,19 +940,43 @@ export default function MiniPlayerWindow() {
                                 {/* Transport: Prev, Play, Next */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                     <ControlButton icon={PrevIcon} onClick={() => window.khelper?.miniPlayer?.sendCommand('prev')} title="上一首" />
-                                    <button
-                                        onClick={() => window.khelper?.miniPlayer?.sendCommand('playPause')}
-                                        style={{
-                                            width: '28px', height: '28px', borderRadius: '50%',
-                                            backgroundColor: '#fff', border: 'none',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                                            boxShadow: '0 2px 8px rgba(255,255,255,0.2)',
-                                            // @ts-ignore
-                                            WebkitAppRegion: 'no-drag'
-                                        }}
-                                    >
-                                        <img src={state.isPlaying ? PauseIcon : PlayIcon} style={{ width: '12px', height: '12px', filter: 'brightness(0)' }} />
-                                    </button>
+                                    <div style={{ position: 'relative', width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        {state.isPlaybackLoading && (
+                                            <div
+                                                style={{
+                                                    position: 'absolute',
+                                                    inset: 0,
+                                                    borderRadius: '50%',
+                                                    border: '2px solid rgba(255,255,255,0.18)',
+                                                    borderTopColor: 'var(--accent-color, #646cff)',
+                                                    borderRightColor: 'rgba(255,255,255,0.5)',
+                                                    animation: 'khelperMiniPlaybackLoadingRing 0.8s linear infinite',
+                                                    pointerEvents: 'none',
+                                                }}
+                                            />
+                                        )}
+                                        <button
+                                            onClick={() => {
+                                                if (!state.isPlaybackLoading) {
+                                                    window.khelper?.miniPlayer?.sendCommand('playPause');
+                                                }
+                                            }}
+                                            disabled={state.isPlaybackLoading}
+                                            title={state.isPlaybackLoading ? '載入中' : undefined}
+                                            style={{
+                                                width: '28px', height: '28px', borderRadius: '50%',
+                                                backgroundColor: '#fff', border: 'none',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                cursor: state.isPlaybackLoading ? 'wait' : 'pointer',
+                                                boxShadow: '0 2px 8px rgba(255,255,255,0.2)',
+                                                opacity: state.isPlaybackLoading ? 0.94 : 1,
+                                                // @ts-ignore
+                                                WebkitAppRegion: 'no-drag'
+                                            }}
+                                        >
+                                            <img src={state.isPlaying ? PauseIcon : PlayIcon} style={{ width: '12px', height: '12px', filter: 'brightness(0)' }} />
+                                        </button>
+                                    </div>
                                     <ControlButton icon={NextIcon} onClick={() => window.khelper?.miniPlayer?.sendCommand('next')} title="下一首" />
                                 </div>
 

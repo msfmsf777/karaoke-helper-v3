@@ -12,6 +12,7 @@ interface MiniPlayerState {
         thumbnailPath?: string;
     } | null;
     isPlaying: boolean;
+    isPlaybackLoading: boolean;
     currentTime: number;
     volume: {
         instrumental: number;
@@ -44,6 +45,7 @@ export default function MiniPlayerSync() {
         removeFromQueue,
         playQueueIndex,
         isStreamWaiting, // Destructure from hook
+        isPlaybackLoading,
         playbackMode // Need mode for logic
     } = useQueue();
 
@@ -98,6 +100,7 @@ export default function MiniPlayerSync() {
     }
 
     const handlePlayPauseLogic = () => {
+        if (isPlaybackLoading) return;
         if (isWaiting) {
             // In Waiting State, Play button acts as "Start Next Song"
             playNext(false);
@@ -174,7 +177,7 @@ export default function MiniPlayerSync() {
         });
 
         return () => removeListener?.();
-    }, [togglePlayPause, playNext, playPrev, removeFromQueue, playQueueIndex, currentSongId, toggleFavorite]);
+    }, [togglePlayPause, playNext, playPrev, removeFromQueue, playQueueIndex, currentSongId, toggleFavorite, isPlaybackLoading, isWaiting]);
 
     // State Broadcaster
     const broadcastState = useCallback((force = false) => {
@@ -221,6 +224,7 @@ export default function MiniPlayerSync() {
                 thumbnailPath: song.thumbnail_path
             } : null,
             isPlaying: audioEngine.isPlaying(),
+            isPlaybackLoading,
             currentTime: audioEngine.getCurrentTime(),
             volume: {
                 instrumental: instVol,
@@ -241,7 +245,7 @@ export default function MiniPlayerSync() {
         };
 
         window.khelper.miniPlayer.sendStateUpdate(state);
-    }, [currentSongId, queue, getSongById, currentIndex, isFavorite, isStreamWaiting, playbackMode]);
+    }, [currentSongId, queue, getSongById, currentIndex, isFavorite, isStreamWaiting, isPlaybackLoading, playbackMode]);
 
     useEffect(() => {
         const unsubTime = audioEngine.onTimeUpdate(() => broadcastState(false));
@@ -260,7 +264,7 @@ export default function MiniPlayerSync() {
     // React to state changes immediately
     useEffect(() => {
         broadcastState(true);
-    }, [currentSongId, queue, getSongById, currentIndex, isFavorite, isStreamWaiting, playbackMode, broadcastState]);
+    }, [currentSongId, queue, getSongById, currentIndex, isFavorite, isStreamWaiting, isPlaybackLoading, playbackMode, broadcastState]);
 
     return null;
 }
