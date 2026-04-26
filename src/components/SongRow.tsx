@@ -9,10 +9,13 @@ import OnlineSongContextMenu from './OnlineSongContextMenu';
 import AddToPlaylistMenu from './AddToPlaylistMenu';
 import OnlineDownloadPanel from './OnlineDownloadPanel';
 import YouTubeDownloadControl, { YouTubeDownloadTarget } from './YouTubeDownloadControl';
+import ArtworkTile from './ArtworkTile';
+import { useEnsureYoutubeThumbnail } from '../hooks/useEnsureYoutubeThumbnail';
 import FavoritesIcon from '../assets/icons/favorites.svg';
 import FavoritesFilledIcon from '../assets/icons/favorites_filled.svg';
 import AddIcon from '../assets/icons/add.svg';
 import MoreIcon from '../assets/icons/more.svg';
+import PlayIcon from '../assets/icons/play.svg';
 import { coerceDurationSeconds, getDownloadState, getSongYoutubeId } from '../utils/onlineSongs';
 
 interface SongRowProps {
@@ -62,7 +65,6 @@ const formatDuration = (seconds?: unknown) => {
 
 const SongRow: React.FC<SongRowProps> = ({
     song,
-    index,
     isActive,
     // context,
     onEditLyrics,
@@ -83,8 +85,14 @@ const SongRow: React.FC<SongRowProps> = ({
     const isStreaming = song.audio_status === 'streaming';
     const youtubeId = getSongYoutubeId(song);
     const downloadState = youtubeId ? getDownloadState(allSongs, downloadJobs, youtubeId) : { kind: 'none' as const };
+    useEnsureYoutubeThumbnail(song);
 
     const handleDoubleClick = () => {
+        playImmediate(song.id);
+    };
+
+    const handleArtworkClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation();
         playImmediate(song.id);
     };
 
@@ -111,8 +119,8 @@ const SongRow: React.FC<SongRowProps> = ({
             <div
                 style={{
                     display: 'grid',
-                    gridTemplateColumns: '40px minmax(200px, 1fr) 60px 120px 100px 150px 75px 80px', // Adjusted columns
-                    padding: '10px 16px',
+                    gridTemplateColumns: '42px minmax(0, 1fr) 44px 124px 68px 112px 60px 60px',
+                    padding: '10px 24px 10px 12px',
                     borderBottom: '1px solid #252525',
                     color: '#fff',
                     fontSize: '14px',
@@ -126,11 +134,20 @@ const SongRow: React.FC<SongRowProps> = ({
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
             >
-                {/* # Index */}
-                <div style={{ color: '#b3b3b3', fontSize: '13px' }}>{index + 1}</div>
+                {/* Artwork / Play */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ArtworkTile
+                        thumbnailPath={song.thumbnail_path}
+                        size={38}
+                        title="播放"
+                        onClick={handleArtworkClick}
+                        overlay={<img src={PlayIcon} alt="" style={{ width: '16px', height: '16px', display: 'block', filter: 'brightness(0) invert(1)' }} />}
+                        style={{ borderColor: isActive ? 'rgba(255, 255, 255, 0.32)' : '#3a3a3a' }}
+                    />
+                </div>
 
                 {/* Title + Artist */}
-                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingRight: '10px', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingLeft: '8px', paddingRight: '10px', overflow: 'hidden' }}>
                     <div
                         title={song.title}
                         style={{
@@ -178,7 +195,7 @@ const SongRow: React.FC<SongRowProps> = ({
                 </div>
 
                 {/* Hover Actions */}
-                <div style={{ display: 'flex', gap: '24px', paddingLeft: '6px', opacity: isHovered ? 1 : 0, transition: 'opacity 0.1s', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '28px', paddingLeft: '8px', opacity: isHovered ? 1 : 0, transition: 'opacity 0.1s', alignItems: 'center' }}>
                     <button
                         onClick={handleAddToPlaylistClick}
                         title="加入歌單/播放隊列"

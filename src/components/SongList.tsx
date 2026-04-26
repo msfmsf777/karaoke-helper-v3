@@ -43,8 +43,8 @@ const SongList: React.FC<SongListProps> = ({
             <div
                 style={{
                     display: 'grid',
-                    gridTemplateColumns: '40px minmax(200px, 1fr) 60px 120px 100px 150px 75px 80px', // Must match SongRow
-                    padding: '8px 24px 8px 16px', // Added right padding for scrollbar alignment
+                    gridTemplateColumns: '42px minmax(0px, 1fr) 44px 130px 56px 125px 46px 75px',
+                    padding: '8px 24px 8px 12px', // Added right padding for scrollbar alignment
                     borderBottom: '1px solid #333',
                     color: '#888',
                     fontSize: '12px',
@@ -53,8 +53,8 @@ const SongList: React.FC<SongListProps> = ({
                     zIndex: 1,
                 }}
             >
-                <div>#</div>
-                <div>標題 / 歌手</div>
+                <div></div>
+                <div style={{ paddingLeft: '8px' }}>標題 / 歌手</div>
                 <div style={{ textAlign: 'center' }}>最愛</div>
                 <div></div>
                 <div style={{ textAlign: 'center' }}>{showType ? '類型' : ''}</div>
@@ -68,6 +68,7 @@ const SongList: React.FC<SongListProps> = ({
                 <Virtuoso
                     style={{ height: '100%', overflowY: 'scroll', overflowX: 'hidden' }}
                     totalCount={songs.length}
+                    computeItemKey={(index) => songs[index]?.id ?? index}
                     components={{
                         Footer: () => <div style={{ height: '120px' }} />
                     }}

@@ -9,6 +9,7 @@ interface MiniPlayerState {
         title: string;
         artist: string;
         duration: number;
+        thumbnailPath?: string;
     } | null;
     isPlaying: boolean;
     currentTime: number;
@@ -215,7 +216,8 @@ export default function MiniPlayerSync() {
             currentTrack: song ? {
                 title: song.title,
                 artist: song.artist || '',
-                duration: audioEngine.getDuration()
+                duration: audioEngine.getDuration(),
+                thumbnailPath: song.thumbnail_path
             } : null,
             isPlaying: audioEngine.isPlaying(),
             currentTime: audioEngine.getCurrentTime(),

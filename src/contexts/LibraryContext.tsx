@@ -99,10 +99,15 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
             fetchSongs();
         });
 
+        const unsubscribeSongUpdated = window.khelper?.songLibrary?.subscribeSongUpdated?.((updatedSong) => {
+            setAllSongs(prev => prev.map(song => song.id === updatedSong.id ? updatedSong : song));
+        });
+
         return () => {
             unsubscribeSeparation();
             unsubscribeDownloads?.();
             removeListener?.();
+            unsubscribeSongUpdated?.();
         };
     }, [fetchSongs]);
 

@@ -50,6 +50,8 @@ interface Window {
       getSongFilePath: (id: string) => Promise<string | null>
       getOriginalSongFilePath: (id: string) => Promise<string | null>
       getBasePath: () => Promise<string>
+      ensureYoutubeThumbnail: (id: string) => Promise<import('../shared/songTypes').SongMeta | null>
+      subscribeSongUpdated: (callback: (song: import('../shared/songTypes').SongMeta) => void) => () => void
     }
     jobs: {
       queueSeparationJob: (songId: string) => Promise<import('../shared/separationTypes').SeparationJob>

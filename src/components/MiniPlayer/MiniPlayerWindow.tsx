@@ -12,6 +12,7 @@ import VolumeMuteIcon from '../../assets/icons/volume_mute.svg';
 import PlaylistIcon from '../../assets/icons/playlist.svg';
 import ScrollingText from '../ScrollingText';
 import CloseIcon from '../../assets/icons/cancel.svg';
+import { localPathToFileUrl } from '../../utils/localFileUrl';
 
 interface ControlButtonProps {
     icon: string;
@@ -388,7 +389,7 @@ const MiniPlaybackControl: React.FC<{
 
 export default function MiniPlayerWindow() {
     const [state, setState] = useState({
-        currentTrack: null as { title: string; artist: string; duration: number } | null,
+        currentTrack: null as { title: string; artist: string; duration: number; thumbnailPath?: string } | null,
         isPlaying: false,
         currentTime: 0,
         volume: { instrumental: 1, vocal: 1, instrumentalMuted: false, vocalMuted: false },
@@ -406,6 +407,7 @@ export default function MiniPlayerWindow() {
     const [showSpeed, setShowSpeed] = useState(false);
     const [showPitch, setShowPitch] = useState(false);
     const [showQueue, setShowQueue] = useState(false);
+    const [thumbnailFailed, setThumbnailFailed] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const speedContainerRef = useRef<HTMLDivElement>(null);
     const pitchContainerRef = useRef<HTMLDivElement>(null);
@@ -543,6 +545,11 @@ export default function MiniPlayerWindow() {
     }, [showQueue]);
 
     const progress = state.currentTrack?.duration ? state.currentTime / state.currentTrack.duration : 0;
+    const thumbnailSrc = thumbnailFailed ? undefined : localPathToFileUrl(state.currentTrack?.thumbnailPath);
+
+    useEffect(() => {
+        setThumbnailFailed(false);
+    }, [state.currentTrack?.thumbnailPath]);
 
     // Progress Ring
     const radius = 44; // Enlarged radius
@@ -619,10 +626,39 @@ export default function MiniPlayerWindow() {
                     {/* Content */}
                     <div
                         style={{
-                            width: `${circleSize - 20}px`, height: `${circleSize - 20}px`, borderRadius: '50%', backgroundColor: '#222', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                            width: `${circleSize - 20}px`, height: `${circleSize - 20}px`, borderRadius: '50%', backgroundColor: '#222', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative',
                         }}
                     >
-                        {hovered ? (
+                        {thumbnailSrc ? (
+                            <>
+                                <img
+                                    src={thumbnailSrc}
+                                    alt=""
+                                    draggable={false}
+                                    onError={() => setThumbnailFailed(true)}
+                                    style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                        display: 'block',
+                                        opacity: hovered ? 0.42 : 1,
+                                        transition: 'opacity 0.16s ease'
+                                    }}
+                                />
+                                {hovered && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        inset: 0,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        background: 'rgba(0, 0, 0, 0.2)'
+                                    }}>
+                                        <img src={LogoIcon} alt="Logo" style={{ width: '40px', height: '40px', opacity: 0.74 }} />
+                                    </div>
+                                )}
+                            </>
+                        ) : hovered ? (
                             <img src={LogoIcon} alt="Logo" style={{ width: '40px', height: '40px', opacity: 0.8 }} />
                         ) : (
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--primary-color, #00A3FF)' }}>

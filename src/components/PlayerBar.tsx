@@ -9,6 +9,8 @@ import VolumeControlPopup from './VolumeControlPopup';
 import ScrollingText from './ScrollingText';
 import AddToPlaylistMenu from './AddToPlaylistMenu';
 import ModeSelector from './ModeSelector';
+import ArtworkTile from './ArtworkTile';
+import { useEnsureYoutubeThumbnail } from '../hooks/useEnsureYoutubeThumbnail';
 
 // Icons
 import PlayIcon from '../assets/icons/play.svg';
@@ -64,6 +66,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   const currentSong = currentSongId ? getSongById(currentSongId) : null;
   const isStreaming = currentSong?.audio_status === 'streaming';
   const isControlsDisabled = !currentSongId || isStreaming;
+  useEnsureYoutubeThumbnail(currentSong);
 
   if (playbackMode === 'stream' && isStreamWaiting) {
     isWaiting = true;
@@ -256,57 +259,53 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
     >
       {/* Left: Song Info & Live Toggle */}
       <div style={{ display: 'flex', alignItems: 'center', width: '30%', minWidth: 0 }}>
-        <div
+        <ArtworkTile
+          thumbnailPath={currentSong?.thumbnail_path}
+          size={56}
+          title={currentView === 'stream' ? '關閉直播模式' : '進入直播模式'}
+          onClick={handleLiveToggle}
+          overlayVisible={isHovered}
+          dimmed={isHovered}
+          overlay={currentView === 'stream' ? (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 14L4 9l5-5" />
+              <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11" />
+            </svg>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <img src={LiveModeIcon} alt="Live Mode" style={{ width: '20px', height: '20px', marginBottom: currentSong?.thumbnail_path ? 0 : '2px', display: 'block' }} />
+              {!currentSong?.thumbnail_path && <span style={{ fontSize: '10px', color: '#ff4444', lineHeight: 1 }}>直播模式</span>}
+            </div>
+          )}
+          badge={currentView === 'stream' && currentSong?.thumbnail_path ? (
+            <span style={{
+              position: 'absolute',
+              right: '4px',
+              bottom: '4px',
+              padding: '1px 4px',
+              borderRadius: '3px',
+              background: 'rgba(255, 68, 68, 0.88)',
+              color: '#fff',
+              fontSize: '9px',
+              fontWeight: 800,
+              letterSpacing: 0,
+            }}>
+              LIVE
+            </span>
+          ) : null}
+          placeholder={currentView === 'stream' && !isHovered ? <span>LIVE</span> : undefined}
           style={{
-            width: '56px',
-            height: '56px',
-            backgroundColor: currentView === 'stream' ? '#330000' : '#333',
-            borderRadius: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
             marginRight: '12px',
+            backgroundColor: currentView === 'stream' ? '#330000' : '#333',
             color: currentView === 'stream' ? '#ff4444' : '#ccc',
-            cursor: 'pointer',
-            position: 'relative',
-            overflow: 'hidden',
             border: currentView === 'stream' ? '1px solid #ff4444' : '1px solid #444',
             fontWeight: 700,
             fontSize: '14px',
-            textAlign: 'center' as const,
             lineHeight: 1.2,
-            flexShrink: 0, // Prevent shrinking
           }}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
-          onClick={handleLiveToggle}
-          title={currentView === 'stream' ? '關閉直播模式' : '進入直播模式'}
-        >
-          {currentView === 'stream' ? (
-            isHovered ? (
-              // Back Icon
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 14L4 9l5-5" />
-                <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11" />
-              </svg>
-            ) : (
-              <span>LIVE</span>
-            )
-          ) : isHovered ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              {/* Red Live Icon */}
-              <img src={LiveModeIcon} alt="Live Mode" style={{ width: '20px', height: '20px', marginBottom: '2px', display: 'block' }} />
-              <span style={{ fontSize: '10px', color: '#ff4444', lineHeight: 1 }}>直播模式</span>
-            </div>
-          ) : (
-            // Music Icon
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 18V5l12-2v13" />
-              <circle cx="6" cy="18" r="3" />
-              <circle cx="18" cy="16" r="3" />
-            </svg>
-          )}
-        </div>
+        />
         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flex: 1, minWidth: 0 }}>
           {/* Song Title + Artist Marquee */}
           <div style={{ marginBottom: '4px', width: '100%' }}>

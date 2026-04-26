@@ -12,6 +12,7 @@ const LYRICS_STATUS_VALUES: LyricsStatus[] = ['none', 'text_only', 'synced'];
 const DEFAULT_LYRICS_STATUS: LyricsStatus = 'none';
 export const RAW_LYRICS_FILENAME = 'lyrics_raw.txt';
 export const SYNCED_LYRICS_FILENAME = 'lyrics_synced.lrc';
+const YOUTUBE_THUMBNAIL_BASENAME = 'thumbnail';
 
 function getAppDataRoot() {
   const userData = app.getPath('userData');
@@ -97,12 +98,73 @@ function normalizeMeta(meta: SongMeta): SongMeta {
     separation_quality: meta.separation_quality ?? undefined,
     duration: normalizeDuration((meta as { duration?: unknown }).duration),
     thumbnailUrl: meta.thumbnailUrl ?? undefined,
+    thumbnail_path: meta.thumbnail_path ?? undefined,
   };
   return normalized;
 }
 
 async function writeMeta(songDir: string, meta: SongMeta) {
   await fs.writeFile(path.join(songDir, 'meta.json'), JSON.stringify(meta, null, 2), 'utf-8');
+}
+
+function getThumbnailCandidates(youtubeId: string, preferredUrl?: string) {
+  const urls = [
+    preferredUrl,
+    `https://i.ytimg.com/vi/${youtubeId}/maxresdefault.jpg`,
+    `https://i.ytimg.com/vi/${youtubeId}/sddefault.jpg`,
+    `https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg`,
+    `https://i.ytimg.com/vi/${youtubeId}/mqdefault.jpg`,
+  ].filter((url): url is string => Boolean(url));
+
+  return Array.from(new Set(urls));
+}
+
+function extensionFromContentType(contentType: string | null) {
+  if (!contentType) return '.jpg';
+  if (contentType.includes('webp')) return '.webp';
+  if (contentType.includes('png')) return '.png';
+  return '.jpg';
+}
+
+async function fetchImage(url: string): Promise<{ bytes: Buffer; extension: string } | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) return null;
+
+    const contentType = response.headers.get('content-type');
+    if (contentType && !contentType.toLowerCase().startsWith('image/')) return null;
+
+    const arrayBuffer = await response.arrayBuffer();
+    const bytes = Buffer.from(arrayBuffer);
+    if (bytes.length === 0) return null;
+
+    return { bytes, extension: extensionFromContentType(contentType) };
+  } catch (error) {
+    console.warn('[Library] Failed to fetch thumbnail candidate', url, error);
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+export async function downloadYoutubeThumbnailToSongDir(
+  songDir: string,
+  youtubeId: string,
+  preferredUrl?: string
+): Promise<string | undefined> {
+  for (const url of getThumbnailCandidates(youtubeId, preferredUrl)) {
+    const image = await fetchImage(url);
+    if (!image) continue;
+
+    const thumbnailPath = path.join(songDir, `${YOUTUBE_THUMBNAIL_BASENAME}${image.extension}`);
+    await fs.writeFile(thumbnailPath, image.bytes);
+    return thumbnailPath;
+  }
+
+  return undefined;
 }
 
 async function readMeta(songDir: string): Promise<SongMeta | null> {
@@ -514,6 +576,46 @@ export async function updateSong(id: string, updates: Partial<SongMeta>): Promis
     ...current,
     ...updates,
   }));
+}
+
+export async function ensureYoutubeThumbnail(id: string): Promise<SongMeta | null> {
+  if (!id) return null;
+
+  const songsDir = await ensureSongsDir();
+  const songDir = path.join(songsDir, id);
+  const current = await readMeta(songDir);
+  if (!current) return null;
+
+  if (current.source.kind !== 'youtube' || current.audio_status === 'streaming') {
+    return null;
+  }
+
+  if (current.thumbnail_path) {
+    try {
+      await fs.access(current.thumbnail_path);
+      return null;
+    } catch {
+      // Fall through and try to rebuild the local cached thumbnail.
+    }
+  }
+
+  const thumbnailPath = await downloadYoutubeThumbnailToSongDir(
+    songDir,
+    current.source.youtubeId,
+    current.thumbnailUrl
+  );
+
+  if (!thumbnailPath) return null;
+
+  const updated = normalizeMeta({
+    ...current,
+    thumbnail_path: thumbnailPath,
+    updated_at: new Date().toISOString(),
+  });
+
+  await writeMeta(songDir, updated);
+  invalidateCache();
+  return updated;
 }
 
 export function getSongsBaseDir() {

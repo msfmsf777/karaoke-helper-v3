@@ -53,6 +53,8 @@ interface Window {
       getBasePath: () => Promise<string>;
       deleteSong: (id: string) => Promise<boolean>;
       updateSong: (id: string, updates: Partial<import('../shared/songTypes').SongMeta>) => Promise<import('../shared/songTypes').SongMeta | null>;
+      ensureYoutubeThumbnail: (id: string) => Promise<import('../shared/songTypes').SongMeta | null>;
+      subscribeSongUpdated: (callback: (song: import('../shared/songTypes').SongMeta) => void) => () => void;
     };
     youtube: {
       search: (query: string) => Promise<any[]>;
@@ -77,7 +79,7 @@ interface Window {
       invoke: (channel: string, ...args: any[]) => Promise<any>;
     };
     downloads: {
-      validateUrl: (url: string) => Promise<{ videoId: string; title: string; duration?: number } | null>;
+      validateUrl: (url: string) => Promise<{ videoId: string; title: string; duration?: number; thumbnailUrl?: string } | null>;
       queueDownload: (url: string, quality: 'best' | 'high' | 'normal', title?: string, artist?: string, type?: import('../shared/songTypes').SongType, lyricsText?: string, lyricsLrc?: string) => Promise<import('../shared/songTypes').DownloadJob>;
       getAllJobs: () => Promise<import('../shared/songTypes').DownloadJob[]>;
       subscribeUpdates: (

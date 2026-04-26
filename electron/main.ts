@@ -9,7 +9,7 @@ import {
   addLocalSong, getOriginalSongFilePath,
   getSeparatedSongPaths,
   getSongFilePath, getSongsBaseDir, loadAllSongs,
-  deleteSong, updateSong, getSongDirById, addOnlineSong
+  deleteSong, updateSong, getSongDirById, addOnlineSong, ensureYoutubeThumbnail
 } from './songLibrary'
 import { getAllJobs, queueSeparationJob, subscribeJobUpdates, cancelSeparationJob, retrySeparationJob, removeSeparationJob, killActiveSeparation } from './separationJobs'
 import { downloadManager, searchYouTube, searchYouTubeMore, getYouTubeStreamUrl, getYouTubeSuggestions } from './downloadJobs'
@@ -666,6 +666,16 @@ ipcMain.handle('library:delete-song', async (_event, id: string) => {
 
 ipcMain.handle('library:update-song', async (_event, payload: { id: string; updates: any }) => {
   return updateSong(payload.id, payload.updates)
+})
+
+ipcMain.handle('library:ensure-youtube-thumbnail', async (_event, id: string) => {
+  const updated = await ensureYoutubeThumbnail(id)
+  if (updated?.thumbnail_path) {
+    BrowserWindow.getAllWindows().forEach(w => {
+      w.webContents.send('library:song-updated', updated)
+    })
+  }
+  return updated
 })
 
 ipcMain.handle('jobs:queue-separation', async (_event, songId: string, quality?: 'high' | 'normal' | 'fast') => {

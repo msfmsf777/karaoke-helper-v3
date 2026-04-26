@@ -86,6 +86,13 @@ contextBridge.exposeInMainWorld('khelper', {
     deleteSong: (id: string): Promise<boolean> => ipcRenderer.invoke('library:delete-song', id),
     updateSong: (id: string, updates: Partial<SongMeta>): Promise<SongMeta | null> =>
       ipcRenderer.invoke('library:update-song', { id, updates }),
+    ensureYoutubeThumbnail: (id: string): Promise<SongMeta | null> =>
+      ipcRenderer.invoke('library:ensure-youtube-thumbnail', id),
+    subscribeSongUpdated: (callback: (song: SongMeta) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, song: SongMeta) => callback(song)
+      ipcRenderer.on('library:song-updated', listener)
+      return () => ipcRenderer.off('library:song-updated', listener)
+    },
   },
   jobs: {
     queueSeparationJob: (songId: string, quality?: 'high' | 'normal' | 'fast'): Promise<SeparationJob> =>

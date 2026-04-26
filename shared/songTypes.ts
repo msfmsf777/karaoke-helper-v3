@@ -48,6 +48,7 @@ export interface SongMeta {
   };
   duration?: number;
   thumbnailUrl?: string;
+  thumbnail_path?: string;
 }
 
 export interface DownloadJob {
@@ -58,6 +59,8 @@ export interface DownloadJob {
   quality: 'best' | 'high' | 'normal';
   type?: SongType;
   lyricsText?: string;
+  lyricsLrc?: string;
+  thumbnailUrl?: string;
   status: 'queued' | 'downloading' | 'processing' | 'completed' | 'failed';
   progress: number;
   error?: string;

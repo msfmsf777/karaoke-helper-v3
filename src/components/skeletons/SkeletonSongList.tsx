@@ -12,11 +12,11 @@ const SkeletonSongRow: React.FC = () => {
                 gap: '16px',
             }}
         >
-            {/* Index / Play Icon */}
+            {/* Artwork */}
             <div
                 style={{
-                    width: '30px',
-                    height: '16px',
+                    width: '34px',
+                    height: '34px',
                     backgroundColor: '#333',
                     borderRadius: '4px',
                 }}

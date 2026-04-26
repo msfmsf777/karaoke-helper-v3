@@ -16,6 +16,7 @@ export interface DownloadJob {
     type: SongType;
     lyricsText?: string;
     lyricsLrc?: string;
+    thumbnailUrl?: string;
     status: 'queued' | 'downloading' | 'processing' | 'completed' | 'failed';
     progress: number;
     error?: string;
@@ -223,7 +224,24 @@ class DownloadJobManager {
         }
     }
 
-    async validateUrl(url: string): Promise<{ videoId: string; title: string; duration?: number } | null> {
+    private getBestThumbnailUrl(data: any): string | undefined {
+        if (typeof data.thumbnail === 'string' && data.thumbnail) {
+            return data.thumbnail;
+        }
+
+        if (Array.isArray(data.thumbnails) && data.thumbnails.length > 0) {
+            const sorted = [...data.thumbnails].sort((a, b) => {
+                const aSize = (Number(a.width) || 0) * (Number(a.height) || 0);
+                const bSize = (Number(b.width) || 0) * (Number(b.height) || 0);
+                return bSize - aSize;
+            });
+            return sorted.find((item) => typeof item.url === 'string' && item.url)?.url;
+        }
+
+        return undefined;
+    }
+
+    async validateUrl(url: string): Promise<{ videoId: string; title: string; duration?: number; thumbnailUrl?: string } | null> {
         await ensureBinaries();
         const ytDlp = getYtDlpPath();
         const bundledBin = getBundledBinDir();
@@ -252,7 +270,8 @@ class DownloadJobManager {
                     resolve({
                         videoId: data.id,
                         title: data.title,
-                        duration: data.duration
+                        duration: data.duration,
+                        thumbnailUrl: this.getBestThumbnailUrl(data)
                     });
                 } catch (e) {
                     resolve(null);
@@ -336,6 +355,7 @@ class DownloadJobManager {
                 youtubeId: meta.videoId,
                 title: titleOverride || meta.title,
                 songId: targetSongId,
+                thumbnailUrl: meta.thumbnailUrl,
             });
 
             this.processQueue();
@@ -467,6 +487,14 @@ class DownloadJobManager {
             if (lyricsLrcPath) lyricsStatus = 'synced';
             else if (lyricsRawPath) lyricsStatus = 'text_only';
 
+            let thumbnailPath: string | undefined;
+            try {
+                const { downloadYoutubeThumbnailToSongDir } = await import('./songLibrary');
+                thumbnailPath = await downloadYoutubeThumbnailToSongDir(songDir, job.youtubeId, job.thumbnailUrl);
+            } catch (e) {
+                console.warn('Failed to download thumbnail for YouTube song', e);
+            }
+
             // Create or Upgrade Meta
             const metaFile = path.join(songDir, 'meta.json');
             let meta: SongMeta;
@@ -481,6 +509,8 @@ class DownloadJobManager {
                      lyrics_status: lyricsStatus !== 'none' ? lyricsStatus : existingMeta.lyrics_status,
                      lyrics_raw_path: lyricsRawPath || existingMeta.lyrics_raw_path,
                      lyrics_lrc_path: lyricsLrcPath || existingMeta.lyrics_lrc_path,
+                     thumbnailUrl: job.thumbnailUrl || existingMeta.thumbnailUrl,
+                     thumbnail_path: thumbnailPath || existingMeta.thumbnail_path,
                      updated_at: now,
                      duration: duration || existingMeta.duration
                  };
@@ -504,7 +534,9 @@ class DownloadJobManager {
                      created_at: now,
                      updated_at: now,
                      last_separation_error: null,
-                     duration
+                     duration,
+                     thumbnailUrl: job.thumbnailUrl,
+                     thumbnail_path: thumbnailPath
                  };
             }
 
