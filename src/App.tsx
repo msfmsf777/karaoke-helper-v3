@@ -339,9 +339,17 @@ function AppContent() {
     return () => removeListener?.();
   }, [currentView]);
 
-  const handleOpenLyrics = (song: any) => {
-    setLyricsEditorSongId(song.id);
+  const openLyricsView = (songId?: string | null) => {
+    if (songId !== undefined) {
+      setLyricsEditorSongId(songId);
+    } else if (currentTrack?.id) {
+      setLyricsEditorSongId(currentTrack.id);
+    }
     handleViewChange('lyrics');
+  };
+
+  const handleOpenLyrics = (song: any) => {
+    openLyricsView(song.id);
   };
 
   const renderContent = () => {
@@ -443,7 +451,16 @@ function AppContent() {
           />
 
           <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
-            <Sidebar currentView={currentView} onViewChange={handleViewChange} />
+            <Sidebar
+              currentView={currentView}
+              onViewChange={(view) => {
+                if (view === 'lyrics') {
+                  openLyricsView();
+                  return;
+                }
+                handleViewChange(view);
+              }}
+            />
             <div ref={mainContentRef} style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
               {renderContent()}
             </div>

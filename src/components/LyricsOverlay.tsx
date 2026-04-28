@@ -121,6 +121,49 @@ const LyricLine = React.memo(({
     );
 });
 
+const JapaneseToggleButton = React.memo(({
+    label,
+    active,
+    onToggle
+}: {
+    label: string;
+    active?: boolean;
+    onToggle?: () => void;
+}) => (
+    <button
+        type="button"
+        onPointerDown={(event) => {
+            event.stopPropagation();
+        }}
+        onClick={(event) => {
+            event.stopPropagation();
+            onToggle?.();
+        }}
+        disabled={!onToggle}
+        style={{
+            width: '24px',
+            height: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: active ? 'var(--accent-color, #00e5ff)' : 'rgba(255,255,255,0.1)',
+            color: active ? '#000' : '#fff',
+            borderRadius: '4px',
+            fontSize: '12px',
+            cursor: onToggle ? 'pointer' : 'default',
+            fontWeight: 'bold',
+            transition: 'all 0.2s',
+            border: '1px solid rgba(255,255,255,0.1)',
+            opacity: onToggle ? 1 : 0.7,
+            padding: 0,
+            lineHeight: 1,
+            WebkitAppRegion: 'no-drag',
+        } as React.CSSProperties}
+    >
+        {label}
+    </button>
+));
+
 const LyricsOverlay: React.FC<LyricsOverlayProps> = ({
     status,
     lines,
@@ -195,34 +238,6 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({
     }, [externalScrollTop, status]);
 
 
-    // Helper for text-only mode (reusing LyricLine but without click/active logic if desired, or just simple render)
-    // For text-only, we can still use LyricLine but isActive is always false
-
-    // Helper for buttons
-    const SwitchButton = ({ label, active, onClick }: { label: string, active?: boolean, onClick?: () => void }) => (
-        <div
-            onClick={onClick}
-            style={{
-                width: '24px',
-                height: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: active ? 'var(--accent-color, #00e5ff)' : 'rgba(255,255,255,0.1)',
-                color: active ? '#000' : '#fff',
-                borderRadius: '4px',
-                fontSize: '12px',
-                cursor: onClick ? 'pointer' : 'default',
-                fontWeight: 'bold',
-                transition: 'all 0.2s',
-                border: '1px solid rgba(255,255,255,0.1)',
-                opacity: onClick ? 1 : 0.7
-            }}
-        >
-            {label}
-        </div>
-    );
-
     if (status === 'none') {
         return null;
     }
@@ -262,17 +277,19 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({
                     right: '16px',
                     display: 'flex',
                     gap: '8px',
-                    zIndex: 10
-                }}>
-                    <SwitchButton
+                    zIndex: 30,
+                    pointerEvents: 'auto',
+                    WebkitAppRegion: 'no-drag',
+                } as React.CSSProperties}>
+                    <JapaneseToggleButton
                         label="あ"
                         active={furiganaEnabled}
-                        onClick={onToggleFurigana}
+                        onToggle={onToggleFurigana}
                     />
-                    <SwitchButton
+                    <JapaneseToggleButton
                         label="a"
                         active={romajiEnabled}
-                        onClick={onToggleRomaji}
+                        onToggle={onToggleRomaji}
                     />
                 </div>
             )}

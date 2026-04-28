@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import LyricsOverlay from './LyricsOverlay';
 import StreamSetlist from './StreamSetlist';
 import LyricStylePopup from './LyricStylePopup';
@@ -45,17 +45,17 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
     setTimeout(() => setToastMessage(null), 2000);
   };
 
-  const toggleFurigana = () => {
+  const toggleFurigana = useCallback(() => {
     if (currentSongId) {
       setSongPreference(currentSongId, { furigana: !furiganaEnabled });
     }
-  };
+  }, [currentSongId, furiganaEnabled, setSongPreference]);
 
-  const toggleRomaji = () => {
+  const toggleRomaji = useCallback(() => {
     if (currentSongId) {
       setSongPreference(currentSongId, { romaji: !romajiEnabled });
     }
-  };
+  }, [currentSongId, romajiEnabled, setSongPreference]);
 
   // Sync preferences to Overlay
   useEffect(() => {

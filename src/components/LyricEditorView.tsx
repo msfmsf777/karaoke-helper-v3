@@ -113,6 +113,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
     const [savingRaw, setSavingRaw] = useState(false);
     const [savingLrc, setSavingLrc] = useState(false);
     const initialSelectDone = useRef(false);
+    const lyricsLoadTokenRef = useRef(0);
     const lineRefs = useRef<Record<string, HTMLDivElement | null>>({});
     const queue = useQueue();
 
@@ -163,14 +164,6 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
         refreshSongs();
     }, [refreshSongs]);
 
-    // Unified logic moved to bottom effect
-
-    useEffect(() => {
-        if (activeSongId && !selectedSongId) {
-            setSelectedSongId(activeSongId);
-        }
-    }, [activeSongId]); // Only run when activeSongId changes, don't depend on selectedSongId to avoid loops or overriding user selection
-
     useEffect(() => {
         const idx = lines.findIndex((line) => line.timeSeconds === null);
         setTapIndex(idx === -1 ? lines.length : idx);
@@ -180,11 +173,13 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
         setSongs((prev) => prev.map((s) => (s.id === meta.id ? meta : s)));
     }, []);
 
-    const loadLyricsForSong = useCallback(async (song: SongMeta) => {
+    const loadLyricsForSong = useCallback(async (song: SongMeta, token = ++lyricsLoadTokenRef.current) => {
         setLoadingLyrics(true);
         setErrorMessage(null);
         try {
             const [synced, raw] = await Promise.all([readSyncedLyrics(song.id), readRawLyrics(song.id)]);
+            if (token !== lyricsLoadTokenRef.current) return;
+
             let nextLines: EditableLyricLine[] = [];
             let computedStatus: SongMeta['lyrics_status'] = 'none';
 
@@ -216,19 +211,23 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
             showTempMessage(synced ? '已載入 LRC' : raw ? '已載入純文字' : '無歌詞');
 
         } catch (err) {
+            if (token !== lyricsLoadTokenRef.current) return;
             console.error('[Lyrics] Failed to load lyrics', song.id, err);
             setErrorMessage('讀取失敗');
             setLines([{ id: `line-${Date.now()}`, text: '', timeSeconds: null }]);
             setRawTextDraft('');
             setLastSavedRawText('');
         } finally {
-            setLoadingLyrics(false);
+            if (token === lyricsLoadTokenRef.current) {
+                setLoadingLyrics(false);
+            }
         }
     }, [updateSongMetaInList, showTempMessage]);
 
     const performSongSelection = useCallback(async (songId: string) => {
         const song = songs.find(s => s.id === songId);
         if (!song) return;
+        const token = ++lyricsLoadTokenRef.current;
 
         setSelectedSongId(songId);
         onSongSelectedChange?.(songId);
@@ -238,15 +237,20 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
         setDeleteConfirmLineId(null); // Reset delete state
 
         try {
-            // Use queue.loadImmediate to load but NOT play
-            await queue.loadImmediate(songId);
+            if (songId !== activeSongId) {
+                // Use queue.loadImmediate to load but NOT play
+                await queue.loadImmediate(songId);
+                if (token !== lyricsLoadTokenRef.current) return;
+            }
 
-            await loadLyricsForSong(song);
+            await loadLyricsForSong(song, token);
         } catch (err) {
+            if (token !== lyricsLoadTokenRef.current) return;
             console.error('[Lyrics] Failed to load song for lyrics', songId, err);
             setErrorMessage('載入錯誤');
+            setLoadingLyrics(false);
         }
-    }, [songs, onSongSelectedChange, queue, loadLyricsForSong]);
+    }, [songs, onSongSelectedChange, activeSongId, queue, loadLyricsForSong]);
 
     const handleSelectSong = useCallback(
         async (song: SongMeta) => {
@@ -282,14 +286,12 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
             if (activeSongId) {
                 const target = songs.find((s) => s.id === activeSongId);
                 if (target) {
-                    // For active song, we just bind to it without forcing audio reload
-                    setSelectedSongId(target.id);
-                    void loadLyricsForSong(target);
+                    performSongSelection(target.id);
                 }
             }
             initialSelectDone.current = true;
         }
-    }, [songs, initialSongId, selectedSongId, activeSongId, performSongSelection, loadLyricsForSong]);
+    }, [songs, initialSongId, selectedSongId, activeSongId, performSongSelection]);
 
     const applyDraftToLines = useCallback(
         (resetTimes = false) => {
