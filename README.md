@@ -6,14 +6,14 @@
 [![GitHub license](https://img.shields.io/github/license/msfmsf777/karaoke-helper-v3)](https://github.com/msfmsf777/karaoke-helper-v3/blob/main/LICENSE)
 
 **KHelper V3** 是一款專為 **VTuber** 與 **實況主** 打造的 K 歌直播輔助工具。  
-整合歌曲管理、AI 人聲分離、日文歌詞輔助與直播場景整合，讓你的歌回直播更穩、更順、更專業。
+整合歌曲管理、YouTube 線上播放、AI 人聲分離、日文歌詞輔助與直播場景整合，讓你的歌回直播更穩、更順、更專業。
 
 > 🧪 **Public Pre-release / Beta 公開測試中** 
 > 歡迎自由下載試用與回報問題，協助我們把 KHelper V3 變得更好！
 
 > ⚠️ 目前僅支援 **Windows (64-bit)**，其他平台暫不支援。
 
-【[直接下載連結](https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v3.1.1-beta/KHelperV3.Setup.3.1.1-beta.exe)】
+【[直接下載連結](https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v3.2.0-beta/KHelperV3.Setup.3.2.0-beta.exe)】
 
 
 ----------
@@ -24,11 +24,17 @@
 
 -  **本地歌曲匯入**：支援批量匯入 MP3, WAV 等多種音訊檔案。
 
--  **YouTube 下載**：內建下載管理器，可直接批量貼上 YouTube 連結下載歌曲並自動匯入。**請自行確認您擁有從 YouTube 下載所選歌曲的使用權限， 本工具不負擔任何法律責任。**
+-  **YouTube 線上播放與搜尋**：可直接在 APP 內搜尋並播放 YouTube 結果，也可將線上歌曲加入佇列、最愛、最近播放與自訂歌單。
+
+-  **YouTube 下載**：內建下載管理器，可下載為原曲、伴奏或自訂歌曲資料並自動匯入。**請自行確認您擁有從 YouTube 下載所選歌曲的使用權限， 本工具不負擔任何法律責任。**
+
+-  **縮圖顯示**：下載自 YouTube 的歌曲會在歌曲列表、底部播放器與迷你播放器中顯示縮圖。
 
 -  **歌曲分類**：支援「原曲」與「伴奏」分類，原曲可以進行人聲分離，請注意添加歌曲後分類不能修改。
 
 -  **播放清單**：支援「我的最愛」、「歷史記錄」與自訂播放清單，輕鬆管理歌單。
+
+-  **列表搜尋 / 篩選 / 排序**：歌曲庫、我的最愛、最近播放與自訂歌單皆支援快速搜尋、篩選與排序。
 
 ### 🤖 AI 音訊處理 (Powered by UVR)
 
@@ -48,15 +54,21 @@
 
 -  **日文輔助**：自動為日文歌詞標註平假名 (Furigana) 與羅馬拼音 (Romaji)。
 
+-  **OBS 同步顯示**：實況模式中的日文輔助顯示狀態可同步至 OBS / Browser Source 歌詞畫面。
+
 ### 📺 專為直播設計
 
 -  **直播界面 (Stream View)**：簡潔的直播專屬界面，隱藏不必要的控制項，專注於演唱。
 
 -  **迷你播放器 (Mini Player)**：懸浮的小型控制台，方便在直播時快速控制歌曲播放而無需占用大量空間。
 
+-  **快速播放佇列**：迷你播放器可查看播放佇列並快速切換歌曲。
+
 -  **觀衆體驗++**：提供透明背景瀏覽器來源 (Browser Source) 連結，輕鬆將動態歌詞、歌曲資訊美觀地整合至 OBS 直播畫面。
 
 -  **高度客製化字幕**：字幕大小、顏色、邊框皆可即時調整。
+
+-  **快捷鍵支援**：可自訂本機快捷鍵與全域快捷鍵，快速控制播放與常用功能。
 
 ----------
 
@@ -64,13 +76,13 @@
 
 ### 一般使用者
 
-1.  前往 GitHub Releases或使用【[最新版本 (V3.1.1-beta) 下載連結](https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v3.1.1-beta/KHelperV3.Setup.3.1.1-beta.exe)】：  
+1.  前往 GitHub Releases或使用【[最新版本 (V3.2.0-beta) 下載連結](https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v3.2.0-beta/KHelperV3.Setup.3.2.0-beta.exe)】：  
     👉 `https://github.com/msfmsf777/karaoke-helper-v3/releases`
     
 2.  找到想要的版本。
     
 3.  下載 Windows 安裝檔，例如：  
-    `KHelperLive-Setup-3.1.1-beta.exe`
+    `KHelperV3.Setup.3.2.0-beta.exe`
     
 4.  執行安裝程式並依照步驟完成安裝。**若遇到 Windows SmartScreen（未簽章），點「更多資訊 → 仍要執行」**。
     
@@ -89,7 +101,9 @@
     
     -   從本地電腦匯入音樂檔 (MP3 / WAV…)
         
-    -   或貼上 **YouTube 連結**，讓 KHelper 自動下載音訊並加入歌庫。
+    -   或直接搜尋 **YouTube 線上結果** 進行播放、加入歌單，或下載後加入歌庫。
+        
+    -   若已經有 YouTube 連結，也可以在新增歌曲精靈中貼上連結，讓 KHelper 自動下載音訊並加入歌庫。
     - 注：測試版本所有檔案只會存放在系統硬碟Appdata裏。由於分離以及下載品質都為直播打造（偏高），可能會占用大量儲存空間。當前不支持調整儲存位置，後續版本可能會調整（一首~3分鐘歌曲原檔 + 分離音檔總計約~30MB空間）。
         
 2.  **AI 人聲分離 (可選)**
@@ -211,7 +225,8 @@
     -   **Electron** (Cross-platform desktop application framework)
     -   **React** (UI Library) + **TypeScript**
     -   **Vite** (Build tool)
-    -   **TailwindCSS** (Styling)
+    -   **Electron Builder** (Windows NSIS packaging)
+    -   **React Virtuoso** (Virtualized song lists)
         
 -   **Backend / Runtime**
     -   **Node.js** (Electron Main Process)
@@ -219,6 +234,7 @@
         
 -   **Audio / AI Core**
     -   **UVR (Ultimate Vocal Remover)** / **MDX-Net** / **Demucs** (Vocal Separation)
+    -   **youtubei.js** (YouTube online search / streaming metadata)
     -   **yt-dlp** (Media Downloader)
     -   **FFmpeg** (Audio Conversion & Processing)
         
@@ -235,6 +251,10 @@ KHelper V3 的誕生離不開這些強大開源專案與社群的貢獻：
     提供世界頂尖的 AI 人聲分離核心與模型參考。
 *   **[yt-dlp](https://github.com/yt-dlp/yt-dlp)**:  
     強大且持續更新的媒體下載工具。
+*   **[youtubei.js](https://github.com/LuanRT/YouTube.js)**:  
+    提供 YouTube InnerTube API 的線上搜尋與播放資料支援。
+*   **[LRCLIB](https://lrclib.net/)**:  
+    提供線上歌詞搜尋與 LRC 歌詞匯入來源。
 *   **[FFmpeg](https://ffmpeg.org/)**:  
     音訊處理的瑞士軍刀。
 *   **[Electron](https://www.electronjs.org/)** & **[React](https://reactjs.org/)** & **[Vite](https://vitejs.dev/)**:  
@@ -277,7 +297,7 @@ npm run dev
 # 建置 Windows 安裝檔
 npm run build
 
-# 產物位於 dist/ 目錄
+# 產物位於 release/<version>/ 目錄
  
 ```
 
