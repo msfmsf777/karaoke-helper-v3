@@ -3,6 +3,7 @@ import { useQueue } from '../../contexts/QueueContext';
 import { useLibrary } from '../../contexts/LibraryContext';
 import { useUserData } from '../../contexts/UserDataContext';
 import audioEngine from '../../audio/AudioEngine';
+import { getStreamingSongThumbnailUrl } from '../../utils/onlineSongs';
 
 interface MiniPlayerState {
     currentTrack: {
@@ -10,6 +11,7 @@ interface MiniPlayerState {
         artist: string;
         duration: number;
         thumbnailPath?: string;
+        thumbnailUrl?: string;
     } | null;
     isPlaying: boolean;
     isPlaybackLoading: boolean;
@@ -27,6 +29,7 @@ interface MiniPlayerState {
         title: string;
         artist: string;
         thumbnailPath?: string;
+        thumbnailUrl?: string;
     }[];
     currentIndex: number;
     isFavorite: boolean;
@@ -221,7 +224,8 @@ export default function MiniPlayerSync() {
                 title: song.title,
                 artist: song.artist || '',
                 duration: audioEngine.getDuration(),
-                thumbnailPath: song.thumbnail_path
+                thumbnailPath: song.thumbnail_path,
+                thumbnailUrl: getStreamingSongThumbnailUrl(song)
             } : null,
             isPlaying: audioEngine.isPlaying(),
             isPlaybackLoading,
@@ -236,7 +240,13 @@ export default function MiniPlayerSync() {
             pitch: tf.transpose,
             queue: queue.slice(0, 20).map(id => {
                 const s = getSongById(id);
-                return { id, title: s?.title || 'Unknown', artist: s?.artist || '', thumbnailPath: s?.thumbnail_path };
+                return {
+                    id,
+                    title: s?.title || 'Unknown',
+                    artist: s?.artist || '',
+                    thumbnailPath: s?.thumbnail_path,
+                    thumbnailUrl: getStreamingSongThumbnailUrl(s),
+                };
             }),
             currentIndex: currentIndex,
             isFavorite: currentSongId ? isFavorite(currentSongId) : false,

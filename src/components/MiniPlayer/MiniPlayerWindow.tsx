@@ -397,15 +397,16 @@ const MusicNoteIcon = () => (
 
 const QueueArtworkButton: React.FC<{
     thumbnailPath?: string;
+    thumbnailUrl?: string;
     onPlay: () => void;
-}> = ({ thumbnailPath, onPlay }) => {
+}> = ({ thumbnailPath, thumbnailUrl, onPlay }) => {
     const [hovered, setHovered] = useState(false);
     const [failed, setFailed] = useState(false);
-    const thumbnailSrc = failed ? undefined : localPathToFileUrl(thumbnailPath);
+    const thumbnailSrc = failed ? undefined : (localPathToFileUrl(thumbnailPath) || thumbnailUrl);
 
     useEffect(() => {
         setFailed(false);
-    }, [thumbnailPath]);
+    }, [thumbnailPath, thumbnailUrl]);
 
     return (
         <button
@@ -483,14 +484,14 @@ const QueueArtworkButton: React.FC<{
 
 export default function MiniPlayerWindow() {
     const [state, setState] = useState({
-        currentTrack: null as { title: string; artist: string; duration: number; thumbnailPath?: string } | null,
+        currentTrack: null as { title: string; artist: string; duration: number; thumbnailPath?: string; thumbnailUrl?: string } | null,
         isPlaying: false,
         isPlaybackLoading: false,
         currentTime: 0,
         volume: { instrumental: 1, vocal: 1, instrumentalMuted: false, vocalMuted: false },
         speed: 1,
         pitch: 0,
-        queue: [] as { id: string; title: string; artist: string; thumbnailPath?: string }[],
+        queue: [] as { id: string; title: string; artist: string; thumbnailPath?: string; thumbnailUrl?: string }[],
         currentIndex: 0,
         isFavorite: false,
         displayTitle: '',
@@ -640,11 +641,11 @@ export default function MiniPlayerWindow() {
     }, [showQueue]);
 
     const progress = state.currentTrack?.duration ? state.currentTime / state.currentTrack.duration : 0;
-    const thumbnailSrc = thumbnailFailed ? undefined : localPathToFileUrl(state.currentTrack?.thumbnailPath);
+    const thumbnailSrc = thumbnailFailed ? undefined : (localPathToFileUrl(state.currentTrack?.thumbnailPath) || state.currentTrack?.thumbnailUrl);
 
     useEffect(() => {
         setThumbnailFailed(false);
-    }, [state.currentTrack?.thumbnailPath]);
+    }, [state.currentTrack?.thumbnailPath, state.currentTrack?.thumbnailUrl]);
 
     // Progress Ring
     const radius = 44; // Enlarged radius
@@ -1062,6 +1063,7 @@ export default function MiniPlayerWindow() {
                                         >
                                             <QueueArtworkButton
                                                 thumbnailPath={item.thumbnailPath}
+                                                thumbnailUrl={item.thumbnailUrl}
                                                 onPlay={() => window.khelper?.miniPlayer?.sendCommand('playQueueIndex', idx)}
                                             />
                                             <div style={{ minWidth: 0, overflow: 'hidden' }}>

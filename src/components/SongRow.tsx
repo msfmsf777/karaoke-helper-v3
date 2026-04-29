@@ -16,7 +16,7 @@ import FavoritesFilledIcon from '../assets/icons/favorites_filled.svg';
 import AddIcon from '../assets/icons/add.svg';
 import MoreIcon from '../assets/icons/more.svg';
 import PlayIcon from '../assets/icons/play.svg';
-import { coerceDurationSeconds, getDownloadState, getSongYoutubeId } from '../utils/onlineSongs';
+import { coerceDurationSeconds, getDownloadState, getSongYoutubeId, getStreamingSongThumbnailUrl } from '../utils/onlineSongs';
 import { SONG_TABLE_GRID, SONG_TABLE_ROW_PADDING } from './songTableLayout';
 
 interface SongRowProps {
@@ -151,6 +151,7 @@ const SongRow: React.FC<SongRowProps> = ({
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <ArtworkTile
                         thumbnailPath={song.thumbnail_path}
+                        remoteUrl={getStreamingSongThumbnailUrl(song)}
                         size={38}
                         title="播放"
                         onClick={handleArtworkClick}

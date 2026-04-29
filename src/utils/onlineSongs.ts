@@ -31,6 +31,11 @@ export const getSongYoutubeId = (song: SongMeta): string | null => {
     return song.source.kind === 'youtube' ? song.source.youtubeId : null;
 };
 
+export const getStreamingSongThumbnailUrl = (song?: SongMeta | null): string | undefined => {
+    if (!song || song.audio_status !== 'streaming' || song.source.kind !== 'youtube') return undefined;
+    return song.thumbnailUrl || `https://i.ytimg.com/vi/${song.source.youtubeId}/hqdefault.jpg`;
+};
+
 export const getYtDurationSeconds = (yt: YouTubeResultLike): number | undefined => {
     return coerceDurationSeconds(yt.duration);
 };
