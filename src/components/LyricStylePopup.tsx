@@ -34,13 +34,17 @@ const LyricStylePopup: React.FC<LyricStylePopupProps> = ({ styles, onChange, onC
             }}
         >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>歌詞樣式設定</h3>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>App 內歌詞顯示</h3>
                 <button
                     onClick={onClose}
                     style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '18px' }}
                 >
                     ✕
                 </button>
+            </div>
+
+            <div style={{ color: '#999', fontSize: '12px', lineHeight: 1.5, marginBottom: '14px' }}>
+                此設定只影響 App 內直播畫面，不會影響 OBS 覆蓋模板。
             </div>
 
             {/* Font Size */}

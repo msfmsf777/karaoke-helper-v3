@@ -15,10 +15,12 @@ import audioEngine from '../audio/AudioEngine';
 
 interface StreamModeViewProps {
   currentTime: number;
+  onOpenOverlaySettings?: () => void;
 }
 
 const StreamModeView: React.FC<StreamModeViewProps> = ({
   currentTime,
+  onOpenOverlaySettings,
 }) => {
   const { currentSongId, resetStream } = useQueue();
   const { getSongById } = useLibrary();
@@ -283,6 +285,10 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
 
         {/* Right: Lyrics Overlay */}
         <div
+          onContextMenu={(event) => {
+            event.preventDefault();
+            setShowStylePopup(true);
+          }}
           style={{
             flex: 1,
             backgroundColor: '#111',
@@ -308,11 +314,14 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
             }}
           >
             {/* New Dropdown */}
-            <StreamControlDropdown onCopy={() => showToast('已複製')} />
+            <StreamControlDropdown
+              onCopy={() => showToast('已複製')}
+              onOpenOverlaySettings={onOpenOverlaySettings}
+            />
 
             <button
               onClick={() => setShowStylePopup(!showStylePopup)}
-              title="歌詞樣式設定"
+              title="App 內歌詞顯示"
               className="stream-control-btn"
               style={{
                 width: '32px',

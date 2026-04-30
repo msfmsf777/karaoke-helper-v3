@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { useQueue } from './QueueContext';
 import { HotkeyConfig, mergeHotkeyConfig } from '../../shared/hotkeys';
 import { SongListViewConfig, SongListViewConfigs, mergeSongListViewConfig, mergeSongListViewConfigs } from '../../shared/songListView';
+import { OverlayTemplatesConfig, mergeOverlayTemplatesConfig } from '../../shared/overlayTemplates';
 // import { useLibrary } from './LibraryContext';
 
 export interface Playlist {
@@ -56,6 +57,8 @@ interface UserDataContextType {
     setHotkeys: (hotkeys: HotkeyConfig) => void;
     songListViews: SongListViewConfigs;
     setSongListViewConfig: (key: string, config: Partial<SongListViewConfig>) => void;
+    overlayTemplates: OverlayTemplatesConfig;
+    setOverlayTemplates: (config: OverlayTemplatesConfig) => void;
 }
 
 const UserDataContext = createContext<UserDataContextType | null>(null);
@@ -67,13 +70,13 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [separationQuality, setSeparationQuality] = useState<'high' | 'normal' | 'fast'>('normal');
     const { currentSongId } = useQueue();
     const isInitialized = useRef(false);
-    const styleUpdateTimeout = useRef<NodeJS.Timeout | null>(null);
 
     const [recentSearches, setRecentSearches] = useState<string[]>([]);
     const [lyricStyles, setLyricStyles] = useState<LyricStyleConfig>(DEFAULT_LYRIC_STYLES);
     const [songPreferences, setSongPreferences] = useState<Record<string, { furigana?: boolean; romaji?: boolean }>>({});
     const [hotkeys, setHotkeys] = useState<HotkeyConfig>(() => mergeHotkeyConfig());
     const [songListViews, setSongListViews] = useState<SongListViewConfigs>({});
+    const [overlayTemplates, setOverlayTemplates] = useState<OverlayTemplatesConfig>(() => mergeOverlayTemplatesConfig());
 
     // Load data on startup
     useEffect(() => {
@@ -91,6 +94,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                         songPreferences?: Record<string, { furigana?: boolean; romaji?: boolean }>;
                         hotkeys?: HotkeyConfig;
                         songListViews?: SongListViewConfigs;
+                        overlayTemplates?: OverlayTemplatesConfig;
                     }>
                 ]);
                 setFavorites(Array.from(new Set(favs)));
@@ -106,6 +110,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 }
                 setHotkeys(mergeHotkeyConfig(settings.hotkeys));
                 setSongListViews(mergeSongListViewConfigs(settings.songListViews));
+                setOverlayTemplates(mergeOverlayTemplatesConfig(settings.overlayTemplates, settings.lyricStyles));
 
                 // Load recent searches from localStorage
                 const savedRecent = localStorage.getItem('khelper_recent_searches');
@@ -151,22 +156,13 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         );
     }, [playlists]);
 
-    // Save settings (quality + styles + songPrefs + hotkeys + song list views) on change
+    // Save settings (quality + in-app lyrics styles + songPrefs + hotkeys + song list views + overlay templates) on change
     useEffect(() => {
         if (!isInitialized.current) return;
-        window.khelper?.userData.saveSettings({ separationQuality, lyricStyles, songPreferences, hotkeys, songListViews }).catch(err =>
+        window.khelper?.userData.saveSettings({ separationQuality, lyricStyles, songPreferences, hotkeys, songListViews, overlayTemplates }).catch(err =>
             console.error('[UserData] Failed to save settings', err)
         );
-
-        // Sync styles to overlay with throttling (500ms)
-        if (styleUpdateTimeout.current) {
-            clearTimeout(styleUpdateTimeout.current);
-        }
-        styleUpdateTimeout.current = setTimeout(() => {
-            window.api?.sendOverlayStyleUpdate(lyricStyles);
-        }, 500);
-
-    }, [separationQuality, lyricStyles, songPreferences, hotkeys, songListViews]);
+    }, [separationQuality, lyricStyles, songPreferences, hotkeys, songListViews, overlayTemplates]);
 
     // Save recent searches on change
     useEffect(() => {
@@ -311,7 +307,9 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             hotkeys,
             setHotkeys,
             songListViews,
-            setSongListViewConfig
+            setSongListViewConfig,
+            overlayTemplates,
+            setOverlayTemplates
         }}>
             {children}
         </UserDataContext.Provider>

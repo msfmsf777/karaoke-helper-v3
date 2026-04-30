@@ -45,13 +45,14 @@ function AppContent() {
     headphoneDeviceId: null as string | null,
   });
   const [lyricsEditorSongId, setLyricsEditorSongId] = useState<string | null>(null);
+  const [settingsFocusRequest, setSettingsFocusRequest] = useState<{ section: 'overlayTemplates'; token: number } | null>(null);
   // Navigation Blocking State
   const [isLyricsDirty, setIsLyricsDirty] = useState(false);
   const [pendingView, setPendingView] = useState<View | null>(null);
 
   const mainContentRef = useRef<HTMLDivElement>(null);
 
-  const { currentSongId, playNext, playPrev, queue, currentIndex, isStreamWaiting, isPlaybackLoading } = useQueue();
+  const { currentSongId, playNext, playPrev, queue, currentIndex, isStreamWaiting, isPlaybackLoading, playbackMode } = useQueue();
   const { getSongById } = useLibrary();
   const { hotkeys } = useUserData();
   const [focusSearchRequest, setFocusSearchRequest] = useState(0);
@@ -125,17 +126,26 @@ function AppContent() {
     audioEngine.setOutputVolume('stream', streamEnabled ? 1.0 : 0);
   }, []);
 
-  // Always send update if state changes, even if no track is playing (e.g. waiting state)
+  // Lyrics overlays need frequent playback time updates, but not the full queue payload.
   useEffect(() => {
     window.api.sendOverlayUpdate({
+      type: 'playback',
       songId: currentTrack?.id ?? '',
       currentTime,
-      isPlaying,
+      isPlaying
+    });
+  }, [currentTrack, currentTime, isPlaying]);
+
+  // Setlist overlays only need queue/current-index/waiting updates.
+  useEffect(() => {
+    window.api.sendOverlayUpdate({
+      type: 'setlist',
       queue,
       currentIndex,
-      isStreamWaiting
+      isStreamWaiting,
+      playbackMode
     });
-  }, [currentTrack, currentTime, isPlaying, queue, currentIndex, isStreamWaiting]);
+  }, [queue, currentIndex, isStreamWaiting, playbackMode]);
 
   const handlePlayPause = () => {
     if (!currentTrack) {
@@ -324,6 +334,12 @@ function AppContent() {
     }
   };
 
+  const handleOpenOverlaySettings = () => {
+    setSettingsFocusRequest({ section: 'overlayTemplates', token: Date.now() });
+    setPreviousView(isStreamMode ? 'library' : currentView);
+    handleViewChange('settings');
+  };
+
   // Listen for Tray navigation events
   useEffect(() => {
     const removeListener = window.khelper?.navigation.onNavigate((view) => {
@@ -405,6 +421,7 @@ function AppContent() {
                   streamDeviceId={outputDevices.streamDeviceId}
                   headphoneDeviceId={outputDevices.headphoneDeviceId}
                   onChangeDevice={handleDeviceChange}
+                  focusRequest={settingsFocusRequest}
                 />
               );
             case 'favorites':
@@ -486,6 +503,7 @@ function AppContent() {
             <Suspense fallback={null}>
               <StreamModeView
                 currentTime={currentTime}
+                onOpenOverlaySettings={handleOpenOverlaySettings}
               />
             </Suspense>
           )}

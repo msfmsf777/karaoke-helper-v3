@@ -1,21 +1,36 @@
 import React, { useEffect, useState } from 'react';
-import LyricsOverlay from './LyricsOverlay';
 import { SongMeta, EnrichedLyricLine } from '../../shared/songTypes';
 import { EditableLyricLine, linesFromRawText, parseLrc, readRawLyrics, readSyncedLyrics } from '../library/lyrics';
-import { LyricStyleConfig, DEFAULT_LYRIC_STYLES } from '../contexts/UserDataContext';
+import { DEFAULT_OVERLAY_DESIGN_ID, findLyricsOverlayDesign, LyricsOverlayDesign } from '../../shared/overlayTemplates';
+import { TemplatedLyricsOverlay } from './overlayTemplates/OverlayTemplateRenderers';
 
 const OverlayWindow: React.FC = () => {
     const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
     const [currentTime, setCurrentTime] = useState(0);
     const [lines, setLines] = useState<EditableLyricLine[]>([]);
     const [lyricsStatus, setLyricsStatus] = useState<SongMeta['lyrics_status']>('none');
-    const [styleConfig, setStyleConfig] = useState<LyricStyleConfig>(DEFAULT_LYRIC_STYLES);
+    const [design, setDesign] = useState<LyricsOverlayDesign | null>(null);
 
     // Japanese Enrichment
     const [enrichedLines, setEnrichedLines] = useState<EnrichedLyricLine[] | null>(null);
     const [furiganaEnabled, setFuriganaEnabled] = useState(false);
     const [romajiEnabled, setRomajiEnabled] = useState(false);
-    const [externalScrollTop, setExternalScrollTop] = useState<number | null>(null);
+    const designId = new URLSearchParams(window.location.search).get('design');
+    const baseUrl = window.location.port === '5173' ? 'http://localhost:10001' : '';
+
+    useEffect(() => {
+        const loadConfig = async () => {
+            try {
+                const response = await fetch(`${baseUrl}/overlay-config?kind=lyrics${designId ? `&design=${encodeURIComponent(designId)}` : ''}`);
+                if (!response.ok) throw new Error('Failed to fetch overlay config');
+                const payload = await response.json();
+                setDesign(payload.design);
+            } catch (err) {
+                console.error('[Overlay] Failed to load template config', err);
+            }
+        };
+        loadConfig();
+    }, [baseUrl, designId]);
 
     useEffect(() => {
         // Check if we are in Electron or Browser
@@ -25,15 +40,20 @@ const OverlayWindow: React.FC = () => {
         if (isElectron) {
             // Listen for updates from the main window via IPC
             const removeListener = window.api.subscribeOverlayUpdates((payload) => {
-                const { songId, currentTime: time } = payload;
-                setCurrentTime(time);
-                if (songId !== currentTrackId) {
-                    setCurrentTrackId(songId);
+                if (payload.type === 'overlay-template-config') {
+                    if (payload.overlayTemplates) {
+                        setDesign(findLyricsOverlayDesign(payload.overlayTemplates, designId ?? DEFAULT_OVERLAY_DESIGN_ID));
+                    } else if (payload.kind === 'lyrics' && (!payload.designId || payload.designId === designId)) {
+                        setDesign(payload.design);
+                    }
+                    return;
                 }
-            });
-
-            const removeStyleListener = window.api.subscribeOverlayStyleUpdates((style) => {
-                setStyleConfig(style);
+                if (payload.type === 'setlist') return;
+                const { songId, currentTime: time } = payload;
+                if (typeof time === 'number') setCurrentTime(time);
+                if (songId !== currentTrackId) {
+                    setCurrentTrackId(songId || null);
+                }
             });
 
             const removePrefListener = window.api.subscribeOverlayPreferenceUpdates((prefs) => {
@@ -41,22 +61,9 @@ const OverlayWindow: React.FC = () => {
                 setRomajiEnabled(prefs.romajiEnabled);
             });
 
-            const removeScrollListener = window.api.subscribeOverlayScrollUpdates((scrollTop) => {
-                setExternalScrollTop(scrollTop);
-            });
-
-            // Load initial styles
-            window.khelper?.userData.loadSettings().then(settings => {
-                if (settings.lyricStyles) {
-                    setStyleConfig({ ...DEFAULT_LYRIC_STYLES, ...settings.lyricStyles });
-                }
-            });
-
             return () => {
                 removeListener();
-                removeStyleListener();
                 removePrefListener();
-                removeScrollListener();
             };
         } else {
             // Browser / OBS Mode: Use SSE
@@ -69,48 +76,38 @@ const OverlayWindow: React.FC = () => {
                     const payload = JSON.parse(event.data);
                     if (payload.type === 'connected') return;
 
-                    if (payload.type === 'style') {
-                        setStyleConfig(payload.style);
-                        return;
-                    }
-
                     if (payload.type === 'preference') {
                         setFuriganaEnabled(payload.prefs.furiganaEnabled);
                         setRomajiEnabled(payload.prefs.romajiEnabled);
                         return;
                     }
 
-                    if (payload.type === 'scroll') {
-                        setExternalScrollTop(payload.scrollTop);
+                    if (payload.type === 'overlay-template-config') {
+                        if (payload.overlayTemplates) {
+                            setDesign(findLyricsOverlayDesign(payload.overlayTemplates, designId ?? DEFAULT_OVERLAY_DESIGN_ID));
+                        } else if (payload.kind === 'lyrics' && (!payload.designId || payload.designId === designId)) {
+                            setDesign(payload.design);
+                        }
                         return;
                     }
 
+                    if (payload.type === 'setlist') return;
+
                     const { songId, currentTime: time } = payload;
-                    setCurrentTime(time);
+                    if (typeof time === 'number') setCurrentTime(time);
                     if (songId !== currentTrackId) {
-                        setCurrentTrackId(songId);
+                        setCurrentTrackId(songId || null);
                     }
                 } catch (e) {
                     console.error('Failed to parse SSE message', e);
                 }
             };
 
-            // Fetch initial styles
-            fetch(`${baseUrl}/styles`)
-                .then(res => {
-                    if (res.ok) return res.json();
-                    return null;
-                })
-                .then(styles => {
-                    if (styles) setStyleConfig({ ...DEFAULT_LYRIC_STYLES, ...styles });
-                })
-                .catch(err => console.error('Failed to fetch styles', err));
-
             return () => {
                 eventSource.close();
             };
         }
-    }, [currentTrackId]);
+    }, [currentTrackId, baseUrl, designId]);
 
     useEffect(() => {
         if (!currentTrackId) {
@@ -228,17 +225,17 @@ const OverlayWindow: React.FC = () => {
                 cursor: 'move',
             } as React.CSSProperties} />
 
-            <LyricsOverlay
-                status={lyricsStatus}
-                lines={lines}
-                currentTime={currentTime}
-                className="overlay-lyrics-container"
-                styleConfig={styleConfig}
-                enrichedLines={enrichedLines}
-                furiganaEnabled={furiganaEnabled}
-                romajiEnabled={romajiEnabled}
-                externalScrollTop={externalScrollTop}
-            />
+            {design && (
+                <TemplatedLyricsOverlay
+                    design={design}
+                    status={lyricsStatus}
+                    lines={lines}
+                    currentTime={currentTime}
+                    enrichedLines={enrichedLines}
+                    furiganaEnabled={furiganaEnabled}
+                    romajiEnabled={romajiEnabled}
+                />
+            )}
         </div>
     );
 };

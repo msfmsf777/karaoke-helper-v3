@@ -23,6 +23,7 @@ import {
 import { initUpdater, checkForUpdates, onStatusChange } from './updater'
 import type { HotkeyAction, HotkeyConfig } from '../shared/hotkeys'
 import { applyGlobalHotkeys, getHotkeyRegistrationStatus, unregisterGlobalHotkeys } from './hotkeys'
+import { DEFAULT_OVERLAY_DESIGN_ID, findLyricsOverlayDesign, findSetlistOverlayDesign, mergeOverlayTemplatesConfig } from '../shared/overlayTemplates'
 
 // Disable native swipe navigation (fixes sidebar drag sliding the screen)
 app.commandLine.appendSwitch('disable-features', 'OverscrollHistoryNavigation')
@@ -781,6 +782,15 @@ ipcMain.handle('userData:load-playlists', async () => {
 ipcMain.handle('userData:save-settings', async (_event, settings: any) => {
   await saveSettings(settings)
   applyHotkeysFromSettings(settings?.hotkeys)
+  if (settings?.overlayTemplates) {
+    const overlayTemplates = mergeOverlayTemplatesConfig(settings.overlayTemplates, settings.lyricStyles)
+    const data = JSON.stringify({ type: 'overlay-template-config', overlayTemplates })
+    // @ts-ignore
+    for (const client of clients) {
+      // @ts-ignore
+      client.write(`data: ${data}\n\n`)
+    }
+  }
 })
 
 ipcMain.handle('userData:load-settings', async () => {
@@ -943,7 +953,8 @@ const clients: Set<Response> = new Set()
 
 // State cache for new clients
 // Moved from bottom of file to here for scope access in server
-let lastSongInfo: any = null;
+let lastPlaybackInfo: any = null;
+let lastSetlistInfo: any = null;
 let lastStyle: any = null;
 let lastPreferences: any = null;
 
@@ -996,8 +1007,11 @@ const server = http.createServer((req, res) => {
     if (lastPreferences) {
       res.write(`data: ${JSON.stringify({ type: 'preference', prefs: lastPreferences })}\n\n`);
     }
-    if (lastSongInfo) {
-      res.write(`data: ${JSON.stringify(lastSongInfo)}\n\n`);
+    if (lastPlaybackInfo) {
+      res.write(`data: ${JSON.stringify(lastPlaybackInfo)}\n\n`);
+    }
+    if (lastSetlistInfo) {
+      res.write(`data: ${JSON.stringify(lastSetlistInfo)}\n\n`);
     }
 
     // Add to clients
@@ -1068,6 +1082,64 @@ const server = http.createServer((req, res) => {
     return
   }
 
+  if (pathname === '/overlay-config') {
+    const kind = urlObj.searchParams.get('kind') === 'setlist' ? 'setlist' : 'lyrics'
+    const designId = urlObj.searchParams.get('design')
+
+    loadSettings().then((settings) => {
+      const overlayTemplates = mergeOverlayTemplatesConfig(settings.overlayTemplates, settings.lyricStyles)
+      const design = kind === 'setlist'
+        ? findSetlistOverlayDesign(overlayTemplates, designId ?? DEFAULT_OVERLAY_DESIGN_ID)
+        : findLyricsOverlayDesign(overlayTemplates, designId ?? DEFAULT_OVERLAY_DESIGN_ID)
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({
+        type: 'overlay-template-config',
+        kind,
+        designId: design.id,
+        design,
+      }))
+    }).catch((err) => {
+      console.error('[OverlayServer] Failed to read overlay config', err)
+      res.writeHead(500)
+      res.end('Internal Server Error')
+    })
+    return
+  }
+
+  if (pathname === '/song-thumbnail') {
+    const songId = urlObj.searchParams.get('id')
+    if (!songId) {
+      res.writeHead(400)
+      res.end('Missing songId')
+      return
+    }
+
+    loadAllSongs().then((songs) => {
+      const song = songs.find((candidate) => candidate.id === songId)
+      const thumbnailPath = song?.thumbnail_path
+      const baseDir = getSongsBaseDir()
+      if (!thumbnailPath || !path.resolve(thumbnailPath).startsWith(path.resolve(baseDir)) || !fs.existsSync(thumbnailPath)) {
+        res.writeHead(404)
+        res.end('Thumbnail not found')
+        return
+      }
+
+      const ext = path.extname(thumbnailPath).toLowerCase()
+      const contentType = ext === '.png'
+        ? 'image/png'
+        : ext === '.webp'
+          ? 'image/webp'
+          : 'image/jpeg'
+      res.writeHead(200, { 'Content-Type': contentType, 'Cache-Control': 'public, max-age=300' })
+      fs.createReadStream(thumbnailPath).pipe(res)
+    }).catch((err) => {
+      console.error('[OverlayServer] Failed to serve thumbnail', err)
+      res.writeHead(500)
+      res.end('Internal Server Error')
+    })
+    return
+  }
+
   if (pathname === '/batch-metadata' && req.method === 'POST') {
     // ... (keep existing Metadata logic)
     let body = '';
@@ -1087,7 +1159,16 @@ const server = http.createServer((req, res) => {
         const results = ids.map(id => {
           const s = map.get(id);
           if (!s) return null;
-          return { id: s.id, title: s.title, artist: s.artist };
+          const localThumbnail = s.thumbnail_path ? `/song-thumbnail?id=${encodeURIComponent(s.id)}` : undefined;
+          return {
+            id: s.id,
+            title: s.title,
+            artist: s.artist,
+            type: s.type,
+            source: s.source.kind,
+            duration: s.duration,
+            thumbnailUrl: localThumbnail ?? s.thumbnailUrl,
+          };
         });
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -1112,9 +1193,10 @@ const server = http.createServer((req, res) => {
 
     if (pathname.startsWith('/obs/setlist') || pathname === '/setlist') {
       console.log('[OverlayServer] Redirecting to Setlist');
+      const query = urlObj.search ? urlObj.search : '';
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
-      res.writeHead(302, { 'Location': `${devUrl}#/setlist` })
+      res.writeHead(302, { 'Location': `${devUrl}${query}#/setlist` })
       res.end()
       return
     }
@@ -1137,9 +1219,10 @@ const server = http.createServer((req, res) => {
     // Also support readable /lyrics or /obs/lyrics -> redirect to overlay
     if (pathname.startsWith('/lyrics') || pathname.startsWith('/obs/lyrics')) {
       console.log('[OverlayServer] Redirecting to Lyrics');
+      const query = urlObj.search ? urlObj.search : '';
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
-      res.writeHead(302, { 'Location': `${devUrl}#/overlay` })
+      res.writeHead(302, { 'Location': `${devUrl}${query}#/overlay` })
       res.end()
       return
     }
@@ -1248,9 +1331,14 @@ ipcMain.on('window:open-overlay', () => {
 })
 
 ipcMain.on('overlay:update', (_event, payload) => {
-  lastSongInfo = payload;
+  const typedPayload = payload?.type ? payload : { ...payload, type: 'playback' }
+  if (typedPayload.type === 'setlist') {
+    lastSetlistInfo = typedPayload
+  } else {
+    lastPlaybackInfo = typedPayload
+  }
   // Broadcast to all SSE clients
-  const data = JSON.stringify(payload)
+  const data = JSON.stringify(typedPayload)
   // @ts-ignore
   for (const client of clients) {
     // @ts-ignore

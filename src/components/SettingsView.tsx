@@ -4,6 +4,8 @@ import { useUserData } from '../contexts/UserDataContext';
 import CalibrationModal from './CalibrationModal';
 import { getAudioOffset, loadOutputDevicePreferences, saveStreamEnabledPreference } from '../settings/devicePreferences';
 import HotkeysSettingsSection from './HotkeysSettingsSection';
+import OverlayTemplateSettingsSection, { OverlayTemplateEditor } from './OverlayTemplateSettingsSection';
+import { OverlayKind } from '../../shared/overlayTemplates';
 
 // Lazy loading DebugUpdaterUI
 const DebugUpdaterUI = React.lazy(() => import('./DebugUpdaterUI'));
@@ -14,6 +16,7 @@ interface SettingsViewProps {
     streamDeviceId: string | null;
     headphoneDeviceId: string | null;
     onChangeDevice: (role: OutputRole, deviceId: string | null) => void;
+    focusRequest?: { section: 'overlayTemplates'; token: number } | null;
 }
 
 const SettingsView: React.FC<SettingsViewProps> = ({
@@ -21,11 +24,14 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     streamDeviceId,
     headphoneDeviceId,
     onChangeDevice,
+    focusRequest,
 }) => {
     const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const { separationQuality, setSeparationQuality } = useUserData();
+    const { separationQuality, setSeparationQuality, overlayTemplates } = useUserData();
+    const [overlayEditor, setOverlayEditor] = useState<{ kind: OverlayKind; designId: string } | null>(null);
+    const [overlayEditorDirty, setOverlayEditorDirty] = useState(false);
 
     // Calibration State
     const [showCalibration, setShowCalibration] = useState(false);
@@ -64,6 +70,31 @@ const SettingsView: React.FC<SettingsViewProps> = ({
             setStreamEnabled(prefs.isStreamEnabled ?? true);
         }
     }, []);
+
+    useEffect(() => {
+        if (focusRequest?.section === 'overlayTemplates') {
+            setOverlayEditor(null);
+            window.setTimeout(() => {
+                document.getElementById('overlay-template-settings-section')?.scrollIntoView({ block: 'start' });
+            }, 0);
+        }
+    }, [focusRequest?.token, focusRequest?.section]);
+
+    const closeOverlayEditor = () => {
+        if (overlayEditorDirty && !window.confirm('直播覆蓋模板有尚未儲存的變更，確定要離開編輯器嗎？')) {
+            return;
+        }
+        setOverlayEditorDirty(false);
+        setOverlayEditor(null);
+    };
+
+    const handleBackClick = () => {
+        if (overlayEditor) {
+            closeOverlayEditor();
+            return;
+        }
+        onBack();
+    };
 
     // Update displayed offset and sample rates when devices change
     useEffect(() => {
@@ -115,7 +146,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                 flexShrink: 0
             }}>
                 <button
-                    onClick={onBack}
+                    onClick={handleBackClick}
                     style={{
                         background: 'none',
                         border: 'none',
@@ -141,11 +172,25 @@ const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
 
             {/* Content Container - Scrollbar lives here */}
-            <div style={{
-                flex: 1,
-                overflowY: 'auto',
-                width: '100%',
-            }}>
+            {overlayEditor ? (
+                <div style={{
+                    flex: 1,
+                    overflow: 'hidden',
+                    width: '100%',
+                }}>
+                    <OverlayTemplateEditor
+                        initialKind={overlayEditor.kind}
+                        initialDesignId={overlayEditor.designId}
+                        onClose={closeOverlayEditor}
+                        onDirtyChange={setOverlayEditorDirty}
+                    />
+                </div>
+            ) : (
+                <div style={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    width: '100%',
+                }}>
                 {/* Centered Content Wrapper */}
                 <div style={{
                     padding: '32px',
@@ -332,6 +377,13 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                         {error && <div style={{ color: '#ff6666', marginTop: '12px', fontSize: '14px' }}>{error}</div>}
                     </section>
 
+                    <OverlayTemplateSettingsSection
+                        onOpenEditor={(kind, designId) => setOverlayEditor({
+                            kind,
+                            designId: designId ?? (kind === 'lyrics' ? overlayTemplates.activeLyricsDesignId : overlayTemplates.activeSetlistDesignId)
+                        })}
+                    />
+
                     <HotkeysSettingsSection />
 
                     {/* Section: Processing */}
@@ -424,7 +476,8 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     </section>
 
                 </div>
-            </div>
+                </div>
+            )}
 
             {showCalibration && (
                 <CalibrationModal

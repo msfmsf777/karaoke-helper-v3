@@ -3,6 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import { HotkeyConfig, mergeHotkeyConfig } from '../shared/hotkeys';
 import { SongListViewConfigs, mergeSongListViewConfigs } from '../shared/songListView';
+import { OverlayTemplatesConfig, mergeOverlayTemplatesConfig } from '../shared/overlayTemplates';
 
 export interface UserData {
     favorites: string[];
@@ -89,6 +90,7 @@ export interface UserSettings {
     songPreferences?: Record<string, { furigana?: boolean; romaji?: boolean }>;
     hotkeys?: HotkeyConfig;
     songListViews?: SongListViewConfigs;
+    overlayTemplates?: OverlayTemplatesConfig;
 }
 
 export async function saveSettings(settings: UserSettings): Promise<void> {
@@ -97,6 +99,7 @@ export async function saveSettings(settings: UserSettings): Promise<void> {
             ...settings,
             hotkeys: mergeHotkeyConfig(settings.hotkeys),
             songListViews: mergeSongListViewConfigs(settings.songListViews),
+            overlayTemplates: mergeOverlayTemplatesConfig(settings.overlayTemplates, settings.lyricStyles),
         });
     } catch (err) {
         console.error('[UserData] Failed to save settings', err);
@@ -113,12 +116,18 @@ export async function loadSettings(): Promise<UserSettings> {
             separationQuality: parsed.separationQuality || 'normal',
             hotkeys: mergeHotkeyConfig(parsed.hotkeys),
             songListViews: mergeSongListViewConfigs(parsed.songListViews),
+            overlayTemplates: mergeOverlayTemplatesConfig(parsed.overlayTemplates, parsed.lyricStyles),
         };
     } catch (err: any) {
         if (err.code !== 'ENOENT' && !(err instanceof SyntaxError) && !err.message.includes('JSON')) {
             console.error('[UserData] Failed to load settings', err);
         }
-        return { separationQuality: 'normal', hotkeys: mergeHotkeyConfig(), songListViews: {} };
+        return {
+            separationQuality: 'normal',
+            hotkeys: mergeHotkeyConfig(),
+            songListViews: {},
+            overlayTemplates: mergeOverlayTemplatesConfig(),
+        };
     }
 }
 
