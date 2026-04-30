@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { EditableLyricLine } from '../../library/lyrics';
 import { EnrichedLyricLine, SongMeta } from '../../../shared/songTypes';
 import {
@@ -292,6 +292,18 @@ const renderLyricContent = (
   );
 };
 
+const getOffsetTopWithin = (element: HTMLElement, ancestor: HTMLElement) => {
+  let offsetTop = 0;
+  let node: HTMLElement | null = element;
+
+  while (node && node !== ancestor) {
+    offsetTop += node.offsetTop;
+    node = node.offsetParent as HTMLElement | null;
+  }
+
+  return node === ancestor ? offsetTop : null;
+};
+
 export const TemplatedLyricsOverlay: React.FC<{
   design: LyricsOverlayDesign;
   status: SongMeta['lyrics_status'];
@@ -304,30 +316,71 @@ export const TemplatedLyricsOverlay: React.FC<{
   const config = design.config;
   const activeLineRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
   const currentIdx = status === 'synced' ? getActiveLineIndex(lines, currentTime) : -1;
   const visibleRange = getVisibleLineRange(lines.length, currentIdx, config);
   const showFurigana = config.furiganaPolicy === 'show' || (config.furiganaPolicy === 'follow_app' && furiganaEnabled);
   const showRomaji = config.romajiPolicy === 'show' || (config.romajiPolicy === 'follow_app' && romajiEnabled);
   const usesEntranceAnimation = config.animation === 'fade' || config.animation === 'slide' || config.animation === 'scale';
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const scrollContainer = scrollRef.current;
     if (!scrollContainer || status !== 'synced') return;
     if (currentIdx < 0) {
       scrollContainer.scrollTo({ top: 0, behavior: 'auto' });
       return;
     }
-    if (!activeLineRef.current) return;
-    const activeLine = activeLineRef.current;
-    const scrollRect = scrollContainer.getBoundingClientRect();
-    const lineRect = activeLine.getBoundingClientRect();
-    if (scrollRect.height <= 0 || lineRect.height <= 0) return;
-    const delta = (lineRect.top + lineRect.height / 2) - (scrollRect.top + scrollRect.height / 2);
-    scrollContainer.scrollTo({
-      top: scrollContainer.scrollTop + delta,
-      behavior: config.animation === 'scroll' ? 'smooth' : 'auto',
-    });
-  }, [currentIdx, status, config.lineMode, config.activeFontSize, config.inactiveFontSize, config.lineGap, config.animation]);
+
+    const centerActiveLine = () => {
+      const activeLine = activeLineRef.current;
+      if (!activeLine || scrollContainer.clientHeight <= 0 || activeLine.offsetHeight <= 0) return;
+
+      const activeOffsetTop = getOffsetTopWithin(activeLine, scrollContainer);
+      if (activeOffsetTop === null) return;
+
+      const activeCenter = activeOffsetTop + activeLine.offsetHeight / 2;
+      const targetTop = activeCenter - scrollContainer.clientHeight / 2;
+      const maxTop = Math.max(0, scrollContainer.scrollHeight - scrollContainer.clientHeight);
+      const nextTop = Math.max(0, Math.min(maxTop, targetTop));
+
+      if (trackRef.current) {
+        const originY = Math.max(0, activeCenter - trackRef.current.offsetTop);
+        trackRef.current.style.transformOrigin = `center ${originY}px`;
+      }
+
+      scrollContainer.scrollTo({
+        top: nextTop,
+        behavior: config.animation === 'scroll' ? 'smooth' : 'auto',
+      });
+    };
+
+    centerActiveLine();
+    const frame = requestAnimationFrame(centerActiveLine);
+    const settleTimer = usesEntranceAnimation
+      ? window.setTimeout(centerActiveLine, config.animationDurationMs + 60)
+      : 0;
+
+    return () => {
+      cancelAnimationFrame(frame);
+      if (settleTimer) window.clearTimeout(settleTimer);
+    };
+  }, [
+    currentIdx,
+    status,
+    config.lineMode,
+    config.activeFontSize,
+    config.inactiveFontSize,
+    config.lineGap,
+    config.animation,
+    config.animationDurationMs,
+    config.letterSpacing,
+    config.romajiLetterSpacing,
+    config.romajiMarginTop,
+    showFurigana,
+    showRomaji,
+    usesEntranceAnimation,
+    lines.length,
+  ]);
 
   if (status === 'none' || lines.length === 0) {
     return (
@@ -368,6 +421,7 @@ export const TemplatedLyricsOverlay: React.FC<{
           style={{
             width: '100%',
             height: '100%',
+            position: 'relative',
             overflow: 'hidden',
             textAlign: 'center',
             scrollbarWidth: 'none',
@@ -382,9 +436,11 @@ export const TemplatedLyricsOverlay: React.FC<{
         >
           <div style={{ height: '50%', flexShrink: 0 }} />
           <div
+            ref={trackRef}
             key={usesEntranceAnimation ? `${config.animation}-${currentIdx}` : 'lyric-scroll-track'}
             style={{
               width: '100%',
+              transformOrigin: 'center center',
               animation: usesEntranceAnimation
                 ? `khelperObsLyric${config.animation === 'fade' ? 'Fade' : config.animation === 'slide' ? 'Slide' : 'Scale'} ${config.animationDurationMs}ms ease both`
                 : undefined,
@@ -418,7 +474,7 @@ export const TemplatedLyricsOverlay: React.FC<{
                     visibility: isVisible ? 'visible' : 'hidden',
                     opacity: isVisible ? isActive ? 1 : isPast ? 0.48 : 0.72 : 0,
                     textShadow: textShadow || undefined,
-                    transition: config.animation === 'none' ? 'none' : 'color 180ms ease, opacity 180ms ease, font-size 180ms ease',
+                    transition: config.animation === 'none' ? 'none' : 'color 180ms ease, opacity 180ms ease',
                     overflowWrap: 'anywhere',
                     letterSpacing: config.letterSpacing,
                   }}

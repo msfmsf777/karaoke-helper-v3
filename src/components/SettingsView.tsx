@@ -137,11 +137,11 @@ const SettingsView: React.FC<SettingsViewProps> = ({
         }}>
             {/* Header */}
             <div style={{
-                padding: '20px 24px',
+                padding: '12px 24px',
                 borderBottom: '1px solid #333',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '16px',
+                gap: '14px',
                 backgroundColor: '#252525',
                 flexShrink: 0
             }}>
@@ -149,26 +149,35 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     onClick={handleBackClick}
                     style={{
                         background: 'none',
-                        border: 'none',
-                        color: '#fff',
+                        border: '1px solid transparent',
+                        color: '#f2f2f2',
                         cursor: 'pointer',
-                        fontSize: '32px',
+                        fontSize: '28px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        width: '48px',
-                        height: '48px',
+                        width: '36px',
+                        height: '36px',
                         borderRadius: '50%',
-                        transition: 'background 0.2s',
+                        transition: 'background-color 0.16s ease, border-color 0.16s ease, transform 0.16s ease',
                         padding: 0,
-                        lineHeight: 1
+                        lineHeight: 1,
+                        fontWeight: 700
                     }}
-                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
-                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                    onMouseEnter={e => {
+                        e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)';
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
+                        e.currentTarget.style.transform = 'translateX(-1px)';
+                    }}
+                    onMouseLeave={e => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.borderColor = 'transparent';
+                        e.currentTarget.style.transform = 'translateX(0)';
+                    }}
                 >
                     ‹
                 </button>
-                <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold' }}>設定</h1>
+                <h1 style={{ margin: 0, fontSize: '22px', lineHeight: 1.15, fontWeight: 'bold' }}>設定</h1>
             </div>
 
             {/* Content Container - Scrollbar lives here */}

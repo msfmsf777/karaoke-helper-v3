@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLibrary } from '../contexts/LibraryContext';
 import { useQueue } from '../contexts/QueueContext';
 import { useUserData } from '../contexts/UserDataContext';
@@ -170,6 +170,9 @@ const OverlayTemplateSettingsSection: React.FC<OverlayTemplateSettingsSectionPro
 
 type OverviewDesign = LyricsOverlayDesign | SetlistOverlayDesign;
 
+const PREVIEW_CANVAS_WIDTH = 1280;
+const PREVIEW_CANVAS_HEIGHT = 720;
+
 const OverviewGroup: React.FC<{
   title: string;
   description: string;
@@ -241,6 +244,9 @@ export const OverlayTemplateEditor: React.FC<OverlayTemplateEditorProps> = ({ in
   const { overlayTemplates, setOverlayTemplates } = useUserData();
   const { queue, currentIndex, isStreamWaiting, playbackMode } = useQueue();
   const { getSongById } = useLibrary();
+  const editorViewportRef = useRef<HTMLDivElement | null>(null);
+  const designMenuRef = useRef<HTMLDivElement | null>(null);
+  const [editorViewport, setEditorViewport] = useState({ width: 0, height: 0 });
   const [draft, setDraft] = useState<OverlayTemplatesConfig>(() => mergeOverlayTemplatesConfig(overlayTemplates));
   const [kind] = useState<OverlayKind>(initialKind);
   const [selectedDesignId, setSelectedDesignId] = useState(
@@ -252,6 +258,7 @@ export const OverlayTemplateEditor: React.FC<OverlayTemplateEditorProps> = ({ in
   const [setlistPreviewMode, setSetlistPreviewMode] = useState<'normal' | 'stream'>('stream');
   const [setlistPreviewIndex, setSetlistPreviewIndex] = useState(0);
   const [setlistPreviewWaiting, setSetlistPreviewWaiting] = useState(true);
+  const [designMenuOpen, setDesignMenuOpen] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [fonts, setFonts] = useState<string[]>([
     DEFAULT_OVERLAY_FONT,
@@ -342,6 +349,44 @@ export const OverlayTemplateEditor: React.FC<OverlayTemplateEditorProps> = ({ in
   }), [setlistPreviewIndex, setlistPreviewMode, setlistPreviewWaiting]);
 
   const previewSetlistState = setlistPreviewDataMode === 'current' ? currentSetlistState : sampleSetlistState;
+  const compactEditor = editorViewport.width > 0 && editorViewport.width < 1120;
+  const tightEditor = editorViewport.width > 0 && editorViewport.width < 920;
+  const editorGap = tightEditor ? 10 : compactEditor ? 12 : 16;
+  const editorPanelPadding = tightEditor ? 10 : compactEditor ? 12 : 14;
+  const editorGridColumns = tightEditor
+    ? 'minmax(0, 1fr) minmax(250px, 260px)'
+    : compactEditor
+      ? 'minmax(0, 1fr) minmax(270px, 285px)'
+      : 'minmax(0, 1fr) minmax(300px, 320px)';
+
+  useEffect(() => {
+    const element = editorViewportRef.current;
+    if (!element) return;
+
+    const updateSize = () => setEditorViewport({
+      width: element.clientWidth,
+      height: element.clientHeight,
+    });
+    updateSize();
+
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!designMenuOpen) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      const menu = designMenuRef.current;
+      if (menu && !menu.contains(event.target as Node)) {
+        setDesignMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('mousedown', handlePointerDown);
+    return () => window.removeEventListener('mousedown', handlePointerDown);
+  }, [designMenuOpen]);
 
   const updateLyricsDesign = (recipe: (design: LyricsOverlayDesign) => LyricsOverlayDesign) => {
     setDraft(prev => ({
@@ -414,6 +459,26 @@ export const OverlayTemplateEditor: React.FC<OverlayTemplateEditorProps> = ({ in
     }
   };
 
+  const selectDesignFromMenu = (designId: string) => {
+    setSelectedDesignId(designId);
+    setDesignMenuOpen(false);
+  };
+
+  const addDesignFromMenu = () => {
+    addDesign();
+    setDesignMenuOpen(false);
+  };
+
+  const duplicateDesignFromMenu = () => {
+    duplicateDesign();
+    setDesignMenuOpen(false);
+  };
+
+  const deleteDesignFromMenu = () => {
+    deleteDesign();
+    setDesignMenuOpen(false);
+  };
+
   const saveDraft = () => {
     const withActive = kind === 'lyrics'
       ? { ...draft, activeLyricsDesignId: selectedLyricsDesign.id }
@@ -482,17 +547,112 @@ export const OverlayTemplateEditor: React.FC<OverlayTemplateEditorProps> = ({ in
   };
 
   return (
-    <div style={{ height: '100%', boxSizing: 'border-box', padding: '22px 24px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, marginBottom: 16, flexShrink: 0 }}>
-        <div style={{ minWidth: 0 }}>
+    <div
+      style={{
+        height: '100%',
+        boxSizing: 'border-box',
+        padding: '18px 22px',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        minWidth: 0,
+      }}
+    >
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: 16,
+        marginBottom: 14,
+        flexShrink: 0,
+        flexWrap: 'wrap',
+      }}>
+        <div style={{ minWidth: 0, flex: '1 1 260px' }}>
           <div style={{ color: '#888', fontSize: 13, marginBottom: 5 }}>
             設定 &gt; 直播覆蓋模板 &gt; {kind === 'lyrics' ? '歌詞覆蓋' : '歌單覆蓋'} &gt; {selectedDesign.name}
           </div>
-          <h2 style={{ color: '#fff', margin: 0, fontSize: 22, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {kind === 'lyrics' ? '歌詞覆蓋編輯器' : '歌單覆蓋編輯器'}
-          </h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', minWidth: 0 }}>
+            <h2 style={{ color: '#fff', margin: 0, fontSize: 22, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {kind === 'lyrics' ? '歌詞覆蓋編輯器' : '歌單覆蓋編輯器'}
+            </h2>
+            <div ref={designMenuRef} style={{ position: 'relative', minWidth: 0 }}>
+              <button
+                type="button"
+                onClick={() => setDesignMenuOpen(open => !open)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 7,
+                  maxWidth: 280,
+                  minWidth: 0,
+                  padding: '7px 10px',
+                  borderRadius: 999,
+                  border: BORDER,
+                  background: designMenuOpen ? '#303030' : PANEL_BG,
+                  color: '#ddd',
+                  cursor: 'pointer',
+                  fontSize: 12,
+                  fontWeight: 700,
+                }}
+              >
+                <span style={{ color: '#999', flex: '0 0 auto' }}>設計</span>
+                <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedDesign.name}</span>
+                <span style={{ color: '#aaa', flex: '0 0 auto' }}>⌄</span>
+              </button>
+              {designMenuOpen && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 8px)',
+                    left: 0,
+                    width: 280,
+                    maxWidth: 'calc(100vw - 48px)',
+                    background: '#242424',
+                    border: BORDER,
+                    borderRadius: 12,
+                    padding: 8,
+                    boxShadow: '0 16px 38px rgba(0,0,0,0.42)',
+                    zIndex: 1000,
+                  }}
+                >
+                  <div style={{ maxHeight: 220, overflowY: 'auto', overflowX: 'hidden', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {designs.map(design => (
+                      <button
+                        key={design.id}
+                        type="button"
+                        onClick={() => selectDesignFromMenu(design.id)}
+                        style={{
+                          background: design.id === selectedDesign.id ? 'rgba(var(--accent-color-rgb), 0.18)' : 'transparent',
+                          border: design.id === selectedDesign.id ? '1px solid var(--accent-color)' : '1px solid transparent',
+                          color: design.id === selectedDesign.id ? '#fff' : '#bbb',
+                          borderRadius: 8,
+                          padding: '8px 9px',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          fontSize: 13,
+                          fontWeight: design.id === selectedDesign.id ? 800 : 600,
+                        }}
+                      >
+                        {design.name}
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ borderTop: '1px solid #383838', marginTop: 8, paddingTop: 8, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    <SmallButton onClick={addDesignFromMenu}>新增</SmallButton>
+                    <SmallButton onClick={duplicateDesignFromMenu}>複製</SmallButton>
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <SmallButton onClick={deleteDesignFromMenu} disabled={designs.length <= 1 || selectedDesign.id === 'default'} danger>刪除目前設計</SmallButton>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           {copied && <span style={{ color: 'var(--accent-color)', fontSize: 12 }}>{copied}</span>}
           <SmallButton onClick={saveDraft} primary disabled={!isDirty}>儲存</SmallButton>
           <SmallButton onClick={revertDraft} disabled={!isDirty}>還原</SmallButton>
@@ -501,134 +661,113 @@ export const OverlayTemplateEditor: React.FC<OverlayTemplateEditorProps> = ({ in
         </div>
       </div>
 
-      <div style={{
+      <div ref={editorViewportRef} style={{
         flex: 1,
         minHeight: 0,
-        display: 'grid',
-        gridTemplateColumns: '220px minmax(420px, 1fr) 320px',
-        gap: 16,
         overflow: 'hidden',
+        display: 'grid',
+        gridTemplateAreas: '"preview inspector"',
+        gridTemplateColumns: editorGridColumns,
+        gridTemplateRows: 'minmax(0, 1fr)',
+        gap: editorGap,
+        alignItems: 'stretch',
+        minWidth: 0,
       }}>
-        <div style={editorPanelStyle}>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-            <SmallButton onClick={addDesign}>新增</SmallButton>
-            <SmallButton onClick={duplicateDesign}>複製</SmallButton>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto', minHeight: 0 }}>
-            {designs.map(design => (
-              <button
-                key={design.id}
-                onClick={() => setSelectedDesignId(design.id)}
-                style={{
-                  background: design.id === selectedDesign.id ? 'rgba(var(--accent-color-rgb), 0.18)' : 'transparent',
-                  border: design.id === selectedDesign.id ? '1px solid var(--accent-color)' : '1px solid transparent',
-                  color: design.id === selectedDesign.id ? '#fff' : '#bbb',
-                  borderRadius: 8,
-                  padding: '9px 10px',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {design.name}
-              </button>
-            ))}
-          </div>
-          <SmallButton onClick={deleteDesign} disabled={designs.length <= 1 || selectedDesign.id === 'default'} danger>刪除設計</SmallButton>
-        </div>
-
-        <div style={{ ...editorPanelStyle, padding: 14 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 12, flexShrink: 0, alignItems: 'center' }}>
-            {kind === 'lyrics' ? (
-              <>
-                <div style={{ color: '#aaa', fontSize: 12 }}>範例日文歌詞預覽</div>
-                <LyricsPreviewControls
-                  playing={lyricsPreviewPlaying}
-                  onToggle={() => setLyricsPreviewPlaying(prev => !prev)}
-                  time={lyricsPreviewTime}
-                  duration={lyricsDuration}
-                  onTimeChange={setLyricsPreviewTime}
-                />
-              </>
-            ) : (
-              <>
-                <SegmentedControl
-                  value={setlistPreviewDataMode}
-                  options={[['sample', '範例資料'], ['current', '目前佇列']]}
-                  onChange={(value) => setSetlistPreviewDataMode(value as 'sample' | 'current')}
-                />
-                <SetlistPreviewControls
-                  mode={setlistPreviewMode}
-                  disabled={setlistPreviewDataMode === 'current'}
-                  onModeChange={(mode) => {
-                    setSetlistPreviewMode(mode);
-                    setSetlistPreviewWaiting(mode === 'stream');
-                    if (mode === 'normal') {
-                      setSetlistPreviewIndex(prev => Math.min(prev, SAMPLE_SETLIST_STATE.queue.length - 1));
-                    }
-                  }}
-                  onPrev={() => moveSetlistPreview(-1)}
-                  onNext={() => moveSetlistPreview(1)}
-                  onReset={resetSetlistPreview}
-                />
-              </>
-            )}
-          </div>
           <div style={{
-            flex: 1,
-            minHeight: 0,
-            borderRadius: 12,
-            border: '1px solid #444',
-            backgroundImage: 'linear-gradient(45deg, #2a2a2a 25%, transparent 25%), linear-gradient(-45deg, #2a2a2a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #2a2a2a 75%), linear-gradient(-45deg, transparent 75%, #2a2a2a 75%)',
-            backgroundSize: '20px 20px',
-            backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
-            backgroundColor: '#1b1b1b',
-            display: 'grid',
-            placeItems: 'center',
+            ...editorPanelStyle,
+            gridArea: 'preview',
+            padding: editorPanelPadding,
             overflow: 'hidden',
           }}>
-            <PreviewStage>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 12, flexShrink: 0, alignItems: 'center', flexWrap: 'wrap' }}>
               {kind === 'lyrics' ? (
-                <TemplatedLyricsOverlay
-                  design={selectedLyricsDesign}
-                  status={lyricsPreview.status}
-                  lines={lyricsPreview.lines}
-                  currentTime={lyricsPreviewTime}
-                  enrichedLines={lyricsPreview.enrichedLines}
-                  furiganaEnabled={true}
-                  romajiEnabled={true}
-                />
+                <>
+                  <div style={{ color: '#aaa', fontSize: 12 }}>範例日文歌詞預覽</div>
+                  <LyricsPreviewControls
+                    playing={lyricsPreviewPlaying}
+                    onToggle={() => setLyricsPreviewPlaying(prev => !prev)}
+                    time={lyricsPreviewTime}
+                    duration={lyricsDuration}
+                    onTimeChange={setLyricsPreviewTime}
+                  />
+                </>
               ) : (
-                <TemplatedSetlistOverlay design={selectedSetlistDesign} state={previewSetlistState} />
+                <>
+                  <SegmentedControl
+                    value={setlistPreviewDataMode}
+                    options={[['sample', '範例資料'], ['current', '目前佇列']]}
+                    onChange={(value) => setSetlistPreviewDataMode(value as 'sample' | 'current')}
+                  />
+                  <SetlistPreviewControls
+                    mode={setlistPreviewMode}
+                    disabled={setlistPreviewDataMode === 'current'}
+                    onModeChange={(mode) => {
+                      setSetlistPreviewMode(mode);
+                      setSetlistPreviewWaiting(mode === 'stream');
+                      if (mode === 'normal') {
+                        setSetlistPreviewIndex(prev => Math.min(prev, SAMPLE_SETLIST_STATE.queue.length - 1));
+                      }
+                    }}
+                    onPrev={() => moveSetlistPreview(-1)}
+                    onNext={() => moveSetlistPreview(1)}
+                    onReset={resetSetlistPreview}
+                  />
+                </>
               )}
-            </PreviewStage>
+            </div>
+            <div style={{
+              flex: 1,
+              minHeight: 0,
+              borderRadius: 12,
+              border: '1px solid #444',
+              backgroundImage: 'linear-gradient(45deg, #2a2a2a 25%, transparent 25%), linear-gradient(-45deg, #2a2a2a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #2a2a2a 75%), linear-gradient(-45deg, transparent 75%, #2a2a2a 75%)',
+              backgroundSize: '20px 20px',
+              backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
+              backgroundColor: '#1b1b1b',
+              display: 'grid',
+              placeItems: 'center',
+              overflow: 'hidden',
+            }}>
+              <PreviewStage>
+                {kind === 'lyrics' ? (
+                  <TemplatedLyricsOverlay
+                    design={selectedLyricsDesign}
+                    status={lyricsPreview.status}
+                    lines={lyricsPreview.lines}
+                    currentTime={lyricsPreviewTime}
+                    enrichedLines={lyricsPreview.enrichedLines}
+                    furiganaEnabled={true}
+                    romajiEnabled={true}
+                  />
+                ) : (
+                  <TemplatedSetlistOverlay design={selectedSetlistDesign} state={previewSetlistState} />
+                )}
+              </PreviewStage>
+            </div>
+          </div>
+
+          <div style={{ ...editorPanelStyle, gridArea: 'inspector', padding: editorPanelPadding }}>
+            <input
+              value={selectedDesign.name}
+              onChange={(event) => updateName(event.target.value)}
+              style={{ ...fieldStyle, width: '100%', maxWidth: 'none', marginBottom: 12 }}
+            />
+
+            {kind === 'lyrics' ? (
+              <LyricsInspector design={selectedLyricsDesign} fonts={fonts} onChange={updateLyricsDesign} />
+            ) : (
+              <SetlistInspector design={selectedSetlistDesign} fonts={fonts} onChange={updateSetlistDesign} />
+            )}
+
+            <ControlGroup title="OBS 連結">
+              <SmallButton onClick={copyLink}>{kind === 'lyrics' ? '複製歌詞 OBS 連結' : '複製歌單 OBS 連結'}</SmallButton>
+              <div style={{ color: '#888', fontSize: 12, lineHeight: 1.5 }}>
+                儲存後 OBS 來源會更新；連結會固定指向此設計 ID。
+              </div>
+            </ControlGroup>
           </div>
         </div>
-
-        <div style={editorPanelStyle}>
-          <input
-            value={selectedDesign.name}
-            onChange={(event) => updateName(event.target.value)}
-            style={{ ...fieldStyle, width: '100%', marginBottom: 12 }}
-          />
-
-          {kind === 'lyrics' ? (
-            <LyricsInspector design={selectedLyricsDesign} fonts={fonts} onChange={updateLyricsDesign} />
-          ) : (
-            <SetlistInspector design={selectedSetlistDesign} fonts={fonts} onChange={updateSetlistDesign} />
-          )}
-
-          <ControlGroup title="OBS 連結">
-            <SmallButton onClick={copyLink}>{kind === 'lyrics' ? '複製歌詞 OBS 連結' : '複製歌單 OBS 連結'}</SmallButton>
-            <div style={{ color: '#888', fontSize: 12, lineHeight: 1.5 }}>
-              儲存後 OBS 來源會更新；連結會固定指向此設計 ID。
-            </div>
-          </ControlGroup>
-        </div>
       </div>
-    </div>
   );
 };
 
@@ -783,11 +922,73 @@ const SetlistInspector: React.FC<{
   );
 };
 
-const PreviewStage: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div style={{ width: '100%', height: '100%', maxWidth: '100%', maxHeight: '100%', border: '1px solid rgba(255,255,255,0.12)', overflow: 'hidden', position: 'relative' }}>
-    {children}
-  </div>
-);
+const PreviewStage: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const frameRef = useRef<HTMLDivElement | null>(null);
+  const [frameSize, setFrameSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const element = frameRef.current;
+    if (!element) return;
+
+    const updateSize = () => setFrameSize({
+      width: element.clientWidth,
+      height: element.clientHeight,
+    });
+    updateSize();
+
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  const scale = frameSize.width > 0 && frameSize.height > 0
+    ? Math.min(frameSize.width / PREVIEW_CANVAS_WIDTH, frameSize.height / PREVIEW_CANVAS_HEIGHT)
+    : 0.5;
+  const scaledWidth = PREVIEW_CANVAS_WIDTH * scale;
+  const scaledHeight = PREVIEW_CANVAS_HEIGHT * scale;
+
+  return (
+    <div
+      ref={frameRef}
+      style={{
+        width: '100%',
+        height: '100%',
+        maxWidth: '100%',
+        maxHeight: '100%',
+        border: '1px solid rgba(255,255,255,0.12)',
+        overflow: 'hidden',
+        position: 'relative',
+        display: 'grid',
+        placeItems: 'center',
+        boxSizing: 'border-box',
+      }}
+    >
+      <div
+        style={{
+          width: scaledWidth,
+          height: scaledHeight,
+          position: 'relative',
+          overflow: 'hidden',
+          flex: '0 0 auto',
+        }}
+      >
+        <div
+          style={{
+            width: PREVIEW_CANVAS_WIDTH,
+            height: PREVIEW_CANVAS_HEIGHT,
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+            position: 'absolute',
+            inset: 0,
+            overflow: 'hidden',
+          }}
+        >
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const LyricsPreviewControls: React.FC<{
   playing: boolean;
@@ -796,9 +997,9 @@ const LyricsPreviewControls: React.FC<{
   onToggle: () => void;
   onTimeChange: (time: number) => void;
 }> = ({ playing, time, duration, onToggle, onTimeChange }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 230 }}>
+  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: '1 1 230px' }}>
     <SmallButton onClick={onToggle}>{playing ? '暫停預覽' : '播放預覽'}</SmallButton>
-    <input type="range" min={0} max={duration} step={0.1} value={Math.min(time, duration)} onChange={(event) => onTimeChange(Number(event.target.value))} style={{ flex: 1, accentColor: 'var(--accent-color)' }} />
+    <input type="range" min={0} max={duration} step={0.1} value={Math.min(time, duration)} onChange={(event) => onTimeChange(Number(event.target.value))} style={{ flex: '1 1 120px', minWidth: 80, accentColor: 'var(--accent-color)' }} />
     <span style={{ color: '#aaa', fontSize: 12, width: 40, textAlign: 'right' }}>{formatTime(time)}</span>
   </div>
 );
@@ -811,7 +1012,7 @@ const SetlistPreviewControls: React.FC<{
   onNext: () => void;
   onReset: () => void;
 }> = ({ mode, disabled, onModeChange, onPrev, onNext, onReset }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 8, opacity: disabled ? 0.45 : 1, pointerEvents: disabled ? 'none' : 'auto' }}>
+  <div style={{ display: 'flex', alignItems: 'center', gap: 8, opacity: disabled ? 0.45 : 1, pointerEvents: disabled ? 'none' : 'auto', flexWrap: 'wrap', minWidth: 0 }}>
     <SegmentedControl
       value={mode}
       options={[['normal', '一般模式'], ['stream', '直播模式']]}
@@ -900,6 +1101,7 @@ const SmallButton: React.FC<{ children: React.ReactNode; onClick: () => void; pr
       fontWeight: primary ? 800 : 600,
       fontSize: 13,
       whiteSpace: 'nowrap',
+      minWidth: 0,
     }}
   >
     {children}
@@ -907,7 +1109,7 @@ const SmallButton: React.FC<{ children: React.ReactNode; onClick: () => void; pr
 );
 
 const SegmentedControl: React.FC<{ value: string; options: [string, string][]; onChange: (value: string) => void }> = ({ value, options, onChange }) => (
-  <div style={{ display: 'flex', background: '#202020', borderRadius: 999, padding: 3, border: BORDER }}>
+  <div style={{ display: 'flex', flexWrap: 'wrap', background: '#202020', borderRadius: 999, padding: 3, border: BORDER, minWidth: 0 }}>
     {options.map(([optionValue, label]) => (
       <button
         key={optionValue}
@@ -962,37 +1164,39 @@ const NumberControl: React.FC<{ label: string; min: number; max: number; value: 
 );
 
 const RangeControl: React.FC<{ label: string; min: number; max: number; value: number; step?: number; displayValue?: string; onChange: (value: number) => void }> = ({ label, min, max, value, step = 1, displayValue, onChange }) => (
-  <label style={{ display: 'flex', flexDirection: 'column', gap: 5, color: '#aaa', fontSize: 12 }}>
+  <label style={{ display: 'flex', flexDirection: 'column', gap: 5, color: '#aaa', fontSize: 12, minWidth: 0 }}>
     <span style={{ display: 'flex', justifyContent: 'space-between' }}><span>{label}</span><span>{displayValue ?? value}</span></span>
-    <input type="range" min={min} max={max} step={step} value={value} onChange={(event) => onChange(Number(event.target.value))} style={{ accentColor: 'var(--accent-color)' }} />
+    <input type="range" min={min} max={max} step={step} value={value} onChange={(event) => onChange(Number(event.target.value))} style={{ accentColor: 'var(--accent-color)', width: '100%', minWidth: 0 }} />
   </label>
 );
 
 const ColorControl: React.FC<{ label: string; value: string; onChange: (value: string) => void }> = ({ label, value, onChange }) => (
   <label style={controlRowStyle}>
     <span>{label}</span>
-    <input type="color" value={value.startsWith('#') ? value : '#ffffff'} onChange={(event) => onChange(event.target.value)} style={{ width: 44, height: 30, border: 'none', background: 'transparent', cursor: 'pointer' }} />
+    <input type="color" value={value.startsWith('#') ? value : '#ffffff'} onChange={(event) => onChange(event.target.value)} style={{ width: 44, height: 30, border: 'none', background: 'transparent', cursor: 'pointer', justifySelf: 'end' }} />
   </label>
 );
 
 const CheckboxControl: React.FC<{ label: string; checked: boolean; onChange: (value: boolean) => void }> = ({ label, checked, onChange }) => (
   <label style={controlRowStyle}>
     <span>{label}</span>
-    <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} style={{ width: 17, height: 17, accentColor: 'var(--accent-color)' }} />
+    <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} style={{ width: 17, height: 17, accentColor: 'var(--accent-color)', justifySelf: 'end' }} />
   </label>
 );
 
 const controlRowStyle: React.CSSProperties = {
-  display: 'flex',
-  justifyContent: 'space-between',
+  display: 'grid',
+  gridTemplateColumns: 'minmax(72px, 0.6fr) minmax(0, 1fr)',
   gap: 10,
   alignItems: 'center',
   color: '#aaa',
   fontSize: 12,
+  minWidth: 0,
 };
 
 const fieldStyle: React.CSSProperties = {
-  width: 150,
+  width: '100%',
+  maxWidth: 190,
   minWidth: 0,
   background: '#1d1d1d',
   color: '#fff',
