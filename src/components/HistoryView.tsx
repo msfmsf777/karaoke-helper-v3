@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLibrary } from '../contexts/LibraryContext';
 import { useUserData } from '../contexts/UserDataContext';
 import SongList from './SongList';
@@ -10,6 +11,7 @@ interface HistoryViewProps {
 }
 
 const HistoryView: React.FC<HistoryViewProps> = ({ onOpenLyrics }) => {
+    const { t } = useTranslation();
     const { getSongById } = useLibrary();
     const { history, clearHistory } = useUserData();
 
@@ -24,10 +26,10 @@ const HistoryView: React.FC<HistoryViewProps> = ({ onOpenLyrics }) => {
             <div style={{ marginBottom: '20px', flexShrink: 0 }}>
                 <h1 style={{ margin: '0 0 10px 0', fontSize: '28px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <img src={HistoryIcon} alt="" style={pageTitleIconStyle} />
-                    最近播放
+                    {t('songManagement.historyTitle')}
                 </h1>
                 <div style={{ fontSize: '14px', color: '#888' }}>
-                    最近播放的歌曲會顯示在這裡，可依目前篩選結果直接播放。
+                    {t('songManagement.historyDescription')}
                 </div>
             </div>
 
@@ -37,13 +39,13 @@ const HistoryView: React.FC<HistoryViewProps> = ({ onOpenLyrics }) => {
                     context="recent"
                     listKey="recent"
                     onEditLyrics={onOpenLyrics}
-                    emptyMessage="尚未有播放記錄"
+                    emptyMessage={t('songManagement.historyEmpty')}
                     moreActions={[
                         {
-                            label: '清除播放記錄',
+                            label: t('songManagement.clearHistory'),
                             danger: true,
                             onClick: () => {
-                                if (confirm('確定要清除播放記錄嗎？')) {
+                                if (confirm(t('songManagement.clearHistoryConfirm'))) {
                                     clearHistory();
                                 }
                             },

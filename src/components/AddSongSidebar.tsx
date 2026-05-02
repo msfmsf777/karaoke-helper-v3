@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { addLocalSong, pickAudioFile, SongType, SongMeta } from '../library/songLibrary';
 import { useLibrary } from '../contexts/LibraryContext';
 import LyricsSearchPane from './LyricsSearchPane';
+import { getSongTypeLabel } from '../i18n/domainLabels';
 
 // Icons
 import DeleteIcon from '../assets/icons/delete.svg';
@@ -31,6 +33,7 @@ interface BatchSongEntry {
 }
 
 const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
+    const { t } = useTranslation();
     const { refreshSongs } = useLibrary();
     const [source, setSource] = useState<'file' | 'youtube'>('file');
     const [entries, setEntries] = useState<BatchSongEntry[]>([]);
@@ -196,10 +199,10 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                 }
                 newEntries[i].status = 'success';
                 successCount++;
-            } catch (e: any) {
+            } catch (e: unknown) {
                 console.error(`Failed to add ${entry.title}`, e);
                 newEntries[i].status = 'error';
-                newEntries[i].errorMsg = e.message || 'Unknown error';
+                newEntries[i].errorMsg = e instanceof Error ? e.message : 'Unknown error';
             }
         }
 
@@ -229,7 +232,7 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                 lyricsFormat: type,
                 lyricsText: type === 'txt' ? content : '',
                 lyricsLrc: type === 'lrc' ? content : undefined,
-                lyricsFilename: `搜尋結果: ${name} - ${artist}`
+                lyricsFilename: t('songManagement.onlineDownload.searchResult', { name: name || '', artist: artist || '' })
             });
             setShowSearchPane(false);
             setActiveEntryId(null);
@@ -279,7 +282,7 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
     const handleSafeClose = () => {
         const hasUnsavedContent = entries.length > 0 || youtubeInput.trim().length > 0;
         if (hasUnsavedContent) {
-            if (window.confirm('還有未儲存的變更，確定要關閉嗎？')) {
+            if (window.confirm(t('songManagement.addSong.unsavedConfirm'))) {
                 onClose();
             }
         } else {
@@ -317,7 +320,7 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
             }}>
                 {/* Header */}
                 <div style={{ padding: '20px', borderBottom: '1px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#252525' }}>
-                    <h2 style={{ margin: 0, fontSize: '18px', color: '#fff' }}>新增歌曲</h2>
+                    <h2 style={{ margin: 0, fontSize: '18px', color: '#fff' }}>{t('songManagement.addSong.title')}</h2>
                     <button onClick={handleSafeClose} style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '20px', padding: '4px' }}>×</button>
                 </div>
 
@@ -328,7 +331,7 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                     <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
                         <label style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', padding: '12px', backgroundColor: source === 'file' ? 'var(--accent-color)' : '#2a2a2a', color: source === 'file' ? '#000' : '#fff', borderRadius: '8px', fontWeight: source === 'file' ? 'bold' : 'normal', transition: 'all 0.2s' }}>
                             <input type="radio" name="source" checked={source === 'file'} onChange={() => setSource('file')} style={{ display: 'none' }} />
-                            <span>本機檔案</span>
+                            <span>{t('songManagement.addSong.localFiles')}</span>
                         </label>
                         <label style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', padding: '12px', backgroundColor: source === 'youtube' ? '#ff0000' : '#2a2a2a', color: '#fff', borderRadius: '8px', fontWeight: source === 'youtube' ? 'bold' : 'normal', transition: 'all 0.2s' }}>
                             <input type="radio" name="source" checked={source === 'youtube'} onChange={() => setSource('youtube')} style={{ display: 'none' }} />
@@ -339,9 +342,9 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                     {/* Controls */}
                     {source === 'file' && (
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-                            <label style={{ color: '#b3b3b3', fontSize: '13px' }}>音訊檔案</label>
+                            <label style={{ color: '#b3b3b3', fontSize: '13px' }}>{t('songManagement.addSong.audioFiles')}</label>
                             <button onClick={handleAddFiles} style={{ padding: '6px 12px', background: '#333', color: '#fff', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
-                                + 選擇檔案
+                                {t('songManagement.addSong.chooseFiles')}
                             </button>
                         </div>
                     )}
@@ -349,18 +352,18 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                     {source === 'youtube' && (
                         <div style={{ marginBottom: '20px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                <label style={{ color: '#b3b3b3', fontSize: '13px' }}>YouTube 連結 (每行一個)</label>
-                                <select value={youtubeQuality} onChange={(e) => setYoutubeQuality(e.target.value as any)} style={{ padding: '4px 8px', background: '#252525', color: '#fff', border: '1px solid #3a3a3a', borderRadius: '4px', fontSize: '12px' }}>
-                                    <option value="normal">普通 (節省空間)</option>
-                                    <option value="high">高音質 (標準)</option>
-                                    <option value="best">最佳 (檔案較大)</option>
+                                <label style={{ color: '#b3b3b3', fontSize: '13px' }}>{t('songManagement.addSong.youtubeLinksLabel')}</label>
+                                <select value={youtubeQuality} onChange={(e) => setYoutubeQuality(e.target.value as 'best' | 'high' | 'normal')} style={{ padding: '4px 8px', background: '#252525', color: '#fff', border: '1px solid #3a3a3a', borderRadius: '4px', fontSize: '12px' }}>
+                                    <option value="normal">{t('songManagement.onlineDownload.quality.normal')}</option>
+                                    <option value="high">{t('songManagement.onlineDownload.quality.high')}</option>
+                                    <option value="best">{t('songManagement.onlineDownload.quality.best')}</option>
                                 </select>
                             </div>
                             <div style={{ position: 'relative' }}>
                                 <textarea
                                     value={youtubeInput}
                                     onChange={handleYoutubeInputChange}
-                                    placeholder="貼上 YouTube 連結..."
+                                    placeholder={t('songManagement.addSong.youtubePlaceholder')}
                                     rows={5}
                                     style={{ width: '100%', padding: '10px 12px', background: '#252525', color: getInputColor(), border: '1px solid #3a3a3a', borderRadius: '8px', resize: 'vertical', fontSize: '13px', lineHeight: '1.5', boxSizing: 'border-box', transition: 'color 0.2s' }}
                                 />
@@ -374,21 +377,21 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                                     }}
                                     style={{ position: 'absolute', top: '8px', right: '8px', padding: '4px 8px', background: '#333', color: '#fff', border: '1px solid #444', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
                                 >
-                                    貼上
+                                    {t('songManagement.addSong.paste')}
                                 </button>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
                                 <span style={{ fontSize: '12px', color: '#666', display: 'flex', alignItems: 'center' }}>
-                                    {youtubeInput.split('\n').filter(l => l.trim()).length} 個連結
+                                    {t('songManagement.addSong.linkCount', { count: youtubeInput.split('\n').filter(l => l.trim()).length })}
                                 </span>
                                 <div style={{ display: 'flex', gap: '8px' }}>
                                     {youtubeInput.length > 0 && (
                                         <button onClick={handleClearYoutubeInput} style={{ padding: '6px 12px', background: '#333', color: '#ccc', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>
-                                            清空
+                                            {t('songManagement.addSong.clear')}
                                         </button>
                                     )}
                                     <button onClick={handleCheckYoutube} disabled={validating} style={{ padding: '6px 12px', background: validating ? '#444' : 'var(--accent-color)', color: validating ? '#aaa' : '#000', border: 'none', borderRadius: '6px', cursor: validating ? 'wait' : 'pointer', fontSize: '13px', fontWeight: 'bold' }}>
-                                        {validating ? '解析中...' : '檢查並匯入'}
+                                        {validating ? t('songManagement.addSong.parsing') : t('songManagement.addSong.checkAndImport')}
                                     </button>
                                 </div>
                             </div>
@@ -413,8 +416,8 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                                             onChange={(e) => updateEntry(entry.id, { type: e.target.value as SongType })}
                                             style={{ background: '#333', color: '#fff', border: 'none', borderRadius: '4px', padding: '2px 6px', fontSize: '11px' }}
                                         >
-                                            <option value="原曲">原曲</option>
-                                            <option value="伴奏">伴奏</option>
+                                            <option value="原曲">{getSongTypeLabel(t, '原曲')}</option>
+                                            <option value="伴奏">{getSongTypeLabel(t, '伴奏')}</option>
                                         </select>
                                         <button onClick={() => removeEntry(entry.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', opacity: 0.7 }}>
                                             <img src={DeleteIcon} style={{ width: '14px', height: '14px' }} />
@@ -426,13 +429,13 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                     <input
                                         type="text" value={entry.title} onChange={(e) => updateEntry(entry.id, { title: e.target.value })}
-                                        placeholder="歌曲標題"
+                                        placeholder={t('songManagement.onlineDownload.titlePlaceholder')}
                                         style={{ width: '100%', padding: '8px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', color: '#fff', fontSize: '13px', boxSizing: 'border-box' }}
                                     />
                                     <div style={{ display: 'flex', gap: '8px' }}>
                                         <input
                                             type="text" value={entry.artist} onChange={(e) => updateEntry(entry.id, { artist: e.target.value })}
-                                            placeholder="歌手 (選填)"
+                                            placeholder={t('songManagement.onlineDownload.artistPlaceholder')}
                                             style={{ flex: 1, padding: '6px 8px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', color: '#fff', fontSize: '12px', boxSizing: 'border-box' }}
                                         />
 
@@ -440,12 +443,12 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                                         <div style={{ display: 'flex', gap: '4px' }}>
                                             <select
                                                 value={entry.lyricsMode}
-                                                onChange={(e) => updateEntry(entry.id, { lyricsMode: e.target.value as any })}
+                                                onChange={(e) => updateEntry(entry.id, { lyricsMode: e.target.value as BatchSongEntry['lyricsMode'] })}
                                                 style={{ background: '#333', color: '#fff', border: '1px solid #444', borderRadius: '4px', padding: '0 4px', fontSize: '11px', width: '70px' }}
                                             >
-                                                <option value="none">無歌詞</option>
-                                                <option value="paste">貼上</option>
-                                                <option value="import_search">搜尋/匯入</option>
+                                                <option value="none">{t('songManagement.onlineDownload.lyricsMode.none')}</option>
+                                                <option value="paste">{t('songManagement.addSong.lyricsModePasteShort')}</option>
+                                                <option value="import_search">{t('songManagement.onlineDownload.lyricsMode.importSearch')}</option>
                                             </select>
 
                                             {/* Contextual Action */}
@@ -461,7 +464,7 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                                                         boxShadow: activeEntryId === entry.id ? '0 0 5px var(--accent-color)' : 'none',
                                                         transition: 'all 0.2s'
                                                     }}
-                                                    title="搜尋歌詞"
+                                                    title={t('songManagement.onlineDownload.searchLyrics')}
                                                 >
                                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                         <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -476,7 +479,7 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                                     {entry.lyricsMode === 'paste' && (
                                         <textarea
                                             value={entry.lyricsText} onChange={(e) => updateEntry(entry.id, { lyricsText: e.target.value })}
-                                            placeholder="貼上歌詞..."
+                                            placeholder={t('songManagement.onlineDownload.lyricsPlaceholder')}
                                             rows={2}
                                             style={{ width: '100%', padding: '6px', background: '#1a1a1a', border: '1px solid #333', borderRadius: '4px', color: '#aaa', fontSize: '11px', resize: 'vertical', boxSizing: 'border-box' }}
                                         />
@@ -489,10 +492,10 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                                                     <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.lyricsFilename}</span>
                                                 </>
                                             ) : (
-                                                <div style={{ flex: 1, fontStyle: 'italic' }}>未選擇歌詞</div>
+                                                <div style={{ flex: 1, fontStyle: 'italic' }}>{t('songManagement.onlineDownload.noLyricsSelected')}</div>
                                             )}
                                             <button onClick={() => { setActiveFileInputEntryId(entry.id); fileInputRef.current?.click(); }} style={{ fontSize: '10px', padding: '2px 6px', background: '#333', border: '1px solid #444', color: '#fff', borderRadius: '3px', cursor: 'pointer' }}>
-                                                上傳
+                                                {t('songManagement.addSong.upload')}
                                             </button>
                                         </div>
                                     )}
@@ -508,7 +511,7 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
 
                         {entries.filter(e => e.sourceType === source).length === 0 && (
                             <div style={{ textAlign: 'center', color: '#555', padding: '40px 0', fontSize: '13px' }}>
-                                {source === 'file' ? '尚未選擇任何檔案' : '尚未匯入有效連結'}
+                                {source === 'file' ? t('songManagement.addSong.emptyFiles') : t('songManagement.addSong.emptyLinks')}
                             </div>
                         )}
                     </div>
@@ -524,7 +527,7 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                             fontWeight: 'bold', fontSize: '16px', cursor: (busy || entries.filter(e => e.sourceType === source).length === 0) ? 'not-allowed' : 'pointer', opacity: (busy || entries.filter(e => e.sourceType === source).length === 0) ? 0.7 : 1
                         }}
                     >
-                        {busy ? `處理中...` : `確認新增 (${entries.filter(e => e.sourceType === source).length})`}
+                        {busy ? t('songManagement.addSong.processing') : t('songManagement.addSong.confirmAdd', { count: entries.filter(e => e.sourceType === source).length })}
                     </button>
                 </div>
             </div>

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLibrary } from '../contexts/LibraryContext';
 import { useUserData } from '../contexts/UserDataContext';
 import SongList from './SongList';
@@ -10,6 +11,7 @@ interface FavoritesViewProps {
 }
 
 const FavoritesView: React.FC<FavoritesViewProps> = ({ onOpenLyrics }) => {
+    const { t } = useTranslation();
     const { getSongById } = useLibrary();
     const { favorites } = useUserData();
 
@@ -24,10 +26,10 @@ const FavoritesView: React.FC<FavoritesViewProps> = ({ onOpenLyrics }) => {
             <div style={{ marginBottom: '20px', flexShrink: 0 }}>
                 <h1 style={{ margin: '0 0 10px 0', fontSize: '28px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <img src={FavoritesIcon} alt="" style={pageTitleIconStyle} />
-                    我的最愛
+                    {t('songManagement.favoritesTitle')}
                 </h1>
                 <div style={{ fontSize: '14px', color: '#888' }}>
-                    收藏的歌曲會顯示在這裡，可直接篩選、排序並播放。
+                    {t('songManagement.favoritesDescription')}
                 </div>
             </div>
 
@@ -37,7 +39,7 @@ const FavoritesView: React.FC<FavoritesViewProps> = ({ onOpenLyrics }) => {
                     context="favorites"
                     listKey="favorites"
                     onEditLyrics={onOpenLyrics}
-                    emptyMessage="尚未加入任何最愛歌曲"
+                    emptyMessage={t('songManagement.favoritesEmpty')}
                 />
             </div>
         </div>

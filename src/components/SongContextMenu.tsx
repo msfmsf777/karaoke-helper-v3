@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { SongMeta } from '../../shared/songTypes';
 import { useQueue } from '../contexts/QueueContext';
 import { useUserData } from '../contexts/UserDataContext';
@@ -27,6 +28,7 @@ interface SongContextMenuProps {
 }
 
 const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClose, onEditLyrics }) => {
+    const { t } = useTranslation();
     const menuRef = useRef<HTMLDivElement>(null);
     const playlistItemRef = useRef<HTMLDivElement>(null);
     const { playImmediate, addToQueue, queue, removeFromQueue } = useQueue();
@@ -187,7 +189,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
                 <img src={PlayMenuIcon} alt="" style={iconStyle} />
-                <span>播放</span>
+                <span>{t('common.play')}</span>
             </div>
             <div
                 style={itemStyle}
@@ -197,7 +199,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
                 <img src={QueueAddIcon} alt="" style={iconStyle} />
-                <span>加入播放隊列</span>
+                <span>{t('songList.addToQueue')}</span>
             </div>
 
             <div style={separatorStyle} />
@@ -210,7 +212,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
                 <img src={isFavorite(song.id) ? FavoritesFilledIcon : FavoritesIcon} alt="" style={{ ...iconStyle, color: isFavorite(song.id) ? 'var(--primary-color)' : undefined }} />
-                <span>{isFavorite(song.id) ? '取消最愛' : '加入最愛'}</span>
+                <span>{isFavorite(song.id) ? t('songManagement.removeFavorite') : t('songManagement.addFavorite')}</span>
             </div>
 
             <div
@@ -221,7 +223,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
                 <img src={PlaylistItemIcon} alt="" style={iconStyle} />
-                <span style={{ flex: 1 }}>加入歌單...</span>
+                <span style={{ flex: 1 }}>{t('songManagement.addToPlaylistEllipsis')}</span>
                 <span style={{ fontSize: '10px', opacity: 0.5 }}>▶</span>
 
                 {activeSubmenu === 'playlist' && (
@@ -249,7 +251,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
 
                         if (isSeparated && currentVal === 3) return null;
 
-                        const label = isSeparated ? '重新分離' : '開始分離';
+                        const label = isSeparated ? t('songManagement.restartSeparation') : t('songManagement.startSeparation');
 
                         return (
                             <div
@@ -277,9 +279,9 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                                         zIndex: 10001
                                     }}>
                                         {[
-                                            { id: 'fast', label: '快速 (Fast)', val: 1 },
-                                            { id: 'normal', label: '標準 (Normal)', val: 2 },
-                                            { id: 'high', label: '高品質 (High)', val: 3 }
+                                            { id: 'fast', label: t('songManagement.separationQuality.fast'), val: 1 },
+                                            { id: 'normal', label: t('songManagement.separationQuality.normal'), val: 2 },
+                                            { id: 'high', label: t('songManagement.separationQuality.high'), val: 3 }
                                         ].map((option) => {
                                             const isDisabled = isSeparated && option.val <= currentVal;
                                             return (
@@ -329,7 +331,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
                 <img src={LyricsIcon} alt="" style={iconStyle} />
-                <span>編輯歌詞</span>
+                <span>{t('songManagement.editLyrics')}</span>
             </div>
             <div
                 style={itemStyle}
@@ -339,7 +341,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
                 <img src={EditIcon} alt="" style={iconStyle} />
-                <span>編輯詳情</span>
+                <span>{t('songManagement.editDetails')}</span>
             </div>
             <div
                 style={itemStyle}
@@ -352,7 +354,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
                 <img src={FolderOpenIcon} alt="" style={iconStyle} />
-                <span>開啟資料夾</span>
+                <span>{t('songManagement.openFolder')}</span>
             </div>
             <div
                 style={{ ...itemStyle, color: '#ff8080' }}
@@ -362,7 +364,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
                 <img src={DeleteIcon} alt="" style={{ ...iconStyle, filter: 'sepia(1) saturate(5) hue-rotate(-50deg)' }} />
-                <span>刪除歌曲</span>
+                <span>{t('songManagement.deleteSong')}</span>
             </div>
         </div >,
         document.body

@@ -1,11 +1,13 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import type { SongMeta } from '../../shared/songTypes';
 import { useQueue } from '../contexts/QueueContext';
 import { useUserData } from '../contexts/UserDataContext';
 import AddToPlaylistMenu from './AddToPlaylistMenu';
 import type { YouTubeDownloadTarget } from './YouTubeDownloadControl';
 import { DownloadState, queueYouTubeDownload, youtubeIdToUrl } from '../utils/onlineSongs';
+import { getSongTypeLabel } from '../i18n/domainLabels';
 
 import PlayMenuIcon from '../assets/icons/play_menu.svg';
 import QueueAddIcon from '../assets/icons/queue_add.svg';
@@ -37,6 +39,7 @@ const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
     onCustomDownload,
     downloadState = { kind: 'none' },
 }) => {
+    const { t } = useTranslation();
     const menuRef = useRef<HTMLDivElement>(null);
     const playlistItemRef = useRef<HTMLDivElement>(null);
     const downloadItemRef = useRef<HTMLDivElement>(null);
@@ -122,9 +125,9 @@ const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
 
     const getActiveDownloadLabel = () => {
         if (downloadState.kind !== 'active') return '';
-        if (downloadState.job.status === 'queued') return '佇列中';
-        if (downloadState.job.status === 'processing') return '處理中';
-        return `下載中 ${Math.round(downloadState.job.progress || 0)}%`;
+        if (downloadState.job.status === 'queued') return t('songManagement.download.activeQueued');
+        if (downloadState.job.status === 'processing') return t('songManagement.download.activeProcessing');
+        return t('songManagement.download.activeProgress', { progress: Math.round(downloadState.job.progress || 0) });
     };
 
     return createPortal(
@@ -149,18 +152,18 @@ const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
             >
                 <div style={itemStyle} onClick={() => { playImmediate(song.id); onClose(); }} onMouseOver={hoverIn} onMouseOut={hoverOut}>
                     <img src={PlayMenuIcon} alt="" style={iconStyle} />
-                    <span>播放</span>
+                    <span>{t('common.play')}</span>
                 </div>
                 <div style={itemStyle} onClick={() => { addToQueue(song.id); onClose(); }} onMouseOver={hoverIn} onMouseOut={hoverOut}>
                     <img src={QueueAddIcon} alt="" style={iconStyle} />
-                    <span>加入播放佇列</span>
+                    <span>{t('songList.addToQueue')}</span>
                 </div>
 
                 <div style={separatorStyle} />
 
                 <div style={itemStyle} onClick={() => { toggleFavorite(song.id); onClose(); }} onMouseOver={hoverIn} onMouseOut={hoverOut}>
                     <img src={isFavorite(song.id) ? FavoritesFilledIcon : FavoritesIcon} alt="" style={iconStyle} />
-                    <span>{isFavorite(song.id) ? '取消最愛' : '加入最愛'}</span>
+                    <span>{isFavorite(song.id) ? t('songManagement.removeFavorite') : t('songManagement.addFavorite')}</span>
                 </div>
                 <div
                     ref={playlistItemRef}
@@ -176,7 +179,7 @@ const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
                     }}
                 >
                     <img src={PlaylistItemIcon} alt="" style={iconStyle} />
-                    <span style={{ flex: 1 }}>加入歌單...</span>
+                    <span style={{ flex: 1 }}>{t('songManagement.addToPlaylistEllipsis')}</span>
                     <span style={{ fontSize: '10px', opacity: 0.5 }}>▶</span>
                     {activeSubmenu === 'playlist' && (
                         <AddToPlaylistMenu
@@ -214,7 +217,7 @@ const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
                                 onMouseLeave={hoverOut}
                             >
                                 <img src={SeparateIcon} alt="" style={iconStyle} />
-                                <span style={{ flex: 1 }}>{isSeparated ? '重新分離' : '開始分離'}</span>
+                                <span style={{ flex: 1 }}>{isSeparated ? t('songManagement.restartSeparation') : t('songManagement.startSeparation')}</span>
                                 <span style={{ fontSize: '10px', opacity: 0.5 }}>▶</span>
                                 {activeSubmenu === 'separation' && (
                                     <div style={{
@@ -231,9 +234,9 @@ const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
                                         zIndex: 10001,
                                     }}>
                                         {[
-                                            { id: 'fast', label: '快速 (Fast)', val: 1 },
-                                            { id: 'normal', label: '標準 (Normal)', val: 2 },
-                                            { id: 'high', label: '高品質 (High)', val: 3 },
+                                            { id: 'fast', label: t('songManagement.separationQuality.fast'), val: 1 },
+                                            { id: 'normal', label: t('songManagement.separationQuality.normal'), val: 2 },
+                                            { id: 'high', label: t('songManagement.separationQuality.high'), val: 3 },
                                         ].map((option) => {
                                             const isDisabled = isSeparated && option.val <= currentVal;
                                             return (
@@ -278,7 +281,7 @@ const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
                         onMouseLeave={hoverOut}
                     >
                         <img src={DownloadIcon} alt="" style={iconStyle} />
-                        <span style={{ flex: 1 }}>下載...</span>
+                        <span style={{ flex: 1 }}>{t('songManagement.download.downloadEllipsis')}</span>
                         <span style={{ fontSize: '10px', opacity: 0.5 }}>▶</span>
                         {activeSubmenu === 'download' && (
                             <div
@@ -296,16 +299,20 @@ const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
                                     zIndex: 10001,
                                 }}
                             >
-                                <div style={itemStyle} onClick={() => queueDownload('原曲')} onMouseOver={hoverIn} onMouseOut={hoverOut}>下載為原曲</div>
-                                <div style={itemStyle} onClick={() => queueDownload('伴奏')} onMouseOver={hoverIn} onMouseOut={hoverOut}>下載為伴奏</div>
-                                <div style={itemStyle} onClick={openCustomDownload} onMouseOver={hoverIn} onMouseOut={hoverOut}>自訂下載...</div>
+                                <div style={itemStyle} onClick={() => queueDownload('原曲')} onMouseOver={hoverIn} onMouseOut={hoverOut}>
+                                    {t('songManagement.download.downloadAs', { type: getSongTypeLabel(t, '原曲') })}
+                                </div>
+                                <div style={itemStyle} onClick={() => queueDownload('伴奏')} onMouseOver={hoverIn} onMouseOut={hoverOut}>
+                                    {t('songManagement.download.downloadAs', { type: getSongTypeLabel(t, '伴奏') })}
+                                </div>
+                                <div style={itemStyle} onClick={openCustomDownload} onMouseOver={hoverIn} onMouseOut={hoverOut}>{t('songManagement.download.customDownloadEllipsis')}</div>
                             </div>
                         )}
                     </div>
                 )}
                 <div style={itemStyle} onClick={() => { onEditLyrics?.(song); onClose(); }} onMouseOver={hoverIn} onMouseOut={hoverOut}>
                     <img src={LyricsIcon} alt="" style={iconStyle} />
-                    <span>編輯歌詞</span>
+                    <span>{t('songManagement.editLyrics')}</span>
                 </div>
 
                 <div style={separatorStyle} />
@@ -320,14 +327,14 @@ const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
                     onMouseOut={hoverOut}
                 >
                     <img src={LinkIcon} alt="" style={iconStyle} />
-                    <span style={{ flex: 1 }}>複製影片連結</span>
+                    <span style={{ flex: 1 }}>{t('songManagement.copyVideoLink')}</span>
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
                             window.api.openExternal(videoUrl);
                             onClose();
                         }}
-                        title="在預設瀏覽器開啟"
+                        title={t('songManagement.openInBrowser')}
                         style={{
                             border: '1px solid #555',
                             background: '#333',

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useUserData } from '../contexts/UserDataContext';
 import PlaylistItemIcon from '../assets/icons/playlist_item.svg';
 import PlaylistAddIcon from '../assets/icons/playlist_add.svg';
@@ -11,6 +12,7 @@ interface AddToPlaylistMenuProps {
 }
 
 const AddToPlaylistMenu: React.FC<AddToPlaylistMenuProps> = ({ songId, position, onClose }) => {
+    const { t } = useTranslation();
     const { playlists, addSongToPlaylist, removeSongFromPlaylist, createPlaylist } = useUserData();
     const [isCreating, setIsCreating] = useState(false);
     const [newPlaylistName, setNewPlaylistName] = useState('');
@@ -119,7 +121,7 @@ const AddToPlaylistMenu: React.FC<AddToPlaylistMenuProps> = ({ songId, position,
     return (
         <div ref={menuRef} style={style} onClick={(e) => e.stopPropagation()}>
             {playlists.length === 0 && !isCreating && (
-                <div style={{ padding: '8px 12px', color: '#888', fontSize: '12px' }}>無歌單</div>
+                <div style={{ padding: '8px 12px', color: '#888', fontSize: '12px' }}>{t('songManagement.noPlaylists')}</div>
             )}
 
             {playlists.map(p => {
@@ -146,7 +148,7 @@ const AddToPlaylistMenu: React.FC<AddToPlaylistMenuProps> = ({ songId, position,
                         {isPresent && (
                             <img
                                 src={CheckIcon}
-                                alt="Selected"
+                                alt={t('songManagement.selected')}
                                 style={{
                                     width: '16px',
                                     height: '16px',
@@ -171,7 +173,7 @@ const AddToPlaylistMenu: React.FC<AddToPlaylistMenuProps> = ({ songId, position,
                             if (e.key === 'Enter') handleCreateConfirm();
                             if (e.key === 'Escape') setIsCreating(false);
                         }}
-                        placeholder="新歌單名稱"
+                        placeholder={t('songManagement.newPlaylistName')}
                         style={{
                             flex: 1,
                             padding: '4px',
@@ -200,7 +202,7 @@ const AddToPlaylistMenu: React.FC<AddToPlaylistMenuProps> = ({ songId, position,
                             justifyContent: 'center'
                         }}
                     >
-                        <img src={CheckIcon} alt="OK" style={{ width: '14px', height: '14px', filter: 'brightness(0)' }} />
+                        <img src={CheckIcon} alt={t('common.confirm')} style={{ width: '14px', height: '14px', filter: 'brightness(0)' }} />
                     </button>
                 </div>
             ) : (
@@ -214,7 +216,7 @@ const AddToPlaylistMenu: React.FC<AddToPlaylistMenuProps> = ({ songId, position,
                     onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                     <img src={PlaylistAddIcon} alt="" style={{ ...iconStyle, width: '18px', height: '18px' }} />
-                    <span>新建歌單</span>
+                    <span>{t('songManagement.createPlaylist')}</span>
                 </div>
             )}
         </div>

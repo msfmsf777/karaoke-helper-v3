@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SongMeta } from '../../shared/songTypes';
 import { useQueue } from '../contexts/QueueContext';
 import { useUserData } from '../contexts/UserDataContext';
@@ -18,6 +19,7 @@ import MoreIcon from '../assets/icons/more.svg';
 import PlayIcon from '../assets/icons/play.svg';
 import { coerceDurationSeconds, getDownloadState, getSongYoutubeId, getStreamingSongThumbnailUrl } from '../utils/onlineSongs';
 import { SONG_TABLE_GRID, SONG_TABLE_ROW_PADDING } from './songTableLayout';
+import { getAudioStatusLabel, getLyricsStatusLabel, getSongTypeLabel } from '../i18n/domainLabels';
 
 interface SongRowProps {
     song: SongMeta;
@@ -33,30 +35,6 @@ interface SongRowProps {
     playContextSongIds?: string[];
     playContextIndex?: number;
 }
-
-const audioStatusLabels: Record<SongMeta['audio_status'], string> = {
-    streaming: '線上',
-    original_only: '未分離',
-    separation_pending: '等待分離',
-    separating: '分離中',
-    separation_failed: '分離失敗',
-    separated: '已分離',
-    ready: '未分離',
-    missing: '未分離',
-    error: '錯誤',
-};
-
-const lyricsLabel = (status?: SongMeta['lyrics_status']) => {
-    switch (status) {
-        case 'text_only':
-            return '純文字';
-        case 'synced':
-            return '已對齊';
-        case 'none':
-        default:
-            return '無';
-    }
-};
 
 const formatDuration = (seconds?: unknown) => {
     const value = coerceDurationSeconds(seconds);
@@ -79,6 +57,7 @@ const SongRow: React.FC<SongRowProps> = ({
     playContextSongIds,
     playContextIndex
 }) => {
+    const { t } = useTranslation();
     const { playImmediate, playVisibleList } = useQueue();
     const { isFavorite, toggleFavorite } = useUserData();
     const { allSongs, refreshSongs } = useLibrary();
@@ -153,7 +132,7 @@ const SongRow: React.FC<SongRowProps> = ({
                         thumbnailPath={song.thumbnail_path}
                         remoteUrl={getStreamingSongThumbnailUrl(song)}
                         size={38}
-                        title="播放"
+                        title={t('common.play', { defaultValue: '播放' })}
                         onClick={handleArtworkClick}
                         overlay={<img src={PlayIcon} alt="" style={{ width: '16px', height: '16px', display: 'block', filter: 'brightness(0) invert(1)' }} />}
                         style={{ borderColor: isActive ? 'rgba(255, 255, 255, 0.32)' : '#3a3a3a' }}
@@ -176,7 +155,7 @@ const SongRow: React.FC<SongRowProps> = ({
                         {song.title}
                     </div>
                     <div
-                        title={song.artist || 'Unknown Artist'}
+                        title={song.artist || t('songManagement.unknownArtist')}
                         style={{
                             fontSize: '12px',
                             color: '#888',
@@ -185,7 +164,7 @@ const SongRow: React.FC<SongRowProps> = ({
                             textOverflow: 'ellipsis'
                         }}
                     >
-                        {song.artist || 'Unknown Artist'}
+                        {song.artist || t('songManagement.unknownArtist')}
                     </div>
                 </div>
 
@@ -204,7 +183,7 @@ const SongRow: React.FC<SongRowProps> = ({
                             cursor: 'pointer',
                             display: 'block'
                         }}
-                        title={isFavorite(song.id) ? '取消最愛' : '加入最愛'}
+                        title={isFavorite(song.id) ? t('shell.player.removeFavorite') : t('shell.player.addFavorite')}
                     />
                 </div>
 
@@ -212,7 +191,7 @@ const SongRow: React.FC<SongRowProps> = ({
                 <div style={{ display: 'flex', gap: '28px', paddingLeft: '8px', opacity: isHovered ? 1 : 0, transition: 'opacity 0.1s', alignItems: 'center' }}>
                     <button
                         onClick={handleAddToPlaylistClick}
-                        title="加入歌單/播放隊列"
+                        title={t('songManagement.addToPlaylistOrQueue')}
                         style={{
                             background: 'transparent',
                             border: 'none',
@@ -233,7 +212,7 @@ const SongRow: React.FC<SongRowProps> = ({
                             e.stopPropagation();
                             setContextMenuPosition({ x: e.clientX, y: e.clientY });
                         }}
-                        title="更多"
+                        title={t('shell.topBar.more')}
                         style={{
                             background: 'transparent',
                             border: 'none',
@@ -254,7 +233,7 @@ const SongRow: React.FC<SongRowProps> = ({
 
                 {/* Type */}
                 <div style={{ color: '#b3b3b3', fontSize: '13px', textAlign: 'center' }}>
-                    {showType && (isStreaming ? '-' : song.type)}
+                    {showType && (isStreaming ? '-' : getSongTypeLabel(t, song.type))}
                 </div>
 
                 {/* Audio Status */}
@@ -273,7 +252,7 @@ const SongRow: React.FC<SongRowProps> = ({
                             <span>-</span>
                         ) : (
                             <>
-                                {audioStatusLabels[song.audio_status]}
+                                {getAudioStatusLabel(t, song.audio_status)}
 
                                 {/* Quality Badge */}
                                 {song.audio_status === 'separated' && song.separation_quality && (
@@ -286,7 +265,7 @@ const SongRow: React.FC<SongRowProps> = ({
                                         fontWeight: 'bold',
                                         marginLeft: '4px'
                                     }}>
-                                        {song.separation_quality === 'high' ? 'HQ' : song.separation_quality === 'fast' ? '快速' : '標準'}
+                                        {song.separation_quality === 'high' ? 'HQ' : song.separation_quality === 'fast' ? t('songManagement.fastBadge') : t('songManagement.normalBadge')}
                                     </span>
                                 )}
 
@@ -317,7 +296,7 @@ const SongRow: React.FC<SongRowProps> = ({
                                                 marginLeft: '4px'
                                             }}
                                         >
-                                            {song.audio_status === 'separation_failed' ? '重試' : '分離'}
+                                            {song.audio_status === 'separation_failed' ? t('common.retry') : t('songManagement.separate')}
                                         </button>
                                     ) : null
                                 )}
@@ -332,7 +311,7 @@ const SongRow: React.FC<SongRowProps> = ({
                     fontSize: '13px',
                     textAlign: 'center'
                 }}>
-                    {showLyricStatus && lyricsLabel(song.lyrics_status)}
+                    {showLyricStatus && getLyricsStatusLabel(t, song.lyrics_status, true)}
                 </div>
 
                 {/* Duration */}

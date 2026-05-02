@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Virtuoso } from 'react-virtuoso';
 import { SongMeta } from '../../shared/songTypes';
 import {
@@ -20,6 +21,7 @@ import PlaylistIcon from '../assets/icons/playlist.svg';
 import CheckIcon from '../assets/icons/check.svg';
 import { coerceDurationSeconds } from '../utils/onlineSongs';
 import { SONG_TABLE_GRID, SONG_TABLE_HEADER_PADDING } from './songTableLayout';
+import { getAudioStatusLabel, getLyricsStatusLabel, getSongTypeLabel, getSourceKindLabel } from '../i18n/domainLabels';
 
 interface SongListMoreAction {
     label: string;
@@ -41,34 +43,10 @@ interface SongListProps {
     renderCustomActions?: (song: SongMeta) => React.ReactNode;
 }
 
-const audioFilterOptions: { value: SongListFilters['audio']; label: string }[] = [
-    { value: 'all', label: '全部音訊' },
-    { value: 'streaming', label: '線上' },
-    { value: 'original_only', label: '未分離' },
-    { value: 'separated', label: '已分離' },
-    { value: 'separation_pending', label: '等待分離' },
-    { value: 'separating', label: '分離中' },
-    { value: 'separation_failed', label: '分離失敗' },
-];
-
-const lyricsFilterOptions: { value: SongListFilters['lyrics']; label: string }[] = [
-    { value: 'all', label: '全部歌詞' },
-    { value: 'none', label: '無歌詞' },
-    { value: 'text_only', label: '純文字' },
-    { value: 'synced', label: '已對齊' },
-];
-
-const sourceFilterOptions: { value: SongListFilters['source']; label: string }[] = [
-    { value: 'all', label: '全部來源' },
-    { value: 'file', label: '本機檔案' },
-    { value: 'youtube', label: 'YouTube' },
-];
-
-const favoriteFilterOptions: { value: SongListFilters['favorite']; label: string }[] = [
-    { value: 'all', label: '全部最愛' },
-    { value: 'favorite', label: '最愛' },
-    { value: 'not_favorite', label: '非最愛' },
-];
+const audioFilterValues: SongListFilters['audio'][] = ['all', 'streaming', 'original_only', 'separated', 'separation_pending', 'separating', 'separation_failed'];
+const lyricsFilterValues: SongListFilters['lyrics'][] = ['all', 'none', 'text_only', 'synced'];
+const sourceFilterValues: SongListFilters['source'][] = ['all', 'file', 'youtube'];
+const favoriteFilterValues: SongListFilters['favorite'][] = ['all', 'favorite', 'not_favorite'];
 
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 const iconFilter = 'brightness(0) invert(1)';
@@ -136,7 +114,7 @@ const SongList: React.FC<SongListProps> = ({
     context,
     listKey = context,
     onEditLyrics,
-    emptyMessage = '沒有歌曲',
+    emptyMessage,
     showType = true,
     showAudioStatus = true,
     showLyricStatus = true,
@@ -144,6 +122,7 @@ const SongList: React.FC<SongListProps> = ({
     moreActions = [],
     renderCustomActions
 }) => {
+    const { t } = useTranslation();
     const { currentSongId, playVisibleList, addSongsToQueue } = useQueue();
     const { isFavorite, songListViews, setSongListViewConfig } = useUserData();
     const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -158,6 +137,29 @@ const SongList: React.FC<SongListProps> = ({
 
     const viewConfig = mergeSongListViewConfig(songListViews[listKey]);
     const filters = viewConfig.filters;
+    const resolvedEmptyMessage = emptyMessage ?? t('songList.empty');
+
+    const typeFilterOptions = [
+        { value: 'all' as const, label: t('domain.songType.all') },
+        { value: '原曲' as const, label: getSongTypeLabel(t, '原曲') },
+        { value: '伴奏' as const, label: getSongTypeLabel(t, '伴奏') },
+    ];
+    const audioFilterOptions = audioFilterValues.map((value) => ({
+        value,
+        label: value === 'all' ? t('domain.audioStatus.all') : getAudioStatusLabel(t, value),
+    }));
+    const lyricsFilterOptions = lyricsFilterValues.map((value) => ({
+        value,
+        label: value === 'all' ? t('domain.lyricsStatus.all') : getLyricsStatusLabel(t, value),
+    }));
+    const sourceFilterOptions = sourceFilterValues.map((value) => ({
+        value,
+        label: value === 'all' ? t('domain.source.all') : getSourceKindLabel(t, value),
+    }));
+    const favoriteFilterOptions = favoriteFilterValues.map((value) => ({
+        value,
+        label: t(`domain.favorite.${value}`),
+    }));
 
     const updateView = (patch: Partial<typeof viewConfig>) => {
         setSongListViewConfig(listKey, patch);
@@ -202,10 +204,10 @@ const SongList: React.FC<SongListProps> = ({
 
     const visibleSongIds = useMemo(() => visibleSongs.map(song => song.id), [visibleSongs]);
     const filterChips = [
-        filters.type !== 'all' ? { key: 'type', label: `類型：${filters.type}`, clear: () => updateFilters({ type: 'all' }) } : null,
-        filters.audio !== 'all' ? { key: 'audio', label: `音訊：${audioFilterOptions.find(o => o.value === filters.audio)?.label ?? filters.audio}`, clear: () => updateFilters({ audio: 'all' }) } : null,
-        filters.lyrics !== 'all' ? { key: 'lyrics', label: `歌詞：${lyricsFilterOptions.find(o => o.value === filters.lyrics)?.label ?? filters.lyrics}`, clear: () => updateFilters({ lyrics: 'all' }) } : null,
-        filters.source !== 'all' ? { key: 'source', label: `來源：${sourceFilterOptions.find(o => o.value === filters.source)?.label ?? filters.source}`, clear: () => updateFilters({ source: 'all' }) } : null,
+        filters.type !== 'all' ? { key: 'type', label: t('songList.filterChip.type', { value: typeFilterOptions.find(o => o.value === filters.type)?.label ?? filters.type }), clear: () => updateFilters({ type: 'all' }) } : null,
+        filters.audio !== 'all' ? { key: 'audio', label: t('songList.filterChip.audio', { value: audioFilterOptions.find(o => o.value === filters.audio)?.label ?? filters.audio }), clear: () => updateFilters({ audio: 'all' }) } : null,
+        filters.lyrics !== 'all' ? { key: 'lyrics', label: t('songList.filterChip.lyrics', { value: lyricsFilterOptions.find(o => o.value === filters.lyrics)?.label ?? filters.lyrics }), clear: () => updateFilters({ lyrics: 'all' }) } : null,
+        filters.source !== 'all' ? { key: 'source', label: t('songList.filterChip.source', { value: sourceFilterOptions.find(o => o.value === filters.source)?.label ?? filters.source }), clear: () => updateFilters({ source: 'all' }) } : null,
         filters.favorite !== 'all' ? { key: 'favorite', label: favoriteFilterOptions.find(o => o.value === filters.favorite)?.label ?? filters.favorite, clear: () => updateFilters({ favorite: 'all' }) } : null,
     ].filter(Boolean) as { key: string; label: string; clear: () => void }[];
 
@@ -308,7 +310,7 @@ const SongList: React.FC<SongListProps> = ({
                     padding: align === 'left' ? '0 0 0 8px' : 0,
                     overflow: 'hidden',
                 }}
-                title={key ? `依${label}排序` : undefined}
+                title={key ? t('songList.sortBy', { label }) : undefined}
             >
                 <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
                 {key && enabled && (
@@ -323,7 +325,7 @@ const SongList: React.FC<SongListProps> = ({
     if (songs.length === 0) {
         return (
             <div style={{ padding: '40px', textAlign: 'center', color: '#666', fontSize: '14px' }}>
-                {emptyMessage}
+                {resolvedEmptyMessage}
             </div>
         );
     }
@@ -342,7 +344,7 @@ const SongList: React.FC<SongListProps> = ({
                         onMouseLeave={(e) => clearActionButtonHover(e.currentTarget)}
                     >
                         <img src={PlayIcon} alt="" style={{ width: '14px', height: '14px', filter: visibleSongIds.length ? 'brightness(0)' : undefined }} />
-                        播放顯示清單
+                        {t('songList.playVisible')}
                     </button>
                     <button
                         type="button"
@@ -353,13 +355,13 @@ const SongList: React.FC<SongListProps> = ({
                         onMouseLeave={(e) => clearActionButtonHover(e.currentTarget)}
                     >
                         <img src={queueAdded ? CheckIcon : QueueAddIcon} alt="" style={{ width: '16px', height: '16px', filter: iconFilter, opacity: visibleSongIds.length ? 0.9 : 0.35 }} />
-                        {queueAdded ? '已加入' : '加入佇列'}
+                        {queueAdded ? t('songList.added') : t('songList.addToQueue')}
                     </button>
 
                     <div ref={moreMenuRef} style={{ position: 'relative', flexShrink: 0 }}>
                         <IconButton
                             icon={MoreIcon}
-                            title="更多清單操作"
+                            title={t('songList.moreActions')}
                             active={showMoreMenu}
                             onClick={() => setShowMoreMenu(prev => !prev)}
                         />
@@ -374,7 +376,7 @@ const SongList: React.FC<SongListProps> = ({
                                     onMouseLeave={(e) => clearMenuHover(e.currentTarget)}
                                 >
                                     <img src={ModeRandomIcon} alt="" style={menuIconStyle} />
-                                    隨機播放顯示清單
+                                    {t('songList.shuffleVisible')}
                                 </button>
                                 <button
                                     type="button"
@@ -385,7 +387,7 @@ const SongList: React.FC<SongListProps> = ({
                                     onMouseLeave={(e) => clearMenuHover(e.currentTarget)}
                                 >
                                     <img src={PlaylistIcon} alt="" style={menuIconStyle} />
-                                    取代目前佇列並播放
+                                    {t('songList.replaceQueue')}
                                 </button>
                                 {moreActions.map(action => (
                                     <button
@@ -408,7 +410,7 @@ const SongList: React.FC<SongListProps> = ({
 
                     <div style={{ flex: 1, minWidth: 0 }} />
                     <span style={{ color: '#888', fontSize: '12px', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                        {isFiltered ? `顯示 ${visibleSongs.length} / ${songs.length} 首` : `共 ${songs.length} 首`}
+                        {isFiltered ? t('songList.filteredCount', { visible: visibleSongs.length, total: songs.length }) : t('songList.totalCount', { count: songs.length })}
                     </span>
 
                     <div ref={searchRef} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
@@ -429,56 +431,54 @@ const SongList: React.FC<SongListProps> = ({
                                     onKeyDown={(event) => {
                                         if (event.key === 'Escape' && !viewConfig.search.trim()) setIsSearchOpen(false);
                                     }}
-                                    placeholder="在此列表搜尋"
+                                    placeholder={t('songList.searchPlaceholder')}
                                     style={searchInputStyle}
                                 />
                             </div>
                         ) : (
                             <BareIconButton
                                 icon={SearchIcon}
-                                title="搜尋此列表"
+                                title={t('songList.searchThisList')}
                                 onClick={() => setIsSearchOpen(true)}
                             />
                         )}
                         <div ref={filterMenuRef} style={{ position: 'relative' }}>
                             <BareIconButton
                                 icon={FilterIcon}
-                                title="篩選"
+                                title={t('songList.filter')}
                                 active={showFilterMenu || hasActiveFilters}
                                 onClick={() => setShowFilterMenu(prev => !prev)}
                                 showDot={hasActiveFilters}
                             />
                             {showFilterMenu && (
                                 <div style={menuPanelStyle('right', 292)}>
-                                    <div style={{ color: '#fff', fontSize: '13px', fontWeight: 800, padding: '4px 4px 10px' }}>篩選</div>
-                                    <FilterSelect label="類型" value={filters.type} onChange={(value) => updateFilters({ type: value as SongListFilters['type'] })}>
-                                        <option value="all">全部類型</option>
-                                        <option value="原曲">原曲</option>
-                                        <option value="伴奏">伴奏</option>
+                                    <div style={{ color: '#fff', fontSize: '13px', fontWeight: 800, padding: '4px 4px 10px' }}>{t('songList.filter')}</div>
+                                    <FilterSelect label={t('songList.columns.type')} value={filters.type} onChange={(value) => updateFilters({ type: value as SongListFilters['type'] })}>
+                                        {typeFilterOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
                                     </FilterSelect>
-                                    <FilterSelect label="音訊狀態" value={filters.audio} onChange={(value) => updateFilters({ audio: value as SongListFilters['audio'] })}>
+                                    <FilterSelect label={t('songList.columns.audio')} value={filters.audio} onChange={(value) => updateFilters({ audio: value as SongListFilters['audio'] })}>
                                         {audioFilterOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
                                     </FilterSelect>
-                                    <FilterSelect label="歌詞" value={filters.lyrics} onChange={(value) => updateFilters({ lyrics: value as SongListFilters['lyrics'] })}>
+                                    <FilterSelect label={t('songList.columns.lyrics')} value={filters.lyrics} onChange={(value) => updateFilters({ lyrics: value as SongListFilters['lyrics'] })}>
                                         {lyricsFilterOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
                                     </FilterSelect>
-                                    <FilterSelect label="來源" value={filters.source} onChange={(value) => updateFilters({ source: value as SongListFilters['source'] })}>
+                                    <FilterSelect label={t('songList.columns.source')} value={filters.source} onChange={(value) => updateFilters({ source: value as SongListFilters['source'] })}>
                                         {sourceFilterOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
                                     </FilterSelect>
-                                    <FilterSelect label="最愛" value={filters.favorite} onChange={(value) => updateFilters({ favorite: value as SongListFilters['favorite'] })}>
+                                    <FilterSelect label={t('songList.columns.favorite')} value={filters.favorite} onChange={(value) => updateFilters({ favorite: value as SongListFilters['favorite'] })}>
                                         {favoriteFilterOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
                                     </FilterSelect>
                                     {filterChips.length > 0 && (
                                         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', padding: '8px 2px 2px' }}>
                                             {filterChips.map(chip => (
-                                                <button key={chip.key} type="button" onClick={chip.clear} style={chipStyle} title="點擊清除此條件">
+                                                <button key={chip.key} type="button" onClick={chip.clear} style={chipStyle} title={t('songList.clearCondition')}>
                                                     {chip.label} ×
                                                 </button>
                                             ))}
                                         </div>
                                     )}
                                     <button type="button" onClick={clearFilters} style={{ ...chipResetStyle, width: '100%', marginTop: '10px' }}>
-                                        清除篩選
+                                        {t('songList.clearFilters')}
                                     </button>
                                 </div>
                             )}
@@ -489,20 +489,20 @@ const SongList: React.FC<SongListProps> = ({
 
             <div style={headerStyle}>
                 <div></div>
-                {headerCell('標題 / 歌手', 'title', true, 'left')}
-                {headerCell('最愛', 'favorite')}
+                {headerCell(t('songList.columns.titleArtist'), 'title', true, 'left')}
+                {headerCell(t('songList.columns.favorite'), 'favorite')}
                 <div></div>
-                {showType ? headerCell('類型', 'type') : <div />}
-                {showAudioStatus ? headerCell('音訊狀態', 'audio') : <div />}
-                {showLyricStatus ? headerCell('歌詞', 'lyrics') : <div />}
-                {showDuration ? headerCell('時長', 'duration') : <div />}
+                {showType ? headerCell(t('songList.columns.type'), 'type') : <div />}
+                {showAudioStatus ? headerCell(t('songList.columns.audio'), 'audio') : <div />}
+                {showLyricStatus ? headerCell(t('songList.columns.lyrics'), 'lyrics') : <div />}
+                {showDuration ? headerCell(t('songList.columns.duration'), 'duration') : <div />}
             </div>
 
             {visibleSongs.length === 0 ? (
                 <div style={{ padding: '40px', textAlign: 'center', color: '#666', fontSize: '14px' }}>
-                    沒有符合條件的歌曲
+                    {t('songList.noMatches')}
                     <div style={{ marginTop: '12px' }}>
-                        <button type="button" onClick={resetView} style={chipResetStyle}>清除篩選</button>
+                        <button type="button" onClick={resetView} style={chipResetStyle}>{t('songList.clearFilters')}</button>
                     </div>
                 </div>
             ) : (

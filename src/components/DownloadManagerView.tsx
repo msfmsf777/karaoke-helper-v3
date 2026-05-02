@@ -1,14 +1,16 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DownloadJob, SongMeta } from '../../shared/songTypes';
 import SongList from './SongList';
 import { useLibrary } from '../contexts/LibraryContext';
 import DownloadIcon from '../assets/icons/download.svg';
 
 interface DownloadManagerViewProps {
-    onOpenLyrics?: (song: any) => void;
+    onOpenLyrics?: (song: SongMeta) => void;
 }
 
 const DownloadManagerView: React.FC<DownloadManagerViewProps> = ({ onOpenLyrics }) => {
+    const { t } = useTranslation();
     const [jobs, setJobs] = useState<DownloadJob[]>([]);
     const { songs } = useLibrary();
 
@@ -70,20 +72,26 @@ const DownloadManagerView: React.FC<DownloadManagerViewProps> = ({ onOpenLyrics 
             );
         } catch (err) {
             console.error('Retry failed', err);
-            alert('重試失敗: ' + (err as Error).message);
+            alert(t('songManagement.download.retryFailed', { message: (err as Error).message }));
         }
     };
 
     const handleDeleteJob = async (id: string) => {
         if (!window.khelper?.downloads) return;
-        if (confirm('確定要移除此下載紀錄嗎？')) {
+        if (confirm(t('songManagement.download.removeConfirm'))) {
             await window.khelper.downloads.removeJob(id);
         }
     };
 
     const handleCopyError = (error: string) => {
         navigator.clipboard.writeText(error);
-        alert('錯誤訊息已複製');
+        alert(t('songManagement.download.errorCopied'));
+    };
+
+    const getQualityLabel = (quality: DownloadJob['quality']) => {
+        if (quality === 'best') return t('songManagement.download.quality.best');
+        if (quality === 'high') return t('songManagement.download.quality.high');
+        return t('songManagement.download.quality.normal');
     };
 
     const renderProgressBar = (progress: number) => (
@@ -97,13 +105,13 @@ const DownloadManagerView: React.FC<DownloadManagerViewProps> = ({ onOpenLyrics 
             <div style={{ padding: '32px 32px 0' }}>
                 <h1 style={{ fontSize: '28px', fontWeight: 'bold', margin: '0 0 24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <img src={DownloadIcon} alt="" style={pageTitleIconStyle} />
-                    下載管理
+                    {t('songManagement.download.title')}
                 </h1>
 
                 {/* Active Downloads Section */}
                 <section style={{ marginBottom: '24px' }}>
                     <h2 style={{ fontSize: '18px', color: '#fff', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        下載中 <span style={{ fontSize: '12px', color: '#888', background: '#222', padding: '2px 8px', borderRadius: '12px' }}>{activeJobs.length}</span>
+                        {t('songManagement.download.active')} <span style={{ fontSize: '12px', color: '#888', background: '#222', padding: '2px 8px', borderRadius: '12px' }}>{activeJobs.length}</span>
                     </h2>
 
                     {activeJobs.length > 0 && (
@@ -114,10 +122,10 @@ const DownloadManagerView: React.FC<DownloadManagerViewProps> = ({ onOpenLyrics 
                                         <div style={{ fontWeight: 600, color: '#fff' }}>
                                             {job.title} <span style={{ fontWeight: 'normal', color: '#888' }}>{job.artist ? `- ${job.artist}` : ''}</span>
                                         </div>
-                                        <div style={{ fontSize: '12px', color: '#aaa' }}>{job.status === 'queued' ? '排隊中...' : `${job.progress.toFixed(1)}%`}</div>
+                                        <div style={{ fontSize: '12px', color: '#aaa' }}>{job.status === 'queued' ? t('songManagement.download.queuedEllipsis') : `${job.progress.toFixed(1)}%`}</div>
                                     </div>
                                     <div style={{ fontSize: '12px', color: '#888' }}>
-                                        {job.quality === 'best' ? '最佳' : job.quality === 'high' ? '高音質' : '普通'} • YouTube ID: {job.youtubeId}
+                                        {getQualityLabel(job.quality)} • YouTube ID: {job.youtubeId}
                                     </div>
                                     {renderProgressBar(job.progress)}
                                 </div>
@@ -130,7 +138,7 @@ const DownloadManagerView: React.FC<DownloadManagerViewProps> = ({ onOpenLyrics 
                 {failedJobs.length > 0 && (
                     <section style={{ marginBottom: '24px' }}>
                         <h2 style={{ fontSize: '18px', color: '#ff6b6b', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            下載失敗 <span style={{ fontSize: '12px', color: '#fff', background: '#ff3b3b', padding: '2px 8px', borderRadius: '12px' }}>{failedJobs.length}</span>
+                            {t('songManagement.download.failed')} <span style={{ fontSize: '12px', color: '#fff', background: '#ff3b3b', padding: '2px 8px', borderRadius: '12px' }}>{failedJobs.length}</span>
                         </h2>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto', paddingRight: '8px' }}>
                             {failedJobs.map(job => (
@@ -168,19 +176,19 @@ const DownloadManagerView: React.FC<DownloadManagerViewProps> = ({ onOpenLyrics 
                                             onClick={() => handleRetry(job)}
                                             style={{ background: '#333', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
                                         >
-                                            重試
+                                            {t('common.retry')}
                                         </button>
                                         <button
                                             onClick={() => handleCopyError(job.error || '')}
                                             style={{ background: '#333', border: 'none', color: '#ccc', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
                                         >
-                                            複製錯誤
+                                            {t('songManagement.download.copyError')}
                                         </button>
                                         <button
                                             onClick={() => handleDeleteJob(job.id)}
                                             style={{ background: '#442222', border: '1px solid #663333', color: '#ff6b6b', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
                                         >
-                                            移除
+                                            {t('songManagement.download.remove')}
                                         </button>
                                     </div>
                                 </div>
@@ -192,13 +200,13 @@ const DownloadManagerView: React.FC<DownloadManagerViewProps> = ({ onOpenLyrics 
 
             {/* Completed / History Section - Using SongList */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, padding: '0 32px 32px' }}>
-                <h2 style={{ fontSize: '18px', color: '#fff', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>已下載 <span style={{ fontSize: '12px', color: '#888', background: '#222', padding: '2px 8px', borderRadius: '12px' }}>{historySongs.length}</span></h2>
+                <h2 style={{ fontSize: '18px', color: '#fff', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>{t('songManagement.download.completed')} <span style={{ fontSize: '12px', color: '#888', background: '#222', padding: '2px 8px', borderRadius: '12px' }}>{historySongs.length}</span></h2>
 
                 <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
                     <SongList
                         songs={historySongs}
                         context="library"
-                        emptyMessage="尚無下載紀錄"
+                        emptyMessage={t('songManagement.download.emptyHistory')}
                         showType={true}
                         showAudioStatus={true}
                         onEditLyrics={onOpenLyrics}

@@ -1,10 +1,13 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { SongType } from '../../shared/songTypes';
 import DownloadIcon from '../assets/icons/download.svg';
 import CheckIcon from '../assets/icons/check.svg';
 import CloudIcon from '../assets/icons/cloud.svg';
 import EditIcon from '../assets/icons/edit.svg';
 import { DownloadState, queueYouTubeDownload } from '../utils/onlineSongs';
+import { getSongTypeLabel } from '../i18n/domainLabels';
 
 export interface YouTubeDownloadTarget {
     youtubeId: string;
@@ -23,11 +26,11 @@ interface YouTubeDownloadControlProps {
 
 const isLockedState = (state?: DownloadState) => state?.kind === 'downloaded' || state?.kind === 'active';
 
-const getActiveLabel = (state: DownloadState) => {
+const getActiveLabel = (state: DownloadState, t: TFunction) => {
     if (state.kind !== 'active') return '';
-    if (state.job.status === 'queued') return '佇列中';
-    if (state.job.status === 'processing') return '處理中';
-    return `下載中 ${Math.round(state.job.progress || 0)}%`;
+    if (state.job.status === 'queued') return t('songManagement.download.activeQueued');
+    if (state.job.status === 'processing') return t('songManagement.download.activeProcessing');
+    return t('songManagement.download.activeProgress', { progress: Math.round(state.job.progress || 0) });
 };
 
 const actionButtonStyle: React.CSSProperties = {
@@ -55,6 +58,8 @@ export const YouTubeDownloadControl: React.FC<YouTubeDownloadControlProps> = ({
     onQueued,
     onCustomDownload,
 }) => {
+    const { t } = useTranslation();
+
     const queueQuick = async (type: SongType) => {
         if (isLockedState(state)) return;
         try {
@@ -68,18 +73,18 @@ export const YouTubeDownloadControl: React.FC<YouTubeDownloadControlProps> = ({
     if (state.kind === 'active') {
         return (
             <span style={{ color: '#b8d7ff', fontSize: '12px', whiteSpace: 'nowrap' }}>
-                {getActiveLabel(state)}
+                {getActiveLabel(state, t)}
             </span>
         );
     }
 
     if (state.kind === 'downloaded') {
         if (rowHovered) {
-            return <span style={{ color: '#8be28b', fontSize: '12px', whiteSpace: 'nowrap' }}>已下載</span>;
+            return <span style={{ color: '#8be28b', fontSize: '12px', whiteSpace: 'nowrap' }}>{t('songManagement.download.downloaded')}</span>;
         }
         return (
             <span
-                title="已下載"
+                title={t('songManagement.download.downloaded')}
                 style={{
                     width: '22px',
                     height: '22px',
@@ -100,7 +105,7 @@ export const YouTubeDownloadControl: React.FC<YouTubeDownloadControlProps> = ({
         return (
             <button
                 type="button"
-                title={state.kind === 'failed' ? '下載失敗' : '下載選項'}
+                title={state.kind === 'failed' ? t('songManagement.download.failed') : t('songManagement.download.options')}
                 onClick={(e) => {
                     e.stopPropagation();
                     if (state.kind !== 'failed') onCustomDownload(target);
@@ -118,7 +123,7 @@ export const YouTubeDownloadControl: React.FC<YouTubeDownloadControlProps> = ({
                 }}
             >
                 {state.kind === 'failed' ? (
-                    <span style={{ color: '#ff8b8b', fontSize: '12px' }}>失敗</span>
+                    <span style={{ color: '#ff8b8b', fontSize: '12px' }}>{t('domain.downloadStatus.failed')}</span>
                 ) : (
                     <img
                         src={variant === 'status' ? CloudIcon : DownloadIcon}
@@ -143,30 +148,30 @@ export const YouTubeDownloadControl: React.FC<YouTubeDownloadControlProps> = ({
         >
             <button
                 type="button"
-                title="下載為原曲"
+                title={t('songManagement.download.downloadAs', { type: getSongTypeLabel(t, '原曲') })}
                 onClick={() => queueQuick('原曲')}
                 style={actionButtonStyle}
             >
                 <img src={DownloadIcon} alt="" style={{ width: '15px', height: '15px', display: 'block' }} />
-                <span>原曲</span>
+                <span>{getSongTypeLabel(t, '原曲')}</span>
             </button>
             <button
                 type="button"
-                title="下載為伴奏"
+                title={t('songManagement.download.downloadAs', { type: getSongTypeLabel(t, '伴奏') })}
                 onClick={() => queueQuick('伴奏')}
                 style={actionButtonStyle}
             >
                 <img src={DownloadIcon} alt="" style={{ width: '15px', height: '15px', display: 'block' }} />
-                <span>伴奏</span>
+                <span>{getSongTypeLabel(t, '伴奏')}</span>
             </button>
             <button
                 type="button"
-                title="自訂下載"
+                title={t('songManagement.download.customDownload')}
                 onClick={() => onCustomDownload(target)}
                 style={actionButtonStyle}
             >
                 <img src={EditIcon} alt="" style={{ width: '15px', height: '15px', display: 'block' }} />
-                <span>自訂</span>
+                <span>{t('songManagement.download.custom')}</span>
             </button>
         </div>
     );

@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import type { SongType } from '../../shared/songTypes';
 import LyricsSearchPane from './LyricsSearchPane';
 import type { YouTubeDownloadTarget } from './YouTubeDownloadControl';
 import { queueYouTubeDownload, youtubeIdToUrl } from '../utils/onlineSongs';
+import { getSongTypeLabel } from '../i18n/domainLabels';
 import SearchIcon from '../assets/icons/search.svg';
 
 interface OnlineDownloadPanelProps {
@@ -31,6 +33,7 @@ const labelStyle: React.CSSProperties = {
 };
 
 const OnlineDownloadPanel: React.FC<OnlineDownloadPanelProps> = ({ target, onClose, onQueued }) => {
+    const { t } = useTranslation();
     const [title, setTitle] = useState(target.title);
     const [artist, setArtist] = useState(target.artist || '');
     const [type, setType] = useState<SongType>('原曲');
@@ -60,7 +63,7 @@ const OnlineDownloadPanel: React.FC<OnlineDownloadPanelProps> = ({ target, onClo
         setLyricsFormat(format);
         setLyricsText(format === 'txt' ? content : '');
         setLyricsLrc(format === 'lrc' ? content : '');
-        setLyricsFilename(`搜尋結果: ${name || title} - ${selectedArtist || artist || ''}`);
+        setLyricsFilename(t('songManagement.onlineDownload.searchResult', { name: name || title, artist: selectedArtist || artist || '' }));
         setShowSearchPane(false);
     };
 
@@ -132,7 +135,7 @@ const OnlineDownloadPanel: React.FC<OnlineDownloadPanelProps> = ({ target, onClo
                 onClick={(e) => e.stopPropagation()}
             >
                 <div style={{ padding: '20px', borderBottom: '1px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#252525' }}>
-                    <h2 style={{ margin: 0, fontSize: '18px', color: '#fff' }}>自訂下載</h2>
+                    <h2 style={{ margin: 0, fontSize: '18px', color: '#fff' }}>{t('songManagement.onlineDownload.title')}</h2>
                     <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '20px', padding: '4px' }}>×</button>
                 </div>
 
@@ -142,35 +145,35 @@ const OnlineDownloadPanel: React.FC<OnlineDownloadPanelProps> = ({ target, onClo
                     </div>
 
                     <div>
-                        <div style={labelStyle}>標題</div>
-                        <input style={fieldStyle} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="歌曲標題" />
+                        <div style={labelStyle}>{t('songManagement.onlineDownload.titleLabel')}</div>
+                        <input style={fieldStyle} value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('songManagement.onlineDownload.titlePlaceholder')} />
                     </div>
 
                     <div>
-                        <div style={labelStyle}>歌手</div>
-                        <input style={fieldStyle} value={artist} onChange={(e) => setArtist(e.target.value)} placeholder="歌手（選填）" />
+                        <div style={labelStyle}>{t('songManagement.onlineDownload.artistLabel')}</div>
+                        <input style={fieldStyle} value={artist} onChange={(e) => setArtist(e.target.value)} placeholder={t('songManagement.onlineDownload.artistPlaceholder')} />
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                         <div>
-                            <div style={labelStyle}>類型</div>
+                            <div style={labelStyle}>{t('songManagement.onlineDownload.typeLabel')}</div>
                             <select style={fieldStyle} value={type} onChange={(e) => setType(e.target.value as SongType)}>
-                                <option value="原曲">原曲</option>
-                                <option value="伴奏">伴奏</option>
+                                <option value="原曲">{getSongTypeLabel(t, '原曲')}</option>
+                                <option value="伴奏">{getSongTypeLabel(t, '伴奏')}</option>
                             </select>
                         </div>
                         <div>
-                            <div style={labelStyle}>音質</div>
+                            <div style={labelStyle}>{t('songManagement.onlineDownload.qualityLabel')}</div>
                             <select style={fieldStyle} value={quality} onChange={(e) => setQuality(e.target.value as 'best' | 'high' | 'normal')}>
-                                <option value="normal">普通（節省空間）</option>
-                                <option value="high">高音質（標準）</option>
-                                <option value="best">最佳（檔案較大）</option>
+                                <option value="normal">{t('songManagement.onlineDownload.quality.normal')}</option>
+                                <option value="high">{t('songManagement.onlineDownload.quality.high')}</option>
+                                <option value="best">{t('songManagement.onlineDownload.quality.best')}</option>
                             </select>
                         </div>
                     </div>
 
                     <div>
-                        <div style={labelStyle}>歌詞</div>
+                        <div style={labelStyle}>{t('songManagement.onlineDownload.lyricsLabel')}</div>
                         <select
                             style={fieldStyle}
                             value={lyricsMode}
@@ -179,9 +182,9 @@ const OnlineDownloadPanel: React.FC<OnlineDownloadPanelProps> = ({ target, onClo
                                 setShowSearchPane(false);
                             }}
                         >
-                            <option value="none">無歌詞</option>
-                            <option value="paste">貼上純文字</option>
-                            <option value="import_search">搜尋/匯入</option>
+                            <option value="none">{t('songManagement.onlineDownload.lyricsMode.none')}</option>
+                            <option value="paste">{t('songManagement.onlineDownload.lyricsMode.paste')}</option>
+                            <option value="import_search">{t('songManagement.onlineDownload.lyricsMode.importSearch')}</option>
                         </select>
                     </div>
 
@@ -189,7 +192,7 @@ const OnlineDownloadPanel: React.FC<OnlineDownloadPanelProps> = ({ target, onClo
                         <textarea
                             value={lyricsText}
                             onChange={(e) => setLyricsText(e.target.value)}
-                            placeholder="貼上歌詞..."
+                            placeholder={t('songManagement.onlineDownload.lyricsPlaceholder')}
                             rows={7}
                             style={{ ...fieldStyle, color: '#aaa', resize: 'vertical', lineHeight: 1.5 }}
                         />
@@ -204,18 +207,18 @@ const OnlineDownloadPanel: React.FC<OnlineDownloadPanelProps> = ({ target, onClo
                                         <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lyricsFilename}</span>
                                     </>
                                 ) : (
-                                    <span style={{ flex: 1, fontStyle: 'italic' }}>未選擇歌詞</span>
+                                    <span style={{ flex: 1, fontStyle: 'italic' }}>{t('songManagement.onlineDownload.noLyricsSelected')}</span>
                                 )}
                             </div>
                             <button
                                 onClick={() => fileInputRef.current?.click()}
                                 style={{ padding: '0 10px', background: '#333', border: '1px solid #444', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
                             >
-                                匯入
+                                {t('songManagement.onlineDownload.import')}
                             </button>
                             <button
                                 onClick={() => setShowSearchPane(true)}
-                                title="搜尋歌詞"
+                                title={t('songManagement.onlineDownload.searchLyrics')}
                                 style={{ width: '34px', background: '#333', border: showSearchPane ? '1px solid var(--accent-color)' : '1px solid #444', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
                             >
                                 <img src={SearchIcon} alt="" style={{ width: '15px', height: '15px', display: 'block' }} />
@@ -229,7 +232,7 @@ const OnlineDownloadPanel: React.FC<OnlineDownloadPanelProps> = ({ target, onClo
                         onClick={onClose}
                         style={{ flex: 1, padding: '11px', background: '#333', color: '#ddd', border: '1px solid #444', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}
                     >
-                        取消
+                        {t('common.cancel')}
                     </button>
                     <button
                         onClick={handleSubmit}
@@ -246,7 +249,7 @@ const OnlineDownloadPanel: React.FC<OnlineDownloadPanelProps> = ({ target, onClo
                             fontSize: '15px',
                         }}
                     >
-                        加入下載佇列
+                        {t('songManagement.onlineDownload.enqueue')}
                     </button>
                 </div>
                 <input

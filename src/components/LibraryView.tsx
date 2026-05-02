@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SongMeta } from '../library/songLibrary';
 import { useLibrary } from '../contexts/LibraryContext';
 import SongList from './SongList';
@@ -11,6 +12,7 @@ interface LibraryViewProps {
 }
 
 const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics, onOpenAddSong }) => {
+  const { t } = useTranslation();
   const { songs, loading } = useLibrary();
 
   const currentSongs = useMemo(() => songs, [songs]);
@@ -21,10 +23,10 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics, onOpenAddSong }
         <div>
           <h1 style={{ fontSize: '28px', fontWeight: 'bold', margin: '0 0 10px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <img src={LibraryIcon} alt="" style={pageTitleIconStyle} />
-            歌曲庫
+            {t('songManagement.libraryTitle')}
           </h1>
           <div style={{ fontSize: '14px', color: '#888' }}>
-            所有已加入的歌曲會顯示在這裡，可直接篩選、排序並播放。
+            {t('songManagement.libraryDescription')}
           </div>
         </div>
         <button
@@ -50,7 +52,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics, onOpenAddSong }
             e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
           }}
         >
-          ＋ 新增歌曲
+          {t('songManagement.addSong')}
         </button>
       </div>
 
@@ -65,7 +67,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics, onOpenAddSong }
             context="library"
             listKey="library"
             onEditLyrics={onOpenLyrics}
-            emptyMessage="尚未有歌曲，點右上角「＋ 新增歌曲」開始建立你的歌單。"
+            emptyMessage={t('songManagement.libraryEmpty')}
           />
         )}
       </div>

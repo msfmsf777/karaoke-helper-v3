@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SongMeta } from '../../shared/songTypes';
 import { useLibrary } from '../contexts/LibraryContext';
 import { useQueue } from '../contexts/QueueContext';
@@ -18,13 +19,12 @@ import {
     ensureOnlineSong,
     findSongByYoutubeId,
     formatDuration,
-    formatViewCount,
     getDownloadState,
     getYtDurationSeconds,
     getYtDurationTimestamp,
-    lyricsLabel,
     YouTubeResultLike,
 } from '../utils/onlineSongs';
+import { formatViewCount, getLyricsStatusLabel } from '../i18n/domainLabels';
 
 interface SearchResultsViewProps {
     searchTerm: string;
@@ -63,11 +63,12 @@ const YouTubeSearchRow: React.FC<YouTubeRowProps> = ({
     onDownloadQueued,
     onCustomDownload,
 }) => {
+    const { t } = useTranslation();
     const [isHovered, setIsHovered] = useState(false);
     const { isFavorite } = useUserData();
     const favorite = cachedSong ? isFavorite(cachedSong.id) : false;
     const duration = getYtDurationSeconds(yt);
-    const viewText = formatViewCount(yt.views);
+    const viewText = formatViewCount(t, yt.views);
 
     return (
         <div
@@ -117,10 +118,10 @@ const YouTubeSearchRow: React.FC<YouTubeRowProps> = ({
                 </div>
                 <div style={{ display: 'flex', minWidth: 0, alignItems: 'center', gap: '6px', color: '#888', fontSize: '12px' }}>
                     <span
-                        title={yt.artist || 'Unknown Artist'}
+                        title={yt.artist || t('songManagement.unknownArtist')}
                         style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                     >
-                        {yt.artist || 'Unknown Artist'}
+                        {yt.artist || t('songManagement.unknownArtist')}
                     </span>
                     {viewText && <span style={{ color: '#666', flexShrink: 0 }}>•</span>}
                     {viewText && <span style={{ color: '#888', flexShrink: 0 }}>{viewText}</span>}
@@ -133,7 +134,7 @@ const YouTubeSearchRow: React.FC<YouTubeRowProps> = ({
                 <img
                     src={favorite ? FavoritesFilledIcon : FavoritesIcon}
                     alt=""
-                    title={favorite ? '取消最愛' : '加入最愛'}
+                    title={favorite ? t('songManagement.removeFavorite') : t('songManagement.addFavorite')}
                     onClick={(e) => {
                         e.stopPropagation();
                         onFavorite(yt);
@@ -145,14 +146,14 @@ const YouTubeSearchRow: React.FC<YouTubeRowProps> = ({
             <div style={{ display: 'flex', gap: '24px', paddingLeft: '6px', opacity: isHovered ? 1 : 0, transition: 'opacity 0.1s', alignItems: 'center' }}>
                 <button
                     onClick={(e) => onAddToPlaylist(e, yt)}
-                    title="加入歌單"
+                    title={t('songManagement.addToPlaylist')}
                     style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', opacity: 0.7 }}
                 >
                     <img src={AddIcon} alt="" style={{ width: '20px', height: '20px', display: 'block' }} />
                 </button>
                 <button
                     onClick={(e) => onMore(e, yt)}
-                    title="更多"
+                    title={t('songManagement.more')}
                     style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', opacity: 0.7 }}
                 >
                     <img src={MoreIcon} alt="" style={{ width: '20px', height: '20px', display: 'block' }} />
@@ -171,7 +172,7 @@ const YouTubeSearchRow: React.FC<YouTubeRowProps> = ({
             </div>
 
             <div style={{ color: cachedSong?.lyrics_status === 'synced' ? '#4caf50' : '#b3b3b3', fontSize: '13px', textAlign: 'center' }}>
-                {lyricsLabel(cachedSong?.lyrics_status)}
+                {getLyricsStatusLabel(t, cachedSong?.lyrics_status, true)}
             </div>
 
             <div style={{ color: '#b3b3b3', fontSize: '13px', textAlign: 'center' }}>
@@ -182,6 +183,7 @@ const YouTubeSearchRow: React.FC<YouTubeRowProps> = ({
 };
 
 const SearchResultsView: React.FC<SearchResultsViewProps> = ({ searchTerm, onOpenLyrics }) => {
+    const { t } = useTranslation();
     const { songs, allSongs, refreshSongs } = useLibrary();
     const { playAtFront, currentSongId } = useQueue();
     const { toggleFavorite } = useUserData();
@@ -347,7 +349,7 @@ const SearchResultsView: React.FC<SearchResultsViewProps> = ({ searchTerm, onOpe
                 zIndex: 10,
             }}>
                 <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#fff' }}>
-                    搜尋結果: "{searchTerm}"
+                    {t('songManagement.searchResults.title', { term: searchTerm })}
                 </div>
             </div>
 
@@ -357,7 +359,7 @@ const SearchResultsView: React.FC<SearchResultsViewProps> = ({ searchTerm, onOpe
             >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#aaaaaa' }}>
-                        本地庫相符歌曲 <span style={{ fontSize: '14px', fontWeight: 'normal', opacity: 0.6 }}>({filteredSongs.length})</span>
+                        {t('songManagement.searchResults.localMatches')} <span style={{ fontSize: '14px', fontWeight: 'normal', opacity: 0.6 }}>({filteredSongs.length})</span>
                     </div>
                     {filteredSongs.length > 0 ? (
                         <div className="local-scroll" style={{ height: Math.min(filteredSongs.length * 55 + 160, 230) + 'px', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '8px', overflowX: 'hidden', boxSizing: 'border-box' }}>
@@ -366,7 +368,7 @@ const SearchResultsView: React.FC<SearchResultsViewProps> = ({ searchTerm, onOpe
                         </div>
                     ) : (
                         <div style={{ padding: '24px', textAlign: 'center', color: '#666', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
-                            找不到符合 "{searchTerm}" 的本地歌曲
+                            {t('songManagement.searchResults.noLocalMatches', { term: searchTerm })}
                         </div>
                     )}
                 </div>
@@ -379,30 +381,30 @@ const SearchResultsView: React.FC<SearchResultsViewProps> = ({ searchTerm, onOpe
                         padding: '16px 24px',
                         margin: '-16px -24px 0 -24px',
                     }}>
-                        <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#88aaff' }}>YouTube 串流結果</div>
+                        <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#88aaff' }}>{t('songManagement.searchResults.youtubeResults')}</div>
                         <div style={{ flex: 1 }} />
                         <div style={{ display: 'flex', gap: '8px', opacity: ytResults.length > 0 ? 1 : 0.5, pointerEvents: ytResults.length > 0 ? 'auto' : 'none' }}>
                             <select value={durationFilter} onChange={e => setDurationFilter(e.target.value as DurationFilter)} style={{ background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', padding: '4px 8px', outline: 'none', cursor: 'pointer', fontSize: '13px' }}>
-                                <option value="any" style={{ color: '#000' }}>任何時長</option>
-                                <option value="under5" style={{ color: '#000' }}>5 分鐘以內</option>
-                                <option value="5to10" style={{ color: '#000' }}>5 - 10 分鐘</option>
-                                <option value="over10" style={{ color: '#000' }}>超過 10 分鐘</option>
+                                <option value="any" style={{ color: '#000' }}>{t('songManagement.searchResults.duration.any')}</option>
+                                <option value="under5" style={{ color: '#000' }}>{t('songManagement.searchResults.duration.under5')}</option>
+                                <option value="5to10" style={{ color: '#000' }}>{t('songManagement.searchResults.duration.5to10')}</option>
+                                <option value="over10" style={{ color: '#000' }}>{t('songManagement.searchResults.duration.over10')}</option>
                             </select>
                             <select value={dateFilter} onChange={e => setDateFilter(e.target.value as DateFilter)} style={{ background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', padding: '4px 8px', outline: 'none', cursor: 'pointer', fontSize: '13px' }}>
-                                <option value="any" style={{ color: '#000' }}>任何時間</option>
-                                <option value="week" style={{ color: '#000' }}>本週上傳</option>
-                                <option value="month" style={{ color: '#000' }}>本月上傳</option>
-                                <option value="year" style={{ color: '#000' }}>今年上傳</option>
+                                <option value="any" style={{ color: '#000' }}>{t('songManagement.searchResults.date.any')}</option>
+                                <option value="week" style={{ color: '#000' }}>{t('songManagement.searchResults.date.week')}</option>
+                                <option value="month" style={{ color: '#000' }}>{t('songManagement.searchResults.date.month')}</option>
+                                <option value="year" style={{ color: '#000' }}>{t('songManagement.searchResults.date.year')}</option>
                             </select>
                             <select value={sortFilter} onChange={e => setSortFilter(e.target.value as SortFilter)} style={{ background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', padding: '4px 8px', outline: 'none', cursor: 'pointer', fontSize: '13px' }}>
-                                <option value="relevance" style={{ color: '#000' }}>關聯性排序</option>
-                                <option value="popularity" style={{ color: '#000' }}>觀看次數排序</option>
+                                <option value="relevance" style={{ color: '#000' }}>{t('songManagement.searchResults.sort.relevance')}</option>
+                                <option value="popularity" style={{ color: '#000' }}>{t('songManagement.searchResults.sort.popularity')}</option>
                             </select>
                         </div>
                     </div>
 
                     {ytLoading ? (
-                        <div style={{ padding: '24px', textAlign: 'center', color: '#888' }}>搜尋 YouTube 中...</div>
+                        <div style={{ padding: '24px', textAlign: 'center', color: '#888' }}>{t('songManagement.searchResults.searchingYoutube')}</div>
                     ) : visibleRows.length > 0 ? (
                         <div style={{ width: '100%', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', overflow: 'visible', background: 'rgba(255,255,255,0.01)' }}>
                             <div style={{
@@ -417,12 +419,12 @@ const SearchResultsView: React.FC<SearchResultsViewProps> = ({ searchTerm, onOpe
                                 alignItems: 'center',
                             }}>
                                 <div></div>
-                                <div>標題 / 頻道</div>
-                                <div style={{ textAlign: 'center' }}>最愛</div>
+                                <div>{t('songManagement.searchResults.columns.titleChannel')}</div>
+                                <div style={{ textAlign: 'center' }}>{t('songList.columns.favorite')}</div>
                                 <div></div>
-                                <div style={{ textAlign: 'center' }}>下載</div>
-                                <div style={{ textAlign: 'center' }}>歌詞</div>
-                                <div style={{ textAlign: 'center' }}>時長</div>
+                                <div style={{ textAlign: 'center' }}>{t('songManagement.searchResults.columns.download')}</div>
+                                <div style={{ textAlign: 'center' }}>{t('songList.columns.lyrics')}</div>
+                                <div style={{ textAlign: 'center' }}>{t('songList.columns.duration')}</div>
                             </div>
                             {visibleRows.map((yt, index) => {
                                 const cachedSong = findSongByYoutubeId(allSongs, yt.videoId);
@@ -454,25 +456,25 @@ const SearchResultsView: React.FC<SearchResultsViewProps> = ({ searchTerm, onOpe
                         </div>
                     ) : (
                         <div style={{ padding: '24px', textAlign: 'center', color: '#666', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
-                            {ytResults.length > 0 ? '找不到符合目前篩選條件的 YouTube 結果' : '找不到來自 YouTube 的結果'}
+                            {ytResults.length > 0 ? t('songManagement.searchResults.noFilteredYoutube') : t('songManagement.searchResults.noYoutubeResults')}
                         </div>
                     )}
 
                     {visibleYtLimit < filteredYtResults.length && !ytFetchingMore && hasMoreYtResults && (
                         <div style={{ padding: '16px', textAlign: 'center', color: '#888', fontStyle: 'italic' }}>
-                            向下捲動以載入更多...
+                            {t('songManagement.searchResults.scrollMore')}
                         </div>
                     )}
                     {visibleYtLimit >= filteredYtResults.length && !hasMoreYtResults && ytResults.length > 0 && (
                         <div style={{ padding: '16px', textAlign: 'center', color: '#666', fontSize: '13px' }}>
-                            沒有更多 YouTube 結果了
+                            {t('songManagement.searchResults.noMoreYoutube')}
                         </div>
                     )}
                     {ytFetchingMore && (
                         <div style={{ padding: '24px', textAlign: 'center', color: '#888', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
                             <div style={{ width: '20px', height: '20px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#88aaff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
                             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-                            載入更多 YouTube 結果中...
+                            {t('songManagement.searchResults.loadingMore')}
                         </div>
                     )}
                 </div>

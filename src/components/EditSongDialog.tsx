@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SongMeta } from '../../shared/songTypes';
 import { useLibrary } from '../contexts/LibraryContext';
 
@@ -8,6 +9,7 @@ interface EditSongDialogProps {
 }
 
 const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
+    const { t } = useTranslation();
     const { updateSong } = useLibrary();
     const [title, setTitle] = useState(song.title);
     const [artist, setArtist] = useState(song.artist || '');
@@ -21,7 +23,7 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
 
     const handleSave = async () => {
         if (!title.trim()) {
-            setError('歌曲標題不能為空');
+            setError(t('songManagement.editDialog.titleRequired'));
             return;
         }
 
@@ -36,7 +38,7 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
             onClose();
         } catch (err) {
             console.error('Failed to update song', err);
-            setError('儲存失敗，請稍後再試');
+            setError(t('songManagement.editDialog.saveFailed'));
         } finally {
             setIsSaving(false);
         }
@@ -63,7 +65,7 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
                 boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
                 color: '#fff',
             }}>
-                <h2 style={{ margin: '0 0 20px 0', fontSize: '18px' }}>編輯歌曲資訊</h2>
+                <h2 style={{ margin: '0 0 20px 0', fontSize: '18px' }}>{t('songManagement.editDialog.title')}</h2>
 
                 {error && (
                     <div style={{
@@ -80,7 +82,7 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
 
                 <div style={{ marginBottom: '16px' }}>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: '#aaa' }}>
-                        歌曲標題 <span style={{ color: '#ff5252' }}>*</span>
+                        {t('songManagement.editDialog.titleLabel')} <span style={{ color: '#ff5252' }}>*</span>
                     </label>
                     <input
                         type="text"
@@ -101,7 +103,7 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
 
                 <div style={{ marginBottom: '24px' }}>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: '#aaa' }}>
-                        歌手
+                        {t('songManagement.editDialog.artistLabel')}
                     </label>
                     <input
                         type="text"
@@ -132,7 +134,7 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
                             cursor: 'pointer',
                         }}
                     >
-                        取消
+                        {t('common.cancel')}
                     </button>
                     <button
                         onClick={handleSave}
@@ -147,7 +149,7 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
                             opacity: isSaving ? 0.7 : 1,
                         }}
                     >
-                        {isSaving ? '儲存中...' : '儲存'}
+                        {isSaving ? t('songManagement.editDialog.saving') : t('common.save')}
                     </button>
                 </div>
             </div>

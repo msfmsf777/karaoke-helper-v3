@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLibrary } from '../contexts/LibraryContext';
 import { useUserData } from '../contexts/UserDataContext';
 import SongList from './SongList';
@@ -12,6 +13,7 @@ interface PlaylistViewProps {
 }
 
 const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId, onOpenLyrics }) => {
+    const { t } = useTranslation();
     const { getSongById } = useLibrary();
     const { playlists, renamePlaylist, deletePlaylist, removeSongFromPlaylist } = useUserData();
     const [isRenaming, setIsRenaming] = useState(false);
@@ -27,11 +29,11 @@ const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId, onOpenLyrics })
     }, [playlist, getSongById]);
 
     if (!playlist) {
-        return <div style={{ padding: '20px', color: '#fff' }}>Playlist not found</div>;
+        return <div style={{ padding: '20px', color: '#fff' }}>{t('songManagement.playlistNotFound')}</div>;
     }
 
     const handleDeletePlaylist = () => {
-        if (window.confirm(`確定要刪除歌單「${playlist.name}」嗎？`)) {
+        if (window.confirm(t('songManagement.deletePlaylistConfirm', { name: playlist.name }))) {
             deletePlaylist(playlistId);
         }
     };
@@ -77,7 +79,7 @@ const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId, onOpenLyrics })
                         <h1
                             style={{ margin: 0, fontSize: '28px', fontWeight: 'bold', cursor: 'pointer' }}
                             onClick={startRename}
-                            title="點擊重新命名"
+                            title={t('songManagement.renameHint')}
                         >
                             {playlist.name}
                         </h1>
@@ -86,7 +88,7 @@ const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId, onOpenLyrics })
                 </div>
 
                 <div style={{ fontSize: '14px', color: '#888' }}>
-                    此歌單的排序與篩選只改變目前顯示，不會改寫歌單原始順序。
+                    {t('songManagement.playlistDescription')}
                 </div>
             </div>
 
@@ -96,10 +98,10 @@ const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId, onOpenLyrics })
                     context="playlist"
                     listKey={`playlist:${playlistId}`}
                     onEditLyrics={onOpenLyrics}
-                    emptyMessage="此歌單目前沒有歌曲，可從歌曲庫或其他列表使用「加入歌單…」新增。"
+                    emptyMessage={t('songManagement.playlistEmpty')}
                     moreActions={[
                         {
-                            label: '刪除此歌單',
+                            label: t('songManagement.deletePlaylist'),
                             danger: true,
                             onClick: handleDeletePlaylist,
                         },
@@ -110,7 +112,7 @@ const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId, onOpenLyrics })
                                 e.stopPropagation();
                                 removeSongFromPlaylist(playlistId, song.id);
                             }}
-                            title="從歌單移除"
+                            title={t('songManagement.removeFromPlaylist')}
                             style={{
                                 background: 'transparent',
                                 border: 'none',

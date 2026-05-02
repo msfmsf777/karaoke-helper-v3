@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useLayoutEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import PlayMenuIcon from '../assets/icons/play_menu.svg';
 import EditIcon from '../assets/icons/edit.svg';
 import DeleteIcon from '../assets/icons/delete.svg';
@@ -12,6 +13,7 @@ interface PlaylistContextMenuProps {
 }
 
 const PlaylistContextMenu: React.FC<PlaylistContextMenuProps> = ({ position, onClose, onPlay, onRename, onDelete }) => {
+    const { t } = useTranslation();
     const menuRef = useRef<HTMLDivElement>(null);
     const [adjustedPosition, setAdjustedPosition] = useState(position);
 
@@ -89,7 +91,7 @@ const PlaylistContextMenu: React.FC<PlaylistContextMenuProps> = ({ position, onC
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
                 <img src={PlayMenuIcon} alt="" style={iconStyle} />
-                <span>播放</span>
+                <span>{t('common.play')}</span>
             </div>
             <div
                 style={itemStyle}
@@ -98,7 +100,7 @@ const PlaylistContextMenu: React.FC<PlaylistContextMenuProps> = ({ position, onC
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
                 <img src={EditIcon} alt="" style={iconStyle} />
-                <span>重新命名</span>
+                <span>{t('songManagement.renamePlaylist')}</span>
             </div>
             <div
                 style={{ ...itemStyle, color: '#ff8080' }}
@@ -107,7 +109,7 @@ const PlaylistContextMenu: React.FC<PlaylistContextMenuProps> = ({ position, onC
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
                 <img src={DeleteIcon} alt="" style={{ ...iconStyle, filter: 'sepia(1) saturate(5) hue-rotate(-50deg)' }} />
-                <span>刪除歌單</span>
+                <span>{t('songManagement.deletePlaylist')}</span>
             </div>
         </div>
     );
