@@ -26,5 +26,104 @@
       "description": "Choose the display language for KHelper. If no language has been selected, KHelper auto-detects it from your system language.",
       "label": "Language"
     }
+  },
+  "domain": {
+    "songType": {
+      "original": "Original",
+      "instrumental": "Instrumental",
+      "all": "All Types"
+    },
+    "audioStatus": {
+      "streaming": "Online",
+      "original_only": "Not Separated",
+      "separation_pending": "Waiting",
+      "separating": "Separating",
+      "separation_failed": "Separation Failed",
+      "separated": "Separated",
+      "ready": "Not Separated",
+      "missing": "Not Separated",
+      "error": "Error",
+      "all": "All Audio"
+    },
+    "lyricsStatus": {
+      "none": "No Lyrics",
+      "text_only": "Plain Text",
+      "synced": "Synced",
+      "all": "All Lyrics",
+      "shortNone": "None"
+    },
+    "source": {
+      "file": "Local File",
+      "youtube": "YouTube",
+      "all": "All Sources"
+    },
+    "favorite": {
+      "all": "All Favorites",
+      "favorite": "Favorite",
+      "not_favorite": "Not Favorite"
+    },
+    "downloadStatus": {
+      "queued": "Queued",
+      "downloading": "Downloading",
+      "processing": "Processing",
+      "completed": "Completed",
+      "failed": "Failed"
+    },
+    "hotkeys": {
+      "groups": {
+        "playback": "Playback",
+        "custom": "Custom Shortcuts"
+      },
+      "unset": "Not Set",
+      "failures": {
+        "plainGlobal": "Global hotkeys must include a modifier",
+        "duplicate": "Duplicate shortcut",
+        "occupied": "Used by another app"
+      },
+      "actions": {
+        "playPause": {
+          "label": "Play / Pause",
+          "description": "Toggle playback for the current song"
+        },
+        "nextTrack": {
+          "label": "Next Track",
+          "description": "Play the next song in the queue"
+        },
+        "previousTrack": {
+          "label": "Previous Track",
+          "description": "Play the previous song in the queue"
+        },
+        "toggleMiniPlayer": {
+          "label": "Mini Player",
+          "description": "Show or hide the mini player"
+        },
+        "focusSearch": {
+          "label": "Search",
+          "description": "Focus the top search field"
+        },
+        "toggleStreamMode": {
+          "label": "Stream Mode",
+          "description": "Enter or leave stream mode"
+        },
+        "instrumentalVolumeUp": {
+          "label": "Instrumental Volume +",
+          "description": "Raise instrumental volume by 5%"
+        },
+        "instrumentalVolumeDown": {
+          "label": "Instrumental Volume -",
+          "description": "Lower instrumental volume by 5%"
+        },
+        "vocalVolumeUp": {
+          "label": "Vocal Volume +",
+          "description": "Raise vocal volume by 5%"
+        },
+        "vocalVolumeDown": {
+          "label": "Vocal Volume -",
+          "description": "Lower vocal volume by 5%"
+        }
+      }
+    },
+    "viewCount": "{{count}} views",
+    "viewCountTenThousands": "{{count}} views"
   }
 }

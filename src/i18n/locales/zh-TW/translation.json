@@ -26,5 +26,104 @@
       "description": "選擇 KHelper 的顯示語言。若尚未選擇，會先依照系統語言自動判斷。",
       "label": "語言"
     }
+  },
+  "domain": {
+    "songType": {
+      "original": "原曲",
+      "instrumental": "伴奏",
+      "all": "全部類型"
+    },
+    "audioStatus": {
+      "streaming": "線上",
+      "original_only": "未分離",
+      "separation_pending": "等待分離",
+      "separating": "分離中",
+      "separation_failed": "分離失敗",
+      "separated": "已分離",
+      "ready": "未分離",
+      "missing": "未分離",
+      "error": "錯誤",
+      "all": "全部音訊"
+    },
+    "lyricsStatus": {
+      "none": "無歌詞",
+      "text_only": "純文字",
+      "synced": "已對齊",
+      "all": "全部歌詞",
+      "shortNone": "無"
+    },
+    "source": {
+      "file": "本機檔案",
+      "youtube": "YouTube",
+      "all": "全部來源"
+    },
+    "favorite": {
+      "all": "全部最愛",
+      "favorite": "最愛",
+      "not_favorite": "非最愛"
+    },
+    "downloadStatus": {
+      "queued": "等待中",
+      "downloading": "下載中",
+      "processing": "處理中",
+      "completed": "已完成",
+      "failed": "失敗"
+    },
+    "hotkeys": {
+      "groups": {
+        "playback": "播放控制",
+        "custom": "自訂快捷鍵"
+      },
+      "unset": "未設定",
+      "failures": {
+        "plainGlobal": "全域快捷鍵需包含修飾鍵",
+        "duplicate": "重複快捷鍵",
+        "occupied": "被其他應用程式佔用"
+      },
+      "actions": {
+        "playPause": {
+          "label": "播放 / 暫停",
+          "description": "切換目前歌曲播放狀態"
+        },
+        "nextTrack": {
+          "label": "下一首",
+          "description": "播放佇列中的下一首"
+        },
+        "previousTrack": {
+          "label": "上一首",
+          "description": "播放佇列中的上一首"
+        },
+        "toggleMiniPlayer": {
+          "label": "迷你播放器",
+          "description": "顯示或隱藏迷你播放器"
+        },
+        "focusSearch": {
+          "label": "搜尋",
+          "description": "聚焦上方搜尋欄"
+        },
+        "toggleStreamMode": {
+          "label": "直播模式",
+          "description": "進入或離開直播模式"
+        },
+        "instrumentalVolumeUp": {
+          "label": "伴奏音量 +",
+          "description": "提高伴奏音量 5%"
+        },
+        "instrumentalVolumeDown": {
+          "label": "伴奏音量 -",
+          "description": "降低伴奏音量 5%"
+        },
+        "vocalVolumeUp": {
+          "label": "人聲音量 +",
+          "description": "提高人聲音量 5%"
+        },
+        "vocalVolumeDown": {
+          "label": "人聲音量 -",
+          "description": "降低人聲音量 5%"
+        }
+      }
+    },
+    "viewCount": "{{count}}次觀看",
+    "viewCountTenThousands": "{{count}}萬次觀看"
   }
 }
