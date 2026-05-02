@@ -25,6 +25,39 @@
       "title": "介面語言",
       "description": "選擇 KHelper 的顯示語言。若尚未選擇，會先依照系統語言自動判斷。",
       "label": "語言"
+    },
+    "audio": {
+      "loadError": "無法取得音訊輸出裝置清單",
+      "title": "音訊輸出裝置",
+      "scan": "重新掃描",
+      "scanning": "掃描中...",
+      "description": "設定觀眾聽到（Stream）與您自己聽到（Headphone）的聲音輸出位置。",
+      "separationDescription": "若歌曲已進行人聲分離，Stream 只會輸出伴奏，而 Headphone 會同時輸出人聲與伴奏。",
+      "systemDefault": "系統預設",
+      "device": "裝置 {{index}}",
+      "streamOutput": "觀眾輸出 (Stream)",
+      "headphoneOutput": "耳機輸出 (Headphone)",
+      "syncOffset": "雙輸出同步偏移：",
+      "calibrate": "校準"
+    },
+    "separation": {
+      "title": "人聲分離品質",
+      "fast": "快速 (Fast)",
+      "fastDescription": "較省資源，處理速度最快，但音質略低。",
+      "normal": "標準 (Normal)",
+      "normalDescription": "推薦選項。在速度與音質之間取得平衡。",
+      "high": "高品質 (High)",
+      "highDescription": "處理時間較長，但能提供最佳的分離效果。"
+    },
+    "updates": {
+      "title": "軟體更新",
+      "check": "檢查更新",
+      "checking": "檢查中...",
+      "neverChecked": "尚未檢查",
+      "lastChecked": "上次檢查時間：{{time}}"
+    },
+    "overlay": {
+      "unsavedLeaveConfirm": "直播覆蓋模板有尚未儲存的變更，確定要離開編輯器嗎？"
     }
   },
   "domain": {
@@ -125,5 +158,84 @@
     },
     "viewCount": "{{count}}次觀看",
     "viewCountTenThousands": "{{count}}萬次觀看"
+  },
+  "shell": {
+    "nav": {
+      "browse": "瀏覽",
+      "library": "歌曲庫",
+      "downloads": "下載管理",
+      "lyrics": "歌詞編輯",
+      "myMusic": "我的音樂",
+      "favorites": "我的最愛",
+      "recent": "最近播放",
+      "playlists": "我的歌單",
+      "addPlaylist": "新增歌單",
+      "playlistName": "歌單名稱",
+      "deletePlaylistConfirm": "確定要刪除此歌單嗎？"
+    },
+    "topBar": {
+      "searchPlaceholder": "搜尋歌曲 / 歌手",
+      "recentSearches": "最近搜尋",
+      "clear": "清除",
+      "noRecentSearches": "無最近搜尋紀錄",
+      "localMatches": "本地庫相符歌曲",
+      "viewAll": "查看全部 ➔",
+      "noLocalMatches": "找不到相符本地歌曲",
+      "youtubeResults": "YouTube 串流結果",
+      "suggestions": "搜尋建議",
+      "searching": "搜尋中...",
+      "noOnlineResults": "找不到相關結果",
+      "showMore": "查看更多",
+      "tasks": "處理中任務",
+      "about": "關於",
+      "miniPlayer": "迷你播放器",
+      "addToPlaylist": "加入歌單",
+      "more": "更多",
+      "updateFailed": "更新檢查失敗",
+      "updateAvailable": "有新版本可用"
+    },
+    "player": {
+      "noSong": "尚未選擇歌曲",
+      "unknownSong": "未知歌曲",
+      "nextSong": "下一首: {{title}}",
+      "emptySetlist": "待播清單已空",
+      "order": "順序播放",
+      "repeatOne": "單曲循環",
+      "random": "隨機播放",
+      "stream": "直播模式",
+      "enterStream": "進入直播模式",
+      "closeStream": "關閉直播模式",
+      "cloudStreamingTooltip": "線上串流 - 未下載前無法使用變調/變速與伴奏分離功能",
+      "cloudStreaming": "雲端串流",
+      "addFavorite": "加入最愛",
+      "removeFavorite": "取消最愛",
+      "switchModeHint": "點擊左側切換模式",
+      "previous": "上一首",
+      "next": "下一首",
+      "speed": "變速",
+      "speedTooltip": "變速 (Speed)",
+      "speedDisabledTooltip": "變速 (線上串流無法使用)",
+      "pitch": "變調",
+      "pitchTooltip": "變調 (Pitch)",
+      "pitchDisabledTooltip": "變調 (線上串流無法使用)",
+      "instrumental": "伴奏",
+      "vocal": "人聲",
+      "queue": "播放隊列"
+    },
+    "queue": {
+      "title": "播放隊列",
+      "count": "共 {{count}} 首歌曲",
+      "clear": "清空",
+      "confirmClear": "確定清空?",
+      "empty": "播放隊列是空的，請在歌曲庫或歌單中加入歌曲。",
+      "remove": "從隊列移除",
+      "hint": "雙擊可立即播放此曲"
+    },
+    "window": {
+      "minimize": "最小化",
+      "maximize": "最大化",
+      "restore": "還原",
+      "close": "關閉"
+    }
   }
 }

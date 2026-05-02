@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useQueue } from '../contexts/QueueContext';
 import { useLibrary } from '../contexts/LibraryContext';
@@ -20,6 +21,7 @@ interface QueuePanelProps {
 }
 
 const QueuePanel: React.FC<QueuePanelProps> = ({ isOpen, onClose }) => {
+    const { t } = useTranslation();
     const { queue, currentIndex, playQueueIndex, removeFromQueue, moveQueueItem, clearQueue } = useQueue();
     const { getSongById } = useLibrary();
     const [confirmClear, setConfirmClear] = useState(false);
@@ -121,8 +123,8 @@ const QueuePanel: React.FC<QueuePanelProps> = ({ isOpen, onClose }) => {
                 }}
             >
                 <div>
-                    <h2 style={{ margin: 0, fontSize: '16px', color: '#fff' }}>播放隊列</h2>
-                    <div style={{ fontSize: '12px', color: '#888' }}>共 {queue.length} 首歌曲</div>
+                    <h2 style={{ margin: 0, fontSize: '16px', color: '#fff' }}>{t('shell.queue.title')}</h2>
+                    <div style={{ fontSize: '12px', color: '#888' }}>{t('shell.queue.count', { count: queue.length })}</div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                     <button
@@ -136,7 +138,7 @@ const QueuePanel: React.FC<QueuePanelProps> = ({ isOpen, onClose }) => {
                             padding: '4px 8px',
                         }}
                     >
-                        {confirmClear ? '確定清空?' : '清空'}
+                        {confirmClear ? t('shell.queue.confirmClear') : t('shell.queue.clear')}
                     </button>
                     <button
                         onClick={onClose}
@@ -158,7 +160,7 @@ const QueuePanel: React.FC<QueuePanelProps> = ({ isOpen, onClose }) => {
             <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
                 {queue.length === 0 ? (
                     <div style={{ padding: '20px', textAlign: 'center', color: '#666', fontSize: '14px' }}>
-                        播放隊列是空的，請在歌曲庫或歌單中加入歌曲。
+                        {t('shell.queue.empty')}
                     </div>
                 ) : (
                     <DragDropContext onDragEnd={handleDragEnd}>
@@ -233,7 +235,7 @@ const QueuePanel: React.FC<QueuePanelProps> = ({ isOpen, onClose }) => {
                                                                 {song.title}
                                                             </div>
                                                             <div style={{ color: '#666', fontSize: '12px' }}>
-                                                                {song.artist || 'Unknown'}
+                                                                {song.artist || t('common.unknown')}
                                                             </div>
                                                         </div>
 
@@ -248,7 +250,7 @@ const QueuePanel: React.FC<QueuePanelProps> = ({ isOpen, onClose }) => {
                                                                     fontSize: '16px',
                                                                     padding: '0 4px',
                                                                 }}
-                                                                title="從隊列移除"
+                                                                title={t('shell.queue.remove')}
                                                             >
                                                                 ×
                                                             </button>
@@ -275,7 +277,7 @@ const QueuePanel: React.FC<QueuePanelProps> = ({ isOpen, onClose }) => {
                 textAlign: 'center',
                 backgroundColor: '#1a1a1a'
             }}>
-                雙擊可立即播放此曲
+                {t('shell.queue.hint')}
             </div>
         </div>
     );

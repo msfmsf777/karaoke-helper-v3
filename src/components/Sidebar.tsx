@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useUserData } from '../contexts/UserDataContext';
 import { useQueue } from '../contexts/QueueContext';
 import LibraryIcon from '../assets/icons/library.svg';
@@ -70,6 +71,7 @@ const NavItem: React.FC<NavItemProps> = ({ isActive, onClick, onContextMenu, chi
 };
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
+  const { t } = useTranslation();
   const { playlists, createPlaylist, renamePlaylist, deletePlaylist, favorites, history } = useUserData();
   const { playSongList } = useQueue();
   const [isCreating, setIsCreating] = useState(false);
@@ -177,40 +179,40 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
         `}
       </style>
       <div className="sidebar-content" style={{ flex: 1, overflowY: 'auto', padding: '0 10px' }}>
-        <div style={sectionTitleStyle}>瀏覽</div>
+        <div style={sectionTitleStyle}>{t('shell.nav.browse')}</div>
         <NavItem isActive={currentView === 'library'} onClick={() => onViewChange('library')}>
           <img src={LibraryIcon} alt="Library" style={{ width: '20px', height: '20px', marginRight: '12px', flexShrink: 0 }} />
-          歌曲庫
+          {t('shell.nav.library')}
         </NavItem>
         <NavItem isActive={currentView === 'download-manager'} onClick={() => onViewChange('download-manager')}>
           <img src={DownloadIcon} alt="Download" style={{ width: '20px', height: '20px', marginRight: '12px', flexShrink: 0 }} />
-          下載管理
+          {t('shell.nav.downloads')}
         </NavItem>
         <NavItem isActive={currentView === 'lyrics'} onClick={() => onViewChange('lyrics')}>
           <img src={LyricsIcon} alt="Lyrics" style={{ width: '24px', height: '24px', marginRight: '12px', flexShrink: 0 }} />
-          歌詞編輯
+          {t('shell.nav.lyrics')}
         </NavItem>
 
         <div style={{ height: '1px', backgroundColor: '#282828', margin: '16px 8px' }}></div>
 
-        <div style={sectionTitleStyle}>我的音樂</div>
+        <div style={sectionTitleStyle}>{t('shell.nav.myMusic')}</div>
         <NavItem isActive={currentView === 'favorites'} onClick={() => onViewChange('favorites')} badge={favorites.length}>
           <img src={FavoritesIcon} alt="Favorites" style={{ width: '20px', height: '20px', marginRight: '12px', flexShrink: 0 }} />
-          我的最愛
+          {t('shell.nav.favorites')}
         </NavItem>
         <NavItem isActive={currentView === 'history'} onClick={() => onViewChange('history')} badge={history.length}>
           <img src={HistoryIcon} alt="History" style={{ width: '20px', height: '20px', marginRight: '12px', flexShrink: 0 }} />
-          最近播放
+          {t('shell.nav.recent')}
         </NavItem>
 
         <div style={{ height: '1px', backgroundColor: '#282828', margin: '16px 8px' }}></div>
 
         <div style={sectionTitleStyle}>
-          我的歌單
+          {t('shell.nav.playlists')}
           <span
             style={addButtonStyle}
             onClick={handleCreateClick}
-            title="新增歌單"
+            title={t('shell.nav.addPlaylist')}
           >
             +
           </span>
@@ -227,7 +229,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
                 if (e.key === 'Enter') handleCreateConfirm();
                 if (e.key === 'Escape') handleCreateCancel();
               }}
-              placeholder="歌單名稱"
+              placeholder={t('shell.nav.playlistName')}
               style={{
                 flex: 1,
                 width: '100%',
@@ -252,7 +254,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
                 alignItems: 'center',
                 justifyContent: 'center'
               }}
-              title="確認"
+              title={t('common.confirm')}
             >
               <img src={CheckIcon} alt="Confirm" style={{ width: '14px', height: '14px', filter: 'brightness(0)' }} />
             </button>
@@ -268,7 +270,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
                 alignItems: 'center',
                 justifyContent: 'center'
               }}
-              title="取消"
+              title={t('common.cancel')}
             >
               <img src={CancelIcon} alt="Cancel" style={{ width: '14px', height: '14px', filter: 'brightness(0)' }} />
             </button>
@@ -313,7 +315,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
                     alignItems: 'center',
                     justifyContent: 'center'
                   }}
-                  title="確認"
+                  title={t('common.confirm')}
                 >
                   <img src={CheckIcon} alt="Confirm" style={{ width: '14px', height: '14px', filter: 'brightness(0)' }} />
                 </button>
@@ -329,7 +331,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
                     alignItems: 'center',
                     justifyContent: 'center'
                   }}
-                  title="取消"
+                  title={t('common.cancel')}
                 >
                   <img src={CancelIcon} alt="Cancel" style={{ width: '14px', height: '14px', filter: 'brightness(0)' }} />
                 </button>
@@ -374,7 +376,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
             // "Make only requested changes". User didn't explicitly ask for confirmation on playlist delete, 
             // but did for song delete (in previous context).
             // I'll just delete for now to be strictly compliant, or maybe a simple confirm.
-            if (window.confirm('確定要刪除此歌單嗎？')) {
+            if (window.confirm(t('shell.nav.deletePlaylistConfirm'))) {
               deletePlaylist(contextMenu.playlistId);
               if (currentView === `playlist:${contextMenu.playlistId}`) {
                 onViewChange('library');

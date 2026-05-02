@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useUserData } from '../contexts/UserDataContext';
 import { SongMeta } from '../../shared/songTypes';
 import { useLibrary } from '../contexts/LibraryContext';
@@ -42,6 +43,7 @@ const SearchResultItem: React.FC<{
   onAddToPlaylist: (e: React.MouseEvent, song: SongMeta) => void;
   onMore: (e: React.MouseEvent, song: SongMeta) => void;
 }> = ({ song, isActive, onPlay, onContextMenu, onAddToPlaylist, onMore }) => {
+  const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -122,7 +124,7 @@ const SearchResultItem: React.FC<{
             }}
             onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
             onMouseLeave={(e) => e.currentTarget.style.opacity = '0.6'}
-            title="加入歌單"
+            title={t('shell.topBar.addToPlaylist')}
           >
             <img src={AddIcon} alt="Add" style={{ width: '16px', height: '16px', filter: 'brightness(0) invert(1)' }} />
           </button>
@@ -145,7 +147,7 @@ const SearchResultItem: React.FC<{
             }}
             onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
             onMouseLeave={(e) => e.currentTarget.style.opacity = '0.6'}
-            title="更多"
+            title={t('shell.topBar.more')}
           >
             <img src={MoreIcon} alt="More" style={{ width: '16px', height: '16px', filter: 'brightness(0) invert(1)' }} />
           </button>
@@ -156,6 +158,7 @@ const SearchResultItem: React.FC<{
 };
 
 const UpdateIndicator: React.FC = () => {
+  const { t } = useTranslation();
   const { status } = useUpdater();
   const [showPopup, setShowPopup] = useState(false);
 
@@ -169,7 +172,7 @@ const UpdateIndicator: React.FC = () => {
     <>
       <button
         onClick={() => setShowPopup(true)}
-        title={status === 'error' ? '更新檢查失敗' : '有新版本可用'}
+        title={status === 'error' ? t('shell.topBar.updateFailed') : t('shell.topBar.updateAvailable')}
         style={{
           background: 'none',
           border: 'none',
@@ -213,6 +216,7 @@ const UpdateIndicator: React.FC = () => {
 
 
 const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenAbout, onSearch, onOpenLyrics, onNavigate, focusSearchRequest }) => {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const { recentSearches, addRecentSearch, clearRecentSearches } = useUserData();
@@ -453,7 +457,7 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenAbout, onSearch, 
           <input
             ref={inputRef}
             type="text"
-            placeholder="搜尋歌曲 / 歌手"
+            placeholder={t('shell.topBar.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onFocus={() => setIsFocused(true)}
@@ -518,13 +522,13 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenAbout, onSearch, 
                     justifyContent: 'space-between',
                     alignItems: 'center'
                   }}>
-                    <span>最近搜尋</span>
+                    <span>{t('shell.topBar.recentSearches')}</span>
                     {recentSearches.length > 0 && (
                       <span
                         onClick={(e) => { e.stopPropagation(); clearRecentSearches(); }}
                         style={{ cursor: 'pointer', color: '#888' }}
                       >
-                        清除
+                        {t('shell.topBar.clear')}
                       </span>
                     )}
                   </div>
@@ -561,7 +565,7 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenAbout, onSearch, 
                     ))
                   ) : (
                     <div style={{ padding: '12px', textAlign: 'center', color: '#666', fontSize: '13px' }}>
-                      無最近搜尋紀錄
+                      {t('shell.topBar.noRecentSearches')}
                     </div>
                   )}
                 </div>
@@ -570,13 +574,13 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenAbout, onSearch, 
                 <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
                   {/* Local Results */}
                   <div style={{ padding: '8px 12px', fontSize: '12px', color: '#aaaaaa', display: 'flex', justifyContent: 'space-between' }}>
-                    <span>本地庫相符歌曲</span>
+                    <span>{t('shell.topBar.localMatches')}</span>
                     {liveResults.length > 3 && (
                       <span 
                         onClick={() => { handleSearch(searchTerm); setSearchTerm(''); }}
                         style={{ color: 'var(--accent-color)', cursor: 'pointer', fontWeight: 600 }}
                       >
-                         查看全部 ➔
+                         {t('shell.topBar.viewAll')}
                       </span>
                     )}
                   </div>
@@ -609,16 +613,16 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenAbout, onSearch, 
                       ))}
                     </>
                   ) : (
-                    <div style={{ padding: '8px 12px', color: '#666', fontSize: '13px' }}>找不到相符本地歌曲</div>
+                    <div style={{ padding: '8px 12px', color: '#666', fontSize: '13px' }}>{t('shell.topBar.noLocalMatches')}</div>
                   )}
 
                   {/* YouTube Quick Results (Horizontal) */}
                   <div style={{ padding: '8px 12px', fontSize: '12px', color: '#aaaaaa', borderTop: '1px solid #3e3e3e', marginTop: '4px', display: 'flex', justifyContent: 'space-between' }}>
-                    <span>YouTube 串流結果</span>
-                    {isSearchingOnline && <span style={{fontSize:'10px', color:'#666'}}>搜尋中...</span>}
+                    <span>{t('shell.topBar.youtubeResults')}</span>
+                    {isSearchingOnline && <span style={{fontSize:'10px', color:'#666'}}>{t('shell.topBar.searching')}</span>}
                   </div>
                   {!isSearchingOnline && youtubeResults.length === 0 && (
-                      <div style={{ padding: '8px 12px', color: '#666', fontSize: '13px' }}>找不到相關結果</div>
+                      <div style={{ padding: '8px 12px', color: '#666', fontSize: '13px' }}>{t('shell.topBar.noOnlineResults')}</div>
                   )}
                   {youtubeResults.length > 0 && (
                     <div style={{ position: 'relative', width: '100%' }}>
@@ -661,7 +665,7 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenAbout, onSearch, 
                             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'}
                           >
                             <div style={{ fontSize: '24px' }}>➔</div>
-                            <div style={{ fontSize: '12px', fontWeight: 500 }}>查看更多</div>
+                            <div style={{ fontSize: '12px', fontWeight: 500 }}>{t('shell.topBar.showMore')}</div>
                           </div>
                         )}
                       </div>
@@ -701,7 +705,7 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenAbout, onSearch, 
                   {/* Query Suggestions */}
                   {querySuggestions.length > 0 && (
                     <>
-                      <div style={{ padding: '8px 12px', fontSize: '12px', color: '#aaaaaa', borderTop: '1px solid #3e3e3e', marginTop: '4px' }}>搜尋建議</div>
+                      <div style={{ padding: '8px 12px', fontSize: '12px', color: '#aaaaaa', borderTop: '1px solid #3e3e3e', marginTop: '4px' }}>{t('shell.topBar.suggestions')}</div>
                       {querySuggestions.slice(0, 5).map((sug, i) => (
                         <div
                           key={i}
@@ -757,7 +761,7 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenAbout, onSearch, 
                 return next;
               });
             }}
-            title="處理中任務"
+            title={t('shell.topBar.tasks')}
             style={{
               background: 'none',
               border: 'none',
@@ -819,7 +823,7 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenAbout, onSearch, 
         </div>
         <button
           onClick={onOpenSettings}
-          title="設定"
+          title={t('common.settings')}
           style={{
             background: 'none',
             border: 'none',
@@ -840,7 +844,7 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenAbout, onSearch, 
         </button>
         <button
           onClick={onOpenAbout}
-          title="關於"
+          title={t('shell.topBar.about')}
           style={{
             background: 'none',
             border: 'none',
@@ -862,7 +866,7 @@ const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenAbout, onSearch, 
 
         <button
           onClick={() => window.khelper?.miniPlayer?.toggle()}
-          title="迷你播放器"
+          title={t('shell.topBar.miniPlayer')}
           style={{
             background: 'none',
             border: 'none',

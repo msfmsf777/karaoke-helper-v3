@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQueue } from '../contexts/QueueContext';
 import { useLibrary } from '../contexts/LibraryContext';
 import { useUserData } from '../contexts/UserDataContext';
@@ -55,11 +56,12 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   currentTrackName,
   onToggleQueue,
 }) => {
+  const { t } = useTranslation();
   const { playNext, playPrev, currentSongId, playbackMode, setPlaybackMode, isStreamWaiting, isPlaybackLoading, queue, currentIndex } = useQueue();
   const { getSongById, updateSong } = useLibrary();
   const initialVolumes = loadVolumePreferences() ?? { streamVolume: 0.8, headphoneVolume: 1 };
 
-  let displayText = currentTrackName || '尚未選擇歌曲';
+  let displayText = currentTrackName || t('shell.player.noSong');
   let isWaiting = false;
   let nextSongTitle = '';
   
@@ -77,10 +79,10 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
     const nextId = queue[currentIndex]; // In waiting state, currentIndex is the next song
     if (nextId) {
       const nextSong = getSongById(nextId);
-      nextSongTitle = nextSong ? nextSong.title : '未知歌曲';
-      displayText = `下一首: ${nextSongTitle}`;
+      nextSongTitle = nextSong ? nextSong.title : t('shell.player.unknownSong');
+      displayText = t('shell.player.nextSong', { title: nextSongTitle });
     } else {
-      displayText = '待播清單已空';
+      displayText = t('shell.player.emptySetlist');
     }
   }
 
@@ -241,10 +243,10 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
 
   const getModeLabel = () => {
     switch (playbackMode) {
-      case 'repeat_one': return '單曲循環';
-      case 'random': return '隨機播放';
-      case 'stream': return '直播模式';
-      default: return '順序播放';
+      case 'repeat_one': return t('shell.player.repeatOne');
+      case 'random': return t('shell.player.random');
+      case 'stream': return t('shell.player.stream');
+      default: return t('shell.player.order');
     }
   };
 
@@ -274,7 +276,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
           thumbnailPath={currentSong?.thumbnail_path}
           remoteUrl={remoteArtworkUrl}
           size={56}
-          title={currentView === 'stream' ? '關閉直播模式' : '進入直播模式'}
+          title={currentView === 'stream' ? t('shell.player.closeStream') : t('shell.player.enterStream')}
           onClick={handleLiveToggle}
           overlayVisible={isHovered}
           dimmed={isHovered}
@@ -286,7 +288,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
               <img src={LiveModeIcon} alt="Live Mode" style={{ width: '20px', height: '20px', marginBottom: currentSong?.thumbnail_path ? 0 : '2px', display: 'block' }} />
-              {!currentSong?.thumbnail_path && <span style={{ fontSize: '10px', color: '#ff4444', lineHeight: 1 }}>直播模式</span>}
+              {!currentSong?.thumbnail_path && <span style={{ fontSize: '10px', color: '#ff4444', lineHeight: 1 }}>{t('shell.player.stream')}</span>}
             </div>
           )}
           badge={currentView === 'stream' && currentSong?.thumbnail_path ? (
@@ -333,7 +335,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
               <>
                 {isStreaming && (
                   <div
-                    title="線上串流 - 未下載前無法使用變調/變速與伴奏分離功能"
+                    title={t('shell.player.cloudStreamingTooltip')}
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       backgroundColor: 'rgba(68, 102, 170, 0.2)', color: '#88aaff',
@@ -341,7 +343,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
                       borderRadius: '4px', border: '1px solid rgba(68, 102, 170, 0.5)'
                     }}
                   >
-                    雲端串流
+                    {t('shell.player.cloudStreaming')}
                   </div>
                 )}
                 <img
@@ -358,7 +360,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
                   onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
                   onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
                   onClick={() => toggleFavorite(currentSongId)}
-                  title={isFavorite(currentSongId) ? "取消最愛" : "加入最愛"}
+                  title={isFavorite(currentSongId) ? t('shell.player.removeFavorite') : t('shell.player.addFavorite')}
                 />
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                   <img
@@ -378,7 +380,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
                       setPlaylistPopupPosition({ x: rect.left, y: rect.top });
                       setShowPlaylistPopup(true);
                     }}
-                    title="加入歌單"
+                    title={t('shell.topBar.addToPlaylist')}
                   />
                   {showPlaylistPopup && currentSongId && (
                     <AddToPlaylistMenu
@@ -394,7 +396,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
               </>
             ) : (
               <div style={{ fontSize: '12px', color: '#666' }}>
-                {currentView === 'stream' ? '直播模式' : '點擊左側切換模式'}
+                {currentView === 'stream' ? t('shell.player.stream') : t('shell.player.switchModeHint')}
               </div>
             )}
           </div>
@@ -456,7 +458,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <button
               onClick={playPrev}
-              title="上一首"
+              title={t('shell.player.previous')}
               style={{
                 background: 'none',
                 border: 'none',
@@ -499,7 +501,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
               <button
                 onClick={handlePlayClick}
                 disabled={isPlaybackLoading}
-                title={isPlaybackLoading ? '載入中' : undefined}
+                title={isPlaybackLoading ? t('common.loading') : undefined}
                 style={{
                   width: '36px',
                   height: '36px',
@@ -527,7 +529,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
             </div>
             <button
               onClick={() => playNext(false)}
-              title="下一首"
+              title={t('shell.player.next')}
               style={{
                 background: 'none',
                 border: 'none',
@@ -584,7 +586,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
         <div style={{ position: 'relative', top: '-4px' }}>
           <button
             onClick={() => { setShowSpeedPopup(!showSpeedPopup); setShowPitchPopup(false); }}
-            title={isStreaming ? "變速 (線上串流無法使用)" : "變速 (Speed)"}
+            title={isStreaming ? t('shell.player.speedDisabledTooltip') : t('shell.player.speedTooltip')}
             style={{
               background: showSpeedPopup ? '#333' : 'transparent',
               border: 'none',
@@ -605,11 +607,11 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
             disabled={isControlsDisabled}
           >
             <img src={SpeedIcon} alt="Speed" style={{ width: '24px', height: '24px', marginBottom: '2px', display: 'block' }} />
-            <span style={{ fontSize: '10px', lineHeight: 1 }}>變速</span>
+            <span style={{ fontSize: '10px', lineHeight: 1 }}>{t('shell.player.speed')}</span>
           </button>
           {showSpeedPopup && (
             <PlaybackControlPopup
-              title="變速"
+              title={t('shell.player.speed')}
               value={speed}
               min={0.5}
               max={2.0}
@@ -626,7 +628,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
         <div style={{ position: 'relative', top: '-4px' }}>
           <button
             onClick={() => { setShowPitchPopup(!showPitchPopup); setShowSpeedPopup(false); }}
-            title={isStreaming ? "變調 (線上串流無法使用)" : "變調 (Pitch)"}
+            title={isStreaming ? t('shell.player.pitchDisabledTooltip') : t('shell.player.pitchTooltip')}
             style={{
               background: showPitchPopup ? '#333' : 'transparent',
               border: 'none',
@@ -647,11 +649,11 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
             disabled={isControlsDisabled}
           >
             <img src={PitchIcon} alt="Pitch" style={{ width: '24px', height: '24px', marginBottom: '2px', display: 'block' }} />
-            <span style={{ fontSize: '10px', lineHeight: 1 }}>變調</span>
+            <span style={{ fontSize: '10px', lineHeight: 1 }}>{t('shell.player.pitch')}</span>
           </button>
           {showPitchPopup && (
             <PlaybackControlPopup
-              title="變調"
+              title={t('shell.player.pitch')}
               value={pitch}
               min={-12}
               max={12}
@@ -666,12 +668,12 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <VolumeControlPopup
-            label="伴奏"
+            label={t('shell.player.instrumental')}
             volume={backingVolume}
             onChange={(val) => setBackingVolume(val)}
           />
           <VolumeControlPopup
-            label="人聲"
+            label={t('shell.player.vocal')}
             volume={vocalVolume}
             onChange={(val) => setVocalVolume(val)}
           />
@@ -688,7 +690,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
 
         <button
           onClick={onToggleQueue}
-          title="播放隊列"
+          title={t('shell.player.queue')}
           style={{
             background: 'none',
             border: 'none',

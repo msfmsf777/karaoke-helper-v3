@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 
 interface WindowControlsProps {
@@ -16,6 +17,7 @@ const WindowControls: React.FC<WindowControlsProps> = ({
     hoverColor = '#fff',
     variant = 'default'
 }) => {
+    const { t } = useTranslation();
     const [hoveredButton, setHoveredButton] = React.useState<string | null>(null);
 
     const isStream = variant === 'stream';
@@ -94,7 +96,7 @@ const WindowControls: React.FC<WindowControlsProps> = ({
         <div className={className} style={{ display: 'flex', alignItems: 'center', ...style }}>
             <button
                 onClick={handleMinimize}
-                title="最小化"
+                title={t('shell.window.minimize')}
                 style={getButtonStyle('min')}
                 onMouseEnter={() => setHoveredButton('min')}
                 onMouseLeave={() => setHoveredButton(null)}
@@ -105,7 +107,7 @@ const WindowControls: React.FC<WindowControlsProps> = ({
             </button>
             <button
                 onClick={handleMaximize}
-                title={isMaximized ? "還原" : "最大化"}
+                title={isMaximized ? t('shell.window.restore') : t('shell.window.maximize')}
                 style={getButtonStyle('max')}
                 onMouseEnter={() => setHoveredButton('max')}
                 onMouseLeave={() => setHoveredButton(null)}
@@ -126,7 +128,7 @@ const WindowControls: React.FC<WindowControlsProps> = ({
             </button>
             <button
                 onClick={handleClose}
-                title="關閉"
+                title={t('shell.window.close')}
                 style={getButtonStyle('close')}
                 onMouseEnter={() => setHoveredButton('close')}
                 onMouseLeave={() => setHoveredButton(null)}

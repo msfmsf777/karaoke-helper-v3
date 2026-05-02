@@ -58,7 +58,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
             setHeadphoneSampleRate(audioEngine.getSampleRate('headphone'));
         } catch (err) {
             console.error('[Settings] Failed to enumerate devices', err);
-            setError('無法取得音訊輸出裝置清單');
+            setError(t('settings.audio.loadError'));
         } finally {
             setLoading(false);
         }
@@ -84,7 +84,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     }, [focusRequest?.token, focusRequest?.section]);
 
     const closeOverlayEditor = () => {
-        if (overlayEditorDirty && !window.confirm('直播覆蓋模板有尚未儲存的變更，確定要離開編輯器嗎？')) {
+        if (overlayEditorDirty && !window.confirm(t('settings.overlay.unsavedLeaveConfirm'))) {
             return;
         }
         setOverlayEditorDirty(false);
@@ -121,13 +121,13 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 
     const deviceOptions = useMemo(() => {
         return [
-            { deviceId: '', label: '系統預設' },
+            { deviceId: '', label: t('settings.audio.systemDefault') },
             ...devices.map((d, idx) => ({
                 deviceId: d.deviceId,
-                label: d.label || `裝置 ${idx + 1}`,
+                label: d.label || t('settings.audio.device', { index: idx + 1 }),
             })),
         ];
-    }, [devices]);
+    }, [devices, t]);
 
     return (
         <div style={{
@@ -180,7 +180,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                 >
                     ‹
                 </button>
-                <h1 style={{ margin: 0, fontSize: '22px', lineHeight: 1.15, fontWeight: 'bold' }}>設定</h1>
+                <h1 style={{ margin: 0, fontSize: '22px', lineHeight: 1.15, fontWeight: 'bold' }}>{t('common.settings')}</h1>
             </div>
 
             {/* Content Container - Scrollbar lives here */}
@@ -248,7 +248,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     <section style={{ marginBottom: '40px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                             <h2 style={{ margin: 0, fontSize: '18px', color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: '12px' }}>
-                                音訊輸出裝置
+                                {t('settings.audio.title')}
                             </h2>
                             <button
                                 onClick={refreshDevices}
@@ -264,14 +264,14 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                                     opacity: loading ? 0.7 : 1
                                 }}
                             >
-                                {loading ? '掃描中...' : '重新掃描'}
+                                {loading ? t('settings.audio.scanning') : t('settings.audio.scan')}
                             </button>
                         </div>
 
                         <p style={{ margin: '0 0 24px', color: '#aaa', fontSize: '14px', lineHeight: '1.6' }}>
-                            設定觀眾聽到（Stream）與您自己聽到（Headphone）的聲音輸出位置。
+                            {t('settings.audio.description')}
                             <br />
-                            若歌曲已進行人聲分離，Stream 只會輸出伴奏，而 Headphone 會同時輸出人聲與伴奏。
+                            {t('settings.audio.separationDescription')}
                         </p>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
@@ -281,7 +281,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                         <label style={{ display: 'block', color: '#ddd', fontSize: '14px', fontWeight: 'bold' }}>
-                                            觀眾輸出 (Stream)
+                                            {t('settings.audio.streamOutput')}
                                         </label>
                                         <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                                             <input
@@ -340,7 +340,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                             <div style={{ background: '#2a2a2a', padding: '20px', borderRadius: '12px', border: '1px solid #333' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                                     <label style={{ display: 'block', color: '#ddd', fontSize: '14px', fontWeight: 'bold' }}>
-                                        耳機輸出 (Headphone)
+                                        {t('settings.audio.headphoneOutput')}
                                     </label>
                                     {headphoneSampleRate > 0 && (
                                         <div style={{
@@ -392,7 +392,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                             transition: 'opacity 0.2s'
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <div style={{ fontSize: '14px', color: '#ddd', fontWeight: 'bold' }}>雙輸出同步偏移：</div>
+                                <div style={{ fontSize: '14px', color: '#ddd', fontWeight: 'bold' }}>{t('settings.audio.syncOffset')}</div>
                                 <div style={{
                                     fontSize: '14px',
                                     color: currentOffset === 0 ? '#aaa' : 'var(--accent-color)',
@@ -415,7 +415,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                                     fontSize: '13px'
                                 }}
                             >
-                                校準
+                                {t('settings.audio.calibrate')}
                             </button>
                         </div>
 
@@ -434,7 +434,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     {/* Section: Processing */}
                     <section style={{ marginBottom: '40px' }}>
                         <h2 style={{ margin: '0 0 16px 0', fontSize: '18px', color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: '12px' }}>
-                            人聲分離品質
+                            {t('settings.separation.title')}
                         </h2>
                         <div style={{ background: '#2a2a2a', padding: '24px', borderRadius: '12px', border: '1px solid #333' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -451,8 +451,8 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                                         style={{ accentColor: 'var(--accent-color)', width: '18px', height: '18px' }}
                                     />
                                     <div>
-                                        <div style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold' }}>快速 (Fast)</div>
-                                        <div style={{ color: '#aaa', fontSize: '13px' }}>較省資源，處理速度最快，但音質略低。</div>
+                                        <div style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold' }}>{t('settings.separation.fast')}</div>
+                                        <div style={{ color: '#aaa', fontSize: '13px' }}>{t('settings.separation.fastDescription')}</div>
                                     </div>
                                 </label>
 
@@ -469,8 +469,8 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                                         style={{ accentColor: 'var(--accent-color)', width: '18px', height: '18px' }}
                                     />
                                     <div>
-                                        <div style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold' }}>標準 (Normal)</div>
-                                        <div style={{ color: '#aaa', fontSize: '13px' }}>推薦選項。在速度與音質之間取得平衡。</div>
+                                        <div style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold' }}>{t('settings.separation.normal')}</div>
+                                        <div style={{ color: '#aaa', fontSize: '13px' }}>{t('settings.separation.normalDescription')}</div>
                                     </div>
                                 </label>
 
@@ -487,8 +487,8 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                                         style={{ accentColor: 'var(--accent-color)', width: '18px', height: '18px' }}
                                     />
                                     <div>
-                                        <div style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold' }}>高品質 (High)</div>
-                                        <div style={{ color: '#aaa', fontSize: '13px' }}>處理時間較長，但能提供最佳的分離效果。</div>
+                                        <div style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold' }}>{t('settings.separation.high')}</div>
+                                        <div style={{ color: '#aaa', fontSize: '13px' }}>{t('settings.separation.highDescription')}</div>
                                     </div>
                                 </label>
                             </div>
@@ -498,13 +498,13 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     {/* Section: Software Update */}
                     <section>
                         <h2 style={{ margin: '0 0 16px 0', fontSize: '18px', color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: '12px' }}>
-                            軟體更新
+                            {t('settings.updates.title')}
                         </h2>
                         <div style={{ background: '#2a2a2a', padding: '24px', borderRadius: '12px', border: '1px solid #333' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <div>
                                     <div style={{ fontSize: '15px', color: '#fff', fontWeight: 'bold', marginBottom: '4px' }}>
-                                        檢查更新
+                                        {t('settings.updates.check')}
                                     </div>
                                     <LastCheckedText />
                                 </div>
@@ -538,18 +538,20 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 };
 
 const LastCheckedText: React.FC = () => {
+    const { t } = useTranslation();
     const { lastCheckTime } = useUpdater();
 
-    if (!lastCheckTime) return <div style={{ color: '#aaa', fontSize: '13px' }}>尚未檢查</div>;
+    if (!lastCheckTime) return <div style={{ color: '#aaa', fontSize: '13px' }}>{t('settings.updates.neverChecked')}</div>;
 
     const date = new Date(lastCheckTime);
     const timeString = date.toLocaleString(); // Or simpler formatting
 
-    return <div style={{ color: '#aaa', fontSize: '13px' }}>上次檢查時間：{timeString}</div>;
+    return <div style={{ color: '#aaa', fontSize: '13px' }}>{t('settings.updates.lastChecked', { time: timeString })}</div>;
 };
 
 // Sub-component for clean context usage
 const CheckForUpdatesButton: React.FC = () => {
+    const { t } = useTranslation();
     const { checkForUpdates, status } = useUpdater();
 
     return (
@@ -566,7 +568,7 @@ const CheckForUpdatesButton: React.FC = () => {
                 padding: '8px 20px',
             }}
         >
-            {status === 'checking' ? '檢查中...' : '檢查更新'}
+            {status === 'checking' ? t('settings.updates.checking') : t('settings.updates.check')}
         </button>
     );
 };

@@ -25,6 +25,39 @@
       "title": "Interface Language",
       "description": "Choose the display language for KHelper. If no language has been selected, KHelper auto-detects it from your system language.",
       "label": "Language"
+    },
+    "audio": {
+      "loadError": "Unable to get the audio output device list",
+      "title": "Audio Output Devices",
+      "scan": "Rescan",
+      "scanning": "Scanning...",
+      "description": "Choose where the audience hears audio (Stream) and where you hear audio (Headphone).",
+      "separationDescription": "For separated songs, Stream outputs instrumental only while Headphone outputs both vocal and instrumental tracks.",
+      "systemDefault": "System Default",
+      "device": "Device {{index}}",
+      "streamOutput": "Audience Output (Stream)",
+      "headphoneOutput": "Headphone Output",
+      "syncOffset": "Dual-output sync offset:",
+      "calibrate": "Calibrate"
+    },
+    "separation": {
+      "title": "Vocal Separation Quality",
+      "fast": "Fast",
+      "fastDescription": "Uses fewer resources and finishes fastest, with slightly lower quality.",
+      "normal": "Normal",
+      "normalDescription": "Recommended. Balances speed and quality.",
+      "high": "High Quality",
+      "highDescription": "Takes longer, but provides the best separation result."
+    },
+    "updates": {
+      "title": "Software Updates",
+      "check": "Check for Updates",
+      "checking": "Checking...",
+      "neverChecked": "Never checked",
+      "lastChecked": "Last checked: {{time}}"
+    },
+    "overlay": {
+      "unsavedLeaveConfirm": "The live overlay template has unsaved changes. Leave the editor?"
     }
   },
   "domain": {
@@ -125,5 +158,84 @@
     },
     "viewCount": "{{count}} views",
     "viewCountTenThousands": "{{count}} views"
+  },
+  "shell": {
+    "nav": {
+      "browse": "Browse",
+      "library": "Library",
+      "downloads": "Downloads",
+      "lyrics": "Lyrics Editor",
+      "myMusic": "My Music",
+      "favorites": "Favorites",
+      "recent": "Recently Played",
+      "playlists": "My Playlists",
+      "addPlaylist": "Add Playlist",
+      "playlistName": "Playlist Name",
+      "deletePlaylistConfirm": "Delete this playlist?"
+    },
+    "topBar": {
+      "searchPlaceholder": "Search songs / artists",
+      "recentSearches": "Recent Searches",
+      "clear": "Clear",
+      "noRecentSearches": "No recent searches",
+      "localMatches": "Local Library Matches",
+      "viewAll": "View All ->",
+      "noLocalMatches": "No matching local songs",
+      "youtubeResults": "YouTube Stream Results",
+      "suggestions": "Search Suggestions",
+      "searching": "Searching...",
+      "noOnlineResults": "No related results",
+      "showMore": "Show More",
+      "tasks": "Tasks",
+      "about": "About",
+      "miniPlayer": "Mini Player",
+      "addToPlaylist": "Add to Playlist",
+      "more": "More",
+      "updateFailed": "Update check failed",
+      "updateAvailable": "New version available"
+    },
+    "player": {
+      "noSong": "No song selected",
+      "unknownSong": "Unknown Song",
+      "nextSong": "Next: {{title}}",
+      "emptySetlist": "Setlist is empty",
+      "order": "Order",
+      "repeatOne": "Repeat One",
+      "random": "Shuffle",
+      "stream": "Stream Mode",
+      "enterStream": "Enter Stream Mode",
+      "closeStream": "Close Stream Mode",
+      "cloudStreamingTooltip": "Online streaming - pitch, speed, and vocal separation are unavailable until downloaded",
+      "cloudStreaming": "Cloud Stream",
+      "addFavorite": "Add Favorite",
+      "removeFavorite": "Remove Favorite",
+      "switchModeHint": "Use the sidebar to switch modes",
+      "previous": "Previous",
+      "next": "Next",
+      "speed": "Speed",
+      "speedTooltip": "Speed",
+      "speedDisabledTooltip": "Speed is unavailable for online streams",
+      "pitch": "Pitch",
+      "pitchTooltip": "Pitch",
+      "pitchDisabledTooltip": "Pitch is unavailable for online streams",
+      "instrumental": "Instrumental",
+      "vocal": "Vocal",
+      "queue": "Queue"
+    },
+    "queue": {
+      "title": "Queue",
+      "count": "{{count}} songs",
+      "clear": "Clear",
+      "confirmClear": "Clear?",
+      "empty": "The queue is empty. Add songs from the library or a playlist.",
+      "remove": "Remove from queue",
+      "hint": "Double-click to play this song now"
+    },
+    "window": {
+      "minimize": "Minimize",
+      "maximize": "Maximize",
+      "restore": "Restore",
+      "close": "Close"
+    }
   }
 }
