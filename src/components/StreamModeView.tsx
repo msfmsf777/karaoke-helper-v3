@@ -1,5 +1,6 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import LyricsOverlay from './LyricsOverlay';
 import StreamSetlist from './StreamSetlist';
 import LyricStylePopup from './LyricStylePopup';
@@ -22,6 +23,7 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
   currentTime,
   onOpenOverlaySettings,
 }) => {
+  const { t } = useTranslation();
   const { currentSongId, resetStream } = useQueue();
   const { getSongById } = useLibrary();
   const { lyricStyles, setLyricStyles, songPreferences, setSongPreference } = useUserData();
@@ -161,9 +163,8 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
       padding: '24px',
       position: 'relative',
       boxSizing: 'border-box',
-      // @ts-ignore
       WebkitAppRegion: 'drag',
-    }}>
+    } as React.CSSProperties}>
       {/* Toast Notification */}
       {toastMessage && (
         <div style={{
@@ -211,9 +212,8 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
           zIndex: 100,
           opacity: 0,
           transition: 'opacity 0.2s',
-          // @ts-ignore
           WebkitAppRegion: 'no-drag',
-        }}
+        } as React.CSSProperties}
         onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
         onMouseLeave={(e) => e.currentTarget.style.opacity = '0'}
       >
@@ -230,13 +230,12 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
             display: 'flex',
             flexDirection: 'column',
             border: '1px solid #222',
-            // @ts-ignore
             WebkitAppRegion: 'no-drag',
-          }}
+          } as React.CSSProperties}
         >
           <div style={{ marginBottom: '24px' }}>
             <h3 style={{ color: '#666', fontSize: '12px', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>Now Playing</span>
+              <span>{t('lyrics.stream.nowPlaying')}</span>
               <button
                 onClick={() => {
                   if (confirmReset) {
@@ -247,7 +246,7 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
                     setTimeout(() => setConfirmReset(false), 3000);
                   }
                 }}
-                title={confirmReset ? "再次點擊確認重置" : "重置播放進度"}
+                title={confirmReset ? t('lyrics.stream.confirmResetTitle') : t('lyrics.stream.resetProgressTitle')}
                 style={{
                   background: confirmReset ? '#ff4444' : 'transparent',
                   border: '1px solid #444',
@@ -262,7 +261,7 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
                   gap: '4px',
                 }}
               >
-                {confirmReset ? '確認重置?' : '重置'}
+                {confirmReset ? t('lyrics.stream.confirmReset') : t('common.reset')}
               </button>
             </h3>
             {currentSong ? (
@@ -271,11 +270,11 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
                   {currentSong.title}
                 </div>
                 <div style={{ color: 'var(--accent-color)', fontSize: '16px' }}>
-                  {currentSong.artist || 'Unknown Artist'}
+                  {currentSong.artist || t('songManagement.unknownArtist')}
                 </div>
               </div>
             ) : (
-              <div style={{ color: '#888' }}>尚未播放</div>
+              <div style={{ color: '#888' }}>{t('lyrics.stream.notPlaying')}</div>
             )}
           </div>
 
@@ -296,9 +295,8 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
             overflow: 'hidden',
             position: 'relative',
             border: '1px solid #222',
-            // @ts-ignore
             WebkitAppRegion: 'no-drag',
-          }}
+          } as React.CSSProperties}
         >
           {/* Controls Overlay */}
           <div
@@ -309,19 +307,18 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
               display: 'flex',
               gap: '12px',
               zIndex: 20,
-              // @ts-ignore
               WebkitAppRegion: 'no-drag',
-            }}
+            } as React.CSSProperties}
           >
             {/* New Dropdown */}
             <StreamControlDropdown
-              onCopy={() => showToast('已複製')}
+              onCopy={(message) => showToast(message || t('common.copied'))}
               onOpenOverlaySettings={onOpenOverlaySettings}
             />
 
             <button
               onClick={() => setShowStylePopup(!showStylePopup)}
-              title="App 內歌詞顯示"
+              title={t('lyrics.style.title')}
               className="stream-control-btn"
               style={{
                 width: '32px',
@@ -374,7 +371,7 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
                 fontSize: '14px',
               }}
             >
-              無歌詞
+              {t('domain.lyricsStatus.none')}
             </div>
           )}
 

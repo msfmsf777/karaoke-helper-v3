@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { EditableLyricLine } from '../library/lyrics';
 import { SongMeta, EnrichedLyricLine } from '../../shared/songTypes';
 import { LyricStyleConfig, DEFAULT_LYRIC_STYLES } from '../contexts/UserDataContext';
@@ -180,6 +181,7 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({
     externalScrollTop,
     showControls = false
 }) => {
+    const { t } = useTranslation();
     const activeLineRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const isUserScrolling = useRef(false);
@@ -265,7 +267,7 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({
                     border: '1px solid rgba(255,255,255,0.1)',
                     zIndex: 10
                 }}>
-                    純文字
+                    {t('domain.lyricsStatus.text_only')}
                 </div>
             )}
 

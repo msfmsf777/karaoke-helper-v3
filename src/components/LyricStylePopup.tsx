@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { LyricStyleConfig, DEFAULT_LYRIC_STYLES } from '../contexts/UserDataContext';
 
 interface LyricStylePopupProps {
@@ -8,7 +9,9 @@ interface LyricStylePopupProps {
 }
 
 const LyricStylePopup: React.FC<LyricStylePopupProps> = ({ styles, onChange, onClose }) => {
-    const handleChange = (key: keyof LyricStyleConfig, value: any) => {
+    const { t } = useTranslation();
+
+    const handleChange = (key: keyof LyricStyleConfig, value: LyricStyleConfig[keyof LyricStyleConfig]) => {
         onChange({ ...styles, [key]: value });
     };
 
@@ -34,7 +37,7 @@ const LyricStylePopup: React.FC<LyricStylePopupProps> = ({ styles, onChange, onC
             }}
         >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>App 內歌詞顯示</h3>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>{t('lyrics.style.title')}</h3>
                 <button
                     onClick={onClose}
                     style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '18px' }}
@@ -44,13 +47,13 @@ const LyricStylePopup: React.FC<LyricStylePopupProps> = ({ styles, onChange, onC
             </div>
 
             <div style={{ color: '#999', fontSize: '12px', lineHeight: 1.5, marginBottom: '14px' }}>
-                此設定只影響 App 內直播畫面，不會影響 OBS 覆蓋模板。
+                {t('lyrics.style.description')}
             </div>
 
             {/* Font Size */}
             <div style={{ marginBottom: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <label>字體大小</label>
+                    <label>{t('lyrics.style.fontSize')}</label>
                     <span style={{ color: '#aaa' }}>{styles.fontSize}px</span>
                 </div>
                 <input
@@ -66,7 +69,7 @@ const LyricStylePopup: React.FC<LyricStylePopupProps> = ({ styles, onChange, onC
             {/* Colors */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                 <div>
-                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#aaa' }}>一般文字</label>
+                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#aaa' }}>{t('lyrics.style.inactiveColor')}</label>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <input
                             type="color"
@@ -78,7 +81,7 @@ const LyricStylePopup: React.FC<LyricStylePopupProps> = ({ styles, onChange, onC
                     </div>
                 </div>
                 <div>
-                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#aaa' }}>高亮文字</label>
+                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#aaa' }}>{t('lyrics.style.activeColor')}</label>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <input
                             type="color"
@@ -94,7 +97,7 @@ const LyricStylePopup: React.FC<LyricStylePopupProps> = ({ styles, onChange, onC
             {/* Glow & Stroke */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                 <div>
-                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#aaa' }}>發光顏色</label>
+                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#aaa' }}>{t('lyrics.style.glowColor')}</label>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <input
                             type="color"
@@ -105,7 +108,7 @@ const LyricStylePopup: React.FC<LyricStylePopupProps> = ({ styles, onChange, onC
                     </div>
                 </div>
                 <div>
-                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#aaa' }}>描邊顏色</label>
+                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#aaa' }}>{t('lyrics.style.strokeColor')}</label>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <input
                             type="color"
@@ -120,7 +123,7 @@ const LyricStylePopup: React.FC<LyricStylePopupProps> = ({ styles, onChange, onC
             {/* Stroke Width */}
             <div style={{ marginBottom: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <label>描邊寬度</label>
+                    <label>{t('lyrics.style.strokeWidth')}</label>
                     <span style={{ color: '#aaa' }}>{styles.strokeWidth}px</span>
                 </div>
                 <input
@@ -150,7 +153,7 @@ const LyricStylePopup: React.FC<LyricStylePopupProps> = ({ styles, onChange, onC
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#444'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#333'}
             >
-                重置為預設值
+                {t('lyrics.style.resetDefault')}
             </button>
         </div>
     );

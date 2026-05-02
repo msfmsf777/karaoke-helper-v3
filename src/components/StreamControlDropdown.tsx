@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import ObsLinkIcon from '../assets/icons/obs_link.svg';
 import { useUserData } from '../contexts/UserDataContext';
 
@@ -24,6 +25,7 @@ const menuButtonStyle: React.CSSProperties = {
 };
 
 const StreamControlDropdown: React.FC<StreamControlDropdownProps> = ({ onCopy, onOpenOverlaySettings }) => {
+    const { t } = useTranslation();
     const { overlayTemplates } = useUserData();
     const [isOpen, setIsOpen] = useState(false);
     const [activeSubmenu, setActiveSubmenu] = useState<OverlaySubmenu>(null);
@@ -44,7 +46,7 @@ const StreamControlDropdown: React.FC<StreamControlDropdownProps> = ({ onCopy, o
     const copyDesignLink = (kind: 'lyrics' | 'setlist', designId: string, designName: string) => {
         const url = `http://localhost:10001/obs/${kind}?design=${encodeURIComponent(designId)}`;
         navigator.clipboard.writeText(url);
-        onCopy(kind === 'lyrics' ? `已複製歌詞 OBS 連結：${designName}` : `已複製歌單 OBS 連結：${designName}`);
+        onCopy(t(kind === 'lyrics' ? 'lyrics.stream.copiedLyricsObs' : 'lyrics.stream.copiedSetlistObs', { name: designName }));
         setIsOpen(false);
         setActiveSubmenu(null);
     };
@@ -156,8 +158,8 @@ const StreamControlDropdown: React.FC<StreamControlDropdownProps> = ({ onCopy, o
                     flexDirection: 'column',
                     gap: '2px'
                 }}>
-                    {renderSubmenuTrigger('lyrics', '複製歌詞 OBS 連結')}
-                    {renderSubmenuTrigger('setlist', '複製歌單 OBS 連結')}
+                    {renderSubmenuTrigger('lyrics', t('lyrics.stream.copyLyricsObs'))}
+                    {renderSubmenuTrigger('setlist', t('lyrics.stream.copySetlistObs'))}
                     {onOpenOverlaySettings && (
                         <>
                             <div style={{ height: 1, background: '#3a3a3a', margin: '3px 4px' }} />
@@ -174,7 +176,7 @@ const StreamControlDropdown: React.FC<StreamControlDropdownProps> = ({ onCopy, o
                                 }}
                                 onMouseLeave={(event) => event.currentTarget.style.backgroundColor = 'transparent'}
                             >
-                                OBS模板設定
+                                {t('lyrics.stream.obsTemplateSettings')}
                             </button>
                         </>
                     )}

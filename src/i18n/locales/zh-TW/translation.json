@@ -20,7 +20,8 @@
     "settings": "設定",
     "unknown": "未知",
     "none": "無",
-    "default": "預設"
+    "default": "預設",
+    "copied": "已複製"
   },
   "settings": {
     "language": {
@@ -434,6 +435,116 @@
       "processing": "處理中...",
       "confirmAdd": "確認新增 ({{count}})",
       "unsavedConfirm": "還有未儲存的變更，確定要關閉嗎？"
+    }
+  },
+  "lyrics": {
+    "search": {
+      "title": "搜尋歌詞",
+      "placeholder": "搜尋歌曲 / 歌手...",
+      "searching": "搜尋中...",
+      "noResults": "無結果",
+      "preview": "預覽",
+      "hidePreview": "隱藏預覽",
+      "useLyrics": "使用此歌詞"
+    },
+    "style": {
+      "title": "App 內歌詞顯示",
+      "description": "此設定只影響 App 內直播畫面，不會影響 OBS 覆蓋模板。",
+      "fontSize": "字體大小",
+      "inactiveColor": "一般文字",
+      "activeColor": "高亮文字",
+      "glowColor": "發光顏色",
+      "strokeColor": "描邊顏色",
+      "strokeWidth": "描邊寬度",
+      "resetDefault": "重置為預設值"
+    },
+    "stream": {
+      "nowPlaying": "正在播放",
+      "confirmResetTitle": "再次點擊確認重置",
+      "resetProgressTitle": "重置播放進度",
+      "confirmReset": "確認重置?",
+      "notPlaying": "尚未播放",
+      "copyLyricsObs": "複製歌詞 OBS 連結",
+      "copySetlistObs": "複製歌單 OBS 連結",
+      "copiedLyricsObs": "已複製歌詞 OBS 連結：{{name}}",
+      "copiedSetlistObs": "已複製歌單 OBS 連結：{{name}}",
+      "obsTemplateSettings": "OBS模板設定",
+      "upNext": "待播清單 ({{count}})",
+      "played": "已播清單 ({{count}})",
+      "noPlayedSongs": "尚無已播歌曲",
+      "requeueTitle": "將此曲重新加入待播清單底部",
+      "queueEmpty": "請先將歌曲加入播放隊列",
+      "nextSongBadge": "下一首 •",
+      "removeFromSetlist": "從清單移除"
+    },
+    "editor": {
+      "title": "歌詞編輯",
+      "songList": "歌曲列表",
+      "selectSong": "請從左側選擇歌曲",
+      "confirmResetTimes": "確定要重設所有時間標記嗎？此動作無法復原。",
+      "confirmOverwrite": "此歌曲已有歌詞，是否要覆蓋原本的歌詞檔案？",
+      "alignControls": "對齊控制",
+      "alignDescription": "開啟敲擊模式後，按下 J 鍵可將當前播放時間套用到下一行歌詞。",
+      "resetAllTimes": "重設所有時間",
+      "lyricsText": "歌詞文字",
+      "saving": "儲存中...",
+      "saved": "已儲存",
+      "clearBlank": "清除空白",
+      "apply": "套用",
+      "lyricsPlaceholder": "輸入歌詞...",
+      "loadingLyrics": "載入歌詞中...",
+      "noLyricsHelp": "尚未有歌詞，請先貼上並儲存歌詞文字。",
+      "setToCurrentTime": "設定為當前播放時間",
+      "applyCurrentTimeTitle": "套用目前播放時間",
+      "applyCurrentTime": "套用當前時間",
+      "earlier": "稍早",
+      "later": "稍晚",
+      "nextTapLine": "下一次敲擊會套用到此行",
+      "addLineBelow": "向下新增一行",
+      "clickAgainDelete": "再次點擊以刪除",
+      "tapModeTitle": "敲擊模式 (J)",
+      "tapMode": "敲擊模式",
+      "tap": "敲擊",
+      "saveLrc": "儲存 LRC",
+      "messages": {
+        "loadedLrc": "已載入 LRC",
+        "loadedPlain": "已載入純文字",
+        "noLyrics": "無歌詞",
+        "appliedAndReset": "已套用並重設",
+        "appliedText": "已套用文字",
+        "timesReset": "已重置時間",
+        "emptyLinesCleared": "已清除空白行",
+        "savedLrc": "已儲存 LRC (同步 TXT)",
+        "importedLrc": "已匯入 LRC",
+        "importedPlain": "已匯入純文字",
+        "smartAlignDone": "智慧對齊完成"
+      },
+      "errors": {
+        "readFailed": "讀取失敗",
+        "loadFailed": "載入錯誤",
+        "saveFailed": "儲存失敗",
+        "tapFirst": "請先敲擊對齊",
+        "importFailed": "匯入失敗",
+        "noValidMarkers": "無法對齊：找不到任何有效的時間標記",
+        "invalidTimeline": "無法計算：時間軸標記不足或順序錯誤"
+      },
+      "smartAlign": {
+        "label": "智慧對齊",
+        "tooltip": "智慧對齊：設定起始與結束時間，自動調整中間的歌詞",
+        "startTitle": "智慧對齊 - 設定起始",
+        "endTitle": "智慧對齊 - 設定結束",
+        "startDescription": "請將播放器移動到第一句歌詞的正確開始時間，然後點擊下方「設定起始」按鈕。",
+        "endDescription": "請將播放器移動到最後一句歌詞的正確開始時間，然後點擊下方「設定結束」按鈕。系統將自動調整中間所有歌詞的時間。",
+        "setStart": "設定起始 (Offset)",
+        "setEnd": "設定結束 (Scale)"
+      },
+      "unsaved": {
+        "title": "未儲存的變更",
+        "switchSongMessage": "切換歌曲將會導致未儲存的變更遺失。",
+        "leavePageMessage": "離開頁面將會導致未儲存的變更遺失。",
+        "discard": "不儲存",
+        "saveAndContinue": "儲存並繼續"
+      }
     }
   }
 }

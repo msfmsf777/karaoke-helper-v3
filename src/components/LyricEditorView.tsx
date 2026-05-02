@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQueue } from '../contexts/QueueContext';
 
 import { loadAllSongs, SongMeta } from '../library/songLibrary';
@@ -12,6 +13,7 @@ import {
     writeRawLyrics,
     writeSyncedLyrics,
 } from '../library/lyrics';
+import { getAudioStatusLabel, getLyricsStatusLabel, getSongTypeLabel } from '../i18n/domainLabels';
 
 import LyricsSearchPane from './LyricsSearchPane';
 
@@ -61,18 +63,6 @@ const formatDisplayTime = (seconds: number | null) => {
     return `${mins}:${secs}.${hundredths}`;
 };
 
-const audioStatusLabels: Record<SongMeta['audio_status'], string> = {
-    streaming: '線上',
-    original_only: '未分離',
-    separation_pending: '等待分離',
-    separating: '分離中',
-    separation_failed: '分離失敗',
-    separated: '已分離',
-    ready: '未分離',
-    missing: '未分離',
-    error: '錯誤',
-};
-
 const LyricEditorView: React.FC<LyricEditorViewProps> = ({
     activeSongId,
     initialSongId,
@@ -87,6 +77,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
     onConfirmLeave,
     onCancelLeave,
 }) => {
+    const { t } = useTranslation();
     const [songs, setSongs] = useState<SongMeta[]>([]);
     const [loadingSongs, setLoadingSongs] = useState(false);
     const [loadingLyrics, setLoadingLyrics] = useState(false);
@@ -98,7 +89,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
     const [tapIndex, setTapIndex] = useState(0);
     const [tapMode, setTapMode] = useState(true);
 
-    const [headerTitle, setHeaderTitle] = useState('歌詞編輯');
+    const [headerTitle, setHeaderTitle] = useState('');
     const headerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const [showSearchPane, setShowSearchPane] = useState(false);
 
@@ -143,7 +134,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
         if (headerTimeoutRef.current) clearTimeout(headerTimeoutRef.current);
         setHeaderTitle(msg);
         headerTimeoutRef.current = setTimeout(() => {
-            setHeaderTitle('歌詞編輯');
+            setHeaderTitle('');
         }, 3000);
     }, []);
 
@@ -208,12 +199,12 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
             // Take snapshot for dirty check
             setOriginalLinesSnapshot(JSON.stringify(nextLines.map(l => ({ text: l.text, timeSeconds: l.timeSeconds }))));
 
-            showTempMessage(synced ? '已載入 LRC' : raw ? '已載入純文字' : '無歌詞');
+            showTempMessage(synced ? t('lyrics.editor.messages.loadedLrc') : raw ? t('lyrics.editor.messages.loadedPlain') : t('lyrics.editor.messages.noLyrics'));
 
         } catch (err) {
             if (token !== lyricsLoadTokenRef.current) return;
             console.error('[Lyrics] Failed to load lyrics', song.id, err);
-            setErrorMessage('讀取失敗');
+            setErrorMessage(t('lyrics.editor.errors.readFailed'));
             setLines([{ id: `line-${Date.now()}`, text: '', timeSeconds: null }]);
             setRawTextDraft('');
             setLastSavedRawText('');
@@ -222,7 +213,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                 setLoadingLyrics(false);
             }
         }
-    }, [updateSongMetaInList, showTempMessage]);
+    }, [t, updateSongMetaInList, showTempMessage]);
 
     const performSongSelection = useCallback(async (songId: string) => {
         const song = songs.find(s => s.id === songId);
@@ -247,10 +238,10 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
         } catch (err) {
             if (token !== lyricsLoadTokenRef.current) return;
             console.error('[Lyrics] Failed to load song for lyrics', songId, err);
-            setErrorMessage('載入錯誤');
+            setErrorMessage(t('lyrics.editor.errors.loadFailed'));
             setLoadingLyrics(false);
         }
-    }, [songs, onSongSelectedChange, activeSongId, queue, loadLyricsForSong]);
+    }, [songs, onSongSelectedChange, activeSongId, queue, loadLyricsForSong, t]);
 
     const handleSelectSong = useCallback(
         async (song: SongMeta) => {
@@ -304,9 +295,9 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                     timeSeconds: resetTimes ? null : prev[idx]?.timeSeconds ?? null,
                 })),
             );
-            showTempMessage(resetTimes ? '已套用並重設' : '已套用文字');
+            showTempMessage(resetTimes ? t('lyrics.editor.messages.appliedAndReset') : t('lyrics.editor.messages.appliedText'));
         },
-        [rawTextDraft, showTempMessage],
+        [rawTextDraft, showTempMessage, t],
     );
 
     const updateLineText = useCallback((lineId: string, text: string) => {
@@ -396,15 +387,15 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
     }, [currentLineIndex, lines, smartAlignStep]);
 
     const handleResetAlignment = useCallback(() => {
-        if (!window.confirm('確定要重設所有時間標記嗎？此動作無法復原。')) return;
+        if (!window.confirm(t('lyrics.editor.confirmResetTimes'))) return;
         if (isPlaying) {
             onPlayPause();
         }
         onSeek(0);
         setLines((prev) => prev.map((line) => ({ ...line, timeSeconds: null })));
         setTapIndex(0);
-        showTempMessage('已重置時間');
-    }, [isPlaying, onPlayPause, onSeek, showTempMessage]);
+        showTempMessage(t('lyrics.editor.messages.timesReset'));
+    }, [isPlaying, onPlayPause, onSeek, showTempMessage, t]);
 
     const handleSaveRawLyrics = useCallback(async (isAuto = false) => {
         if (!selectedSongId) return;
@@ -416,7 +407,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
         if (!isAuto) setErrorMessage(null);
         try {
             const result = await writeRawLyrics(selectedSongId, rawTextDraft);
-            // if (!isAuto) showTempMessage('已儲存純文字'); // Removed to avoid flashing
+            // Intentionally avoid flashing a saved message during autosave.
 
             let newStatus = result.meta.lyrics_status;
             if (selectedSong?.lyrics_status === 'synced') {
@@ -431,11 +422,11 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
             setLastSavedRawText(rawTextDraft);
         } catch (err) {
             console.error('[Lyrics] Failed to save raw lyrics', err);
-            if (!isAuto) setErrorMessage('儲存失敗');
+            if (!isAuto) setErrorMessage(t('lyrics.editor.errors.saveFailed'));
         } finally {
             setSavingRaw(false);
         }
-    }, [rawTextDraft, lastSavedRawText, selectedSongId, updateSongMetaInList, selectedSong]);
+    }, [rawTextDraft, lastSavedRawText, selectedSongId, updateSongMetaInList, selectedSong, t]);
 
     // Auto-save effect
     useEffect(() => {
@@ -461,14 +452,14 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                 timeSeconds: null,
             }));
         });
-        showTempMessage('已清除空白行');
-    }, [rawTextDraft, showTempMessage]);
+        showTempMessage(t('lyrics.editor.messages.emptyLinesCleared'));
+    }, [rawTextDraft, showTempMessage, t]);
 
     const handleSaveLrc = useCallback(async () => {
         if (!selectedSongId || !selectedSong) return;
         const hasTimed = lines.some((line) => line.timeSeconds !== null);
         if (!hasTimed) {
-            setErrorMessage('請先敲擊對齊');
+            setErrorMessage(t('lyrics.editor.errors.tapFirst'));
             return;
         }
         setSavingLrc(true);
@@ -481,7 +472,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
             const rawText = lines.map(l => l.text).join('\n');
             await writeRawLyrics(selectedSongId, rawText);
 
-            showTempMessage('已儲存 LRC (同步 TXT)');
+            showTempMessage(t('lyrics.editor.messages.savedLrc'));
             updateSongMetaInList({ ...result.meta, lyrics_status: 'synced' });
 
             // Update snapshot
@@ -489,11 +480,11 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
             setLastSavedRawText(rawText);
         } catch (err) {
             console.error('[Lyrics] Failed to save synced lyrics', err);
-            setErrorMessage('儲存失敗');
+            setErrorMessage(t('lyrics.editor.errors.saveFailed'));
         } finally {
             setSavingLrc(false);
         }
-    }, [lines, selectedSong, selectedSongId, updateSongMetaInList, showTempMessage]);
+    }, [lines, selectedSong, selectedSongId, updateSongMetaInList, showTempMessage, t]);
 
     const handleLyricsImport = useCallback(async (content: string, type: 'lrc' | 'txt') => {
         if (!selectedSongId || !selectedSong) return;
@@ -502,7 +493,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
         const hasExistingLyrics = selectedSong.lyrics_status !== 'none' || lines.length > 1 || (lines.length === 1 && lines[0].text.trim().length > 0);
 
         if (hasExistingLyrics) {
-            if (!window.confirm('此歌曲已有歌詞，是否要覆蓋原本的歌詞檔案？')) {
+            if (!window.confirm(t('lyrics.editor.confirmOverwrite'))) {
                 return;
             }
         }
@@ -513,11 +504,11 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
             if (type === 'lrc') {
                 result = await writeSyncedLyrics(selectedSongId, content);
                 updateSongMetaInList({ ...result.meta, lyrics_status: 'synced' });
-                showTempMessage('已匯入 LRC');
+                showTempMessage(t('lyrics.editor.messages.importedLrc'));
             } else {
                 result = await writeRawLyrics(selectedSongId, content);
                 updateSongMetaInList({ ...result.meta, lyrics_status: 'text_only' });
-                showTempMessage('已匯入純文字');
+                showTempMessage(t('lyrics.editor.messages.importedPlain'));
             }
             setShowSearchPane(false);
 
@@ -526,11 +517,11 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
 
         } catch (err) {
             console.error('[Lyrics] Failed to import lyrics', err);
-            setErrorMessage('匯入失敗');
+            setErrorMessage(t('lyrics.editor.errors.importFailed'));
         } finally {
             setLoadingLyrics(false);
         }
-    }, [selectedSongId, selectedSong, lines, updateSongMetaInList, showTempMessage, loadLyricsForSong]);
+    }, [selectedSongId, selectedSong, lines, updateSongMetaInList, showTempMessage, loadLyricsForSong, t]);
 
     // Smart Alignment Logic
     const startSmartAlign = useCallback(() => {
@@ -569,7 +560,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
         // We look up valid index from snapshot to be consistent with how we determine "first"
         const firstValidIndex = linesSnapshot.findIndex(l => l.timeSeconds !== null);
         if (firstValidIndex === -1) {
-            setErrorMessage("無法對齊：找不到任何有效的時間標記");
+            setErrorMessage(t('lyrics.editor.errors.noValidMarkers'));
             return;
         }
 
@@ -623,7 +614,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
         } else {
             onSeek(currentTime);
         }
-    }, [currentTime, lines, linesSnapshot, onSeek]);
+    }, [currentTime, lines, linesSnapshot, onSeek, t]);
 
 
     const confirmSmartAlignStep2 = useCallback(() => {
@@ -641,7 +632,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
         }
 
         if (firstValidIndex === -1 || lastValidIndex === -1 || firstValidIndex >= lastValidIndex) {
-            setErrorMessage('無法計算：時間軸標記不足或順序錯誤');
+            setErrorMessage(t('lyrics.editor.errors.invalidTimeline'));
             setSmartAlignStep(0);
             return;
         }
@@ -687,12 +678,13 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
         }));
 
         setSmartAlignStep(0);
-        showTempMessage('智慧對齊完成');
+        showTempMessage(t('lyrics.editor.messages.smartAlignDone'));
         setTapMode(true);
-    }, [currentTime, lines, linesSnapshot, smartAlignStartTime, showTempMessage]);
+    }, [currentTime, lines, linesSnapshot, smartAlignStartTime, showTempMessage, t]);
 
 
     const isRawChanged = rawTextDraft !== lastSavedRawText;
+    const displayHeaderTitle = headerTitle || t('lyrics.editor.title');
 
     return (
         <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
@@ -709,13 +701,13 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                 }}
             >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h2 style={{ margin: 0, color: '#fff', fontSize: '16px' }}>歌曲列表</h2>
+                    <h2 style={{ margin: 0, color: '#fff', fontSize: '16px' }}>{t('lyrics.editor.songList')}</h2>
                     <span style={{ color: '#888', fontSize: '11px' }}>{loadingSongs ? '...' : `${songs.length}`}</span>
                 </div>
 
                 <input
                     type="text"
-                    placeholder="搜尋..."
+                    placeholder={t('common.search')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     style={{
@@ -731,7 +723,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                 />
 
                 {songs.length === 0 ? (
-                    <div style={{ color: '#777', fontSize: '12px' }}>無歌曲</div>
+                    <div style={{ color: '#777', fontSize: '12px' }}>{t('songList.empty')}</div>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {songs
@@ -742,8 +734,9 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                             )
                             .map((song) => {
                                 const active = song.id === selectedSongId;
-                                const lyricLabel =
-                                    song.lyrics_status === 'synced' ? '已對齊' : song.lyrics_status === 'text_only' ? '純文字' : '無';
+                                const lyricLabel = getLyricsStatusLabel(t, song.lyrics_status, true);
+                                const songTypeLabel = getSongTypeLabel(t, song.type);
+                                const artist = song.artist || t('songManagement.unknownArtist');
                                 return (
                                     <div
                                         key={song.id}
@@ -773,7 +766,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                             {song.title}
                                         </div>
                                         <div
-                                            title={`${song.artist || '未知'} ・ ${song.type}`}
+                                            title={`${artist} ・ ${songTypeLabel}`}
                                             style={{
                                                 color: '#aaa',
                                                 fontSize: '11px',
@@ -783,10 +776,10 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                                 textOverflow: 'ellipsis'
                                             }}
                                         >
-                                            {song.artist || '未知'} ・ {song.type}
+                                            {artist} ・ {songTypeLabel}
                                         </div>
                                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', fontSize: '11px', color: '#888', whiteSpace: 'nowrap', overflow: 'hidden' }}>
-                                            <span>{audioStatusLabels[song.audio_status] ?? song.audio_status}</span>
+                                            <span>{getAudioStatusLabel(t, song.audio_status)}</span>
                                             <span>| {lyricLabel}</span>
                                         </div>
                                     </div>
@@ -799,7 +792,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
             {/* Main Content Area */}
             {!selectedSong ? (
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555', fontSize: '14px' }}>
-                    請從左側選擇歌曲
+                    {t('lyrics.editor.selectSong')}
                 </div>
             ) : (
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '15px', gap: '10px' }}>
@@ -818,8 +811,8 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', height: '100%' }}>
                             {/* Header Info */}
                             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: '50px' }}>
-                                <div style={{ fontSize: '12px', transition: 'color 0.2s', color: headerTitle === '歌詞編輯' ? '#999' : 'var(--accent-color)' }}>
-                                    {headerTitle}
+                                <div style={{ fontSize: '12px', transition: 'color 0.2s', color: headerTitle ? 'var(--accent-color)' : '#999' }}>
+                                    {displayHeaderTitle}
                                 </div>
                                 <div
                                     title={selectedSong.title}
@@ -844,7 +837,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                     </div>
                                     <button
                                         onClick={() => setShowSearchPane(true)}
-                                        title="搜尋歌詞"
+                                        title={t('lyrics.search.title')}
                                         style={{
                                             flexShrink: 0, // Prevent shrinking
                                             background: 'transparent',
@@ -865,7 +858,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                     </button>
                                 </div>
                                 <div
-                                    title={`${selectedSong.artist || '未知歌手'} ・ ${selectedSong.type || '—'}`}
+                                    title={`${selectedSong.artist || t('songManagement.unknownArtist')} ・ ${selectedSong.type ? getSongTypeLabel(t, selectedSong.type) : '-'}`}
                                     style={{
                                         color: '#aaa',
                                         fontSize: '12px',
@@ -875,10 +868,10 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                         textOverflow: 'ellipsis'
                                     }}
                                 >
-                                    {selectedSong.artist || '未知歌手'} ・ {selectedSong.type || '—'}
+                                    {selectedSong.artist || t('songManagement.unknownArtist')} ・ {selectedSong.type ? getSongTypeLabel(t, selectedSong.type) : '-'}
                                 </div>
                                 <div style={{ color: '#aaa', fontSize: '12px', marginTop: '2px' }}>
-                                    {selectedSong.lyrics_status === 'synced' ? '已對齊' : selectedSong.lyrics_status === 'text_only' ? '純文字' : '無'}
+                                    {getLyricsStatusLabel(t, selectedSong.lyrics_status, true)}
                                 </div>
                             </div>
 
@@ -886,21 +879,21 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                             {smartAlignStep > 0 ? (
                                 <div style={{ background: '#1e1e1e', borderRadius: '12px', border: '1px solid var(--accent-color)', padding: '12px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                                     <div style={{ color: 'var(--accent-color)', fontWeight: 700, marginBottom: '8px', fontSize: '16px' }}>
-                                        {smartAlignStep === 1 ? '智慧對齊 - 設定起始' : '智慧對齊 - 設定結束'}
+                                        {smartAlignStep === 1 ? t('lyrics.editor.smartAlign.startTitle') : t('lyrics.editor.smartAlign.endTitle')}
                                     </div>
                                     <div style={{ color: '#ccc', fontSize: '13px', lineHeight: 1.5 }}>
                                         {smartAlignStep === 1
-                                            ? '請將播放器移動到第一句歌詞的正確開始時間，然後點擊下方「設定起始」按鈕。'
-                                            : '請將播放器移動到最後一句歌詞的正確開始時間，然後點擊下方「設定結束」按鈕。系統將自動調整中間所有歌詞的時間。'}
+                                            ? t('lyrics.editor.smartAlign.startDescription')
+                                            : t('lyrics.editor.smartAlign.endDescription')}
                                     </div>
                                 </div>
                             ) : (
                                 /* Alignment Control */
                                 <div style={{ background: '#141414', borderRadius: '12px', border: '1px solid #222', padding: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1 }}>
                                     <div>
-                                        <div style={{ color: '#fff', fontWeight: 700, marginBottom: '4px' }}>對齊控制</div>
+                                        <div style={{ color: '#fff', fontWeight: 700, marginBottom: '4px' }}>{t('lyrics.editor.alignControls')}</div>
                                         <div style={{ color: '#888', fontSize: '12px', lineHeight: 1.4 }}>
-                                            開啟敲擊模式後，按下 J 鍵可將當前播放時間套用到下一行歌詞。
+                                            {t('lyrics.editor.alignDescription')}
                                         </div>
                                     </div>
 
@@ -918,7 +911,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                             marginTop: '8px'
                                         }}
                                     >
-                                        重設所有時間
+                                        {t('lyrics.editor.resetAllTimes')}
                                     </button>
                                 </div>
                             )}
@@ -928,7 +921,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                         <div style={{ background: '#141414', borderRadius: '12px', border: '1px solid #222', padding: '12px', display: 'flex', flexDirection: 'column' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <div style={{ color: '#fff', fontWeight: 700 }}>歌詞文字</div>
+                                    <div style={{ color: '#fff', fontWeight: 700 }}>{t('lyrics.editor.lyricsText')}</div>
                                     {/* Auto-save Badge */}
                                     <div style={{
                                         fontSize: '10px',
@@ -938,7 +931,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                         color: (savingRaw || isRawChanged) ? '#ffcc00' : '#4caf50',
                                         border: `1px solid ${(savingRaw || isRawChanged) ? '#5a4a2a' : '#2a3a2a'}`
                                     }}>
-                                        {(savingRaw || isRawChanged) ? '正在儲存...' : '已儲存'}
+                                        {(savingRaw || isRawChanged) ? t('lyrics.editor.saving') : t('lyrics.editor.saved')}
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -954,7 +947,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                             fontSize: '12px',
                                         }}
                                     >
-                                        清除空白
+                                        {t('lyrics.editor.clearBlank')}
                                     </button>
                                     <button
                                         onClick={() => applyDraftToLines(false)}
@@ -968,14 +961,14 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                             fontSize: '12px',
                                         }}
                                     >
-                                        套用
+                                        {t('lyrics.editor.apply')}
                                     </button>
                                 </div>
                             </div>
                             <textarea
                                 value={rawTextDraft}
                                 onChange={(e) => setRawTextDraft(e.target.value)}
-                                placeholder="輸入歌詞..."
+                                placeholder={t('lyrics.editor.lyricsPlaceholder')}
                                 style={{
                                     flex: 1,
                                     width: '100%',
@@ -1007,9 +1000,9 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                         }}
                     >
                         {loadingLyrics ? (
-                            <div style={{ color: '#b3b3b3' }}>載入歌詞中...</div>
+                            <div style={{ color: '#b3b3b3' }}>{t('lyrics.editor.loadingLyrics')}</div>
                         ) : lines.length === 0 ? (
-                            <div style={{ color: '#777' }}>尚未有歌詞，請先貼上並儲存歌詞文字。</div>
+                            <div style={{ color: '#777' }}>{t('lyrics.editor.noLyricsHelp')}</div>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
 
@@ -1090,7 +1083,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                                             onClick={() => updateLineTime(idx, currentTime)}
                                                             style={{ padding: '4px 12px', background: 'var(--accent-color)', border: 'none', color: '#000', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
                                                         >
-                                                            設定為當前播放時間
+                                                            {t('lyrics.editor.setToCurrentTime')}
                                                         </button>
                                                         <button
                                                             onClick={() => adjustLineTime(idx, 0.1)}
@@ -1176,9 +1169,9 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                                             padding: '2px 6px', background: '#2a2a2a', color: '#fff', border: '1px solid #333',
                                                             borderRadius: '4px', cursor: 'pointer', fontSize: '10px', width: '100%'
                                                         }}
-                                                        title="套用目前播放時間"
+                                                        title={t('lyrics.editor.applyCurrentTimeTitle')}
                                                     >
-                                                        套用當前時間
+                                                        {t('lyrics.editor.applyCurrentTime')}
                                                     </button>
                                                 </div>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -1196,7 +1189,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                                             fontSize: '12px',
                                                         }}
                                                     >
-                                                        稍早
+                                                        {t('lyrics.editor.earlier')}
                                                     </button>
                                                     <button
                                                         onClick={() => adjustLineTime(idx, 0.05)}
@@ -1211,7 +1204,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                                             fontSize: '12px',
                                                         }}
                                                     >
-                                                        稍晚
+                                                        {t('lyrics.editor.later')}
                                                     </button>
                                                 </div>
                                             </div>
@@ -1248,7 +1241,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                                     {/* Left: Instruction */}
                                                     <div style={{ flex: 1 }}>
                                                         {isNextTap && (
-                                                            <div style={{ color: '#f0c36b', fontSize: '12px' }}>下一次敲擊會套用到此行</div>
+                                                            <div style={{ color: '#f0c36b', fontSize: '12px' }}>{t('lyrics.editor.nextTapLine')}</div>
                                                         )}
                                                     </div>
 
@@ -1276,7 +1269,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                                             }}
                                                             onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
                                                             onMouseLeave={(e) => e.currentTarget.style.opacity = '0.6'}
-                                                            title="向下新增一行"
+                                                            title={t('lyrics.editor.addLineBelow')}
                                                         >
                                                             <img src={AddIcon} style={{ width: '16px', height: '16px' }} />
                                                         </button>
@@ -1325,10 +1318,10 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                                                     e.currentTarget.style.color = '#ff4444'; // Normal red
                                                                 }
                                                             }}
-                                                            title={deleteConfirmLineId === line.id ? "再次點擊以刪除" : "刪除"}
+                                                            title={deleteConfirmLineId === line.id ? t('lyrics.editor.clickAgainDelete') : t('common.delete')}
                                                         >
                                                             {deleteConfirmLineId === line.id ? (
-                                                                <span>確認？</span>
+                                                                <span>{t('common.confirm')}?</span>
                                                             ) : (
                                                                 <img src={DeleteIcon} style={{ width: '16px', height: '16px' }} />
                                                             )}
@@ -1398,10 +1391,10 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                             border: tapMode ? '1px solid rgba(var(--accent-color-rgb), 0.3)' : '1px solid transparent',
                                             whiteSpace: 'nowrap'
                                         }}
-                                        title="敲擊模式 (J)"
+                                        title={t('lyrics.editor.tapModeTitle')}
                                     >
                                         <img src={TapModeIcon} alt="Tap Mode" style={{ width: '20px', height: '20px', filter: tapMode ? 'none' : 'grayscale(100%) opacity(0.3)' }} />
-                                        <span style={{ fontSize: '9px', fontWeight: 600, marginTop: '2px' }}>敲擊模式</span>
+                                        <span style={{ fontSize: '9px', fontWeight: 600, marginTop: '2px' }}>{t('lyrics.editor.tapMode')}</span>
                                     </div>
                                 </div>
                             )}
@@ -1431,7 +1424,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                             justifyContent: 'center',
                                             transition: 'all 0.2s',
                                         }}
-                                        title="智慧對齊：設定起始與結束時間，自動調整中間的歌詞"
+                                        title={t('lyrics.editor.smartAlign.tooltip')}
                                         onMouseEnter={e => {
                                             e.currentTarget.style.color = '#fff';
                                             e.currentTarget.style.borderColor = '#666';
@@ -1442,7 +1435,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                         }}
                                     >
                                         <img src={SmartAlignIcon} alt="Smart Align" style={{ width: '20px', height: '20px' }} />
-                                        <span style={{ fontSize: '9px', fontWeight: 600, marginTop: '2px', whiteSpace: 'nowrap' }}>智慧對齊</span>
+                                        <span style={{ fontSize: '9px', fontWeight: 600, marginTop: '2px', whiteSpace: 'nowrap' }}>{t('lyrics.editor.smartAlign.label')}</span>
                                     </button>
                                 </div>
                             )}
@@ -1473,7 +1466,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                     onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                     onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                 >
-                                    <span>敲擊</span>
+                                    <span>{t('lyrics.editor.tap')}</span>
                                     <span style={{
                                         background: 'rgba(0,0,0,0.2)',
                                         color: tapMode ? '#000' : '#888',
@@ -1503,7 +1496,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                         boxShadow: '0 0 15px rgba(var(--accent-color-rgb), 0.4)'
                                     }}
                                 >
-                                    {smartAlignStep === 1 ? '設定起始 (Offset)' : '設定結束 (Scale)'}
+                                    {smartAlignStep === 1 ? t('lyrics.editor.smartAlign.setStart') : t('lyrics.editor.smartAlign.setEnd')}
                                 </button>
                             )}
                         </div>
@@ -1526,7 +1519,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                     fontWeight: 600
                                 }}
                             >
-                                取消
+                                {t('common.cancel')}
                             </button>
                         ) : (
                             <button
@@ -1547,7 +1540,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                 }}
                             >
                                 <img src={SaveLrcIcon} alt="Save" style={{ width: '16px', height: '16px' }} />
-                                {savingLrc ? '儲存中...' : '儲存 LRC'}
+                                {savingLrc ? t('lyrics.editor.saving') : t('lyrics.editor.saveLrc')}
                             </button>
                         )}
                     </div>
@@ -1595,9 +1588,9 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                             ✕
                         </button>
 
-                        <h3 style={{ margin: '0 0 12px', color: '#fff', fontSize: '16px' }}>未儲存的變更</h3>
+                        <h3 style={{ margin: '0 0 12px', color: '#fff', fontSize: '16px' }}>{t('lyrics.editor.unsaved.title')}</h3>
                         <p style={{ color: '#aaa', marginBottom: '20px', fontSize: '13px' }}>
-                            {pendingSongId ? '切換歌曲' : '離開頁面'}將會導致未儲存的變更遺失。
+                            {pendingSongId ? t('lyrics.editor.unsaved.switchSongMessage') : t('lyrics.editor.unsaved.leavePageMessage')}
                         </p>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1613,7 +1606,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                     marginRight: 'auto' // Push other buttons to right
                                 }}
                             >
-                                取消
+                                {t('common.cancel')}
                             </button>
 
                             <button
@@ -1633,7 +1626,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                     color: '#fff', borderRadius: '6px', cursor: 'pointer', fontSize: '13px'
                                 }}
                             >
-                                不儲存
+                                {t('lyrics.editor.unsaved.discard')}
                             </button>
                             <button
                                 onClick={() => {
@@ -1653,7 +1646,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                     color: '#000', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '13px'
                                 }}
                             >
-                                儲存並繼續
+                                {t('lyrics.editor.unsaved.saveAndContinue')}
                             </button>
                         </div>
                     </div>

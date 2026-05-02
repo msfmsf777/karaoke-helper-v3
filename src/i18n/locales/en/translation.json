@@ -20,7 +20,8 @@
     "settings": "Settings",
     "unknown": "Unknown",
     "none": "None",
-    "default": "Default"
+    "default": "Default",
+    "copied": "Copied"
   },
   "settings": {
     "language": {
@@ -434,6 +435,116 @@
       "processing": "Processing...",
       "confirmAdd": "Confirm Add ({{count}})",
       "unsavedConfirm": "You have unsaved changes. Close anyway?"
+    }
+  },
+  "lyrics": {
+    "search": {
+      "title": "Search Lyrics",
+      "placeholder": "Search songs / artists...",
+      "searching": "Searching...",
+      "noResults": "No results",
+      "preview": "Preview",
+      "hidePreview": "Hide Preview",
+      "useLyrics": "Use These Lyrics"
+    },
+    "style": {
+      "title": "In-App Lyrics Display",
+      "description": "These settings only affect the in-app stream view and do not change OBS overlay templates.",
+      "fontSize": "Font Size",
+      "inactiveColor": "Inactive Text",
+      "activeColor": "Highlighted Text",
+      "glowColor": "Glow Color",
+      "strokeColor": "Stroke Color",
+      "strokeWidth": "Stroke Width",
+      "resetDefault": "Reset to Defaults"
+    },
+    "stream": {
+      "nowPlaying": "Now Playing",
+      "confirmResetTitle": "Click again to confirm reset",
+      "resetProgressTitle": "Reset playback progress",
+      "confirmReset": "Confirm Reset?",
+      "notPlaying": "Nothing playing",
+      "copyLyricsObs": "Copy Lyrics OBS Link",
+      "copySetlistObs": "Copy Setlist OBS Link",
+      "copiedLyricsObs": "Copied lyrics OBS link: {{name}}",
+      "copiedSetlistObs": "Copied setlist OBS link: {{name}}",
+      "obsTemplateSettings": "OBS Template Settings",
+      "upNext": "Up Next ({{count}})",
+      "played": "Played ({{count}})",
+      "noPlayedSongs": "No played songs yet",
+      "requeueTitle": "Add this song back to the bottom of Up Next",
+      "queueEmpty": "Add songs to the queue first",
+      "nextSongBadge": "Next •",
+      "removeFromSetlist": "Remove from list"
+    },
+    "editor": {
+      "title": "Lyrics Editor",
+      "songList": "Song List",
+      "selectSong": "Select a song from the left",
+      "confirmResetTimes": "Reset all time markers? This cannot be undone.",
+      "confirmOverwrite": "This song already has lyrics. Overwrite the existing lyric file?",
+      "alignControls": "Alignment Controls",
+      "alignDescription": "When tap mode is on, press J to apply the current playback time to the next lyric line.",
+      "resetAllTimes": "Reset All Times",
+      "lyricsText": "Lyrics Text",
+      "saving": "Saving...",
+      "saved": "Saved",
+      "clearBlank": "Clear Blank",
+      "apply": "Apply",
+      "lyricsPlaceholder": "Enter lyrics...",
+      "loadingLyrics": "Loading lyrics...",
+      "noLyricsHelp": "No lyrics yet. Paste and save lyrics text first.",
+      "setToCurrentTime": "Set to Current Playback Time",
+      "applyCurrentTimeTitle": "Apply current playback time",
+      "applyCurrentTime": "Apply Current Time",
+      "earlier": "Earlier",
+      "later": "Later",
+      "nextTapLine": "The next tap will apply to this line",
+      "addLineBelow": "Add a line below",
+      "clickAgainDelete": "Click again to delete",
+      "tapModeTitle": "Tap Mode (J)",
+      "tapMode": "Tap Mode",
+      "tap": "Tap",
+      "saveLrc": "Save LRC",
+      "messages": {
+        "loadedLrc": "Loaded LRC",
+        "loadedPlain": "Loaded plain text",
+        "noLyrics": "No lyrics",
+        "appliedAndReset": "Applied and reset",
+        "appliedText": "Applied text",
+        "timesReset": "Times reset",
+        "emptyLinesCleared": "Blank lines cleared",
+        "savedLrc": "Saved LRC (synced TXT)",
+        "importedLrc": "Imported LRC",
+        "importedPlain": "Imported plain text",
+        "smartAlignDone": "Smart align complete"
+      },
+      "errors": {
+        "readFailed": "Failed to read lyrics",
+        "loadFailed": "Failed to load",
+        "saveFailed": "Failed to save",
+        "tapFirst": "Tap to align first",
+        "importFailed": "Failed to import",
+        "noValidMarkers": "Cannot align: no valid time markers found",
+        "invalidTimeline": "Cannot calculate: not enough time markers or invalid order"
+      },
+      "smartAlign": {
+        "label": "Smart Align",
+        "tooltip": "Smart align: set start and end times, then automatically adjust the lyric timing in between",
+        "startTitle": "Smart Align - Set Start",
+        "endTitle": "Smart Align - Set End",
+        "startDescription": "Move the player to the correct start time for the first lyric line, then click Set Start below.",
+        "endDescription": "Move the player to the correct start time for the last lyric line, then click Set End below. KHelper will adjust the timing for all lyrics in between.",
+        "setStart": "Set Start (Offset)",
+        "setEnd": "Set End (Scale)"
+      },
+      "unsaved": {
+        "title": "Unsaved Changes",
+        "switchSongMessage": "Switching songs will discard unsaved changes.",
+        "leavePageMessage": "Leaving this page will discard unsaved changes.",
+        "discard": "Don't Save",
+        "saveAndContinue": "Save and Continue"
+      }
     }
   }
 }

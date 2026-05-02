@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { LrcLibTrack, searchLyrics } from '../library/lyricsSearch';
 
 interface LyricsSearchPaneProps {
@@ -10,6 +11,7 @@ interface LyricsSearchPaneProps {
 }
 
 const LyricsSearchPane: React.FC<LyricsSearchPaneProps> = ({ isOpen, onClose, initialQuery, onSelect, mode = 'sidebar' }) => {
+    const { t } = useTranslation();
     const [query, setQuery] = useState(initialQuery);
     const [results, setResults] = useState<LrcLibTrack[]>([]);
     const [searching, setSearching] = useState(false);
@@ -76,16 +78,15 @@ const LyricsSearchPane: React.FC<LyricsSearchPaneProps> = ({ isOpen, onClose, in
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
-                // @ts-ignore
                 WebkitAppRegion: 'no-drag'
-            }}>
+            } as React.CSSProperties}>
                 <div style={{ flex: 1, position: 'relative' }}>
                     <input
                         type="text"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSearch(query)}
-                        placeholder="搜尋歌曲 / 歌手..."
+                        placeholder={t('lyrics.search.placeholder')}
                         style={{
                             width: '100%',
                             padding: '8px 12px',
@@ -112,7 +113,7 @@ const LyricsSearchPane: React.FC<LyricsSearchPaneProps> = ({ isOpen, onClose, in
                         fontSize: '13px'
                     }}
                 >
-                    搜尋
+                    {t('common.search')}
                 </button>
                 <button
                     onClick={onClose}
@@ -134,8 +135,8 @@ const LyricsSearchPane: React.FC<LyricsSearchPaneProps> = ({ isOpen, onClose, in
 
             {/* Results */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
-                {searching && <div style={{ color: '#888', textAlign: 'center', padding: '20px' }}>搜尋中...</div>}
-                {!searching && results.length === 0 && <div style={{ color: '#666', textAlign: 'center', padding: '20px' }}>無結果</div>}
+                {searching && <div style={{ color: '#888', textAlign: 'center', padding: '20px' }}>{t('lyrics.search.searching')}</div>}
+                {!searching && results.length === 0 && <div style={{ color: '#666', textAlign: 'center', padding: '20px' }}>{t('lyrics.search.noResults')}</div>}
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {results.map(track => (
@@ -182,7 +183,7 @@ const LyricsSearchPane: React.FC<LyricsSearchPaneProps> = ({ isOpen, onClose, in
                                         fontSize: '12px'
                                     }}
                                 >
-                                    {previewId === track.id ? '隱藏預覽' : '預覽'}
+                                    {previewId === track.id ? t('lyrics.search.hidePreview') : t('lyrics.search.preview')}
                                 </button>
                                 <button
                                     onClick={() => {
@@ -201,7 +202,7 @@ const LyricsSearchPane: React.FC<LyricsSearchPaneProps> = ({ isOpen, onClose, in
                                         fontWeight: 'bold'
                                     }}
                                 >
-                                    使用此歌詞
+                                    {t('lyrics.search.useLyrics')}
                                 </button>
                             </div>
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { useTranslation } from 'react-i18next';
 import { useQueue } from '../contexts/QueueContext';
 import { useLibrary } from '../contexts/LibraryContext';
 import ReplayIcon from '../assets/icons/replay.svg';
@@ -26,6 +27,7 @@ const IconDelete = () => (
 );
 
 const StreamSetlist: React.FC = () => {
+    const { t } = useTranslation();
     const { queue, currentIndex, moveQueueItem, removeFromQueue, addToQueue, isStreamWaiting } = useQueue();
     const { getSongById } = useLibrary();
     const [activeTab, setActiveTab] = useState<'up_next' | 'played'>('up_next');
@@ -88,7 +90,7 @@ const StreamSetlist: React.FC = () => {
                         transition: 'color 0.2s'
                     }}
                 >
-                    待播清單 ({upNextSongs.length})
+                    {t('lyrics.stream.upNext', { count: upNextSongs.length })}
                 </button>
                 <button
                     onClick={() => setActiveTab('played')}
@@ -105,7 +107,7 @@ const StreamSetlist: React.FC = () => {
                         transition: 'color 0.2s'
                     }}
                 >
-                    已播清單 ({playedSongs.length})
+                    {t('lyrics.stream.played', { count: playedSongs.length })}
                 </button>
             </div>
 
@@ -116,7 +118,7 @@ const StreamSetlist: React.FC = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         {playedSongs.length === 0 ? (
                             <div style={{ padding: '12px', color: '#444', fontSize: '13px', fontStyle: 'italic', textAlign: 'center' }}>
-                                尚無已播歌曲
+                                {t('lyrics.stream.noPlayedSongs')}
                             </div>
                         ) : (
                             playedSongs.map((songId, idx) => {
@@ -152,7 +154,7 @@ const StreamSetlist: React.FC = () => {
                                                 {song.title}
                                             </div>
                                             <div style={{ color: '#888', fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                {song.artist || 'Unknown'}
+                                                {song.artist || t('songManagement.unknownArtist')}
                                             </div>
                                         </div>
 
@@ -170,7 +172,7 @@ const StreamSetlist: React.FC = () => {
                                                 alignItems: 'center',
                                                 transition: 'opacity 0.2s',
                                             }}
-                                            title="將此曲重新加入待播清單底部"
+                                            title={t('lyrics.stream.requeueTitle')}
                                         >
                                             <img src={ReplayIcon} alt="Requeue" style={{ width: '16px', height: '16px' }} />
                                         </button>
@@ -191,7 +193,7 @@ const StreamSetlist: React.FC = () => {
                                 >
                                     {upNextSongs.length === 0 ? (
                                         <div style={{ padding: '12px', color: '#444', fontSize: '13px', fontStyle: 'italic', textAlign: 'center' }}>
-                                            請先將歌曲加入播放隊列
+                                            {t('lyrics.stream.queueEmpty')}
                                         </div>
                                     ) : (
                                         upNextSongs.map((songId, idx) => {
@@ -278,10 +280,10 @@ const StreamSetlist: React.FC = () => {
                                                                 <div style={{ color: '#666', fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                                     {isWaitingSong(idx) ? (
                                                                         <span style={{ color: 'var(--accent-color)', fontWeight: 'bold', marginRight: '6px' }}>
-                                                                            下一首 •
+                                                                            {t('lyrics.stream.nextSongBadge')}
                                                                         </span>
                                                                     ) : null}
-                                                                    {song.artist || 'Unknown'}
+                                                                    {song.artist || t('songManagement.unknownArtist')}
                                                                 </div>
                                                             </div>
 
@@ -305,7 +307,7 @@ const StreamSetlist: React.FC = () => {
                                                                     alignItems: 'center',
                                                                     transition: 'opacity 0.2s, color 0.2s'
                                                                 }}
-                                                                title="從清單移除"
+                                                                title={t('lyrics.stream.removeFromSetlist')}
                                                                 onMouseEnter={(e) => e.currentTarget.style.color = '#ff4444'}
                                                                 onMouseLeave={(e) => e.currentTarget.style.color = '#888'}
                                                             >
