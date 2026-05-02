@@ -1,0 +1,23 @@
+{
+  "language": {
+    "zhTW": "繁體中文",
+    "en": "English"
+  },
+  "common": {
+    "appName": "KHelper V3",
+    "loading": "載入中",
+    "save": "儲存",
+    "cancel": "取消",
+    "confirm": "確認",
+    "delete": "刪除",
+    "edit": "編輯",
+    "copy": "複製",
+    "reset": "重設",
+    "back": "返回",
+    "search": "搜尋",
+    "settings": "設定",
+    "unknown": "未知",
+    "none": "無",
+    "default": "預設"
+  }
+}

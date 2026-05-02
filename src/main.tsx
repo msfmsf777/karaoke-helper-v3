@@ -1,8 +1,10 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { I18nextProvider } from 'react-i18next'
 import App from './App.tsx'
 import OverlayWindow from './components/OverlayWindow.tsx'
 import './index.css'
+import i18n from './i18n'
 
 import SetlistOverlayWindow from './components/SetlistOverlayWindow.tsx'
 
@@ -35,9 +37,11 @@ else if (isMiniPlayer) {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <React.Suspense fallback={null}>
-      <ComponentToRender />
-    </React.Suspense>
+    <I18nextProvider i18n={i18n}>
+      <React.Suspense fallback={null}>
+        <ComponentToRender />
+      </React.Suspense>
+    </I18nextProvider>
   </React.StrictMode>,
 )
 

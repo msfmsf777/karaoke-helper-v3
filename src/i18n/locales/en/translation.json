@@ -1,0 +1,23 @@
+{
+  "language": {
+    "zhTW": "Traditional Chinese",
+    "en": "English"
+  },
+  "common": {
+    "appName": "KHelper V3",
+    "loading": "Loading",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "copy": "Copy",
+    "reset": "Reset",
+    "back": "Back",
+    "search": "Search",
+    "settings": "Settings",
+    "unknown": "Unknown",
+    "none": "None",
+    "default": "Default"
+  }
+}
