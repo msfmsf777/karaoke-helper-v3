@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import { HotkeyConfig, mergeHotkeyConfig } from '../shared/hotkeys';
 import { SongListViewConfigs, mergeSongListViewConfigs } from '../shared/songListView';
 import { OverlayTemplatesConfig, mergeOverlayTemplatesConfig } from '../shared/overlayTemplates';
+import { SupportedLanguage, normalizeLanguage } from '../shared/i18n';
 
 export interface UserData {
     favorites: string[];
@@ -85,6 +86,7 @@ export interface LyricStyleConfig {
 
 export interface UserSettings {
     separationQuality: 'high' | 'normal' | 'fast';
+    language?: SupportedLanguage;
     ignoredVersion?: string;
     lyricStyles?: LyricStyleConfig;
     songPreferences?: Record<string, { furigana?: boolean; romaji?: boolean }>;
@@ -97,6 +99,7 @@ export async function saveSettings(settings: UserSettings): Promise<void> {
     try {
         await writeAtomic(SETTINGS_FILE, {
             ...settings,
+            language: settings.language ? normalizeLanguage(settings.language) : undefined,
             hotkeys: mergeHotkeyConfig(settings.hotkeys),
             songListViews: mergeSongListViewConfigs(settings.songListViews),
             overlayTemplates: mergeOverlayTemplatesConfig(settings.overlayTemplates, settings.lyricStyles),
@@ -114,6 +117,7 @@ export async function loadSettings(): Promise<UserSettings> {
         return {
             ...parsed,
             separationQuality: parsed.separationQuality || 'normal',
+            language: parsed.language ? normalizeLanguage(parsed.language) : undefined,
             hotkeys: mergeHotkeyConfig(parsed.hotkeys),
             songListViews: mergeSongListViewConfigs(parsed.songListViews),
             overlayTemplates: mergeOverlayTemplatesConfig(parsed.overlayTemplates, parsed.lyricStyles),

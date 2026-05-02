@@ -19,5 +19,12 @@
     "unknown": "未知",
     "none": "無",
     "default": "預設"
+  },
+  "settings": {
+    "language": {
+      "title": "介面語言",
+      "description": "選擇 KHelper 的顯示語言。若尚未選擇，會先依照系統語言自動判斷。",
+      "label": "語言"
+    }
   }
 }

@@ -19,5 +19,12 @@
     "unknown": "Unknown",
     "none": "None",
     "default": "Default"
+  },
+  "settings": {
+    "language": {
+      "title": "Interface Language",
+      "description": "Choose the display language for KHelper. If no language has been selected, KHelper auto-detects it from your system language.",
+      "label": "Language"
+    }
   }
 }

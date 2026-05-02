@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import audioEngine, { OutputRole } from '../audio/AudioEngine';
 import { useUserData } from '../contexts/UserDataContext';
 import CalibrationModal from './CalibrationModal';
@@ -6,6 +7,7 @@ import { getAudioOffset, loadOutputDevicePreferences, saveStreamEnabledPreferenc
 import HotkeysSettingsSection from './HotkeysSettingsSection';
 import OverlayTemplateSettingsSection, { OverlayTemplateEditor } from './OverlayTemplateSettingsSection';
 import { OverlayKind } from '../../shared/overlayTemplates';
+import { LANGUAGE_OPTIONS, SupportedLanguage } from '../../shared/i18n';
 
 // Lazy loading DebugUpdaterUI
 const DebugUpdaterUI = React.lazy(() => import('./DebugUpdaterUI'));
@@ -26,10 +28,11 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     onChangeDevice,
     focusRequest,
 }) => {
+    const { t } = useTranslation();
     const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const { separationQuality, setSeparationQuality, overlayTemplates } = useUserData();
+    const { separationQuality, setSeparationQuality, overlayTemplates, language, setLanguage } = useUserData();
     const [overlayEditor, setOverlayEditor] = useState<{ kind: OverlayKind; designId: string } | null>(null);
     const [overlayEditorDirty, setOverlayEditorDirty] = useState(false);
 
@@ -207,6 +210,39 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     margin: '0 auto',
                     boxSizing: 'border-box'
                 }}>
+
+                    {/* Section: Language */}
+                    <section style={{ marginBottom: '40px' }}>
+                        <h2 style={{ margin: '0 0 16px', fontSize: '18px', color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: '12px' }}>
+                            {t('settings.language.title')}
+                        </h2>
+                        <p style={{ margin: '0 0 16px', color: '#aaa', fontSize: '14px', lineHeight: '1.6' }}>
+                            {t('settings.language.description')}
+                        </p>
+                        <label style={{ display: 'block', color: '#ddd', fontSize: '14px', fontWeight: 'bold', marginBottom: '8px' }}>
+                            {t('settings.language.label')}
+                        </label>
+                        <select
+                            value={language}
+                            onChange={(event) => setLanguage(event.target.value as SupportedLanguage)}
+                            style={{
+                                width: '100%',
+                                maxWidth: '320px',
+                                padding: '10px 12px',
+                                backgroundColor: '#2a2a2a',
+                                color: '#fff',
+                                border: '1px solid #444',
+                                borderRadius: '6px',
+                                outline: 'none'
+                            }}
+                        >
+                            {LANGUAGE_OPTIONS.map((option) => (
+                                <option key={option.code} value={option.code}>
+                                    {option.nativeName}
+                                </option>
+                            ))}
+                        </select>
+                    </section>
 
                     {/* Section: Audio Devices */}
                     <section style={{ marginBottom: '40px' }}>

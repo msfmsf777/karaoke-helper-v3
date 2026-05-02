@@ -3,6 +3,8 @@ import { useQueue } from './QueueContext';
 import { HotkeyConfig, mergeHotkeyConfig } from '../../shared/hotkeys';
 import { SongListViewConfig, SongListViewConfigs, mergeSongListViewConfig, mergeSongListViewConfigs } from '../../shared/songListView';
 import { OverlayTemplatesConfig, mergeOverlayTemplatesConfig } from '../../shared/overlayTemplates';
+import { SupportedLanguage, normalizeLanguage } from '../../shared/i18n';
+import i18n from '../i18n';
 // import { useLibrary } from './LibraryContext';
 
 export interface Playlist {
@@ -34,6 +36,8 @@ interface UserDataContextType {
     favorites: string[];
     history: string[];
     playlists: Playlist[];
+    language: SupportedLanguage;
+    setLanguage: (language: SupportedLanguage) => void;
     separationQuality: 'high' | 'normal' | 'fast';
     setSeparationQuality: (quality: 'high' | 'normal' | 'fast') => void;
     toggleFavorite: (songId: string) => void;
@@ -67,6 +71,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [favorites, setFavorites] = useState<string[]>([]);
     const [history, setHistory] = useState<string[]>([]);
     const [playlists, setPlaylists] = useState<Playlist[]>([]);
+    const [language, setLanguageState] = useState<SupportedLanguage>(() => normalizeLanguage(i18n.language));
     const [separationQuality, setSeparationQuality] = useState<'high' | 'normal' | 'fast'>('normal');
     const { currentSongId } = useQueue();
     const isInitialized = useRef(false);
@@ -90,6 +95,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                     window.khelper?.userData.loadPlaylists() || [],
                     (window.khelper?.userData.loadSettings() || Promise.resolve({ separationQuality: 'normal' })) as Promise<{
                         separationQuality: 'high' | 'normal' | 'fast';
+                        language?: SupportedLanguage;
                         lyricStyles?: LyricStyleConfig;
                         songPreferences?: Record<string, { furigana?: boolean; romaji?: boolean }>;
                         hotkeys?: HotkeyConfig;
@@ -100,6 +106,11 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 setFavorites(Array.from(new Set(favs)));
                 setHistory(Array.from(new Set(hist)));
                 setPlaylists(pl);
+                const nextLanguage = normalizeLanguage(settings.language ?? i18n.language);
+                setLanguageState(nextLanguage);
+                if (i18n.language !== nextLanguage) {
+                    await i18n.changeLanguage(nextLanguage);
+                }
                 setSeparationQuality((settings.separationQuality as 'high' | 'normal' | 'fast') || 'normal');
                 const settingsWithStyles = settings as { separationQuality: string; lyricStyles?: LyricStyleConfig; songPreferences?: Record<string, { furigana?: boolean; romaji?: boolean }> };
                 if (settingsWithStyles.lyricStyles) {
@@ -159,10 +170,10 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // Save settings (quality + in-app lyrics styles + songPrefs + hotkeys + song list views + overlay templates) on change
     useEffect(() => {
         if (!isInitialized.current) return;
-        window.khelper?.userData.saveSettings({ separationQuality, lyricStyles, songPreferences, hotkeys, songListViews, overlayTemplates }).catch(err =>
+        window.khelper?.userData.saveSettings({ separationQuality, language, lyricStyles, songPreferences, hotkeys, songListViews, overlayTemplates }).catch(err =>
             console.error('[UserData] Failed to save settings', err)
         );
-    }, [separationQuality, lyricStyles, songPreferences, hotkeys, songListViews, overlayTemplates]);
+    }, [separationQuality, language, lyricStyles, songPreferences, hotkeys, songListViews, overlayTemplates]);
 
     // Save recent searches on change
     useEffect(() => {
@@ -204,6 +215,14 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     const clearHistory = useCallback(() => {
         setHistory([]);
+    }, []);
+
+    const setLanguage = useCallback((nextLanguage: SupportedLanguage) => {
+        const normalized = normalizeLanguage(nextLanguage);
+        setLanguageState(normalized);
+        if (i18n.language !== normalized) {
+            void i18n.changeLanguage(normalized);
+        }
     }, []);
 
     const createPlaylist = useCallback((name: string) => {
@@ -285,6 +304,8 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             favorites,
             history,
             playlists,
+            language,
+            setLanguage,
             separationQuality,
             setSeparationQuality,
             toggleFavorite,
