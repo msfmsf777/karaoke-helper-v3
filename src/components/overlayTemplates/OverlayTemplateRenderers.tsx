@@ -496,9 +496,15 @@ const getFrameStyle = (config: SetlistOverlayTemplateConfig): React.CSSPropertie
     borderRadius: config.outerRadius,
     border: '1px solid transparent',
   };
+  const isLightPanel = config.presetId === 'clean_white';
 
   if (config.frameStyle === 'solid') {
-    return { ...base, background: 'rgba(8, 12, 18, 0.86)', borderColor: 'rgba(255,255,255,0.12)' };
+    return {
+      ...base,
+      background: isLightPanel ? 'rgba(255,255,255,0.9)' : 'rgba(8, 12, 18, 0.86)',
+      borderColor: isLightPanel ? 'rgba(17,24,39,0.18)' : 'rgba(255,255,255,0.12)',
+      boxShadow: isLightPanel ? '0 18px 46px rgba(0,0,0,0.18)' : undefined,
+    };
   }
   if (config.frameStyle === 'glass') {
     return { ...base, background: 'rgba(8, 14, 22, 0.52)', borderColor: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(8px)' };
@@ -547,9 +553,7 @@ const SetlistRow: React.FC<{
         color: config.textColor,
         minWidth: 0,
         border: waitingNext ? `1px solid ${config.accentColor}66` : '1px solid transparent',
-        animation: config.changeAnimation === 'none'
-          ? undefined
-          : `khelperSetlist${config.changeAnimation === 'fade' ? 'Fade' : 'Slide'} 260ms ease both`,
+        animation: getSetlistChangeAnimation(config),
       }}
     >
     {showNumber && (
@@ -614,6 +618,53 @@ const SetlistRow: React.FC<{
       </div>
     )}
   </div>
+  );
+};
+
+const SetlistAnimationStyles: React.FC = () => (
+  <style>{`
+    @keyframes khelperSetlistFade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes khelperSetlistSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes khelperSetlistDiskSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes khelperSetlistTicker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    @keyframes khelperSetlistTextMarquee { 0%, 12% { transform: translateX(0); } 88%, 100% { transform: translateX(calc(-50% - 14px)); } }
+    @keyframes khelperSetlistLightBreathe { 0%, 100% { opacity: .42; transform: scale(.92); } 50% { opacity: 1; transform: scale(1.08); } }
+    @keyframes khelperSetlistLightFlash { 0%, 48%, 100% { opacity: .36; } 50%, 72% { opacity: 1; } }
+    @keyframes khelperSetlistLightChase { 0% { filter: brightness(.72); } 35% { filter: brightness(1.75); } 70%, 100% { filter: brightness(.72); } }
+    @keyframes khelperSetlistCardSlide { from { opacity: 0; transform: translateX(42px) rotate(-4deg); } to { opacity: 1; transform: translateX(0) rotate(var(--khelper-card-tilt, -1deg)); } }
+  `}</style>
+);
+
+const getSetlistChangeAnimation = (config: SetlistOverlayTemplateConfig): React.CSSProperties['animation'] => {
+  if (config.changeAnimation === 'none') return undefined;
+  return `khelperSetlist${config.changeAnimation === 'fade' ? 'Fade' : 'Slide'} 260ms ease both`;
+};
+
+const getSetlistCurrentAnimationKey = (
+  state: OverlaySetlistState,
+  current: ReturnType<typeof getSetlistCurrentDisplay>
+) => `${state.isStreamWaiting ? 'waiting' : 'playing'}-${current.song?.id ?? 'empty'}-${current.title}`;
+
+const ScrollingText: React.FC<{
+  text: string;
+  threshold?: number;
+  style?: React.CSSProperties;
+}> = ({ text, threshold = 24, style }) => {
+  const shouldScroll = Array.from(text || '').length > threshold;
+  return (
+    <div style={{ ...style, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: shouldScroll ? undefined : 'ellipsis' }}>
+      {shouldScroll ? (
+        <span style={{
+          display: 'inline-flex',
+          gap: 28,
+          minWidth: 'max-content',
+          animation: 'khelperSetlistTextMarquee 12s ease-in-out infinite',
+        }}>
+          <span>{text}</span>
+          <span>{text}</span>
+        </span>
+      ) : text}
+    </div>
   );
 };
 
@@ -707,10 +758,79 @@ const AutoScrollArea: React.FC<{
   );
 };
 
+interface SetlistViewData {
+  currentSong: OverlaySongMetadata | null;
+  upcomingStart: number;
+  upcomingSongs: OverlaySongMetadata[];
+  historySongs: OverlaySongMetadata[];
+  waitingSong: OverlaySongMetadata | null;
+}
+
+const getSetlistCurrentDisplay = (
+  config: SetlistOverlayTemplateConfig,
+  state: OverlaySetlistState,
+  view: SetlistViewData
+) => {
+  const song = state.isStreamWaiting
+    ? config.emptyState === 'waiting' && config.showWaitingSongTitle
+      ? view.waitingSong
+      : null
+    : view.currentSong;
+  const label = state.isStreamWaiting
+    ? config.emptyState === 'waiting'
+      ? config.waitingText || config.currentLabel
+      : '...'
+    : config.currentLabel;
+
+  return {
+    song,
+    label,
+    title: song?.title || '...',
+    artist: song?.artist || 'Unknown Artist',
+  };
+};
+
+const alphaHex = (value: number) => Math.round(Math.max(0, Math.min(1, value)) * 255).toString(16).padStart(2, '0');
+
+const getTickerDuration = (speed: number) => `${Math.max(10, 42 - Math.max(1, Math.min(10, speed)) * 3)}s`;
+
+const getTextEffectStyle = (config: SetlistOverlayTemplateConfig): React.CSSProperties => {
+  if (config.templateOptions.textEffect === 'lcd') {
+    return {
+      letterSpacing: 1,
+      textShadow: `0 0 10px ${config.accentColor}66`,
+      fontVariantNumeric: 'tabular-nums',
+    };
+  }
+  if (config.templateOptions.textEffect === 'pixel') {
+    return {
+      letterSpacing: 1.4,
+      textShadow: `1px 0 ${config.accentColor}55, 0 1px ${config.accentColor}44`,
+      imageRendering: 'pixelated',
+      fontVariantNumeric: 'tabular-nums',
+    };
+  }
+  return {};
+};
+
+const getLightColor = (config: SetlistOverlayTemplateConfig, index: number) => {
+  if (config.templateOptions.lightPalette === 'warm') {
+    return ['#facc15', '#fb923c', '#fff7ad'][index % 3];
+  }
+  if (config.templateOptions.lightPalette === 'cool') {
+    return ['#38bdf8', '#818cf8', '#a5f3fc'][index % 3];
+  }
+  if (config.templateOptions.lightPalette === 'rainbow' || config.templateOptions.lightAnimation === 'rainbow') {
+    return ['#fb7185', '#facc15', '#34d399', '#38bdf8', '#a78bfa'][index % 5];
+  }
+  return config.accentColor;
+};
+
 export const TemplatedSetlistOverlay: React.FC<{
   design: SetlistOverlayDesign;
   state: OverlaySetlistState;
-}> = ({ design, state }) => {
+  preview?: boolean;
+}> = ({ design, state, preview = false }) => {
   const config = design.config;
   const currentSong = !state.isStreamWaiting && state.queue[state.currentIndex]
     ? state.songs[state.queue[state.currentIndex]]
@@ -725,6 +845,53 @@ export const TemplatedSetlistOverlay: React.FC<{
   const waitingSong = state.isStreamWaiting && state.queue[upcomingStart]
     ? state.songs[state.queue[upcomingStart]]
     : null;
+  const view: SetlistViewData = {
+    currentSong,
+    upcomingStart,
+    upcomingSongs,
+    historySongs,
+    waitingSong,
+  };
+
+  if (config.templateId === 'compact_strip') {
+    return <CompactStripSetlist config={config} state={state} view={view} preview={preview} />;
+  }
+
+  if (config.templateId === 'neon_signboard') {
+    return <NeonSignboardSetlist config={config} state={state} view={view} preview={preview} />;
+  }
+
+  if (config.templateId === 'countdown_counter') {
+    return <CountdownCounterSetlist config={config} state={state} view={view} preview={preview} />;
+  }
+
+  if (config.templateId === 'index_grid') {
+    return <IndexGridSetlist config={config} state={state} view={view} preview={preview} />;
+  }
+
+  if (config.templateId === 'pager_console') {
+    return <PagerConsoleSetlist config={config} state={state} view={view} preview={preview} />;
+  }
+
+  if (config.templateId === 'cassette_deck') {
+    return <CassetteDeckSetlist config={config} state={state} view={view} preview={preview} />;
+  }
+
+  if (config.templateId === 'stage_marquee') {
+    return <StageMarqueeSetlist config={config} state={state} view={view} preview={preview} />;
+  }
+
+  if (config.templateId === 'photo_stack') {
+    return <PhotoStackSetlist config={config} state={state} view={view} preview={preview} />;
+  }
+
+  if (config.templateId === 'vertical_column') {
+    return <VerticalColumnSetlist config={config} state={state} view={view} preview={preview} />;
+  }
+
+  if (config.templateId === 'spinning_disk_list') {
+    return <SpinningDiskListSetlist config={config} state={state} view={view} preview={preview} />;
+  }
 
   const hasUpcoming = config.showUpcoming;
   const hasHistory = config.templateId !== 'record_card' && config.showHistory;
@@ -737,23 +904,20 @@ export const TemplatedSetlistOverlay: React.FC<{
         width: '100%',
         height: '100%',
         boxSizing: 'border-box',
-        padding: 26,
+        padding: preview ? 26 : 0,
         background: 'transparent',
         color: config.textColor,
         fontFamily: config.fontFamily,
         overflow: 'hidden',
       }}
     >
-      <style>{`
-        @keyframes khelperSetlistFade { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes khelperSetlistSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-      `}</style>
+      <SetlistAnimationStyles />
       <div
         style={{
           width: '100%',
           height: '100%',
           boxSizing: 'border-box',
-          padding: 20,
+          padding: preview ? 20 : 12,
           display: 'flex',
           flexDirection: 'column',
           gap: config.density === 'compact' ? 12 : 18,
@@ -815,6 +979,1231 @@ export const TemplatedSetlistOverlay: React.FC<{
                 ) : null}
               </Section>
             )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const CompactStripSetlist: React.FC<{
+  config: SetlistOverlayTemplateConfig;
+  state: OverlaySetlistState;
+  view: SetlistViewData;
+  preview: boolean;
+}> = ({ config, state, view, preview }) => {
+  const current = getSetlistCurrentDisplay(config, state, view);
+  const stripHeight = preview ? config.presetId === 'minimal_text' ? '24%' : '32%' : '100%';
+  return (
+    <div style={{
+      width: '100%',
+      height: '100%',
+      boxSizing: 'border-box',
+      padding: preview ? 28 : 0,
+      display: 'flex',
+      alignItems: preview ? 'flex-end' : 'stretch',
+      color: config.textColor,
+      fontFamily: config.fontFamily,
+      overflow: 'hidden',
+    }}>
+      <SetlistAnimationStyles />
+      <div style={{
+        width: '100%',
+        height: stripHeight,
+        minHeight: preview ? 132 : 0,
+        boxSizing: 'border-box',
+        padding: preview
+          ? config.presetId === 'tag_queue' ? '18px 22px' : '16px 20px'
+          : config.presetId === 'tag_queue' ? '14px 18px' : '12px 16px',
+        display: 'grid',
+        gridTemplateColumns: config.showUpcoming ? 'minmax(240px, 0.42fr) minmax(0, 1fr)' : 'minmax(0, 1fr)',
+        gap: 18,
+        ...getFrameStyle(config),
+        borderRadius: config.outerRadius,
+      }}>
+        <div
+          style={{
+            minWidth: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 14,
+          }}
+        >
+          {config.showThumbnails && current.song?.thumbnailUrl && (
+            <img src={current.song.thumbnailUrl} alt="" style={{
+              width: 76,
+              height: 76,
+              borderRadius: Math.min(18, config.innerRadius),
+              objectFit: 'cover',
+              boxShadow: `0 0 18px ${config.accentColor}44`,
+            }} />
+          )}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ color: config.accentColor, fontSize: 13, fontWeight: 900, letterSpacing: 1.6 }}>
+              {current.label}
+            </div>
+            <div style={{
+              fontSize: 30,
+              fontWeight: 900,
+              lineHeight: 1.1,
+              marginTop: 8,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}>
+              {current.title}
+            </div>
+            {config.showArtist && current.song && (
+              <div style={{ color: config.secondaryColor, fontSize: 14, marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {current.artist}
+              </div>
+            )}
+          </div>
+        </div>
+        {config.showUpcoming && (
+          <div style={{ minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: config.accentColor, fontSize: 12, fontWeight: 900, letterSpacing: 1.2 }}>
+              <span>{config.upcomingLabel}</span>
+              {config.showCounts && <span>{view.upcomingSongs.length}</span>}
+            </div>
+            <AutoScrollArea enabled={config.autoScroll} speed={config.autoScrollSpeed} pauseMs={config.autoScrollPauseMs}>
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignContent: 'flex-start',
+                gap: 8,
+              }}>
+                {view.upcomingSongs.length ? view.upcomingSongs.map((song, index) => (
+                  <div key={`${song.id}-${index}`} style={{
+                    maxWidth: 220,
+                    minWidth: 0,
+                    padding: config.presetId === 'tag_queue' ? '8px 14px' : '7px 10px',
+                    borderRadius: config.presetId === 'tag_queue' ? 999 : config.innerRadius,
+                    background: state.isStreamWaiting && index === 0 ? `${config.accentColor}34` : 'rgba(255,255,255,0.08)',
+                    border: state.isStreamWaiting && index === 0 ? `1px solid ${config.accentColor}aa` : '1px solid rgba(255,255,255,0.1)',
+                    color: config.textColor,
+                    fontSize: config.density === 'compact' ? 14 : 15,
+                    fontWeight: 800,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    animation: getSetlistChangeAnimation(config),
+                  }}>
+                    {config.showNumbering ? `${view.upcomingStart + index + 1}. ` : ''}{song.title}
+                    {config.showDuration ? ` · ${formatDuration(song.duration)}` : ''}
+                  </div>
+                )) : (
+                  <EmptyText text="尚無待播歌曲" color={config.secondaryColor} />
+                )}
+              </div>
+            </AutoScrollArea>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const NeonSignboardSetlist: React.FC<{
+  config: SetlistOverlayTemplateConfig;
+  state: OverlaySetlistState;
+  view: SetlistViewData;
+  preview: boolean;
+}> = ({ config, state, view, preview }) => {
+  const hasHistory = config.showHistory;
+  const current = getSetlistCurrentDisplay(config, state, view);
+  return (
+    <div style={{
+      width: '100%',
+      height: '100%',
+      boxSizing: 'border-box',
+      padding: preview ? 34 : 0,
+      color: config.textColor,
+      fontFamily: config.fontFamily,
+      overflow: 'hidden',
+      background: `radial-gradient(circle at 50% 0%, ${config.accentColor}22, transparent 42%)`,
+    }}>
+      <SetlistAnimationStyles />
+      <div style={{
+        width: preview ? '58%' : '100%',
+        height: '100%',
+        margin: '0 auto',
+        boxSizing: 'border-box',
+        padding: preview ? 22 : 14,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+        transform: preview && config.presetId === 'pink_neon' ? 'rotate(-1deg)' : undefined,
+        ...getFrameStyle(config),
+        boxShadow: `0 0 28px ${config.accentColor}88, inset 0 0 24px ${config.accentColor}22`,
+      }}>
+        {config.showCurrent && (
+          <div key={getSetlistCurrentAnimationKey(state, current)} style={{
+            flex: '0 0 auto',
+            border: `2px solid ${config.accentColor}`,
+            borderRadius: config.innerRadius,
+            padding: '14px 18px',
+            background: `${config.accentColor}16`,
+            boxShadow: `0 0 18px ${config.accentColor}66`,
+            animation: getSetlistChangeAnimation(config),
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: config.accentColor, fontWeight: 900, fontSize: 13, letterSpacing: 2 }}>
+              <span>{current.label}</span>
+              {config.showCounts && <span>{view.upcomingSongs.length}</span>}
+            </div>
+            <div style={{ marginTop: 10, fontSize: 30, fontWeight: 900, textShadow: `0 0 14px ${config.accentColor}`, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {current.title}
+            </div>
+            {config.showArtist && current.song && (
+              <div style={{ color: config.secondaryColor, fontSize: 14, marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {current.artist}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: hasHistory ? '2fr 1fr' : '1fr', gap: 14 }}>
+          {config.showUpcoming && (
+            <Section label={config.upcomingLabel} count={view.upcomingSongs.length} config={config} flex="1 1 0">
+              <AutoScrollArea enabled={config.autoScroll} speed={config.autoScrollSpeed} pauseMs={config.autoScrollPauseMs}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {view.upcomingSongs.map((song, index) => (
+                    <SetlistRow
+                      key={`${song.id}-${index}`}
+                      song={song}
+                      index={view.upcomingStart + index + 1}
+                      config={config}
+                      waitingNext={state.isStreamWaiting && index === 0}
+                    />
+                  ))}
+                </div>
+              </AutoScrollArea>
+            </Section>
+          )}
+          {hasHistory && (
+            <Section label={config.historyLabel} count={view.historySongs.length} config={config} flex="1 1 0">
+              <AutoScrollArea enabled={config.autoScroll} speed={config.autoScrollSpeed} pauseMs={config.autoScrollPauseMs}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {view.historySongs.map((song, index) => (
+                    <SetlistRow key={`${song.id}-${index}`} song={song} config={config} />
+                  ))}
+                </div>
+              </AutoScrollArea>
+            </Section>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const CountdownCounterSetlist: React.FC<{
+  config: SetlistOverlayTemplateConfig;
+  state: OverlaySetlistState;
+  view: SetlistViewData;
+  preview: boolean;
+}> = ({ config, state, view, preview }) => {
+  const reserveCount = config.showUpcoming ? view.upcomingSongs.length : 0;
+  const current = getSetlistCurrentDisplay(config, state, view);
+  return (
+    <div style={{
+      width: '100%',
+      height: '100%',
+      boxSizing: 'border-box',
+      padding: preview ? 36 : 0,
+      display: 'grid',
+      placeItems: 'center',
+      color: config.textColor,
+      fontFamily: config.fontFamily,
+      overflow: 'hidden',
+      background: config.presetId === 'gold_countdown'
+        ? `radial-gradient(circle at 50% 40%, ${config.accentColor}22, transparent 42%)`
+        : undefined,
+    }}>
+      <SetlistAnimationStyles />
+      <div style={{
+        width: preview ? '64%' : '100%',
+        height: preview ? '74%' : '100%',
+        boxSizing: 'border-box',
+        padding: preview ? 24 : 16,
+        display: 'grid',
+        gridTemplateRows: 'auto auto minmax(0, 1fr)',
+        gap: 14,
+        textAlign: 'center',
+        overflow: 'hidden',
+        ...getFrameStyle(config),
+      }}>
+        <div style={{ color: config.secondaryColor, fontSize: 16, fontWeight: 800, letterSpacing: 3 }}>
+          {config.upcomingLabel}
+        </div>
+        <div style={{ display: 'grid', placeItems: 'center' }}>
+          <div style={{
+            width: 136,
+            height: 136,
+            borderRadius: '50%',
+            display: 'grid',
+            placeItems: 'center',
+            border: `2px solid ${config.accentColor}`,
+            color: config.accentColor,
+            fontSize: 66,
+            fontWeight: 950,
+            lineHeight: 1,
+            textShadow: `0 0 18px ${config.accentColor}88`,
+            boxShadow: `0 0 24px ${config.accentColor}55, inset 0 0 20px ${config.accentColor}18`,
+          }}>
+            {reserveCount}
+          </div>
+        </div>
+        <div style={{ minHeight: 0, overflow: 'hidden', display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)', gap: 12 }}>
+          <div key={getSetlistCurrentAnimationKey(state, current)} style={{
+            borderRadius: config.innerRadius,
+            background: `${config.accentColor}12`,
+            padding: '10px 16px',
+            border: `1px solid ${config.accentColor}44`,
+            animation: getSetlistChangeAnimation(config),
+          }}>
+            <div style={{ color: config.accentColor, fontSize: 12, fontWeight: 900, letterSpacing: 2 }}>
+              {current.label}
+            </div>
+            <div style={{ marginTop: 6, fontSize: 26, fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {current.title}
+            </div>
+            {config.showArtist && current.song && (
+              <div style={{ color: config.secondaryColor, marginTop: 3, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {current.artist}
+              </div>
+            )}
+          </div>
+          {config.showUpcoming && (
+            <AutoScrollArea enabled={config.autoScroll} speed={config.autoScrollSpeed} pauseMs={config.autoScrollPauseMs}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, textAlign: 'left' }}>
+                {view.upcomingSongs.map((song, index) => (
+                  <SetlistRow
+                    key={`${song.id}-${index}`}
+                    song={song}
+                    index={view.upcomingStart + index + 1}
+                    config={config}
+                    waitingNext={state.isStreamWaiting && index === 0}
+                  />
+                ))}
+              </div>
+            </AutoScrollArea>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const IndexGridSetlist: React.FC<{
+  config: SetlistOverlayTemplateConfig;
+  state: OverlaySetlistState;
+  view: SetlistViewData;
+  preview: boolean;
+}> = ({ config, state, view, preview }) => {
+  const allSongs = config.showUpcoming
+    ? state.queue.map((id) => state.songs[id]).filter(Boolean)
+    : [];
+  const columns = Math.max(2, Math.min(6, config.gridColumns || 4));
+  const current = getSetlistCurrentDisplay(config, state, view);
+  return (
+    <div style={{
+      width: '100%',
+      height: '100%',
+      boxSizing: 'border-box',
+      padding: preview ? 34 : 0,
+      color: config.textColor,
+      fontFamily: config.fontFamily,
+      overflow: 'hidden',
+      background: config.presetId === 'rose_grid'
+        ? `linear-gradient(135deg, ${config.accentColor}18, transparent 55%)`
+        : undefined,
+    }}>
+      <SetlistAnimationStyles />
+      <div style={{
+        width: '100%',
+        height: '100%',
+        boxSizing: 'border-box',
+        padding: preview ? 22 : 12,
+        display: 'grid',
+        gridTemplateRows: config.showCurrent ? 'auto minmax(0, 1fr)' : 'minmax(0, 1fr)',
+        gap: 16,
+        ...getFrameStyle(config),
+      }}>
+        {config.showCurrent && (
+          <div key={getSetlistCurrentAnimationKey(state, current)} style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1fr) auto',
+            gap: 14,
+            alignItems: 'center',
+            padding: '12px 16px',
+            borderRadius: config.innerRadius,
+            border: `1px solid ${config.accentColor}55`,
+            background: `${config.accentColor}12`,
+            animation: getSetlistChangeAnimation(config),
+          }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ color: config.accentColor, fontSize: 12, fontWeight: 900, letterSpacing: 2 }}>
+                {current.label}
+              </div>
+              <div style={{ marginTop: 5, fontSize: 26, fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {current.title}
+              </div>
+            </div>
+            {config.showCounts && <div style={{ color: config.accentColor, fontSize: 34, fontWeight: 950 }}>{allSongs.length}</div>}
+          </div>
+        )}
+        <AutoScrollArea enabled={config.autoScroll} speed={config.autoScrollSpeed} pauseMs={config.autoScrollPauseMs}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+            gap: config.density === 'compact' ? 8 : 10,
+          }}>
+            {allSongs.map((song, index) => {
+              const active = !state.isStreamWaiting && index === state.currentIndex;
+              const waitingNext = state.isStreamWaiting && index === state.currentIndex;
+              return (
+                <div key={`${song.id}-${index}`} style={{
+                  minWidth: 0,
+                  padding: config.density === 'compact' ? '7px 8px' : '9px 10px',
+                  borderRadius: config.innerRadius,
+                  background: active || waitingNext ? `${config.accentColor}24` : 'rgba(255,255,255,0.04)',
+                  border: active || waitingNext ? `1px solid ${config.accentColor}88` : '1px solid rgba(255,255,255,0.08)',
+                  animation: getSetlistChangeAnimation(config),
+                  display: 'grid',
+                  gridTemplateColumns: config.showNumbering ? '30px minmax(0,1fr)' : 'minmax(0,1fr)',
+                  gap: 8,
+                  alignItems: 'center',
+                }}>
+                  {config.showNumbering && (
+                    <div style={{ color: active || waitingNext ? config.accentColor : config.secondaryColor, fontWeight: 900, fontSize: 13, textAlign: 'right' }}>
+                      {index + 1}
+                    </div>
+                  )}
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: config.density === 'compact' ? 14 : 15, fontWeight: active || waitingNext ? 900 : 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {song.title}
+                    </div>
+                    {(config.showArtist || config.showDuration) && (
+                      <div style={{ color: config.secondaryColor, fontSize: 11, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {config.showArtist ? (song.artist || 'Unknown Artist') : ''}
+                        {config.showArtist && config.showDuration ? ' · ' : ''}
+                        {config.showDuration ? formatDuration(song.duration) : ''}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </AutoScrollArea>
+      </div>
+    </div>
+  );
+};
+
+const GraphicReserveList: React.FC<{
+  config: SetlistOverlayTemplateConfig;
+  state: OverlaySetlistState;
+  view: SetlistViewData;
+  compact?: boolean;
+}> = ({ config, state, view, compact = false }) => (
+  <AutoScrollArea enabled={config.autoScroll} speed={config.autoScrollSpeed} pauseMs={config.autoScrollPauseMs}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 6 : 8 }}>
+      {view.upcomingSongs.length ? view.upcomingSongs.map((song, index) => (
+        <SetlistRow
+          key={`${song.id}-${index}`}
+          song={song}
+          index={view.upcomingStart + index + 1}
+          config={config}
+          waitingNext={state.isStreamWaiting && index === 0}
+        />
+      )) : (
+        <EmptyText text="尚無待播歌曲" color={config.secondaryColor} />
+      )}
+    </div>
+  </AutoScrollArea>
+);
+
+const PagerConsoleSetlist: React.FC<{
+  config: SetlistOverlayTemplateConfig;
+  state: OverlaySetlistState;
+  view: SetlistViewData;
+  preview: boolean;
+}> = ({ config, state, view, preview }) => {
+  const current = getSetlistCurrentDisplay(config, state, view);
+  const lcdColor = config.presetId === 'lime_lcd' ? '#bdd3a5' : config.presetId === 'amber_lcd' ? '#2f2110' : '#0f172a';
+  const shellColor = config.presetId === 'lime_lcd' ? '#49698a' : config.presetId === 'amber_lcd' ? '#5b3920' : '#1f2937';
+  const tickerItems = config.templateOptions.tickerSource === 'history' ? view.historySongs : view.upcomingSongs;
+  const tickerLabel = config.templateOptions.tickerSource === 'history' ? config.historyLabel : config.upcomingLabel;
+  const tickerText = tickerItems.map((song) => `${song.title}${config.showArtist && song.artist ? ` / ${song.artist}` : ''}`).join('   ·   ');
+  const lcdTextStyle = getTextEffectStyle(config);
+
+  return (
+    <div style={{
+      width: '100%',
+      height: '100%',
+      boxSizing: 'border-box',
+      padding: preview ? 34 : 0,
+      display: 'grid',
+      placeItems: 'center',
+      color: config.textColor,
+      fontFamily: config.fontFamily,
+      overflow: 'hidden',
+      background: `radial-gradient(circle at 50% 18%, ${config.accentColor}${Math.round(config.templateOptions.textureOpacity * 80).toString(16).padStart(2, '0')}, transparent 50%)`,
+    }}>
+      <SetlistAnimationStyles />
+      <div style={{
+        width: preview ? '78%' : '100%',
+        height: preview ? '76%' : '100%',
+        maxWidth: preview ? 820 : undefined,
+        boxSizing: 'border-box',
+        padding: preview ? 28 : 22,
+        borderRadius: config.outerRadius,
+        border: '3px solid rgba(0,0,0,0.55)',
+        background: `linear-gradient(145deg, ${shellColor}, rgba(255,255,255,0.18)), ${shellColor}`,
+        boxShadow: `inset 0 0 0 2px rgba(255,255,255,0.18), 0 20px 48px rgba(0,0,0,0.35)`,
+        display: 'grid',
+        gridTemplateRows: 'minmax(0, 1fr) auto',
+        gap: 18,
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          minHeight: 0,
+          display: 'grid',
+          gridTemplateRows: config.showUpcoming ? 'minmax(0, 1fr) auto' : 'minmax(0, 1fr)',
+          gap: 14,
+          padding: preview ? 18 : 14,
+          borderRadius: config.innerRadius,
+          background: lcdColor,
+          color: config.presetId === 'lime_lcd' ? '#344234' : config.textColor,
+          boxShadow: `inset 0 0 0 4px rgba(0,0,0,0.45), inset 0 0 28px rgba(0,0,0,${config.templateOptions.textureOpacity})`,
+        }}>
+          <div key={getSetlistCurrentAnimationKey(state, current)} style={{
+            minWidth: 0,
+            minHeight: 0,
+            display: 'grid',
+            placeItems: 'center',
+            textAlign: 'center',
+            animation: getSetlistChangeAnimation(config),
+          }}>
+            <div style={{ width: '100%', minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 2.5, opacity: 0.72, ...lcdTextStyle }}>{current.label}</div>
+              <ScrollingText
+                text={current.title}
+                threshold={18}
+                style={{
+                  marginTop: 12,
+                  fontSize: 'clamp(34px, 8vw, 82px)',
+                  lineHeight: 1.02,
+                  fontWeight: 950,
+                  ...lcdTextStyle,
+                }}
+              />
+              {config.showArtist && current.song && (
+                <ScrollingText
+                  text={current.artist}
+                  threshold={28}
+                  style={{ marginTop: 8, fontSize: 'clamp(14px, 2.1vw, 24px)', fontWeight: 800, opacity: 0.72, ...lcdTextStyle }}
+                />
+              )}
+            </div>
+          </div>
+          {config.showUpcoming && tickerText && (
+            <div style={{
+              minWidth: 0,
+              overflow: 'hidden',
+              borderTop: `1px solid ${config.accentColor}${alphaHex(0.38)}`,
+              background: 'rgba(0,0,0,0.16)',
+              padding: '8px 10px',
+              fontSize: 14,
+              fontWeight: 850,
+              whiteSpace: 'nowrap',
+            }}>
+              <div style={{
+                display: 'inline-flex',
+                gap: 32,
+                minWidth: '200%',
+                animation: `khelperSetlistTicker ${getTickerDuration(config.templateOptions.tickerSpeed)} linear infinite`,
+                ...lcdTextStyle,
+              }}>
+                <span>{tickerLabel}: {tickerText}</span>
+                <span>{tickerLabel}: {tickerText}</span>
+              </div>
+            </div>
+          )}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', opacity: 0.9 }}>
+          <div style={{ fontStyle: 'italic', fontWeight: 700, color: '#fff' }}>{config.templateOptions.footerLabel}</div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            {[0, 1, 2].map((item) => (
+              <div key={item} style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(#fff, #bbb)', boxShadow: 'inset 0 -4px 8px rgba(0,0,0,0.22)' }} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const CassetteDeckSetlist: React.FC<{
+  config: SetlistOverlayTemplateConfig;
+  state: OverlaySetlistState;
+  view: SetlistViewData;
+  preview: boolean;
+}> = ({ config, state, view, preview }) => {
+  const current = getSetlistCurrentDisplay(config, state, view);
+  const reelSpin = config.templateOptions.diskSpinMode !== 'off' && !state.isStreamWaiting;
+  const reelDuration = `${Math.max(1.5, 10 - config.templateOptions.diskSpinSpeed * 0.7)}s`;
+  const depth = config.templateOptions.cassetteDepth;
+  const shellLight = config.presetId === 'cream_retro' ? 'rgba(255,247,220,0.92)' : config.presetId === 'noir_tape' ? 'rgba(26,28,32,0.96)' : 'rgba(34,36,48,0.88)';
+  const labelBg = config.presetId === 'cream_retro' ? '#fff7d6' : config.presetId === 'noir_tape' ? '#111827' : `${config.accentColor}20`;
+
+  return (
+    <div style={{
+      width: '100%',
+      height: '100%',
+      boxSizing: 'border-box',
+      padding: preview ? 36 : 0,
+      color: config.textColor,
+      fontFamily: config.fontFamily,
+      overflow: 'hidden',
+      background: `linear-gradient(135deg, ${config.accentColor}${Math.round(config.templateOptions.textureOpacity * 120).toString(16).padStart(2, '0')}, transparent 60%)`,
+    }}>
+      <SetlistAnimationStyles />
+      <div style={{
+        width: '100%',
+        height: '100%',
+        boxSizing: 'border-box',
+        padding: preview ? 42 : 22,
+        display: 'grid',
+        placeItems: 'center',
+        overflow: 'hidden',
+      }}>
+        <div
+          key={getSetlistCurrentAnimationKey(state, current)}
+          style={{
+            width: 'min(92%, 980px)',
+            aspectRatio: '1.68',
+            borderRadius: `clamp(18px, ${config.outerRadius}px, 42px)`,
+            padding: 'clamp(18px, 4vw, 46px)',
+            boxSizing: 'border-box',
+            position: 'relative',
+            display: 'grid',
+            gridTemplateRows: 'auto minmax(0, 1fr) auto',
+            gap: 'clamp(12px, 2vw, 22px)',
+            color: config.textColor,
+            background: `
+              linear-gradient(145deg, rgba(255,255,255,${0.1 + depth * 0.18}), transparent 28%),
+              linear-gradient(315deg, rgba(0,0,0,${0.22 + depth * 0.35}), transparent 34%),
+              ${shellLight}
+            `,
+            border: `2px solid rgba(255,255,255,${0.14 + depth * 0.18})`,
+            boxShadow: `0 ${Math.round(18 + depth * 38)}px ${Math.round(32 + depth * 50)}px rgba(0,0,0,${0.22 + depth * 0.28}), inset 0 0 0 3px rgba(255,255,255,0.08), inset 0 -18px 40px rgba(0,0,0,${0.12 + depth * 0.22})`,
+            animation: getSetlistChangeAnimation(config),
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: config.accentColor, fontWeight: 950, letterSpacing: 2, fontSize: 'clamp(12px, 1.5vw, 18px)' }}>
+            <span>{current.label}</span>
+            {config.showDuration && current.song && <span>{formatDuration(current.song.duration)}</span>}
+          </div>
+
+          <div style={{
+            minHeight: 0,
+            borderRadius: 'clamp(14px, 2vw, 24px)',
+            border: `2px solid ${config.accentColor}55`,
+            background: 'rgba(0,0,0,0.22)',
+            display: 'grid',
+            gridTemplateRows: 'minmax(0, 1fr) auto',
+            gap: 'clamp(10px, 2vw, 18px)',
+            padding: 'clamp(14px, 3vw, 34px)',
+            boxShadow: 'inset 0 0 24px rgba(0,0,0,0.35)',
+          }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr minmax(120px, 0.8fr) 1fr', alignItems: 'center', gap: 'clamp(12px, 3vw, 34px)' }}>
+              <div style={{
+                justifySelf: 'end',
+                width: 'clamp(78px, 14vw, 152px)',
+                aspectRatio: '1',
+                borderRadius: '50%',
+                border: `clamp(8px, 1.4vw, 16px) solid rgba(255,255,255,0.18)`,
+                background: `repeating-conic-gradient(from 0deg, ${config.accentColor} 0 8deg, rgba(255,255,255,0.18) 8deg 16deg, rgba(0,0,0,0.28) 16deg 24deg)`,
+                boxShadow: `0 0 24px ${config.accentColor}44, inset 0 0 22px rgba(0,0,0,0.42)`,
+                animation: reelSpin ? `khelperSetlistDiskSpin ${reelDuration} linear infinite` : undefined,
+              }} />
+              <div style={{
+                justifySelf: 'center',
+                width: '100%',
+                height: '56%',
+                borderRadius: 999,
+                border: `2px solid ${config.accentColor}55`,
+                background: 'linear-gradient(90deg, rgba(0,0,0,0.45), rgba(255,255,255,0.12), rgba(0,0,0,0.45))',
+              }} />
+              <div style={{
+                justifySelf: 'start',
+                width: 'clamp(78px, 14vw, 152px)',
+                aspectRatio: '1',
+                borderRadius: '50%',
+                border: `clamp(8px, 1.4vw, 16px) solid rgba(255,255,255,0.18)`,
+                background: `repeating-conic-gradient(from 0deg, ${config.accentColor} 0 8deg, rgba(255,255,255,0.18) 8deg 16deg, rgba(0,0,0,0.28) 16deg 24deg)`,
+                boxShadow: `0 0 24px ${config.accentColor}44, inset 0 0 22px rgba(0,0,0,0.42)`,
+                animation: reelSpin ? `khelperSetlistDiskSpin ${reelDuration} linear infinite` : undefined,
+              }} />
+            </div>
+            <div key={getSetlistCurrentAnimationKey(state, current)} style={{
+              minWidth: 0,
+              textAlign: 'center',
+              padding: 'clamp(10px, 2vw, 18px) clamp(14px, 3vw, 28px)',
+              borderRadius: 'clamp(8px, 1.5vw, 16px)',
+              background: labelBg,
+              border: `1px solid ${config.accentColor}55`,
+              boxShadow: 'inset 0 0 18px rgba(0,0,0,0.18)',
+              animation: getSetlistChangeAnimation(config),
+            }}>
+              <div style={{ fontSize: 'clamp(24px, 5vw, 56px)', lineHeight: 1.05, fontWeight: 950, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{current.title}</div>
+              {config.showArtist && current.song && <div style={{ color: config.secondaryColor, fontSize: 'clamp(13px, 1.8vw, 22px)', marginTop: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{current.artist}</div>}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10 }}>
+            {[0, 1, 2, 3, 4].map((item) => <div key={item} style={{ flex: 1, height: 'clamp(7px, 1vw, 12px)', borderRadius: 999, background: `${config.accentColor}66`, boxShadow: `0 0 10px ${config.accentColor}22` }} />)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const StageMarqueeSetlist: React.FC<{
+  config: SetlistOverlayTemplateConfig;
+  state: OverlaySetlistState;
+  view: SetlistViewData;
+  preview: boolean;
+}> = ({ config, state, view, preview }) => {
+  const current = getSetlistCurrentDisplay(config, state, view);
+  const bulbs = Array.from({ length: preview ? 18 : 24 });
+  const lightsActive = !state.isStreamWaiting && config.templateOptions.lightAnimation !== 'off';
+  const lightDuration = `${Math.max(0.65, 3.2 - config.templateOptions.tickerSpeed * 0.22)}s`;
+  const lightAnimationName = config.templateOptions.lightAnimation === 'flash'
+    ? 'khelperSetlistLightFlash'
+    : config.templateOptions.lightAnimation === 'chase'
+      ? 'khelperSetlistLightChase'
+      : 'khelperSetlistLightBreathe';
+  const waitingDim = state.isStreamWaiting ? 0.38 : 1;
+
+  return (
+    <div style={{
+      width: '100%',
+      height: '100%',
+      boxSizing: 'border-box',
+      padding: preview ? 34 : 0,
+      color: config.textColor,
+      fontFamily: config.fontFamily,
+      overflow: 'hidden',
+      background: `radial-gradient(circle at 50% 0%, ${config.accentColor}${Math.round(config.templateOptions.textureOpacity * 120).toString(16).padStart(2, '0')}, transparent 45%)`,
+    }}>
+      <SetlistAnimationStyles />
+      <div style={{
+        width: '100%',
+        height: '100%',
+        boxSizing: 'border-box',
+        padding: preview ? 24 : 16,
+        display: 'grid',
+        gridTemplateRows: 'auto auto minmax(0, 1fr)',
+        gap: 16,
+        overflow: 'hidden',
+        ...getFrameStyle(config),
+        boxShadow: `0 0 ${Math.round(30 + config.templateOptions.decorationIntensity * 30)}px ${config.accentColor}66, inset 0 0 36px ${config.accentColor}1f`,
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+          {bulbs.map((_, index) => (
+            <div key={index} style={{
+              width: 12,
+              height: 12,
+              borderRadius: '50%',
+              background: getLightColor(config, index),
+              opacity: lightsActive ? 0.68 + (index % 2) * 0.22 : 0.22,
+              boxShadow: lightsActive ? `0 0 ${Math.round(9 + config.templateOptions.decorationIntensity * 15)}px ${getLightColor(config, index)}` : 'none',
+              animation: lightsActive
+                ? `${config.templateOptions.lightAnimation === 'rainbow' ? 'khelperSetlistLightBreathe' : lightAnimationName} ${lightDuration} ease-in-out infinite`
+                : undefined,
+              animationDelay: config.templateOptions.lightAnimation === 'chase' ? `${index * 70}ms` : undefined,
+            }} />
+          ))}
+        </div>
+        {config.showCurrent && (
+          <div key={getSetlistCurrentAnimationKey(state, current)} style={{
+            minWidth: 0,
+            textAlign: 'center',
+            padding: '18px 22px',
+            borderRadius: config.innerRadius,
+            border: `2px solid ${config.accentColor}${alphaHex(0.25 + waitingDim * 0.55)}`,
+            background: `${config.accentColor}${alphaHex(state.isStreamWaiting ? 0.06 : 0.14)}`,
+            boxShadow: state.isStreamWaiting ? `0 0 8px ${config.accentColor}22` : `0 0 22px ${config.accentColor}55`,
+            opacity: state.isStreamWaiting ? 0.78 : 1,
+            animation: getSetlistChangeAnimation(config),
+          }}>
+            <div style={{ color: config.accentColor, fontSize: 13, fontWeight: 950, letterSpacing: 3 }}>{current.label}</div>
+            <div style={{ marginTop: 8, fontSize: 34, fontWeight: 950, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textShadow: `0 0 16px ${config.accentColor}88` }}>{current.title}</div>
+            {config.showArtist && current.song && <div style={{ color: config.secondaryColor, marginTop: 4, fontSize: 15 }}>{current.artist}</div>}
+          </div>
+        )}
+        <div style={{ minHeight: 0, display: 'grid', gridTemplateColumns: config.showHistory ? '2fr 1fr' : '1fr', gap: 14 }}>
+          {config.showUpcoming && (
+            <Section label={config.upcomingLabel} count={view.upcomingSongs.length} config={config} flex="1 1 0">
+              <GraphicReserveList config={config} state={state} view={view} />
+            </Section>
+          )}
+          {config.showHistory && (
+            <Section label={config.historyLabel} count={view.historySongs.length} config={config} flex="1 1 0">
+              <AutoScrollArea enabled={config.autoScroll} speed={config.autoScrollSpeed} pauseMs={config.autoScrollPauseMs}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {view.historySongs.map((song, index) => <SetlistRow key={`${song.id}-${index}`} song={song} config={config} />)}
+                </div>
+              </AutoScrollArea>
+            </Section>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const PhotoStackSetlist: React.FC<{
+  config: SetlistOverlayTemplateConfig;
+  state: OverlaySetlistState;
+  view: SetlistViewData;
+  preview: boolean;
+}> = ({ config, state, view, preview }) => {
+  const current = getSetlistCurrentDisplay(config, state, view);
+  const currentSong = current.song;
+  const cardTilt = config.templateOptions.decorationIntensity * -4;
+  const paperColor = config.presetId === 'polaroid_white'
+    ? 'rgba(255,255,255,0.95)'
+    : config.presetId === 'sakura_cards'
+      ? 'rgba(255,239,246,0.9)'
+      : 'rgba(26,24,32,0.9)';
+  const foreground = config.presetId === 'polaroid_white' || config.presetId === 'sakura_cards' ? '#111827' : config.textColor;
+  const animation = config.templateOptions.cardTransition === 'slide'
+    ? 'khelperSetlistCardSlide 360ms cubic-bezier(.2,.8,.2,1) both'
+    : getSetlistChangeAnimation(config);
+  const photoAnimationKey = state.isStreamWaiting
+    ? view.waitingSong?.id ?? 'empty'
+    : view.currentSong?.id ?? 'empty';
+  const showWaitingLabel = state.isStreamWaiting && current.label && current.label !== '...';
+
+  return (
+    <div style={{
+      width: '100%',
+      height: '100%',
+      boxSizing: 'border-box',
+      padding: preview ? 20 : 0,
+      color: config.textColor,
+      fontFamily: config.fontFamily,
+      overflow: 'hidden',
+      background: `linear-gradient(135deg, ${config.accentColor}${Math.round(config.templateOptions.textureOpacity * 110).toString(16).padStart(2, '0')}, transparent 55%)`,
+    }}>
+      <SetlistAnimationStyles />
+      <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', boxSizing: 'border-box', padding: preview ? 8 : 12 }}>
+        {config.showCurrent && (
+          <div key={photoAnimationKey} style={{
+            minWidth: 0,
+            width: preview ? 'min(72%, 520px)' : 'min(82%, 620px)',
+            padding: preview ? 'clamp(12px, 2vw, 24px)' : 'clamp(16px, 2.8vw, 34px)',
+            paddingBottom: preview ? 'clamp(24px, 4vw, 54px)' : 'clamp(34px, 5vw, 76px)',
+            borderRadius: `clamp(8px, ${Math.max(8, config.outerRadius)}px, 24px)`,
+            background: paperColor,
+            color: foreground,
+            boxShadow: `0 28px 72px rgba(0,0,0,0.34), 0 0 ${Math.round(config.templateOptions.currentGlow * 34)}px ${config.accentColor}66, inset 0 0 0 1px rgba(255,255,255,0.52)`,
+            transform: `rotate(${cardTilt}deg)`,
+            ['--khelper-card-tilt' as any]: `${cardTilt}deg`,
+            animation,
+            position: 'relative',
+          }}>
+            <div style={{
+              position: 'absolute',
+              top: -8,
+              left: '12%',
+              width: '24%',
+              height: 26,
+              transform: 'rotate(-5deg)',
+              borderRadius: 4,
+              background: `rgba(255,255,255,${0.32 + config.templateOptions.textureOpacity * 0.38})`,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.16)',
+            }} />
+            <div style={{
+              width: '100%',
+              aspectRatio: '4/3',
+              borderRadius: Math.max(6, config.innerRadius),
+              overflow: 'hidden',
+              position: 'relative',
+              background: `${config.accentColor}22`,
+              display: 'grid',
+              placeItems: 'center',
+              boxShadow: `inset 0 0 0 ${Math.max(4, Math.round(10 * config.templateOptions.textureOpacity))}px rgba(255,255,255,0.08)`,
+            }}>
+              {showWaitingLabel && (
+                <div style={{
+                  position: 'absolute',
+                  top: 'clamp(10px, 2vw, 18px)',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  maxWidth: '82%',
+                  padding: '6px 14px',
+                  borderRadius: 999,
+                  color: config.presetId === 'polaroid_white' || config.presetId === 'sakura_cards' ? '#111827' : config.textColor,
+                  background: 'rgba(255,255,255,0.78)',
+                  boxShadow: '0 8px 22px rgba(0,0,0,0.18)',
+                  fontSize: 'clamp(11px, 1.7vw, 16px)',
+                  fontWeight: 900,
+                  letterSpacing: 1.2,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  zIndex: 1,
+                }}>
+                  {current.label}
+                </div>
+              )}
+              {config.showThumbnails && currentSong?.thumbnailUrl ? (
+                <img src={currentSong.thumbnailUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ fontSize: 'clamp(34px, 5vw, 56px)', fontWeight: 900, color: config.templateOptions.noteColor }}>♪</div>
+              )}
+            </div>
+            <div style={{ marginTop: 14, textAlign: 'center' }}>
+              <div style={{ color: config.accentColor, fontSize: 12, fontWeight: 900, letterSpacing: 2 }}>{current.label}</div>
+              <div style={{ marginTop: 8, fontSize: 'clamp(24px, 4.2vw, 54px)', fontWeight: 950, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{current.title}</div>
+              {config.showArtist && currentSong && <div style={{ color: config.presetId === 'polaroid_white' ? '#4b5563' : config.secondaryColor, fontSize: 'clamp(13px, 1.8vw, 21px)', marginTop: 5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{current.artist}</div>}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const VerticalColumnSetlist: React.FC<{
+  config: SetlistOverlayTemplateConfig;
+  state: OverlaySetlistState;
+  view: SetlistViewData;
+  preview: boolean;
+}> = ({ config, state, view, preview }) => {
+  const options = config.templateOptions;
+  const current = getSetlistCurrentDisplay(config, state, view);
+  const sideInset = `${options.contentInset}%`;
+
+  return (
+    <div style={{
+      width: '100%',
+      height: '100%',
+      boxSizing: 'border-box',
+      padding: preview ? 28 : 0,
+      color: config.textColor,
+      fontFamily: config.fontFamily,
+      overflow: 'hidden',
+      background: 'transparent',
+    }}>
+      <SetlistAnimationStyles />
+      <div style={{
+        width: '100%',
+        height: '100%',
+        boxSizing: 'border-box',
+        padding: `${options.topOffset}% ${sideInset} 18px`,
+      }}>
+        <div style={{
+          width: '100%',
+          height: `${Math.max(22, 92 - options.topOffset)}%`,
+          minHeight: 0,
+          display: 'grid',
+          gridTemplateRows: config.showCurrent ? 'auto minmax(0, 1fr)' : 'minmax(0, 1fr)',
+          gap: Math.max(8, options.rowGap + 2),
+        }}>
+          {config.showCurrent && (
+            <div key={getSetlistCurrentAnimationKey(state, current)} style={{
+              minWidth: 0,
+              width: '100%',
+              padding: '8px 12px',
+              boxSizing: 'border-box',
+              color: config.textColor,
+              background: `rgba(0, 0, 0, ${options.titleBarOpacity})`,
+              borderBottom: `1px solid ${config.accentColor}${Math.round(options.dividerOpacity * 255).toString(16).padStart(2, '0')}`,
+              animation: getSetlistChangeAnimation(config),
+            }}>
+              <div style={{
+                fontSize: options.currentFontSize,
+                fontWeight: 900,
+                lineHeight: 1.1,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}>
+                {current.title}
+              </div>
+              {(config.showArtist || config.showDuration) && current.song && (
+                <div style={{ color: config.secondaryColor, fontSize: Math.max(10, options.reserveFontSize - 1), marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {config.showArtist ? current.artist : ''}
+                  {config.showArtist && config.showDuration ? ' · ' : ''}
+                  {config.showDuration ? formatDuration(current.song.duration) : ''}
+                </div>
+              )}
+            </div>
+          )}
+
+          {config.showUpcoming && (
+            <AutoScrollArea enabled={config.autoScroll} speed={config.autoScrollSpeed} pauseMs={config.autoScrollPauseMs}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: options.rowGap }}>
+                {view.upcomingSongs.length ? view.upcomingSongs.map((song, index) => {
+                  const waitingNext = state.isStreamWaiting && index === 0;
+                  return (
+                    <div key={`${song.id}-${index}`} style={{
+                      minWidth: 0,
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      padding: '2px 8px',
+                      borderLeft: waitingNext ? `3px solid ${config.accentColor}` : `1px solid ${config.accentColor}${Math.round(options.dividerOpacity * 120).toString(16).padStart(2, '0')}`,
+                      color: waitingNext ? config.accentColor : config.textColor,
+                      background: waitingNext ? `${config.accentColor}16` : 'transparent',
+                      animation: getSetlistChangeAnimation(config),
+                    }}>
+                      <div style={{
+                        fontSize: options.reserveFontSize,
+                        fontWeight: waitingNext ? 850 : 700,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}>
+                        {song.title}
+                      </div>
+                      {(config.showArtist || config.showDuration) && (
+                        <div style={{ color: config.secondaryColor, fontSize: Math.max(9, options.reserveFontSize - 3), marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {config.showArtist ? (song.artist || 'Unknown Artist') : ''}
+                          {config.showArtist && config.showDuration ? ' · ' : ''}
+                          {config.showDuration ? formatDuration(song.duration) : ''}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }) : (
+                  <EmptyText text="尚無待播歌曲" color={config.secondaryColor} />
+                )}
+              </div>
+            </AutoScrollArea>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const DiskIcon: React.FC<{
+  config: SetlistOverlayTemplateConfig;
+  active: boolean;
+  spin: boolean;
+  song?: OverlaySongMetadata | null;
+}> = ({ config, active, spin, song }) => {
+  const options = config.templateOptions;
+  const size = options.diskSize;
+  const duration = `${Math.max(1.4, 9 - options.diskSpinSpeed * 0.65)}s`;
+  const common: React.CSSProperties = {
+    width: size,
+    height: size,
+    borderRadius: '50%',
+    flex: '0 0 auto',
+    position: 'relative',
+    animation: spin ? `khelperSetlistDiskSpin ${duration} linear infinite` : undefined,
+    boxShadow: active ? `0 0 14px ${config.accentColor}66` : undefined,
+  };
+
+  if (options.diskStyle === 'thumbnail' && song?.thumbnailUrl) {
+    return (
+      <div style={{
+        ...common,
+        overflow: 'hidden',
+        border: `${options.diskBorderWidth}px solid ${active ? config.accentColor : `${config.secondaryColor}bb`}`,
+        boxSizing: 'border-box',
+        background: 'rgba(0,0,0,0.28)',
+      }}>
+        <img src={song.thumbnailUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+      </div>
+    );
+  }
+
+  if (options.diskStyle === 'dot') {
+    return <div style={{ ...common, background: active ? config.accentColor : `${config.secondaryColor}88` }} />;
+  }
+
+  if (options.diskStyle === 'ring') {
+    return (
+      <div style={{
+        ...common,
+        border: `${Math.max(2, Math.round(size * 0.12))}px solid ${active ? config.accentColor : `${config.secondaryColor}aa`}`,
+        boxSizing: 'border-box',
+      }}>
+        <div style={{
+          position: 'absolute',
+          inset: '34%',
+          borderRadius: '50%',
+          background: active ? config.accentColor : `${config.secondaryColor}88`,
+        }} />
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      ...common,
+      overflow: 'hidden',
+      background: `
+        radial-gradient(circle at 50% 50%, rgba(0,0,0,0.86) 0 14%, transparent 15%),
+        repeating-radial-gradient(circle, ${active ? config.accentColor : config.secondaryColor} 0 1px, rgba(0,0,0,0.32) 1px 3px, rgba(255,255,255,0.1) 3px 5px),
+        conic-gradient(from 28deg, rgba(255,255,255,0.18), rgba(0,0,0,0.15) 18%, rgba(255,255,255,0.08) 34%, rgba(0,0,0,0.35) 58%, rgba(255,255,255,0.16) 76%, rgba(0,0,0,0.18))
+      `,
+      border: `1px solid ${active ? config.accentColor : `${config.secondaryColor}99`}`,
+    }}>
+      <div style={{
+        position: 'absolute',
+        left: '57%',
+        top: '16%',
+        width: '28%',
+        height: '10%',
+        borderRadius: 999,
+        background: active ? `${config.accentColor}dd` : 'rgba(255,255,255,0.42)',
+        boxShadow: `0 0 8px ${config.accentColor}66`,
+        transform: 'rotate(24deg)',
+      }} />
+      <div style={{
+        position: 'absolute',
+        left: '23%',
+        top: '68%',
+        width: '15%',
+        height: '6%',
+        borderRadius: 999,
+        background: 'rgba(255,255,255,0.35)',
+        transform: 'rotate(-32deg)',
+      }} />
+      <div style={{
+        position: 'absolute',
+        inset: '34%',
+        borderRadius: '50%',
+        background: `radial-gradient(circle, rgba(0,0,0,0.52), ${active ? config.accentColor : config.secondaryColor} 72%)`,
+        border: `1px solid ${active ? config.textColor : 'rgba(255,255,255,0.45)'}`,
+      }} />
+    </div>
+  );
+};
+
+const SpinningDiskListSetlist: React.FC<{
+  config: SetlistOverlayTemplateConfig;
+  state: OverlaySetlistState;
+  view: SetlistViewData;
+  preview: boolean;
+}> = ({ config, state, view, preview }) => {
+  const options = config.templateOptions;
+  const current = getSetlistCurrentDisplay(config, state, view);
+  const historySongs = config.showHistory ? view.historySongs : [];
+  const currentSpin = options.diskSpinMode === 'current' || options.diskSpinMode === 'all';
+  const historySpin = options.diskSpinMode === 'all';
+
+  return (
+    <div style={{
+      width: '100%',
+      height: '100%',
+      boxSizing: 'border-box',
+      padding: preview ? 32 : 0,
+      color: config.textColor,
+      fontFamily: config.fontFamily,
+      overflow: 'hidden',
+      background: 'transparent',
+    }}>
+      <SetlistAnimationStyles />
+      <div style={{
+        width: '100%',
+        height: '100%',
+        boxSizing: 'border-box',
+        display: 'grid',
+        gridTemplateRows: 'minmax(0, 1fr) auto',
+        gap: options.rowGap,
+        padding: preview ? '20px 30px' : `${options.contentInset}%`,
+        overflow: 'hidden',
+      }}>
+        <AutoScrollArea enabled={config.autoScroll} speed={config.autoScrollSpeed} pauseMs={config.autoScrollPauseMs}>
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', minHeight: '100%', gap: options.rowGap }}>
+            {historySongs.length ? historySongs.map((song, index) => (
+              <div key={`${song.id}-${index}`} style={{
+                minWidth: 0,
+                width: '86%',
+                alignSelf: 'flex-start',
+                boxSizing: 'border-box',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '7px 10px',
+                borderRadius: config.innerRadius,
+                background: `rgba(12, 10, 18, ${options.rowOpacity})`,
+                border: '1px solid rgba(255,255,255,0.1)',
+                opacity: options.rowOpacity,
+                animation: getSetlistChangeAnimation(config),
+              }}>
+                <DiskIcon config={config} active={false} spin={historySpin} song={song} />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 750, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {song.title}
+                  </div>
+                  {(config.showArtist || config.showDuration) && (
+                    <div style={{ color: config.secondaryColor, fontSize: 12, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {config.showArtist ? (song.artist || 'Unknown Artist') : ''}
+                      {config.showArtist && config.showDuration ? ' · ' : ''}
+                      {config.showDuration ? formatDuration(song.duration) : ''}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )) : null}
+          </div>
+        </AutoScrollArea>
+
+        {config.showCurrent && (
+          <div key={getSetlistCurrentAnimationKey(state, current)} style={{
+            minWidth: 0,
+            width: '100%',
+            boxSizing: 'border-box',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '10px 14px',
+            borderRadius: config.innerRadius,
+            background: `rgba(12, 10, 18, ${Math.min(0.96, options.rowOpacity + options.currentEmphasis * 0.24)})`,
+            border: `1px solid ${config.accentColor}88`,
+            boxShadow: `0 0 ${Math.round(options.currentGlow * 28)}px ${config.accentColor}66`,
+            animation: getSetlistChangeAnimation(config),
+          }}>
+            <DiskIcon config={config} active spin={currentSpin && !state.isStreamWaiting} song={current.song} />
+            <div style={{ minWidth: 0 }}>
+              <div style={{
+                color: config.accentColor,
+                fontSize: 11,
+                fontWeight: 900,
+                letterSpacing: 1.4,
+              }}>
+                {current.label}
+              </div>
+              <div style={{
+                fontSize: 18 + Math.round(options.currentEmphasis * 8),
+                fontWeight: 950,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}>
+                {current.title}
+              </div>
+              {(config.showArtist || config.showDuration) && current.song && (
+                <div style={{ color: config.secondaryColor, fontSize: 12, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {config.showArtist ? current.artist : ''}
+                  {config.showArtist && config.showDuration ? ' · ' : ''}
+                  {config.showDuration ? formatDuration(current.song.duration) : ''}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

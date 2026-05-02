@@ -10,10 +10,13 @@ import {
   DEFAULT_OVERLAY_FONT,
   findLyricsOverlayDesign,
   findSetlistOverlayDesign,
+  getSetlistPresetLabel,
+  getSetlistTemplatePreset,
   LyricsOverlayDesign,
   mergeOverlayTemplatesConfig,
   OverlayKind,
   OverlayTemplatesConfig,
+  SETLIST_TEMPLATE_PRESETS,
   SETLIST_TEMPLATE_LABELS,
   SetlistOverlayDesign,
   SetlistTemplateId,
@@ -159,7 +162,10 @@ const OverlayTemplateSettingsSection: React.FC<OverlayTemplateSettingsSectionPro
           onCopy={(id) => copyLink('setlist', id)}
           onDelete={deleteSetlistDesign}
           canDelete={(id) => overlayTemplates.setlistDesigns.length > 1 && id !== 'default'}
-          summary={(design) => SETLIST_TEMPLATE_LABELS[(design as SetlistOverlayDesign).config.templateId]}
+          summary={(design) => {
+            const config = (design as SetlistOverlayDesign).config;
+            return `${SETLIST_TEMPLATE_LABELS[config.templateId]} · ${getSetlistPresetLabel(config.templateId, config.presetId)}`;
+          }}
         />
       </div>
 
@@ -740,7 +746,7 @@ export const OverlayTemplateEditor: React.FC<OverlayTemplateEditorProps> = ({ in
                     romajiEnabled={true}
                   />
                 ) : (
-                  <TemplatedSetlistOverlay design={selectedSetlistDesign} state={previewSetlistState} />
+                  <TemplatedSetlistOverlay design={selectedSetlistDesign} state={previewSetlistState} preview />
                 )}
               </PreviewStage>
             </div>
@@ -819,25 +825,173 @@ const LyricsInspector: React.FC<{
 };
 
 const SETLIST_TEMPLATE_CAPABILITIES: Record<SetlistTemplateId, {
+  currentControl: boolean;
+  upcomingControl: boolean;
   history: boolean;
+  counts: boolean;
   numbering: boolean;
   thumbnails: boolean;
   density: boolean;
+  frame: boolean;
   scrolling: boolean;
+  gridColumns: boolean;
+  templateOptions: 'pager' | 'cassette' | 'stage' | 'photo' | 'vertical' | 'disk' | 'graphic' | null;
 }> = {
   classic_list: {
+    currentControl: true,
+    upcomingControl: true,
     history: true,
+    counts: true,
     numbering: true,
     thumbnails: true,
     density: true,
+    frame: true,
     scrolling: true,
+    gridColumns: false,
+    templateOptions: null,
   },
   record_card: {
+    currentControl: true,
+    upcomingControl: true,
     history: false,
+    counts: true,
     numbering: false,
     thumbnails: true,
     density: true,
+    frame: true,
     scrolling: true,
+    gridColumns: false,
+    templateOptions: null,
+  },
+  compact_strip: {
+    currentControl: true,
+    upcomingControl: true,
+    history: false,
+    counts: true,
+    numbering: false,
+    thumbnails: true,
+    density: true,
+    frame: true,
+    scrolling: true,
+    gridColumns: false,
+    templateOptions: null,
+  },
+  neon_signboard: {
+    currentControl: true,
+    upcomingControl: true,
+    history: true,
+    counts: true,
+    numbering: true,
+    thumbnails: false,
+    density: true,
+    frame: true,
+    scrolling: true,
+    gridColumns: false,
+    templateOptions: null,
+  },
+  countdown_counter: {
+    currentControl: true,
+    upcomingControl: true,
+    history: false,
+    counts: true,
+    numbering: true,
+    thumbnails: false,
+    density: true,
+    frame: true,
+    scrolling: true,
+    gridColumns: false,
+    templateOptions: null,
+  },
+  index_grid: {
+    currentControl: true,
+    upcomingControl: true,
+    history: false,
+    counts: true,
+    numbering: true,
+    thumbnails: false,
+    density: true,
+    frame: true,
+    scrolling: true,
+    gridColumns: true,
+    templateOptions: null,
+  },
+  pager_console: {
+    currentControl: true,
+    upcomingControl: true,
+    history: false,
+    counts: false,
+    numbering: true,
+    thumbnails: false,
+    density: false,
+    frame: false,
+    scrolling: true,
+    gridColumns: false,
+    templateOptions: 'pager',
+  },
+  cassette_deck: {
+    currentControl: false,
+    upcomingControl: false,
+    history: false,
+    counts: false,
+    numbering: false,
+    thumbnails: true,
+    density: false,
+    frame: false,
+    scrolling: false,
+    gridColumns: false,
+    templateOptions: 'cassette',
+  },
+  stage_marquee: {
+    currentControl: true,
+    upcomingControl: true,
+    history: true,
+    counts: true,
+    numbering: true,
+    thumbnails: false,
+    density: true,
+    frame: true,
+    scrolling: true,
+    gridColumns: false,
+    templateOptions: 'stage',
+  },
+  photo_stack: {
+    currentControl: false,
+    upcomingControl: false,
+    history: false,
+    counts: false,
+    numbering: false,
+    thumbnails: true,
+    density: false,
+    frame: false,
+    scrolling: false,
+    gridColumns: false,
+    templateOptions: 'photo',
+  },
+  vertical_column: {
+    currentControl: true,
+    upcomingControl: true,
+    history: false,
+    counts: false,
+    numbering: false,
+    thumbnails: false,
+    density: false,
+    frame: false,
+    scrolling: true,
+    gridColumns: false,
+    templateOptions: 'vertical',
+  },
+  spinning_disk_list: {
+    currentControl: false,
+    upcomingControl: false,
+    history: true,
+    counts: false,
+    numbering: false,
+    thumbnails: false,
+    density: false,
+    frame: false,
+    scrolling: true,
+    gridColumns: false,
+    templateOptions: 'disk',
   },
 };
 
@@ -851,11 +1005,63 @@ const SetlistInspector: React.FC<{
   const updateConfig = (updates: Partial<typeof config>) => {
     onChange(current => ({ ...current, config: { ...current.config, ...updates } }));
   };
+  const updateTemplateOptions = (updates: Partial<typeof config.templateOptions>) => {
+    onChange(current => ({
+      ...current,
+      config: {
+        ...current.config,
+        templateOptions: { ...current.config.templateOptions, ...updates },
+      },
+    }));
+  };
+  const applyTemplate = (templateId: SetlistTemplateId) => {
+    onChange(current => ({
+      ...current,
+      config: {
+        ...createDefaultSetlistConfig(templateId),
+        fontFamily: current.config.fontFamily,
+      },
+    }));
+  };
+  const applyPreset = (presetId: string) => {
+    onChange(current => {
+      const preset = getSetlistTemplatePreset(current.config.templateId, presetId);
+      const { templateOptions: presetTemplateOptions, ...presetDefaults } = preset.defaults;
+      const {
+        currentLabel,
+        upcomingLabel,
+        historyLabel,
+        showCurrent,
+        showUpcoming,
+        showHistory,
+      } = current.config;
+      return {
+        ...current,
+        config: {
+          ...current.config,
+          ...presetDefaults,
+          templateId: current.config.templateId,
+          presetId: preset.id,
+          templateOptions: {
+            ...current.config.templateOptions,
+            ...presetTemplateOptions,
+          },
+          currentLabel,
+          upcomingLabel,
+          historyLabel,
+          showCurrent,
+          showUpcoming,
+          showHistory,
+        },
+      };
+    });
+  };
 
   return (
     <>
       <ControlGroup title="歌單">
-        <SelectControl label="樣式" value={config.templateId} onChange={(value) => onChange(current => ({ ...current, config: { ...createDefaultSetlistConfig(value as SetlistTemplateId), fontFamily: current.config.fontFamily, accentColor: current.config.accentColor, textColor: current.config.textColor, secondaryColor: current.config.secondaryColor } }))} options={Object.entries(SETLIST_TEMPLATE_LABELS)} />
+        <SelectControl label="樣式" value={config.templateId} onChange={(value) => applyTemplate(value as SetlistTemplateId)} options={Object.entries(SETLIST_TEMPLATE_LABELS)} />
+        <SelectControl label="外觀預設" value={config.presetId} onChange={applyPreset} options={SETLIST_TEMPLATE_PRESETS[config.templateId].map(preset => [preset.id, preset.label])} />
         <SelectControl label="字體" value={config.fontFamily} onChange={(fontFamily) => updateConfig({ fontFamily })} options={fonts.map(font => [font, font.replace(/["]/g, '').split(',')[0]])} />
         <ColorControl label="主色" value={config.accentColor} onChange={(accentColor) => updateConfig({ accentColor })} />
         <ColorControl label="文字色" value={config.textColor} onChange={(textColor) => updateConfig({ textColor })} />
@@ -863,12 +1069,18 @@ const SetlistInspector: React.FC<{
       </ControlGroup>
 
       <ControlGroup title="顯示內容">
-        <CheckboxControl label="目前歌曲" checked={config.showCurrent} onChange={(showCurrent) => updateConfig({ showCurrent })} />
-        <CheckboxControl label="待播" checked={config.showUpcoming} onChange={(showUpcoming) => updateConfig({ showUpcoming })} />
+        {capabilities.currentControl && (
+          <CheckboxControl label="目前歌曲" checked={config.showCurrent} onChange={(showCurrent) => updateConfig({ showCurrent })} />
+        )}
+        {capabilities.upcomingControl && (
+          <CheckboxControl label={config.templateId === 'pager_console' ? '底部跑馬' : '待播'} checked={config.showUpcoming} onChange={(showUpcoming) => updateConfig({ showUpcoming })} />
+        )}
         {capabilities.history && (
           <CheckboxControl label="已唱" checked={config.showHistory} onChange={(showHistory) => updateConfig({ showHistory })} />
         )}
-        <CheckboxControl label="數量" checked={config.showCounts} onChange={(showCounts) => updateConfig({ showCounts })} />
+        {capabilities.counts && (
+          <CheckboxControl label="數量" checked={config.showCounts} onChange={(showCounts) => updateConfig({ showCounts })} />
+        )}
         <CheckboxControl label="歌手" checked={config.showArtist} onChange={(showArtist) => updateConfig({ showArtist })} />
         {capabilities.numbering && (
           <CheckboxControl label="編號" checked={config.showNumbering} onChange={(showNumbering) => updateConfig({ showNumbering })} />
@@ -881,16 +1093,94 @@ const SetlistInspector: React.FC<{
 
       <ControlGroup title="標籤與動態">
         <TextControl label="目前" value={config.currentLabel} onChange={(currentLabel) => updateConfig({ currentLabel })} />
-        <TextControl label="待播" value={config.upcomingLabel} onChange={(upcomingLabel) => updateConfig({ upcomingLabel })} />
-        {capabilities.history && (
+        {capabilities.upcomingControl && (
+          <TextControl label={config.templateId === 'pager_console' ? '待播跑馬標籤' : '待播'} value={config.upcomingLabel} onChange={(upcomingLabel) => updateConfig({ upcomingLabel })} />
+        )}
+        {capabilities.history && config.templateId !== 'spinning_disk_list' && (
           <TextControl label="已唱" value={config.historyLabel} onChange={(historyLabel) => updateConfig({ historyLabel })} />
         )}
         {capabilities.density && (
           <SelectControl label="密度" value={config.density} onChange={(density) => updateConfig({ density: density as any })} options={[['compact', '緊湊'], ['comfortable', '舒適']]} />
         )}
-        <SelectControl label="外框" value={config.frameStyle} onChange={(frameStyle) => updateConfig({ frameStyle: frameStyle as any })} options={[['solid', '實色'], ['glass', '玻璃'], ['neon', '霓虹']]} />
-        <RangeControl label="外框圓角" min={0} max={48} value={config.outerRadius} onChange={(outerRadius) => updateConfig({ outerRadius })} />
-        <RangeControl label="內部項目圓角" min={0} max={32} value={config.innerRadius} onChange={(innerRadius) => updateConfig({ innerRadius })} />
+        {capabilities.frame && (
+          <>
+            <SelectControl label="外框" value={config.frameStyle} onChange={(frameStyle) => updateConfig({ frameStyle: frameStyle as any })} options={[['solid', '實色'], ['glass', '玻璃'], ['neon', '霓虹']]} />
+            <RangeControl label="外框圓角" min={0} max={48} value={config.outerRadius} onChange={(outerRadius) => updateConfig({ outerRadius })} />
+            <RangeControl label="內部項目圓角" min={0} max={32} value={config.innerRadius} onChange={(innerRadius) => updateConfig({ innerRadius })} />
+          </>
+        )}
+        {capabilities.gridColumns && (
+          <RangeControl label="欄數" min={2} max={6} value={config.gridColumns} onChange={(gridColumns) => updateConfig({ gridColumns })} />
+        )}
+        {capabilities.templateOptions === 'graphic' && (
+          <>
+            <RangeControl label="裝飾強度" min={0} max={1} step={0.05} value={config.templateOptions.decorationIntensity} displayValue={`${Math.round(config.templateOptions.decorationIntensity * 100)}%`} onChange={(decorationIntensity) => updateTemplateOptions({ decorationIntensity })} />
+            <RangeControl label="材質紋理" min={0} max={1} step={0.05} value={config.templateOptions.textureOpacity} displayValue={`${Math.round(config.templateOptions.textureOpacity * 100)}%`} onChange={(textureOpacity) => updateTemplateOptions({ textureOpacity })} />
+            <SelectControl label="裝飾動態" value={config.templateOptions.motionDetail} onChange={(motionDetail) => updateTemplateOptions({ motionDetail: motionDetail as any })} options={[['off', '關閉'], ['subtle', '細緻'], ['full', '完整']]} />
+          </>
+        )}
+        {capabilities.templateOptions === 'pager' && (
+          <>
+            <SelectControl label="文字效果" value={config.templateOptions.textEffect} onChange={(textEffect) => updateTemplateOptions({ textEffect: textEffect as any })} options={[['normal', '一般'], ['lcd', 'LCD'], ['pixel', '像素感']]} />
+            <SelectControl label="跑馬內容" value={config.templateOptions.tickerSource} onChange={(tickerSource) => updateTemplateOptions({ tickerSource: tickerSource as any })} options={[['upcoming', '待播清單'], ['history', '已唱清單']]} />
+            {config.templateOptions.tickerSource === 'history' && (
+              <TextControl label="已唱跑馬標籤" value={config.historyLabel} onChange={(historyLabel) => updateConfig({ historyLabel })} />
+            )}
+            <TextControl label="左下文字" value={config.templateOptions.footerLabel} onChange={(footerLabel) => updateTemplateOptions({ footerLabel })} />
+            <RangeControl label="跑馬速度" min={1} max={10} value={config.templateOptions.tickerSpeed} onChange={(tickerSpeed) => updateTemplateOptions({ tickerSpeed })} />
+            <RangeControl label="材質紋理" min={0} max={1} step={0.05} value={config.templateOptions.textureOpacity} displayValue={`${Math.round(config.templateOptions.textureOpacity * 100)}%`} onChange={(textureOpacity) => updateTemplateOptions({ textureOpacity })} />
+          </>
+        )}
+        {capabilities.templateOptions === 'cassette' && (
+          <>
+            <RangeControl label="卡帶深度" min={0} max={1} step={0.05} value={config.templateOptions.cassetteDepth} displayValue={`${Math.round(config.templateOptions.cassetteDepth * 100)}%`} onChange={(cassetteDepth) => updateTemplateOptions({ cassetteDepth })} />
+            <RangeControl label="材質紋理" min={0} max={1} step={0.05} value={config.templateOptions.textureOpacity} displayValue={`${Math.round(config.templateOptions.textureOpacity * 100)}%`} onChange={(textureOpacity) => updateTemplateOptions({ textureOpacity })} />
+            <SelectControl label="轉盤動畫" value={config.templateOptions.diskSpinMode} onChange={(diskSpinMode) => updateTemplateOptions({ diskSpinMode: diskSpinMode as any })} options={[['off', '關閉'], ['current', '旋轉'], ['all', '旋轉']]} />
+            <RangeControl label="轉盤速度" min={1} max={10} value={config.templateOptions.diskSpinSpeed} onChange={(diskSpinSpeed) => updateTemplateOptions({ diskSpinSpeed })} />
+          </>
+        )}
+        {capabilities.templateOptions === 'stage' && (
+          <>
+            <SelectControl label="燈光動畫" value={config.templateOptions.lightAnimation} onChange={(lightAnimation) => updateTemplateOptions({ lightAnimation: lightAnimation as any })} options={[['off', '關閉'], ['breathe', '呼吸'], ['flash', '閃爍'], ['chase', '追光'], ['rainbow', '彩虹']]} />
+            <SelectControl label="燈光色" value={config.templateOptions.lightPalette} onChange={(lightPalette) => updateTemplateOptions({ lightPalette: lightPalette as any })} options={[['accent', '主色'], ['warm', '暖色'], ['cool', '冷色'], ['rainbow', '彩虹']]} />
+            <RangeControl label="燈光速度" min={1} max={10} value={config.templateOptions.tickerSpeed} onChange={(tickerSpeed) => updateTemplateOptions({ tickerSpeed })} />
+            <RangeControl label="裝飾強度" min={0} max={1} step={0.05} value={config.templateOptions.decorationIntensity} displayValue={`${Math.round(config.templateOptions.decorationIntensity * 100)}%`} onChange={(decorationIntensity) => updateTemplateOptions({ decorationIntensity })} />
+          </>
+        )}
+        {capabilities.templateOptions === 'photo' && (
+          <>
+            <RangeControl label="相框質感" min={0} max={1} step={0.05} value={config.templateOptions.textureOpacity} displayValue={`${Math.round(config.templateOptions.textureOpacity * 100)}%`} onChange={(textureOpacity) => updateTemplateOptions({ textureOpacity })} />
+            <RangeControl label="卡片角度" min={0} max={1} step={0.05} value={config.templateOptions.decorationIntensity} displayValue={`${Math.round(config.templateOptions.decorationIntensity * 100)}%`} onChange={(decorationIntensity) => updateTemplateOptions({ decorationIntensity })} />
+            <SelectControl label="滑卡動畫" value={config.templateOptions.cardTransition} onChange={(cardTransition) => updateTemplateOptions({ cardTransition: cardTransition as any })} options={[['slide', '開啟'], ['none', '關閉']]} />
+            <RangeControl label="目前發光" min={0} max={1} step={0.05} value={config.templateOptions.currentGlow} displayValue={`${Math.round(config.templateOptions.currentGlow * 100)}%`} onChange={(currentGlow) => updateTemplateOptions({ currentGlow })} />
+            <ColorControl label="音符色" value={config.templateOptions.noteColor} onChange={(noteColor) => updateTemplateOptions({ noteColor })} />
+          </>
+        )}
+        {capabilities.templateOptions === 'vertical' && (
+          <>
+            <RangeControl label="左右留白" min={0} max={28} value={config.templateOptions.contentInset} displayValue={`${config.templateOptions.contentInset}%`} onChange={(contentInset) => updateTemplateOptions({ contentInset })} />
+            <RangeControl label="頂部位置" min={0} max={70} value={config.templateOptions.topOffset} displayValue={`${config.templateOptions.topOffset}%`} onChange={(topOffset) => updateTemplateOptions({ topOffset })} />
+            <RangeControl label="項目間距" min={0} max={28} value={config.templateOptions.rowGap} onChange={(rowGap) => updateTemplateOptions({ rowGap })} />
+            <RangeControl label="標題底色" min={0} max={1} step={0.05} value={config.templateOptions.titleBarOpacity} displayValue={`${Math.round(config.templateOptions.titleBarOpacity * 100)}%`} onChange={(titleBarOpacity) => updateTemplateOptions({ titleBarOpacity })} />
+            <RangeControl label="分隔線" min={0} max={1} step={0.05} value={config.templateOptions.dividerOpacity} displayValue={`${Math.round(config.templateOptions.dividerOpacity * 100)}%`} onChange={(dividerOpacity) => updateTemplateOptions({ dividerOpacity })} />
+            <RangeControl label="目前字級" min={14} max={54} value={config.templateOptions.currentFontSize} onChange={(currentFontSize) => updateTemplateOptions({ currentFontSize })} />
+            <RangeControl label="待播字級" min={9} max={28} value={config.templateOptions.reserveFontSize} onChange={(reserveFontSize) => updateTemplateOptions({ reserveFontSize })} />
+          </>
+        )}
+        {capabilities.templateOptions === 'disk' && (
+          <>
+            <RangeControl label="列間距" min={0} max={28} value={config.templateOptions.rowGap} onChange={(rowGap) => updateTemplateOptions({ rowGap })} />
+            <RangeControl label="已唱透明度" min={0.1} max={1} step={0.05} value={config.templateOptions.rowOpacity} displayValue={`${Math.round(config.templateOptions.rowOpacity * 100)}%`} onChange={(rowOpacity) => updateTemplateOptions({ rowOpacity })} />
+            <RangeControl label="目前發光" min={0} max={1} step={0.05} value={config.templateOptions.currentGlow} displayValue={`${Math.round(config.templateOptions.currentGlow * 100)}%`} onChange={(currentGlow) => updateTemplateOptions({ currentGlow })} />
+            <RangeControl label="圓盤大小" min={16} max={64} value={config.templateOptions.diskSize} onChange={(diskSize) => updateTemplateOptions({ diskSize })} />
+            <SelectControl label="圓盤樣式" value={config.templateOptions.diskStyle} onChange={(diskStyle) => updateTemplateOptions({ diskStyle: diskStyle as any })} options={[['vinyl', '唱片'], ['thumbnail', '縮圖'], ['ring', '圓環'], ['dot', '圓點']]} />
+            {config.templateOptions.diskStyle === 'thumbnail' && (
+              <RangeControl label="縮圖邊框" min={0} max={8} value={config.templateOptions.diskBorderWidth} displayValue={`${config.templateOptions.diskBorderWidth}px`} onChange={(diskBorderWidth) => updateTemplateOptions({ diskBorderWidth })} />
+            )}
+            <SelectControl label="旋轉" value={config.templateOptions.diskSpinMode} onChange={(diskSpinMode) => updateTemplateOptions({ diskSpinMode: diskSpinMode as any })} options={[['off', '關閉'], ['current', '目前歌曲'], ['all', '全部']]} />
+            <RangeControl label="旋轉速度" min={1} max={10} value={config.templateOptions.diskSpinSpeed} onChange={(diskSpinSpeed) => updateTemplateOptions({ diskSpinSpeed })} />
+          </>
+        )}
         {capabilities.scrolling && (
           <>
             <CheckboxControl label="清單滾動" checked={config.autoScroll} onChange={(autoScroll) => updateConfig({ autoScroll })} />
