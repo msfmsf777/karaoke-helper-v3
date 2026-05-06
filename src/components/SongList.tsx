@@ -319,7 +319,7 @@ const SongList: React.FC<SongListProps> = ({
                     ariaLabel={label}
                     baseFontSize={12}
                     minFontSize={10}
-                    style={{ color: 'inherit', fontWeight: 700, textAlign: align }}
+                    style={{ color: 'inherit', fontWeight: 700, textAlign: align, width: 'auto', flex: '0 1 auto' }}
                 />
                 {key && enabled && (
                     <span style={{ flexShrink: 0, color: active ? '#fff' : '#555', fontSize: active ? '12px' : '11px' }}>

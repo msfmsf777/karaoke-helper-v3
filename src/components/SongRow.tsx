@@ -271,7 +271,7 @@ const SongRow: React.FC<SongRowProps> = ({
                                     ariaLabel={audioStatusLabel}
                                     baseFontSize={13}
                                     minFontSize={10}
-                                    style={{ color: 'inherit', textAlign: 'center', flex: '1 1 auto' }}
+                                    style={{ color: 'inherit', textAlign: 'center', width: 'auto', flex: '0 1 auto' }}
                                 />
 
                                 {/* Quality Badge */}
