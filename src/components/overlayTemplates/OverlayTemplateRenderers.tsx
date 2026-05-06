@@ -1,4 +1,6 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { EditableLyricLine } from '../../library/lyrics';
 import { EnrichedLyricLine, SongMeta } from '../../../shared/songTypes';
 import {
@@ -8,6 +10,7 @@ import {
   SetlistOverlayDesign,
   SetlistOverlayTemplateConfig,
 } from '../../../shared/overlayTemplates';
+import i18nInstance from '../../i18n';
 
 export interface OverlaySongMetadata {
   id: string;
@@ -26,6 +29,35 @@ export interface OverlaySetlistState {
   isStreamWaiting: boolean;
   playbackMode: OverlayPlaybackMode;
 }
+
+const overlayDefaultTextKeys: Record<string, string> = {
+  '歌唱中': 'overlays.defaults.currentLabel',
+  'Now Singing': 'overlays.defaults.currentLabel',
+  '下一首': 'overlays.defaults.upcomingLabel',
+  'Up Next': 'overlays.defaults.upcomingLabel',
+  '已唱': 'overlays.defaults.historyLabel',
+  'Sung': 'overlays.defaults.historyLabel',
+  '等待下一首': 'overlays.defaults.waitingNext',
+  'Waiting for next song': 'overlays.defaults.waitingNext',
+  '尚未播放': 'overlays.defaults.notPlaying',
+  'Nothing playing': 'overlays.defaults.notPlaying',
+};
+
+const localizeOverlayDefaultText = (t: TFunction, value?: string) => {
+  if (!value) return value;
+  const key = overlayDefaultTextKeys[value];
+  return key ? t(key) : value;
+};
+
+const localizeSetlistConfig = (t: TFunction, config: SetlistOverlayTemplateConfig): SetlistOverlayTemplateConfig => ({
+  ...config,
+  currentLabel: localizeOverlayDefaultText(t, config.currentLabel) ?? config.currentLabel,
+  upcomingLabel: localizeOverlayDefaultText(t, config.upcomingLabel) ?? config.upcomingLabel,
+  historyLabel: localizeOverlayDefaultText(t, config.historyLabel) ?? config.historyLabel,
+  waitingText: localizeOverlayDefaultText(t, config.waitingText) ?? config.waitingText,
+});
+
+const overlayText = (key: string) => i18nInstance.t(key);
 
 const SAMPLE_LINES: EditableLyricLine[] = [
   { id: 'sample-1', text: '夜明けのステージに光が差す', timeSeconds: 0 },
@@ -313,6 +345,7 @@ export const TemplatedLyricsOverlay: React.FC<{
   furiganaEnabled: boolean;
   romajiEnabled: boolean;
 }> = ({ design, status, lines, currentTime, enrichedLines, furiganaEnabled, romajiEnabled }) => {
+  const { t } = useTranslation();
   const config = design.config;
   const activeLineRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -385,7 +418,7 @@ export const TemplatedLyricsOverlay: React.FC<{
   if (status === 'none' || lines.length === 0) {
     return (
       <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', color: config.inactiveColor, fontFamily: config.fontFamily }}>
-        無歌詞
+        {t('domain.lyricsStatus.none')}
       </div>
     );
   }
@@ -831,7 +864,8 @@ export const TemplatedSetlistOverlay: React.FC<{
   state: OverlaySetlistState;
   preview?: boolean;
 }> = ({ design, state, preview = false }) => {
-  const config = design.config;
+  const { t } = useTranslation();
+  const config = useMemo(() => localizeSetlistConfig(t, design.config), [design.config, t]);
   const currentSong = !state.isStreamWaiting && state.queue[state.currentIndex]
     ? state.songs[state.queue[state.currentIndex]]
     : null;
@@ -931,7 +965,7 @@ export const TemplatedSetlistOverlay: React.FC<{
             ) : (
               <WaitingCurrent
                 text={config.emptyState === 'waiting'
-                  ? (config.waitingText || (state.playbackMode === 'stream' ? '等待下一首' : '尚未播放'))
+                  ? (config.waitingText || (state.playbackMode === 'stream' ? overlayText('overlays.defaults.waitingNext') : overlayText('overlays.defaults.notPlaying')))
                   : '...'}
                 song={config.emptyState === 'waiting' && config.showWaitingSongTitle ? waitingSong : null}
                 config={config}
@@ -959,7 +993,7 @@ export const TemplatedSetlistOverlay: React.FC<{
                     </div>
                   </AutoScrollArea>
                 ) : config.emptyState === 'waiting' ? (
-                  <EmptyText text="尚無待播歌曲" color={config.secondaryColor} />
+                  <EmptyText text={overlayText('overlays.defaults.noUpcoming')} color={config.secondaryColor} />
                 ) : null}
               </Section>
             )}
@@ -975,7 +1009,7 @@ export const TemplatedSetlistOverlay: React.FC<{
                     </div>
                   </AutoScrollArea>
                 ) : config.emptyState === 'waiting' ? (
-                  <EmptyText text="尚無已唱歌曲" color={config.secondaryColor} />
+                  <EmptyText text={overlayText('overlays.defaults.noHistory')} color={config.secondaryColor} />
                 ) : null}
               </Section>
             )}
@@ -1093,7 +1127,7 @@ const CompactStripSetlist: React.FC<{
                     {config.showDuration ? ` · ${formatDuration(song.duration)}` : ''}
                   </div>
                 )) : (
-                  <EmptyText text="尚無待播歌曲" color={config.secondaryColor} />
+                  <EmptyText text={overlayText('overlays.defaults.noUpcoming')} color={config.secondaryColor} />
                 )}
               </div>
             </AutoScrollArea>
@@ -1419,7 +1453,7 @@ const GraphicReserveList: React.FC<{
           waitingNext={state.isStreamWaiting && index === 0}
         />
       )) : (
-        <EmptyText text="尚無待播歌曲" color={config.secondaryColor} />
+        <EmptyText text={overlayText('overlays.defaults.noUpcoming')} color={config.secondaryColor} />
       )}
     </div>
   </AutoScrollArea>
@@ -1984,7 +2018,7 @@ const VerticalColumnSetlist: React.FC<{
                     </div>
                   );
                 }) : (
-                  <EmptyText text="尚無待播歌曲" color={config.secondaryColor} />
+                  <EmptyText text={overlayText('overlays.defaults.noUpcoming')} color={config.secondaryColor} />
                 )}
               </div>
             </AutoScrollArea>

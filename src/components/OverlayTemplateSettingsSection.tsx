@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useLibrary } from '../contexts/LibraryContext';
 import { useQueue } from '../contexts/QueueContext';
 import { useUserData } from '../contexts/UserDataContext';
@@ -37,11 +39,196 @@ const CONTROL_BG = '#2a2a2a';
 const PANEL_BG = '#252525';
 const BORDER = '1px solid #3a3a3a';
 
+const OVERLAY_UI_TEXT_KEYS: Record<string, string> = {
+  新增: 'overlays.ui.add',
+  編輯: 'common.edit',
+  複製: 'common.copy',
+  刪除: 'common.delete',
+  儲存: 'common.save',
+  還原: 'overlays.ui.revert',
+  返回: 'common.back',
+  '刪除目前設計': 'overlays.ui.deleteCurrentDesign',
+  '重設此設計': 'overlays.ui.resetDesign',
+  設計: 'overlays.ui.design',
+  歌詞: 'overlays.ui.lyrics',
+  歌單: 'overlays.ui.setlist',
+  'OBS 連結': 'overlays.ui.obsLink',
+  '複製 OBS 連結': 'overlays.ui.copyObsLink',
+  '複製歌詞 OBS 連結': 'lyrics.stream.copyLyricsObs',
+  '複製歌單 OBS 連結': 'lyrics.stream.copySetlistObs',
+  '直播覆蓋模板': 'overlays.ui.title',
+  '歌詞覆蓋設計': 'overlays.ui.lyricsDesigns',
+  '歌單覆蓋設計': 'overlays.ui.setlistDesigns',
+  '歌詞覆蓋': 'overlays.ui.lyricsOverlay',
+  '歌單覆蓋': 'overlays.ui.setlistOverlay',
+  '歌詞覆蓋編輯器': 'overlays.ui.lyricsEditor',
+  '歌單覆蓋編輯器': 'overlays.ui.setlistEditor',
+  '範例日文歌詞預覽': 'overlays.ui.sampleLyricsPreview',
+  範例資料: 'overlays.ui.sampleData',
+  目前佇列: 'overlays.ui.currentQueue',
+  歌詞文字: 'lyrics.editor.lyricsText',
+  字體: 'overlays.ui.font',
+  填滿高度: 'overlays.ui.fillHeight',
+  顯示行數: 'overlays.ui.lineCount',
+  動畫: 'overlays.ui.animation',
+  滑動: 'overlays.ui.scroll',
+  無: 'common.none',
+  淡入: 'overlays.ui.fade',
+  滑入: 'overlays.ui.slide',
+  縮放: 'overlays.ui.scale',
+  高亮大小: 'overlays.ui.activeSize',
+  一般大小: 'overlays.ui.inactiveSize',
+  行距: 'overlays.ui.lineGap',
+  字距: 'overlays.ui.letterSpacing',
+  顏色與可讀性: 'overlays.ui.colorsReadability',
+  高亮色: 'overlays.ui.activeColor',
+  一般色: 'overlays.ui.inactiveColor',
+  已唱色: 'overlays.ui.passedColor',
+  描邊色: 'overlays.ui.strokeColor',
+  描邊粗細: 'overlays.ui.strokeWidth',
+  發光色: 'overlays.ui.glowColor',
+  發光強度: 'overlays.ui.glowStrength',
+  日文輔助: 'overlays.ui.japaneseAssist',
+  注音: 'overlays.ui.furigana',
+  羅馬字: 'overlays.ui.romaji',
+  '跟隨 App': 'overlays.ui.followApp',
+  顯示: 'overlays.ui.show',
+  隱藏: 'overlays.ui.hide',
+  羅馬字間距: 'overlays.ui.romajiLetterSpacing',
+  羅馬字上方距離: 'overlays.ui.romajiMarginTop',
+  樣式: 'overlays.ui.style',
+  外觀預設: 'overlays.ui.preset',
+  主色: 'overlays.ui.accentColor',
+  文字色: 'overlays.ui.textColor',
+  次要文字: 'overlays.ui.secondaryText',
+  顯示內容: 'overlays.ui.visibleContent',
+  目前歌曲: 'overlays.ui.currentSong',
+  底部跑馬: 'overlays.ui.footerTicker',
+  待播: 'overlays.defaults.upcomingLabel',
+  數量: 'overlays.ui.counts',
+  歌手: 'overlays.ui.artist',
+  編號: 'overlays.ui.numbering',
+  縮圖: 'overlays.ui.thumbnail',
+  時長: 'songList.columns.duration',
+  標籤與動態: 'overlays.ui.labelsMotion',
+  目前: 'overlays.ui.current',
+  待播跑馬標籤: 'overlays.ui.upcomingTickerLabel',
+  密度: 'overlays.ui.density',
+  緊湊: 'overlays.ui.compact',
+  舒適: 'overlays.ui.comfortable',
+  外框: 'overlays.ui.frame',
+  實色: 'overlays.ui.solid',
+  玻璃: 'overlays.ui.glass',
+  霓虹: 'overlays.ui.neon',
+  外框圓角: 'overlays.ui.outerRadius',
+  內部項目圓角: 'overlays.ui.innerRadius',
+  欄數: 'overlays.ui.columns',
+  裝飾強度: 'overlays.ui.decorationIntensity',
+  材質紋理: 'overlays.ui.textureOpacity',
+  裝飾動態: 'overlays.ui.motionDetail',
+  關閉: 'overlays.ui.off',
+  細緻: 'overlays.ui.subtle',
+  完整: 'overlays.ui.full',
+  文字效果: 'overlays.ui.textEffect',
+  一般: 'overlays.ui.normal',
+  像素感: 'overlays.ui.pixel',
+  跑馬內容: 'overlays.ui.tickerSource',
+  待播清單: 'lyrics.stream.upNextNoCount',
+  已唱清單: 'lyrics.stream.playedNoCount',
+  已唱跑馬標籤: 'overlays.ui.historyTickerLabel',
+  左下文字: 'overlays.ui.footerLabel',
+  跑馬速度: 'overlays.ui.tickerSpeed',
+  卡帶深度: 'overlays.ui.cassetteDepth',
+  轉盤動畫: 'overlays.ui.diskSpinMode',
+  旋轉: 'overlays.ui.spin',
+  轉盤速度: 'overlays.ui.diskSpinSpeed',
+  燈光動畫: 'overlays.ui.lightAnimation',
+  呼吸: 'overlays.ui.breathe',
+  閃爍: 'overlays.ui.flash',
+  追光: 'overlays.ui.chase',
+  彩虹: 'overlays.ui.rainbow',
+  燈光色: 'overlays.ui.lightPalette',
+  暖色: 'overlays.ui.warm',
+  冷色: 'overlays.ui.cool',
+  燈光速度: 'overlays.ui.lightSpeed',
+  相框質感: 'overlays.ui.photoTexture',
+  卡片角度: 'overlays.ui.cardAngle',
+  滑卡動畫: 'overlays.ui.cardTransition',
+  開啟: 'overlays.ui.on',
+  目前發光: 'overlays.ui.currentGlow',
+  音符色: 'overlays.ui.noteColor',
+  左右留白: 'overlays.ui.contentInset',
+  頂部位置: 'overlays.ui.topOffset',
+  項目間距: 'overlays.ui.itemGap',
+  標題底色: 'overlays.ui.titleBarOpacity',
+  分隔線: 'overlays.ui.dividerOpacity',
+  目前字級: 'overlays.ui.currentFontSize',
+  待播字級: 'overlays.ui.reserveFontSize',
+  列間距: 'overlays.ui.rowGap',
+  已唱透明度: 'overlays.ui.historyOpacity',
+  圓盤大小: 'overlays.ui.diskSize',
+  圓盤樣式: 'overlays.ui.diskStyle',
+  唱片: 'overlays.ui.vinyl',
+  圓環: 'overlays.ui.ring',
+  圓點: 'overlays.ui.dot',
+  縮圖邊框: 'overlays.ui.thumbnailBorder',
+  全部: 'overlays.ui.all',
+  清單滾動: 'overlays.ui.listScroll',
+  滾動速度: 'overlays.ui.scrollSpeed',
+  停留時間: 'overlays.ui.pauseTime',
+  換歌動畫: 'overlays.ui.changeAnimation',
+  空狀態: 'overlays.ui.emptyState',
+  顯示等待文字: 'overlays.ui.showWaitingText',
+  等待文字: 'overlays.ui.waitingText',
+  顯示待播歌名: 'overlays.ui.showWaitingSongTitle',
+  暫停預覽: 'overlays.ui.pausePreview',
+  播放預覽: 'overlays.ui.playPreview',
+  一般模式: 'overlays.ui.normalMode',
+  直播模式: 'shell.player.stream',
+  預覽上一首: 'overlays.ui.previewPrevious',
+  預覽下一首: 'overlays.ui.previewNext',
+  重設預覽狀態: 'overlays.ui.resetPreview',
+  經典清單: 'overlays.templates.classic_list',
+  唱片卡片: 'overlays.templates.record_card',
+  精簡橫條: 'overlays.templates.compact_strip',
+  霓虹看板: 'overlays.templates.neon_signboard',
+  倒數看板: 'overlays.templates.countdown_counter',
+  完整清單: 'overlays.templates.index_grid',
+  復古呼叫器: 'overlays.templates.pager_console',
+  卡帶播放器: 'overlays.templates.cassette_deck',
+  舞台燈牌: 'overlays.templates.stage_marquee',
+  拍立得歌單: 'overlays.templates.photo_stack',
+  直式留白清單: 'overlays.templates.vertical_column',
+  圓盤歌列: 'overlays.templates.spinning_disk_list',
+};
+
+const overlayUiText = (t: TFunction, text: string) => {
+  const key = OVERLAY_UI_TEXT_KEYS[text];
+  return key ? t(key) : text;
+};
+
+const displayOverlayDesignName = (
+  t: TFunction,
+  design: Pick<LyricsOverlayDesign | SetlistOverlayDesign, 'name'>,
+) => {
+  if (design.name === '預設歌詞') return t('overlays.defaults.defaultLyricsDesign');
+  if (design.name === '預設歌單') return t('overlays.defaults.defaultSetlistDesign');
+
+  const lyricsMatch = design.name.match(/^歌詞設計 (\d+)$/);
+  if (lyricsMatch) return t('overlays.defaults.lyricsDesignNumber', { index: lyricsMatch[1] });
+
+  const setlistMatch = design.name.match(/^歌單設計 (\d+)$/);
+  if (setlistMatch) return t('overlays.defaults.setlistDesignNumber', { index: setlistMatch[1] });
+
+  return design.name;
+};
+
 interface OverlayTemplateSettingsSectionProps {
   onOpenEditor: (kind: OverlayKind, designId?: string) => void;
 }
 
 const OverlayTemplateSettingsSection: React.FC<OverlayTemplateSettingsSectionProps> = ({ onOpenEditor }) => {
+  const { t } = useTranslation();
   const { overlayTemplates, setOverlayTemplates } = useUserData();
   const [copied, setCopied] = useState<string | null>(null);
 
@@ -50,9 +237,8 @@ const OverlayTemplateSettingsSection: React.FC<OverlayTemplateSettingsSectionPro
   };
 
   const copyLink = async (kind: OverlayKind, designId: string) => {
-    const label = kind === 'lyrics' ? '歌詞' : '歌單';
     await navigator.clipboard.writeText(`http://localhost:10001/obs/${kind}?design=${encodeURIComponent(designId)}`);
-    setCopied(`已複製${label} OBS 連結`);
+    setCopied(t(kind === 'lyrics' ? 'overlays.ui.copiedLyricsObs' : 'overlays.ui.copiedSetlistObs'));
     window.setTimeout(() => setCopied(null), 1600);
   };
 
@@ -62,7 +248,7 @@ const OverlayTemplateSettingsSection: React.FC<OverlayTemplateSettingsSectionPro
     updateConfig({
       ...overlayTemplates,
       activeLyricsDesignId: id,
-      lyricsDesigns: [...overlayTemplates.lyricsDesigns, createLyricsDesign(id, '新歌詞設計', base)],
+      lyricsDesigns: [...overlayTemplates.lyricsDesigns, createLyricsDesign(id, t('overlays.defaults.newLyricsDesign'), base)],
     });
     onOpenEditor('lyrics', id);
   };
@@ -73,7 +259,7 @@ const OverlayTemplateSettingsSection: React.FC<OverlayTemplateSettingsSectionPro
     updateConfig({
       ...overlayTemplates,
       activeSetlistDesignId: id,
-      setlistDesigns: [...overlayTemplates.setlistDesigns, createSetlistDesign(id, '新歌單設計', base)],
+      setlistDesigns: [...overlayTemplates.setlistDesigns, createSetlistDesign(id, t('overlays.defaults.newSetlistDesign'), base)],
     });
     onOpenEditor('setlist', id);
   };
@@ -84,7 +270,7 @@ const OverlayTemplateSettingsSection: React.FC<OverlayTemplateSettingsSectionPro
     updateConfig({
       ...overlayTemplates,
       activeLyricsDesignId: id,
-      lyricsDesigns: [...overlayTemplates.lyricsDesigns, createLyricsDesign(id, `${source.name} 複本`, source)],
+      lyricsDesigns: [...overlayTemplates.lyricsDesigns, createLyricsDesign(id, t('overlays.ui.copyName', { name: displayOverlayDesignName(t, source) }), source)],
     });
     onOpenEditor('lyrics', id);
   };
@@ -95,7 +281,7 @@ const OverlayTemplateSettingsSection: React.FC<OverlayTemplateSettingsSectionPro
     updateConfig({
       ...overlayTemplates,
       activeSetlistDesignId: id,
-      setlistDesigns: [...overlayTemplates.setlistDesigns, createSetlistDesign(id, `${source.name} 複本`, source)],
+      setlistDesigns: [...overlayTemplates.setlistDesigns, createSetlistDesign(id, t('overlays.ui.copyName', { name: displayOverlayDesignName(t, source) }), source)],
     });
     onOpenEditor('setlist', id);
   };
@@ -103,7 +289,7 @@ const OverlayTemplateSettingsSection: React.FC<OverlayTemplateSettingsSectionPro
   const deleteLyricsDesign = (designId: string) => {
     if (overlayTemplates.lyricsDesigns.length <= 1 || designId === 'default') return;
     const design = findLyricsOverlayDesign(overlayTemplates, designId);
-    if (!window.confirm(`刪除「${design.name}」？已加入 OBS 的舊連結會回到預設歌詞設計。`)) return;
+    if (!window.confirm(t('overlays.confirm.deleteLyricsDesign', { name: displayOverlayDesignName(t, design) }))) return;
     const lyricsDesigns = overlayTemplates.lyricsDesigns.filter(candidate => candidate.id !== designId);
     updateConfig({
       ...overlayTemplates,
@@ -117,7 +303,7 @@ const OverlayTemplateSettingsSection: React.FC<OverlayTemplateSettingsSectionPro
   const deleteSetlistDesign = (designId: string) => {
     if (overlayTemplates.setlistDesigns.length <= 1 || designId === 'default') return;
     const design = findSetlistOverlayDesign(overlayTemplates, designId);
-    if (!window.confirm(`刪除「${design.name}」？已加入 OBS 的舊連結會回到預設歌單設計。`)) return;
+    if (!window.confirm(t('overlays.confirm.deleteSetlistDesign', { name: displayOverlayDesignName(t, design) }))) return;
     const setlistDesigns = overlayTemplates.setlistDesigns.filter(candidate => candidate.id !== designId);
     updateConfig({
       ...overlayTemplates,
@@ -132,13 +318,13 @@ const OverlayTemplateSettingsSection: React.FC<OverlayTemplateSettingsSectionPro
     <section id="overlay-template-settings-section" style={{ marginBottom: 40, scrollMarginTop: 24 }}>
       <SectionTitle title="直播覆蓋模板" />
       <div style={{ color: '#aaa', fontSize: 13, lineHeight: 1.6, margin: '0 0 16px 16px' }}>
-        管理 OBS Browser Source 專用的歌詞與歌單外觀。歌詞設計與歌單設計彼此獨立，修改後不會影響 App 內直播畫面。
+        {t('overlays.ui.description')}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <OverviewGroup
-          title="歌詞覆蓋設計"
-          description="控制 OBS 歌詞來源的字體、行數、顏色、動畫與注音 / 羅馬字顯示。"
+          title={t('overlays.ui.lyricsDesigns')}
+          description={t('overlays.ui.lyricsDesignDescription')}
           designs={overlayTemplates.lyricsDesigns}
           onAdd={addLyricsDesign}
           onEdit={(id) => onOpenEditor('lyrics', id)}
@@ -148,13 +334,13 @@ const OverlayTemplateSettingsSection: React.FC<OverlayTemplateSettingsSectionPro
           canDelete={(id) => overlayTemplates.lyricsDesigns.length > 1 && id !== 'default'}
           summary={(design) => {
             const lyricsDesign = design as LyricsOverlayDesign;
-            return lyricsDesign.config.lineMode === 'fill' ? '填滿高度' : `顯示 ${lyricsDesign.config.lineCount} 行`;
+            return lyricsDesign.config.lineMode === 'fill' ? t('overlays.ui.fillHeight') : t('overlays.ui.showLineCount', { count: lyricsDesign.config.lineCount });
           }}
         />
 
         <OverviewGroup
-          title="歌單覆蓋設計"
-          description="控制 OBS 歌單來源的目前歌曲、待播、已唱、縮圖、外框與清單滾動方式。"
+          title={t('overlays.ui.setlistDesigns')}
+          description={t('overlays.ui.setlistDesignDescription')}
           designs={overlayTemplates.setlistDesigns}
           onAdd={addSetlistDesign}
           onEdit={(id) => onOpenEditor('setlist', id)}
@@ -164,7 +350,7 @@ const OverlayTemplateSettingsSection: React.FC<OverlayTemplateSettingsSectionPro
           canDelete={(id) => overlayTemplates.setlistDesigns.length > 1 && id !== 'default'}
           summary={(design) => {
             const config = (design as SetlistOverlayDesign).config;
-            return `${SETLIST_TEMPLATE_LABELS[config.templateId]} · ${getSetlistPresetLabel(config.templateId, config.presetId)}`;
+            return `${overlayUiText(t, SETLIST_TEMPLATE_LABELS[config.templateId])} · ${getSetlistPresetLabel(config.templateId, config.presetId)}`;
           }}
         />
       </div>
@@ -190,7 +376,9 @@ const OverviewGroup: React.FC<{
   onCopy: (id: string) => void;
   onDelete: (id: string) => void;
   canDelete: (id: string) => boolean;
-}> = ({ title, description, designs, summary, onAdd, onEdit, onDuplicate, onCopy, onDelete, canDelete }) => (
+}> = ({ title, description, designs, summary, onAdd, onEdit, onDuplicate, onCopy, onDelete, canDelete }) => {
+  const { t } = useTranslation();
+  return (
   <div style={{ background: CONTROL_BG, border: BORDER, borderRadius: 12, padding: 16 }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 14 }}>
       <div>
@@ -218,12 +406,12 @@ const OverviewGroup: React.FC<{
           <div style={{ minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
               <div style={{ color: '#fff', fontSize: 15, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {design.name}
+                {displayOverlayDesignName(t, design)}
               </div>
             </div>
             <div style={{ color: '#aaa', fontSize: 12, marginTop: 7, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <span>{summary(design)}</span>
-              <span>ID：{design.id}</span>
+              <span>{t('overlays.ui.id', { id: design.id })}</span>
             </div>
           </div>
 
@@ -237,7 +425,8 @@ const OverviewGroup: React.FC<{
       ))}
     </div>
   </div>
-);
+  );
+};
 
 interface OverlayTemplateEditorProps {
   initialKind: OverlayKind;
@@ -247,6 +436,7 @@ interface OverlayTemplateEditorProps {
 }
 
 export const OverlayTemplateEditor: React.FC<OverlayTemplateEditorProps> = ({ initialKind, initialDesignId, onClose, onDirtyChange }) => {
+  const { t } = useTranslation();
   const { overlayTemplates, setOverlayTemplates } = useUserData();
   const { queue, currentIndex, isStreamWaiting, playbackMode } = useQueue();
   const { getSongById } = useLibrary();
@@ -419,13 +609,13 @@ export const OverlayTemplateEditor: React.FC<OverlayTemplateEditorProps> = ({ in
       setDraft(prev => ({
         ...prev,
         activeLyricsDesignId: id,
-        lyricsDesigns: [...prev.lyricsDesigns, createLyricsDesign(id, '新歌詞設計', selectedLyricsDesign)],
+        lyricsDesigns: [...prev.lyricsDesigns, createLyricsDesign(id, t('overlays.defaults.newLyricsDesign'), selectedLyricsDesign)],
       }));
     } else {
       setDraft(prev => ({
         ...prev,
         activeSetlistDesignId: id,
-        setlistDesigns: [...prev.setlistDesigns, createSetlistDesign(id, '新歌單設計', selectedSetlistDesign)],
+        setlistDesigns: [...prev.setlistDesigns, createSetlistDesign(id, t('overlays.defaults.newSetlistDesign'), selectedSetlistDesign)],
       }));
     }
     setSelectedDesignId(id);
@@ -437,13 +627,13 @@ export const OverlayTemplateEditor: React.FC<OverlayTemplateEditorProps> = ({ in
       setDraft(prev => ({
         ...prev,
         activeLyricsDesignId: id,
-        lyricsDesigns: [...prev.lyricsDesigns, createLyricsDesign(id, `${selectedLyricsDesign.name} 複本`, selectedLyricsDesign)],
+        lyricsDesigns: [...prev.lyricsDesigns, createLyricsDesign(id, t('overlays.ui.copyName', { name: displayOverlayDesignName(t, selectedLyricsDesign) }), selectedLyricsDesign)],
       }));
     } else {
       setDraft(prev => ({
         ...prev,
         activeSetlistDesignId: id,
-        setlistDesigns: [...prev.setlistDesigns, createSetlistDesign(id, `${selectedSetlistDesign.name} 複本`, selectedSetlistDesign)],
+        setlistDesigns: [...prev.setlistDesigns, createSetlistDesign(id, t('overlays.ui.copyName', { name: displayOverlayDesignName(t, selectedSetlistDesign) }), selectedSetlistDesign)],
       }));
     }
     setSelectedDesignId(id);
@@ -451,7 +641,7 @@ export const OverlayTemplateEditor: React.FC<OverlayTemplateEditorProps> = ({ in
 
   const deleteDesign = () => {
     if (designs.length <= 1 || selectedDesign.id === 'default') return;
-    if (!window.confirm(`刪除「${selectedDesign.name}」？已加入 OBS 的舊連結會回到預設設計。`)) return;
+    if (!window.confirm(t('overlays.confirm.deleteDesign', { name: displayOverlayDesignName(t, selectedDesign) }))) return;
     if (kind === 'lyrics') {
       const nextDesigns = draft.lyricsDesigns.filter(design => design.id !== selectedDesign.id);
       const nextActive = nextDesigns[0]?.id ?? 'default';
@@ -492,7 +682,7 @@ export const OverlayTemplateEditor: React.FC<OverlayTemplateEditorProps> = ({ in
     const merged = mergeOverlayTemplatesConfig(withActive);
     setOverlayTemplates(merged);
     setDraft(merged);
-    setCopied('已儲存並更新 OBS');
+    setCopied(t('overlays.ui.savedObs'));
     window.setTimeout(() => setCopied(null), 1800);
   };
 
@@ -521,7 +711,7 @@ export const OverlayTemplateEditor: React.FC<OverlayTemplateEditorProps> = ({ in
 
   const copyLink = async () => {
     await navigator.clipboard.writeText(`http://localhost:10001/obs/${kind}?design=${encodeURIComponent(selectedDesign.id)}`);
-    setCopied(kind === 'lyrics' ? '已複製歌詞 OBS 連結' : '已複製歌單 OBS 連結');
+    setCopied(t(kind === 'lyrics' ? 'overlays.ui.copiedLyricsObs' : 'overlays.ui.copiedSetlistObs'));
     window.setTimeout(() => setCopied(null), 1600);
   };
 
@@ -575,11 +765,11 @@ export const OverlayTemplateEditor: React.FC<OverlayTemplateEditorProps> = ({ in
       }}>
         <div style={{ minWidth: 0, flex: '1 1 260px' }}>
           <div style={{ color: '#888', fontSize: 13, marginBottom: 5 }}>
-            設定 &gt; 直播覆蓋模板 &gt; {kind === 'lyrics' ? '歌詞覆蓋' : '歌單覆蓋'} &gt; {selectedDesign.name}
+            {t('common.settings')} &gt; {t('overlays.ui.title')} &gt; {kind === 'lyrics' ? t('overlays.ui.lyricsOverlay') : t('overlays.ui.setlistOverlay')} &gt; {displayOverlayDesignName(t, selectedDesign)}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', minWidth: 0 }}>
             <h2 style={{ color: '#fff', margin: 0, fontSize: 22, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {kind === 'lyrics' ? '歌詞覆蓋編輯器' : '歌單覆蓋編輯器'}
+              {kind === 'lyrics' ? t('overlays.ui.lyricsEditor') : t('overlays.ui.setlistEditor')}
             </h2>
             <div ref={designMenuRef} style={{ position: 'relative', minWidth: 0 }}>
               <button
@@ -601,8 +791,8 @@ export const OverlayTemplateEditor: React.FC<OverlayTemplateEditorProps> = ({ in
                   fontWeight: 700,
                 }}
               >
-                <span style={{ color: '#999', flex: '0 0 auto' }}>設計</span>
-                <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedDesign.name}</span>
+                <span style={{ color: '#999', flex: '0 0 auto' }}>{t('overlays.ui.design')}</span>
+                <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayOverlayDesignName(t, selectedDesign)}</span>
                 <span style={{ color: '#aaa', flex: '0 0 auto' }}>⌄</span>
               </button>
               {designMenuOpen && (
@@ -642,7 +832,7 @@ export const OverlayTemplateEditor: React.FC<OverlayTemplateEditorProps> = ({ in
                           fontWeight: design.id === selectedDesign.id ? 800 : 600,
                         }}
                       >
-                        {design.name}
+                        {displayOverlayDesignName(t, design)}
                       </button>
                     ))}
                   </div>
@@ -688,7 +878,7 @@ export const OverlayTemplateEditor: React.FC<OverlayTemplateEditorProps> = ({ in
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 12, flexShrink: 0, alignItems: 'center', flexWrap: 'wrap' }}>
               {kind === 'lyrics' ? (
                 <>
-                  <div style={{ color: '#aaa', fontSize: 12 }}>範例日文歌詞預覽</div>
+                  <div style={{ color: '#aaa', fontSize: 12 }}>{t('overlays.ui.sampleLyricsPreview')}</div>
                   <LyricsPreviewControls
                     playing={lyricsPreviewPlaying}
                     onToggle={() => setLyricsPreviewPlaying(prev => !prev)}
@@ -701,7 +891,7 @@ export const OverlayTemplateEditor: React.FC<OverlayTemplateEditorProps> = ({ in
                 <>
                   <SegmentedControl
                     value={setlistPreviewDataMode}
-                    options={[['sample', '範例資料'], ['current', '目前佇列']]}
+                    options={[['sample', t('overlays.ui.sampleData')], ['current', t('overlays.ui.currentQueue')]]}
                     onChange={(value) => setSetlistPreviewDataMode(value as 'sample' | 'current')}
                   />
                   <SetlistPreviewControls
@@ -766,9 +956,9 @@ export const OverlayTemplateEditor: React.FC<OverlayTemplateEditorProps> = ({ in
             )}
 
             <ControlGroup title="OBS 連結">
-              <SmallButton onClick={copyLink}>{kind === 'lyrics' ? '複製歌詞 OBS 連結' : '複製歌單 OBS 連結'}</SmallButton>
+              <SmallButton onClick={copyLink}>{kind === 'lyrics' ? t('lyrics.stream.copyLyricsObs') : t('lyrics.stream.copySetlistObs')}</SmallButton>
               <div style={{ color: '#888', fontSize: 12, lineHeight: 1.5 }}>
-                儲存後 OBS 來源會更新；連結會固定指向此設計 ID。
+                {t('overlays.ui.obsLinkDescription')}
               </div>
             </ControlGroup>
           </div>
@@ -1000,6 +1190,7 @@ const SetlistInspector: React.FC<{
   fonts: string[];
   onChange: (recipe: (design: SetlistOverlayDesign) => SetlistOverlayDesign) => void;
 }> = ({ design, fonts, onChange }) => {
+  const { t } = useTranslation();
   const config = design.config;
   const capabilities = SETLIST_TEMPLATE_CAPABILITIES[config.templateId];
   const updateConfig = (updates: Partial<typeof config>) => {
@@ -1199,7 +1390,7 @@ const SetlistInspector: React.FC<{
         <SelectControl label="換歌動畫" value={config.changeAnimation} onChange={(changeAnimation) => updateConfig({ changeAnimation: changeAnimation as any })} options={[['none', '無'], ['fade', '淡入'], ['slide', '滑入']]} />
         <SelectControl label="空狀態" value={config.emptyState} onChange={(emptyState) => updateConfig({ emptyState: emptyState as any })} options={[['waiting', '顯示等待文字'], ['hide', '隱藏']]} />
         <div style={{ color: '#888', fontSize: 12, lineHeight: 1.5 }}>
-          沒有目前歌曲時的 Now Singing 顯示方式；即使隱藏，也會保留區塊避免歌單往上跳。
+          {t('overlays.ui.emptyStateDescription')}
         </div>
         {config.emptyState === 'waiting' && (
           <>
@@ -1314,10 +1505,12 @@ const SetlistPreviewControls: React.FC<{
   </div>
 );
 
-const PreviewIconButton: React.FC<{ icon: string; title: string; onClick: () => void }> = ({ icon, title, onClick }) => (
+const PreviewIconButton: React.FC<{ icon: string; title: string; onClick: () => void }> = ({ icon, title, onClick }) => {
+  const { t } = useTranslation();
+  return (
   <button
     type="button"
-    title={title}
+    title={overlayUiText(t, title)}
     onClick={onClick}
     style={{
       width: 28,
@@ -1343,7 +1536,8 @@ const PreviewIconButton: React.FC<{ icon: string; title: string; onClick: () => 
   >
     <img src={icon} alt="" style={{ width: 16, height: 16, filter: 'brightness(0) invert(1)' }} />
   </button>
-);
+  );
+};
 
 const formatTime = (seconds: number) => {
   const safe = Math.max(0, Math.floor(seconds));
@@ -1363,20 +1557,28 @@ const editorPanelStyle: React.CSSProperties = {
   overflowX: 'hidden',
 };
 
-const SectionTitle: React.FC<{ title: string }> = ({ title }) => (
-  <h2 style={{ margin: '0 0 12px 0', fontSize: 18, color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: 12 }}>
-    {title}
-  </h2>
-);
+const SectionTitle: React.FC<{ title: string }> = ({ title }) => {
+  const { t } = useTranslation();
+  return (
+    <h2 style={{ margin: '0 0 12px 0', fontSize: 18, color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: 12 }}>
+      {overlayUiText(t, title)}
+    </h2>
+  );
+};
 
-const ControlGroup: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <div style={{ borderTop: '1px solid #3a3a3a', paddingTop: 12, marginTop: 12, display: 'flex', flexDirection: 'column', gap: 9 }}>
-    <div style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>{title}</div>
-    {children}
-  </div>
-);
+const ControlGroup: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => {
+  const { t } = useTranslation();
+  return (
+    <div style={{ borderTop: '1px solid #3a3a3a', paddingTop: 12, marginTop: 12, display: 'flex', flexDirection: 'column', gap: 9 }}>
+      <div style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>{overlayUiText(t, title)}</div>
+      {children}
+    </div>
+  );
+};
 
-const SmallButton: React.FC<{ children: React.ReactNode; onClick: () => void; primary?: boolean; disabled?: boolean; danger?: boolean }> = ({ children, onClick, primary, disabled, danger }) => (
+const SmallButton: React.FC<{ children: React.ReactNode; onClick: () => void; primary?: boolean; disabled?: boolean; danger?: boolean }> = ({ children, onClick, primary, disabled, danger }) => {
+  const { t } = useTranslation();
+  return (
   <button
     onClick={onClick}
     disabled={disabled}
@@ -1394,11 +1596,14 @@ const SmallButton: React.FC<{ children: React.ReactNode; onClick: () => void; pr
       minWidth: 0,
     }}
   >
-    {children}
+    {typeof children === 'string' ? overlayUiText(t, children) : children}
   </button>
-);
+  );
+};
 
-const SegmentedControl: React.FC<{ value: string; options: [string, string][]; onChange: (value: string) => void }> = ({ value, options, onChange }) => (
+const SegmentedControl: React.FC<{ value: string; options: [string, string][]; onChange: (value: string) => void }> = ({ value, options, onChange }) => {
+  const { t } = useTranslation();
+  return (
   <div style={{ display: 'flex', flexWrap: 'wrap', background: '#202020', borderRadius: 999, padding: 3, border: BORDER, minWidth: 0 }}>
     {options.map(([optionValue, label]) => (
       <button
@@ -1416,31 +1621,40 @@ const SegmentedControl: React.FC<{ value: string; options: [string, string][]; o
           whiteSpace: 'nowrap',
         }}
       >
-        {label}
+        {overlayUiText(t, label)}
       </button>
     ))}
   </div>
-);
+  );
+};
 
-const SelectControl: React.FC<{ label: string; value: string; options: [string, string][]; onChange: (value: string) => void }> = ({ label, value, options, onChange }) => (
+const SelectControl: React.FC<{ label: string; value: string; options: [string, string][]; onChange: (value: string) => void }> = ({ label, value, options, onChange }) => {
+  const { t } = useTranslation();
+  return (
   <label style={controlRowStyle}>
-    <span>{label}</span>
+    <span>{overlayUiText(t, label)}</span>
     <select value={value} onChange={(event) => onChange(event.target.value)} style={fieldStyle}>
-      {options.map(([optionValue, labelText]) => <option key={optionValue} value={optionValue}>{labelText}</option>)}
+      {options.map(([optionValue, labelText]) => <option key={optionValue} value={optionValue}>{overlayUiText(t, labelText)}</option>)}
     </select>
   </label>
-);
+  );
+};
 
-const TextControl: React.FC<{ label: string; value: string; onChange: (value: string) => void }> = ({ label, value, onChange }) => (
+const TextControl: React.FC<{ label: string; value: string; onChange: (value: string) => void }> = ({ label, value, onChange }) => {
+  const { t } = useTranslation();
+  return (
   <label style={controlRowStyle}>
-    <span>{label}</span>
+    <span>{overlayUiText(t, label)}</span>
     <input value={value} onChange={(event) => onChange(event.target.value)} style={fieldStyle} />
   </label>
-);
+  );
+};
 
-const NumberControl: React.FC<{ label: string; min: number; max: number; value: number; disabled?: boolean; onChange: (value: number) => void }> = ({ label, min, max, value, disabled, onChange }) => (
+const NumberControl: React.FC<{ label: string; min: number; max: number; value: number; disabled?: boolean; onChange: (value: number) => void }> = ({ label, min, max, value, disabled, onChange }) => {
+  const { t } = useTranslation();
+  return (
   <label style={{ ...controlRowStyle, opacity: disabled ? 0.45 : 1 }}>
-    <span>{label}</span>
+    <span>{overlayUiText(t, label)}</span>
     <input
       type="number"
       min={min}
@@ -1451,28 +1665,38 @@ const NumberControl: React.FC<{ label: string; min: number; max: number; value: 
       style={{ ...fieldStyle, width: 82 }}
     />
   </label>
-);
+  );
+};
 
-const RangeControl: React.FC<{ label: string; min: number; max: number; value: number; step?: number; displayValue?: string; onChange: (value: number) => void }> = ({ label, min, max, value, step = 1, displayValue, onChange }) => (
+const RangeControl: React.FC<{ label: string; min: number; max: number; value: number; step?: number; displayValue?: string; onChange: (value: number) => void }> = ({ label, min, max, value, step = 1, displayValue, onChange }) => {
+  const { t } = useTranslation();
+  return (
   <label style={{ display: 'flex', flexDirection: 'column', gap: 5, color: '#aaa', fontSize: 12, minWidth: 0 }}>
-    <span style={{ display: 'flex', justifyContent: 'space-between' }}><span>{label}</span><span>{displayValue ?? value}</span></span>
+    <span style={{ display: 'flex', justifyContent: 'space-between' }}><span>{overlayUiText(t, label)}</span><span>{displayValue ?? value}</span></span>
     <input type="range" min={min} max={max} step={step} value={value} onChange={(event) => onChange(Number(event.target.value))} style={{ accentColor: 'var(--accent-color)', width: '100%', minWidth: 0 }} />
   </label>
-);
+  );
+};
 
-const ColorControl: React.FC<{ label: string; value: string; onChange: (value: string) => void }> = ({ label, value, onChange }) => (
+const ColorControl: React.FC<{ label: string; value: string; onChange: (value: string) => void }> = ({ label, value, onChange }) => {
+  const { t } = useTranslation();
+  return (
   <label style={controlRowStyle}>
-    <span>{label}</span>
+    <span>{overlayUiText(t, label)}</span>
     <input type="color" value={value.startsWith('#') ? value : '#ffffff'} onChange={(event) => onChange(event.target.value)} style={{ width: 44, height: 30, border: 'none', background: 'transparent', cursor: 'pointer', justifySelf: 'end' }} />
   </label>
-);
+  );
+};
 
-const CheckboxControl: React.FC<{ label: string; checked: boolean; onChange: (value: boolean) => void }> = ({ label, checked, onChange }) => (
+const CheckboxControl: React.FC<{ label: string; checked: boolean; onChange: (value: boolean) => void }> = ({ label, checked, onChange }) => {
+  const { t } = useTranslation();
+  return (
   <label style={controlRowStyle}>
-    <span>{label}</span>
+    <span>{overlayUiText(t, label)}</span>
     <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} style={{ width: 17, height: 17, accentColor: 'var(--accent-color)', justifySelf: 'end' }} />
   </label>
-);
+  );
+};
 
 const controlRowStyle: React.CSSProperties = {
   display: 'grid',

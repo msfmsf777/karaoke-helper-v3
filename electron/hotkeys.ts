@@ -49,14 +49,14 @@ export function applyGlobalHotkeys(
     if (!accelerator) continue;
 
     if (isPlainGlobalAccelerator(accelerator)) {
-      status.failed[action] = '全域快捷鍵需包含修飾鍵';
+      status.failed[action] = 'plain-global';
       continue;
     }
 
     const existingAction = seen.get(accelerator);
     if (existingAction) {
-      status.failed[action] = '重複快捷鍵';
-      status.failed[existingAction] = status.failed[existingAction] || '重複快捷鍵';
+      status.failed[action] = 'duplicate';
+      status.failed[existingAction] = status.failed[existingAction] || 'duplicate';
       continue;
     }
     seen.set(accelerator, action);
@@ -67,7 +67,7 @@ export function applyGlobalHotkeys(
     if (registered) {
       registeredAccelerators.add(accelerator);
     } else {
-      status.failed[action] = '被其他應用程式佔用';
+      status.failed[action] = 'occupied';
     }
   }
 

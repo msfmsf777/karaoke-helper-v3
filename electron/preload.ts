@@ -2,6 +2,30 @@ import { ipcRenderer, contextBridge, type IpcRendererEvent } from 'electron'
 import type { SongMeta, SongType, DownloadJob } from '../shared/songTypes'
 import type { SeparationJob } from '../shared/separationTypes'
 import type { HotkeyAction, HotkeyRegistrationStatus } from '../shared/hotkeys'
+import type {
+  LyricsOverlayDesign,
+  OverlayKind,
+  OverlayPlaybackMode,
+  OverlayTemplatesConfig,
+  SetlistOverlayDesign,
+} from '../shared/overlayTemplates'
+import type { SupportedLanguage } from '../shared/i18n'
+
+type OverlayUpdatePayload = {
+  type?: string
+  songId?: string
+  currentTime?: number
+  isPlaying?: boolean
+  queue?: string[]
+  currentIndex?: number
+  isStreamWaiting?: boolean
+  playbackMode?: OverlayPlaybackMode
+  language?: SupportedLanguage
+  kind?: OverlayKind
+  designId?: string
+  design?: LyricsOverlayDesign | SetlistOverlayDesign
+  overlayTemplates?: OverlayTemplatesConfig
+}
 
 // --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld('ipcRenderer', {
@@ -32,8 +56,8 @@ contextBridge.exposeInMainWorld('api', {
   openAudioFileDialog: () => ipcRenderer.invoke('dialog:open-audio-file'),
   openExternal: (url: string) => ipcRenderer.invoke('shell:open-external', url),
   openOverlayWindow: () => ipcRenderer.send('window:open-overlay'),
-  sendOverlayUpdate: (payload: { type?: string; songId?: string; currentTime?: number; isPlaying?: boolean; queue?: string[]; currentIndex?: number; isStreamWaiting?: boolean }) => ipcRenderer.send('overlay:update', payload),
-  subscribeOverlayUpdates: (callback: (payload: { type?: string; songId?: string; currentTime?: number; isPlaying?: boolean; queue?: string[]; currentIndex?: number; isStreamWaiting?: boolean }) => void) => {
+  sendOverlayUpdate: (payload: OverlayUpdatePayload) => ipcRenderer.send('overlay:update', payload),
+  subscribeOverlayUpdates: (callback: (payload: OverlayUpdatePayload) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, payload: any) => callback(payload)
     ipcRenderer.on('overlay:update', listener)
     return () => ipcRenderer.off('overlay:update', listener)

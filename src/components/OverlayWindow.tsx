@@ -3,6 +3,7 @@ import { SongMeta, EnrichedLyricLine } from '../../shared/songTypes';
 import { EditableLyricLine, linesFromRawText, parseLrc, readRawLyrics, readSyncedLyrics } from '../library/lyrics';
 import { DEFAULT_OVERLAY_DESIGN_ID, findLyricsOverlayDesign, LyricsOverlayDesign } from '../../shared/overlayTemplates';
 import { TemplatedLyricsOverlay } from './overlayTemplates/OverlayTemplateRenderers';
+import i18n from '../i18n';
 
 const OverlayWindow: React.FC = () => {
     const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
@@ -24,6 +25,7 @@ const OverlayWindow: React.FC = () => {
                 const response = await fetch(`${baseUrl}/overlay-config?kind=lyrics${designId ? `&design=${encodeURIComponent(designId)}` : ''}`);
                 if (!response.ok) throw new Error('Failed to fetch overlay config');
                 const payload = await response.json();
+                if (payload.language) void i18n.changeLanguage(payload.language);
                 setDesign(payload.design);
             } catch (err) {
                 console.error('[Overlay] Failed to load template config', err);
@@ -41,6 +43,7 @@ const OverlayWindow: React.FC = () => {
             // Listen for updates from the main window via IPC
             const removeListener = window.api.subscribeOverlayUpdates((payload) => {
                 if (payload.type === 'overlay-template-config') {
+                    if (payload.language) void i18n.changeLanguage(payload.language);
                     if (payload.overlayTemplates) {
                         setDesign(findLyricsOverlayDesign(payload.overlayTemplates, designId ?? DEFAULT_OVERLAY_DESIGN_ID));
                     } else if (payload.kind === 'lyrics' && (!payload.designId || payload.designId === designId)) {
@@ -83,6 +86,7 @@ const OverlayWindow: React.FC = () => {
                     }
 
                     if (payload.type === 'overlay-template-config') {
+                        if (payload.language) void i18n.changeLanguage(payload.language);
                         if (payload.overlayTemplates) {
                             setDesign(findLyricsOverlayDesign(payload.overlayTemplates, designId ?? DEFAULT_OVERLAY_DESIGN_ID));
                         } else if (payload.kind === 'lyrics' && (!payload.designId || payload.designId === designId)) {

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import LogoIcon from '../../assets/images/logo.png';
 import PlayIcon from '../../assets/icons/play.svg';
 import PauseIcon from '../../assets/icons/pause.svg';
@@ -69,6 +70,7 @@ const MergedVolumeControl: React.FC<{
     onDragEnd?: () => void;
     forceHover?: boolean;
 }> = (props) => {
+    const { t } = useTranslation();
     const [hover, setHover] = useState(false);
     const show = hover || props.forceHover;
 
@@ -221,7 +223,7 @@ const MergedVolumeControl: React.FC<{
                     <button onClick={toggleInst} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}>
                         <img src={(props.instMuted || sliderInstVal === 0) ? VolumeMuteIcon : (sliderInstVal < 0.5 ? VolumeLowIcon : VolumeHighIcon)} style={{ width: '20px', height: '20px', filter: 'brightness(0) invert(1)' }} />
                     </button>
-                    <span style={{ fontSize: '10px', color: '#aaa', lineHeight: '1' }}>伴奏</span>
+                    <span style={{ fontSize: '10px', color: '#aaa', lineHeight: '1' }}>{t('shell.player.instrumental')}</span>
                 </div>
 
                 {/* Vocal */}
@@ -253,7 +255,7 @@ const MergedVolumeControl: React.FC<{
                     <button onClick={toggleVocal} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}>
                         <img src={(props.vocalMuted || sliderVocalVal === 0) ? VolumeMuteIcon : (sliderVocalVal < 0.5 ? VolumeLowIcon : VolumeHighIcon)} style={{ width: '20px', height: '20px', filter: 'brightness(0) invert(1)' }} />
                     </button>
-                    <span style={{ fontSize: '10px', color: '#aaa', lineHeight: '1' }}>人聲</span>
+                    <span style={{ fontSize: '10px', color: '#aaa', lineHeight: '1' }}>{t('shell.player.vocal')}</span>
                 </div>
             </div>
         </div>
@@ -261,6 +263,7 @@ const MergedVolumeControl: React.FC<{
 };
 
 const MiniPlaybackControl: React.FC<{
+    kind: 'speed' | 'pitch';
     title: string;
     value: number;
     min: number;
@@ -269,7 +272,8 @@ const MiniPlaybackControl: React.FC<{
     formatLabel: (val: number) => string;
     onChange: (val: number) => void;
     onReset: () => void;
-}> = ({ title, value, min, max, step, formatLabel, onChange, onReset }) => {
+}> = ({ kind, title, value, min, max, step, formatLabel, onChange, onReset }) => {
+    const { t } = useTranslation();
     const [isEditing, setIsEditing] = useState(false);
     const [editValue, setEditValue] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);
@@ -284,7 +288,7 @@ const MiniPlaybackControl: React.FC<{
 
     const handleStartEdit = () => {
         let initialEditVal = value;
-        if (title === '變速') initialEditVal = Math.round(value * 100);
+        if (kind === 'speed') initialEditVal = Math.round(value * 100);
         setEditValue(initialEditVal.toString());
         setIsEditing(true);
     };
@@ -292,7 +296,7 @@ const MiniPlaybackControl: React.FC<{
     const handleCommitEdit = () => {
         let num = parseFloat(editValue);
         if (!isNaN(num)) {
-            if (title === '變速') num = num / 100;
+            if (kind === 'speed') num = num / 100;
             const clamped = Math.max(min, Math.min(num, max));
             onChange(clamped);
         }
@@ -349,12 +353,12 @@ const MiniPlaybackControl: React.FC<{
                     <span
                         onClick={handleStartEdit}
                         style={{ fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', borderBottom: '1px dashed #666' }}
-                        title="Click to edit"
+                        title={t('common.edit')}
                     >
                         {formatLabel(value)}
                     </span>
                 )}
-                <button onClick={onReset} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '14px', padding: '0 2px' }} title="Reset">
+                <button onClick={onReset} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '14px', padding: '0 2px' }} title={t('common.reset')}>
                     ↺
                 </button>
             </div>
@@ -400,6 +404,7 @@ const QueueArtworkButton: React.FC<{
     thumbnailUrl?: string;
     onPlay: () => void;
 }> = ({ thumbnailPath, thumbnailUrl, onPlay }) => {
+    const { t } = useTranslation();
     const [hovered, setHovered] = useState(false);
     const [failed, setFailed] = useState(false);
     const thumbnailSrc = failed ? undefined : (localPathToFileUrl(thumbnailPath) || thumbnailUrl);
@@ -411,7 +416,7 @@ const QueueArtworkButton: React.FC<{
     return (
         <button
             type="button"
-            title="播放"
+            title={t('common.play')}
             onClick={(e) => {
                 e.stopPropagation();
                 onPlay();
@@ -483,6 +488,7 @@ const QueueArtworkButton: React.FC<{
 };
 
 export default function MiniPlayerWindow() {
+    const { t } = useTranslation();
     const [state, setState] = useState({
         currentTrack: null as { title: string; artist: string; duration: number; thumbnailPath?: string; thumbnailUrl?: string } | null,
         isPlaying: false,
@@ -866,11 +872,11 @@ export default function MiniPlayerWindow() {
                         }}>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: '200px', paddingRight: '30px' }}>
                                 <ScrollingText
-                                    text={state.displayTitle || '未播放'}
+                                    text={state.displayTitle || t('lyrics.stream.notPlaying')}
                                     style={{ fontSize: '14px', fontWeight: 600, color: '#fff', marginBottom: '2px', textAlign: 'center' }}
                                 />
                                 <ScrollingText
-                                    text={state.displayArtist || '迷你播放器'}
+                                    text={state.displayArtist || t('shell.topBar.miniPlayer')}
                                     style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', textAlign: 'center' }}
                                 />
                             </div>
@@ -896,14 +902,15 @@ export default function MiniPlayerWindow() {
                                     <div style={{ position: 'relative' }} ref={speedContainerRef}>
                                         <ControlButton
                                             icon={SpeedIcon}
-                                            title={`速度: ${state.speed}x`}
+                                            title={t('miniPlayer.speedTitle', { value: state.speed })}
                                             onClick={() => { setShowSpeed(!showSpeed); setShowPitch(false); }}
                                             active={showSpeed || state.speed !== 1}
                                             disabled={!state.currentTrack}
                                         />
                                         {showSpeed && (
                                             <MiniPlaybackControl
-                                                title="變速"
+                                                kind="speed"
+                                                title={t('shell.player.speed')}
                                                 value={state.speed}
                                                 min={0.5}
                                                 max={2.0}
@@ -918,14 +925,15 @@ export default function MiniPlayerWindow() {
                                     <div style={{ position: 'relative' }} ref={pitchContainerRef}>
                                         <ControlButton
                                             icon={PitchIcon}
-                                            title={`變調: ${state.pitch}`}
+                                            title={t('miniPlayer.pitchTitle', { value: state.pitch })}
                                             onClick={() => { setShowPitch(!showPitch); setShowSpeed(false); }}
                                             active={showPitch || state.pitch !== 0}
                                             disabled={!state.currentTrack}
                                         />
                                         {showPitch && (
                                             <MiniPlaybackControl
-                                                title="變調"
+                                                kind="pitch"
+                                                title={t('shell.player.pitch')}
                                                 value={state.pitch}
                                                 min={-12}
                                                 max={12}
@@ -940,7 +948,7 @@ export default function MiniPlayerWindow() {
 
                                 {/* Transport: Prev, Play, Next */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    <ControlButton icon={PrevIcon} onClick={() => window.khelper?.miniPlayer?.sendCommand('prev')} title="上一首" />
+                                    <ControlButton icon={PrevIcon} onClick={() => window.khelper?.miniPlayer?.sendCommand('prev')} title={t('shell.player.previous')} />
                                     <div style={{ position: 'relative', width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         {state.isPlaybackLoading && (
                                             <div
@@ -963,7 +971,7 @@ export default function MiniPlayerWindow() {
                                                 }
                                             }}
                                             disabled={state.isPlaybackLoading}
-                                            title={state.isPlaybackLoading ? '載入中' : undefined}
+                                            title={state.isPlaybackLoading ? t('common.loading') : undefined}
                                             style={{
                                                 width: '28px', height: '28px', borderRadius: '50%',
                                                 backgroundColor: '#fff', border: 'none',
@@ -978,7 +986,7 @@ export default function MiniPlayerWindow() {
                                             <img src={state.isPlaying ? PauseIcon : PlayIcon} style={{ width: '12px', height: '12px', filter: 'brightness(0)' }} />
                                         </button>
                                     </div>
-                                    <ControlButton icon={NextIcon} onClick={() => window.khelper?.miniPlayer?.sendCommand('next')} title="下一首" />
+                                    <ControlButton icon={NextIcon} onClick={() => window.khelper?.miniPlayer?.sendCommand('next')} title={t('shell.player.next')} />
                                 </div>
 
                                 {/* Volumes (Merged) */}
@@ -1000,7 +1008,7 @@ export default function MiniPlayerWindow() {
                                 <ControlButton
                                     icon={PlaylistIcon}
                                     onClick={() => setShowQueue(!showQueue)}
-                                    title="播放清單"
+                                    title={t('shell.player.queue')}
                                     active={showQueue}
                                 />
                             </div>
@@ -1028,7 +1036,7 @@ export default function MiniPlayerWindow() {
                         >
                             {state.queue.length === 0 ? (
                                 <div style={{ color: '#888', textAlign: 'center', fontSize: '12px', paddingTop: '20px' }}>
-                                    請先添加歌曲至播放清單
+                                    {t('shell.queue.empty')}
                                 </div>
                             ) : (
                                 state.queue.map((item, idx) => {
@@ -1072,10 +1080,11 @@ export default function MiniPlayerWindow() {
                                                     fontWeight: isCurrent ? 600 : 400,
                                                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
                                                 }}>{item.title}</div>
-                                                <div style={{ color: '#888', fontSize: '10px', marginTop: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.artist || 'Unknown'}</div>
+                                                <div style={{ color: '#888', fontSize: '10px', marginTop: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.artist || t('songManagement.unknownArtist')}</div>
                                             </div>
                                             <button
                                                 className="remove-btn"
+                                                title={t('shell.queue.remove')}
                                                 onClick={(e) => { e.stopPropagation(); window.khelper?.miniPlayer?.sendCommand('removeFromQueue', idx); }}
                                                 style={{
                                                     background: 'none', border: 'none', color: '#666', cursor: 'pointer',

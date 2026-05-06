@@ -5,6 +5,7 @@ import {
     OverlaySetlistState,
     TemplatedSetlistOverlay,
 } from './overlayTemplates/OverlayTemplateRenderers';
+import i18n from '../i18n';
 
 const SetlistOverlayWindow: React.FC = () => {
     const [queue, setQueue] = useState<string[]>([]);
@@ -24,6 +25,7 @@ const SetlistOverlayWindow: React.FC = () => {
                 const response = await fetch(`${baseUrl}/overlay-config?kind=setlist${designId ? `&design=${encodeURIComponent(designId)}` : ''}`);
                 if (!response.ok) throw new Error('Failed to fetch overlay config');
                 const payload = await response.json();
+                if (payload.language) void i18n.changeLanguage(payload.language);
                 setDesign(payload.design);
             } catch (err) {
                 console.error('[SetlistOverlay] Failed to load template config', err);
@@ -35,6 +37,7 @@ const SetlistOverlayWindow: React.FC = () => {
     useEffect(() => {
         const handleUpdate = (payload: any) => {
             if (payload.type === 'overlay-template-config') {
+                if (payload.language) void i18n.changeLanguage(payload.language);
                 if (payload.overlayTemplates) {
                     setDesign(findSetlistOverlayDesign(payload.overlayTemplates, designId ?? DEFAULT_OVERLAY_DESIGN_ID));
                 } else if (payload.kind === 'setlist' && (!payload.designId || payload.designId === designId)) {

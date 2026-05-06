@@ -24,6 +24,7 @@ import { initUpdater, checkForUpdates, onStatusChange } from './updater'
 import type { HotkeyAction, HotkeyConfig } from '../shared/hotkeys'
 import { applyGlobalHotkeys, getHotkeyRegistrationStatus, unregisterGlobalHotkeys } from './hotkeys'
 import { DEFAULT_OVERLAY_DESIGN_ID, findLyricsOverlayDesign, findSetlistOverlayDesign, mergeOverlayTemplatesConfig } from '../shared/overlayTemplates'
+import { getElectronLanguage, setElectronLanguage, tElectron } from './i18n'
 
 // Disable native swipe navigation (fixes sidebar drag sliding the screen)
 app.commandLine.appendSwitch('disable-features', 'OverscrollHistoryNavigation')
@@ -107,7 +108,7 @@ function createTray() {
 function updateTrayMenu(updaterStatus?: string) {
   if (!tray) return
 
-  const updaterLabel = updaterStatus === 'checking' ? '檢查更新中...' : '檢查更新'
+  const updaterLabel = updaterStatus === 'checking' ? tElectron('tray.checkingUpdates') : tElectron('tray.checkUpdates')
 
   // Icon Helpers
   const getIcon = (name: string) => {
@@ -147,7 +148,7 @@ function updateTrayMenu(updaterStatus?: string) {
     },
     { type: 'separator' },
     {
-      label: '開啟主視窗',
+      label: tElectron('tray.openMainWindow'),
       icon: openIcon || undefined,
       click: () => {
         if (win) {
@@ -157,7 +158,7 @@ function updateTrayMenu(updaterStatus?: string) {
       }
     },
     {
-      label: '設定',
+      label: tElectron('tray.settings'),
       icon: settingsIcon || undefined,
       click: () => {
         if (win) {
@@ -191,7 +192,7 @@ function updateTrayMenu(updaterStatus?: string) {
     },
     { type: 'separator' },
     {
-      label: '退出',
+      label: tElectron('tray.quit'),
       icon: quitIcon || undefined,
       click: () => {
         isQuitting = true
@@ -677,9 +678,9 @@ ipcMain.handle('library:delete-song', async (_event, id: string) => {
   if (!win) return
   const result = await dialog.showMessageBox(win, {
     type: 'warning',
-    title: '刪除歌曲',
-    message: '確定要刪除這首歌曲嗎？此操作無法復原。',
-    buttons: ['取消', '刪除'],
+    title: tElectron('dialog.deleteSong.title'),
+    message: tElectron('dialog.deleteSong.message'),
+    buttons: [tElectron('dialog.cancel'), tElectron('dialog.delete')],
     defaultId: 0,
     cancelId: 0,
   })
@@ -781,10 +782,12 @@ ipcMain.handle('userData:load-playlists', async () => {
 
 ipcMain.handle('userData:save-settings', async (_event, settings: any) => {
   await saveSettings(settings)
+  setElectronLanguage(settings?.language)
+  updateTrayMenu()
   applyHotkeysFromSettings(settings?.hotkeys)
   if (settings?.overlayTemplates) {
     const overlayTemplates = mergeOverlayTemplatesConfig(settings.overlayTemplates, settings.lyricStyles)
-    const data = JSON.stringify({ type: 'overlay-template-config', overlayTemplates })
+    const data = JSON.stringify({ type: 'overlay-template-config', overlayTemplates, language: getElectronLanguage() })
     // @ts-ignore
     for (const client of clients) {
       // @ts-ignore
@@ -944,6 +947,8 @@ if (!gotTheLock) {
     // console.log('[Library] base songs dir:', getSongsBaseDir()) 
     createWindow()
     const settings = await loadSettings()
+    setElectronLanguage(settings.language)
+    updateTrayMenu()
     applyHotkeysFromSettings(settings.hotkeys)
   })
 }
@@ -1097,6 +1102,7 @@ const server = http.createServer((req, res) => {
         kind,
         designId: design.id,
         design,
+        language: settings.language,
       }))
     }).catch((err) => {
       console.error('[OverlayServer] Failed to read overlay config', err)

@@ -4,6 +4,7 @@ import { useLibrary } from '../../contexts/LibraryContext';
 import { useUserData } from '../../contexts/UserDataContext';
 import audioEngine from '../../audio/AudioEngine';
 import { getStreamingSongThumbnailUrl } from '../../utils/onlineSongs';
+import { useTranslation } from 'react-i18next';
 
 interface MiniPlayerState {
     currentTrack: {
@@ -38,6 +39,7 @@ interface MiniPlayerState {
 }
 
 export default function MiniPlayerSync() {
+    const { t } = useTranslation();
     const {
         currentSongId,
         queue,
@@ -203,18 +205,18 @@ export default function MiniPlayerSync() {
         const vocVol = audioEngine.getTrackVolume('vocal');
 
         // Logic to determine display text (Exact match with PlayerBar)
-        let displayTitle = song ? song.title : '未播放';
-        let displayArtist = song ? (song.artist || '') : '迷你播放器';
+        let displayTitle = song ? song.title : t('lyrics.stream.notPlaying');
+        let displayArtist = song ? (song.artist || '') : t('shell.topBar.miniPlayer');
 
         if (playbackMode === 'stream' && isStreamWaiting) {
             const nextId = queue[currentIndex];
             if (nextId) {
                 const nextSong = getSongById(nextId);
-                const nextTitle = nextSong ? nextSong.title : '未知歌曲';
-                displayTitle = `下一首: ${nextTitle}`;
-                displayArtist = nextSong ? (nextSong.artist || '') : '未知歌手';
+                const nextTitle = nextSong ? nextSong.title : t('shell.player.unknownSong');
+                displayTitle = t('shell.player.nextSong', { title: nextTitle });
+                displayArtist = nextSong ? (nextSong.artist || '') : t('songManagement.unknownArtist');
             } else {
-                displayTitle = '待播清單已空';
+                displayTitle = t('shell.player.emptySetlist');
                 displayArtist = '';
             }
         }
@@ -255,7 +257,7 @@ export default function MiniPlayerSync() {
         };
 
         window.khelper.miniPlayer.sendStateUpdate(state);
-    }, [currentSongId, queue, getSongById, currentIndex, isFavorite, isStreamWaiting, isPlaybackLoading, playbackMode]);
+    }, [currentSongId, queue, getSongById, currentIndex, isFavorite, isStreamWaiting, isPlaybackLoading, playbackMode, t]);
 
     useEffect(() => {
         const unsubTime = audioEngine.onTimeUpdate(() => broadcastState(false));
