@@ -11,6 +11,7 @@ import {
 import { useQueue } from '../contexts/QueueContext';
 import { useUserData } from '../contexts/UserDataContext';
 import SongRow from './SongRow';
+import FitText from './FitText';
 import PlayIcon from '../assets/icons/play.svg';
 import QueueAddIcon from '../assets/icons/queue_add.svg';
 import MoreIcon from '../assets/icons/more.svg';
@@ -312,7 +313,14 @@ const SongList: React.FC<SongListProps> = ({
                 }}
                 title={key ? t('songList.sortBy', { label }) : undefined}
             >
-                <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+                <FitText
+                    text={label}
+                    title={key ? t('songList.sortBy', { label }) : label}
+                    ariaLabel={label}
+                    baseFontSize={12}
+                    minFontSize={10}
+                    style={{ color: 'inherit', fontWeight: 700, textAlign: align }}
+                />
                 {key && enabled && (
                     <span style={{ flexShrink: 0, color: active ? '#fff' : '#555', fontSize: active ? '12px' : '11px' }}>
                         {active ? (viewConfig.sortDirection === 'asc' ? '↑' : '↓') : '↕'}
@@ -472,7 +480,14 @@ const SongList: React.FC<SongListProps> = ({
                                         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', padding: '8px 2px 2px' }}>
                                             {filterChips.map(chip => (
                                                 <button key={chip.key} type="button" onClick={chip.clear} style={chipStyle} title={t('songList.clearCondition')}>
-                                                    {chip.label} ×
+                                                    <FitText
+                                                        text={`${chip.label} ×`}
+                                                        title={chip.label}
+                                                        ariaLabel={chip.label}
+                                                        baseFontSize={12}
+                                                        minFontSize={10}
+                                                        style={{ color: 'inherit', textAlign: 'left', maxWidth: '160px' }}
+                                                    />
                                                 </button>
                                             ))}
                                         </div>
@@ -702,6 +717,10 @@ const chipStyle: React.CSSProperties = {
     cursor: 'pointer',
     fontSize: '12px',
     flexShrink: 0,
+    maxWidth: '100%',
+    minWidth: 0,
+    display: 'inline-flex',
+    alignItems: 'center',
 };
 
 const chipResetStyle: React.CSSProperties = {

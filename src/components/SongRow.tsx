@@ -11,6 +11,7 @@ import AddToPlaylistMenu from './AddToPlaylistMenu';
 import OnlineDownloadPanel from './OnlineDownloadPanel';
 import YouTubeDownloadControl, { YouTubeDownloadTarget } from './YouTubeDownloadControl';
 import ArtworkTile from './ArtworkTile';
+import FitText from './FitText';
 import { useEnsureYoutubeThumbnail } from '../hooks/useEnsureYoutubeThumbnail';
 import FavoritesIcon from '../assets/icons/favorites.svg';
 import FavoritesFilledIcon from '../assets/icons/favorites_filled.svg';
@@ -105,6 +106,11 @@ const SongRow: React.FC<SongRowProps> = ({
             : song.audio_status === 'separation_failed' || song.audio_status === 'error'
                 ? '#ff8b8b'
                 : '#e0a040';
+    const typeLabel = isStreaming ? '-' : getSongTypeLabel(t, song.type);
+    const audioStatusLabel = getAudioStatusLabel(t, song.audio_status);
+    const audioStatusTitle = song.last_separation_error ? `${audioStatusLabel}: ${song.last_separation_error}` : audioStatusLabel;
+    const lyricStatusLabel = getLyricsStatusLabel(t, song.lyrics_status, true);
+    const separationActionLabel = song.audio_status === 'separation_failed' ? t('common.retry') : t('songManagement.separate');
 
     return (
         <>
@@ -232,12 +238,19 @@ const SongRow: React.FC<SongRowProps> = ({
                 </div>
 
                 {/* Type */}
-                <div style={{ color: '#b3b3b3', fontSize: '13px', textAlign: 'center' }}>
-                    {showType && (isStreaming ? '-' : getSongTypeLabel(t, song.type))}
+                <div style={{ color: '#b3b3b3', fontSize: '13px', textAlign: 'center', minWidth: 0 }}>
+                    {showType && (
+                        <FitText
+                            text={typeLabel}
+                            baseFontSize={13}
+                            minFontSize={10}
+                            style={{ color: 'inherit', textAlign: 'center' }}
+                        />
+                    )}
                 </div>
 
                 {/* Audio Status */}
-                <div style={{ color: audioColor, fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} title={song.last_separation_error || undefined}>
+                <div style={{ color: audioColor, fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', minWidth: 0, overflow: 'hidden' }} title={audioStatusTitle}>
                     {showAudioStatus && (
                         isStreaming && youtubeId ? (
                             <YouTubeDownloadControl
@@ -252,7 +265,14 @@ const SongRow: React.FC<SongRowProps> = ({
                             <span>-</span>
                         ) : (
                             <>
-                                {getAudioStatusLabel(t, song.audio_status)}
+                                <FitText
+                                    text={audioStatusLabel}
+                                    title={audioStatusTitle}
+                                    ariaLabel={audioStatusLabel}
+                                    baseFontSize={13}
+                                    minFontSize={10}
+                                    style={{ color: 'inherit', textAlign: 'center', flex: '1 1 auto' }}
+                                />
 
                                 {/* Quality Badge */}
                                 {song.audio_status === 'separated' && song.separation_quality && (
@@ -263,7 +283,8 @@ const SongRow: React.FC<SongRowProps> = ({
                                         backgroundColor: song.separation_quality === 'high' ? '#4caf50' : song.separation_quality === 'fast' ? '#ff9800' : '#2196f3',
                                         color: '#fff',
                                         fontWeight: 'bold',
-                                        marginLeft: '4px'
+                                        marginLeft: '2px',
+                                        flexShrink: 0
                                     }}>
                                         {song.separation_quality === 'high' ? 'HQ' : song.separation_quality === 'fast' ? t('songManagement.fastBadge') : t('songManagement.normalBadge')}
                                     </span>
@@ -293,10 +314,24 @@ const SongRow: React.FC<SongRowProps> = ({
                                                 cursor: 'pointer',
                                                 fontSize: '11px',
                                                 fontWeight: 700,
-                                                marginLeft: '4px'
+                                                marginLeft: '2px',
+                                                maxWidth: '54px',
+                                                minWidth: '42px',
+                                                flexShrink: 0,
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                overflow: 'hidden'
                                             }}
+                                            title={separationActionLabel}
+                                            aria-label={separationActionLabel}
                                         >
-                                            {song.audio_status === 'separation_failed' ? t('common.retry') : t('songManagement.separate')}
+                                            <FitText
+                                                text={separationActionLabel}
+                                                baseFontSize={11}
+                                                minFontSize={9}
+                                                style={{ color: 'inherit', fontWeight: 700, textAlign: 'center' }}
+                                            />
                                         </button>
                                     ) : null
                                 )}
@@ -309,9 +344,17 @@ const SongRow: React.FC<SongRowProps> = ({
                 <div style={{
                     color: song.lyrics_status === 'synced' ? '#4caf50' : '#b3b3b3',
                     fontSize: '13px',
-                    textAlign: 'center'
+                    textAlign: 'center',
+                    minWidth: 0
                 }}>
-                    {showLyricStatus && getLyricsStatusLabel(t, song.lyrics_status, true)}
+                    {showLyricStatus && (
+                        <FitText
+                            text={lyricStatusLabel}
+                            baseFontSize={13}
+                            minFontSize={10}
+                            style={{ color: 'inherit', textAlign: 'center' }}
+                        />
+                    )}
                 </div>
 
                 {/* Duration */}

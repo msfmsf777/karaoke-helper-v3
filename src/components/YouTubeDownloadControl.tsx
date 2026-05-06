@@ -6,6 +6,7 @@ import DownloadIcon from '../assets/icons/download.svg';
 import CheckIcon from '../assets/icons/check.svg';
 import CloudIcon from '../assets/icons/cloud.svg';
 import EditIcon from '../assets/icons/edit.svg';
+import FitText from './FitText';
 import { DownloadState, queueYouTubeDownload } from '../utils/onlineSongs';
 import { getSongTypeLabel } from '../i18n/domainLabels';
 
@@ -59,6 +60,9 @@ export const YouTubeDownloadControl: React.FC<YouTubeDownloadControlProps> = ({
     onCustomDownload,
 }) => {
     const { t } = useTranslation();
+    const originalLabel = getSongTypeLabel(t, '原曲');
+    const instrumentalLabel = getSongTypeLabel(t, '伴奏');
+    const customLabel = t('songManagement.download.custom');
 
     const queueQuick = async (type: SongType) => {
         if (isLockedState(state)) return;
@@ -141,28 +145,38 @@ export const YouTubeDownloadControl: React.FC<YouTubeDownloadControlProps> = ({
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '4px',
-                minWidth: '110px',
+                gap: '2px',
+                minWidth: '106px',
             }}
             onClick={(e) => e.stopPropagation()}
         >
             <button
                 type="button"
-                title={t('songManagement.download.downloadAs', { type: getSongTypeLabel(t, '原曲') })}
+                title={t('songManagement.download.downloadAs', { type: originalLabel })}
                 onClick={() => queueQuick('原曲')}
                 style={actionButtonStyle}
             >
                 <img src={DownloadIcon} alt="" style={{ width: '15px', height: '15px', display: 'block' }} />
-                <span>{getSongTypeLabel(t, '原曲')}</span>
+                <FitText
+                    text={originalLabel}
+                    baseFontSize={10}
+                    minFontSize={8.5}
+                    style={{ color: 'inherit', lineHeight: 1.1, textAlign: 'center' }}
+                />
             </button>
             <button
                 type="button"
-                title={t('songManagement.download.downloadAs', { type: getSongTypeLabel(t, '伴奏') })}
+                title={t('songManagement.download.downloadAs', { type: instrumentalLabel })}
                 onClick={() => queueQuick('伴奏')}
                 style={actionButtonStyle}
             >
                 <img src={DownloadIcon} alt="" style={{ width: '15px', height: '15px', display: 'block' }} />
-                <span>{getSongTypeLabel(t, '伴奏')}</span>
+                <FitText
+                    text={instrumentalLabel}
+                    baseFontSize={10}
+                    minFontSize={8.5}
+                    style={{ color: 'inherit', lineHeight: 1.1, textAlign: 'center' }}
+                />
             </button>
             <button
                 type="button"
@@ -171,7 +185,12 @@ export const YouTubeDownloadControl: React.FC<YouTubeDownloadControlProps> = ({
                 style={actionButtonStyle}
             >
                 <img src={EditIcon} alt="" style={{ width: '15px', height: '15px', display: 'block' }} />
-                <span>{t('songManagement.download.custom')}</span>
+                <FitText
+                    text={customLabel}
+                    baseFontSize={10}
+                    minFontSize={8.5}
+                    style={{ color: 'inherit', lineHeight: 1.1, textAlign: 'center' }}
+                />
             </button>
         </div>
     );
