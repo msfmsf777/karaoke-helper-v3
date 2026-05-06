@@ -21,7 +21,8 @@
     "unknown": "Unknown",
     "none": "None",
     "default": "Default",
-    "copied": "Copied"
+    "copied": "Copied",
+    "close": "Close"
   },
   "settings": {
     "language": {
@@ -61,7 +62,107 @@
     },
     "overlay": {
       "unsavedLeaveConfirm": "The live overlay template has unsaved changes. Leave the editor?"
+    },
+    "hotkeys": {
+      "title": "Hotkeys",
+      "resetRecommended": "Restore Recommended Defaults",
+      "resetRecommendedTitle": "Restore only hotkeys with recommended defaults. Custom hotkeys without defaults will not be overwritten.",
+      "enableGlobal": "Enable Global Hotkeys",
+      "globalDisabledDescription": "When off, shortcuts only work inside the KHelper window",
+      "function": "Function",
+      "local": "Local Hotkey",
+      "global": "Global Hotkey",
+      "recordingHint": "Press a shortcut, Esc to cancel, Backspace to clear",
+      "recordHint": "Click, then press a shortcut",
+      "recording": "Press shortcut...",
+      "mediaKey": "Media Key",
+      "clearShortcut": "Clear this hotkey",
+      "status": {
+        "title": "Status",
+        "duplicateGlobal": "Duplicate shortcut",
+        "duplicateLocal": "Duplicate local shortcut",
+        "globalDisabled": "Global hotkeys disabled",
+        "applied": "Applied"
+      }
+    },
+    "calibration": {
+      "title": "Dual-output Sync Calibration",
+      "purposeTitle": "Purpose",
+      "purpose": "Adjust the delay so the stream monitor loopback and direct headphone click are perfectly aligned.",
+      "preparationTitle": "Setup",
+      "obsMonitoringTitle": "Enable OBS monitoring: ",
+      "obsMonitoring": "In the OBS mixer, click the gear ⚙ → Advanced Audio Properties → set your audio source to Monitor Only or Monitor and Output.",
+      "sampleRateTitle": "Confirm sample rate: ",
+      "sampleRate": "Check the Hz badge in the upper-right corner of each selected device card in Settings. Make sure every device and OBS use the same sample rate, such as 48000 Hz.",
+      "operationTitle": "Operation",
+      "operation": "Click Start Test below, then adjust the slider until the two clicks overlap into one sound.",
+      "streamDelay": "← Stream delay",
+      "monitorDelay": "Monitor delay →",
+      "stopTest": "Stop Test",
+      "startTest": "Start Test",
+      "saveApply": "Save and Apply"
     }
+  },
+  "about": {
+    "descriptionLine1": "An all-in-one karaoke helper for VTubers and streamers",
+    "descriptionLine2": "For bugs or feature ideas, Discord is the best place to reach us.",
+    "links": {
+      "website": {
+        "title": "Official Website",
+        "label": "Website"
+      },
+      "twitter": {
+        "title": "Follow the creator",
+        "label": "Follow"
+      },
+      "discord": {
+        "title": "Join the Discord community",
+        "label": "Discord"
+      },
+      "report": {
+        "title": "Report an issue or request a feature on GitHub",
+        "label": "Report"
+      }
+    }
+  },
+  "updatesPopup": {
+    "title": "New Version Available",
+    "noReleaseNotes": "No release notes were provided for this version.",
+    "error": "Update failed. Check your network connection or try again later.",
+    "ignore": "Ignore This Version",
+    "download": "Open Download Page"
+  },
+  "tasks": {
+    "title": "Active Tasks",
+    "download": "Downloads",
+    "separation": "Song Separation",
+    "queuedDownload": "Queued...",
+    "failed": "Failed",
+    "completed": "Completed",
+    "viewAllDownloads": "View all download results",
+    "copyError": "Copy Error",
+    "copied": "Copied ✓",
+    "hideError": "Hide Error",
+    "viewError": "View Error",
+    "empty": "No active tasks",
+    "actions": {
+      "cancel": "Cancel",
+      "retry": "Retry",
+      "remove": "Remove"
+    },
+    "separationStatus": {
+      "queued": "Queued",
+      "running": "Processing",
+      "succeeded": "Completed",
+      "failed": "Failed"
+    },
+    "quality": {
+      "fast": "Fast",
+      "normal": "Normal"
+    }
+  },
+  "playbackControl": {
+    "clickToEdit": "Click to edit"
   },
   "domain": {
     "songType": {

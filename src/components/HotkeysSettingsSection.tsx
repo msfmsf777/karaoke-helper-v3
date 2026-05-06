@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useUserData } from '../contexts/UserDataContext';
 import {
     acceleratorFromKeyboardEvent,
@@ -12,13 +13,14 @@ import {
     normalizeAccelerator,
 } from '../../shared/hotkeys';
 import RemoveIcon from '../assets/icons/remove.svg';
+import {
+    getHotkeyActionDescription,
+    getHotkeyActionLabel,
+    getHotkeyFailureLabel,
+    getHotkeyGroupLabel,
+} from '../i18n/domainLabels';
 
 type HotkeyScope = 'local' | 'global';
-
-const GROUP_LABELS = {
-    playback: '播放控制',
-    custom: '自訂快捷鍵',
-};
 
 const MEDIA_PRESETS: Partial<Record<HotkeyAction, string>> = {
     playPause: 'MediaPlayPause',
@@ -45,9 +47,23 @@ function getDuplicateActions(entries: { action: HotkeyAction; accelerator: strin
 }
 
 const HotkeysSettingsSection: React.FC = () => {
+    const { t } = useTranslation();
     const { hotkeys, setHotkeys } = useUserData();
     const [recording, setRecording] = useState<{ action: HotkeyAction; scope: HotkeyScope } | null>(null);
     const [status, setStatus] = useState<HotkeyRegistrationStatus | null>(null);
+
+    const updateBinding = useCallback((action: HotkeyAction, scope: HotkeyScope, accelerator: string) => {
+        setHotkeys(mergeHotkeyConfig({
+            ...hotkeys,
+            bindings: {
+                ...hotkeys.bindings,
+                [action]: {
+                    ...hotkeys.bindings[action],
+                    [scope]: normalizeAccelerator(accelerator),
+                },
+            },
+        }));
+    }, [hotkeys, setHotkeys]);
 
     useEffect(() => {
         const statusPromise = window.khelper?.hotkeys?.getStatus?.();
@@ -82,7 +98,7 @@ const HotkeysSettingsSection: React.FC = () => {
 
         window.addEventListener('keydown', handleKeyDown, true);
         return () => window.removeEventListener('keydown', handleKeyDown, true);
-    }, [recording, hotkeys]);
+    }, [recording, updateBinding]);
 
     const localDuplicates = useMemo(() => getDuplicateActions(
         HOTKEY_ACTIONS.map(({ action }) => ({ action, accelerator: normalizeAccelerator(hotkeys.bindings[action].local) }))
@@ -96,19 +112,6 @@ const HotkeysSettingsSection: React.FC = () => {
         playback: HOTKEY_ACTIONS.filter((item) => item.group === 'playback'),
         custom: HOTKEY_ACTIONS.filter((item) => item.group === 'custom'),
     }), []);
-
-    const updateBinding = (action: HotkeyAction, scope: HotkeyScope, accelerator: string) => {
-        setHotkeys(mergeHotkeyConfig({
-            ...hotkeys,
-            bindings: {
-                ...hotkeys.bindings,
-                [action]: {
-                    ...hotkeys.bindings[action],
-                    [scope]: normalizeAccelerator(accelerator),
-                },
-            },
-        }));
-    };
 
     const resetRecommendedDefaults = () => {
         const nextBindings = { ...hotkeys.bindings };
@@ -128,16 +131,16 @@ const HotkeysSettingsSection: React.FC = () => {
     };
 
     const renderStatus = (action: HotkeyAction) => {
-        if (globalDuplicates.has(action)) return <span style={{ color: '#ff7777' }}>重複快捷鍵</span>;
+        if (globalDuplicates.has(action)) return <span style={{ color: '#ff7777' }}>{t('settings.hotkeys.status.duplicateGlobal')}</span>;
         const globalAccelerator = hotkeys.bindings[action].global;
         if (globalAccelerator && isPlainGlobalAccelerator(globalAccelerator)) {
-            return <span style={{ color: '#ff7777' }}>全域快捷鍵需包含修飾鍵</span>;
+            return <span style={{ color: '#ff7777' }}>{t('domain.hotkeys.failures.plainGlobal')}</span>;
         }
-        if (localDuplicates.has(action)) return <span style={{ color: '#ffb86c' }}>本機快捷鍵重複</span>;
-        if (!hotkeys.globalHotkeysEnabled && globalAccelerator) return <span style={{ color: '#888' }}>全域快捷鍵未啟用</span>;
-        if (status?.failed[action]) return <span style={{ color: '#ff7777' }}>{status.failed[action]}</span>;
+        if (localDuplicates.has(action)) return <span style={{ color: '#ffb86c' }}>{t('settings.hotkeys.status.duplicateLocal')}</span>;
+        if (!hotkeys.globalHotkeysEnabled && globalAccelerator) return <span style={{ color: '#888' }}>{t('settings.hotkeys.status.globalDisabled')}</span>;
+        if (status?.failed[action]) return <span style={{ color: '#ff7777' }}>{getHotkeyFailureLabel(t, status.failed[action])}</span>;
         if (hotkeys.globalHotkeysEnabled && globalAccelerator && status?.registered[action]) {
-            return <span style={{ color: '#8be28b' }}>已套用</span>;
+            return <span style={{ color: '#8be28b' }}>{t('settings.hotkeys.status.applied')}</span>;
         }
         return <span style={{ color: '#777' }}>-</span>;
     };
@@ -164,9 +167,9 @@ const HotkeysSettingsSection: React.FC = () => {
                     cursor: 'pointer',
                     textAlign: 'center',
                 }}
-                title={isRecording ? '按下快捷鍵，Esc 取消，Backspace 清除' : '點擊後輸入快捷鍵'}
+                title={isRecording ? t('settings.hotkeys.recordingHint') : t('settings.hotkeys.recordHint')}
             >
-                {isRecording ? '請按快捷鍵...' : formatAccelerator(value)}
+                {isRecording ? t('settings.hotkeys.recording') : value ? formatAccelerator(value) : t('domain.hotkeys.unset')}
             </button>
         );
     };
@@ -206,15 +209,15 @@ const HotkeysSettingsSection: React.FC = () => {
                             whiteSpace: 'nowrap',
                         }}
                     >
-                        媒體鍵
+                        {t('settings.hotkeys.mediaKey')}
                     </button>
                 )}
             </div>
             <div style={{ fontSize: '12px' }}>{renderStatus(action)}</div>
             <button
                 type="button"
-                title="清除這個快捷鍵設定"
-                aria-label="清除這個快捷鍵設定"
+                title={t('settings.hotkeys.clearShortcut')}
+                aria-label={t('settings.hotkeys.clearShortcut')}
                 onClick={() => {
                     setHotkeys(mergeHotkeyConfig({
                         ...hotkeys,
@@ -240,7 +243,6 @@ const HotkeysSettingsSection: React.FC = () => {
                 }}
             >
                 <img src={RemoveIcon} alt="" style={{ width: '16px', height: '16px', display: 'block' }} />
-                清除
             </button>
         </div>
     );
@@ -249,12 +251,12 @@ const HotkeysSettingsSection: React.FC = () => {
         <section style={{ marginBottom: '40px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <h2 style={{ margin: 0, fontSize: '18px', color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: '12px' }}>
-                    快捷鍵
+                    {t('settings.hotkeys.title')}
                 </h2>
                 <button
                     type="button"
                     onClick={resetRecommendedDefaults}
-                    title="只還原有建議預設值的快捷鍵，不會覆蓋未設定預設值的自訂快捷鍵"
+                    title={t('settings.hotkeys.resetRecommendedTitle')}
                     style={{
                         padding: '6px 12px',
                         backgroundColor: '#333',
@@ -265,7 +267,7 @@ const HotkeysSettingsSection: React.FC = () => {
                         fontSize: '13px',
                     }}
                 >
-                    還原建議預設
+                    {t('settings.hotkeys.resetRecommended')}
                 </button>
             </div>
 
@@ -277,8 +279,8 @@ const HotkeysSettingsSection: React.FC = () => {
                         onChange={(event) => setHotkeys(mergeHotkeyConfig({ ...hotkeys, globalHotkeysEnabled: event.target.checked }))}
                         style={{ accentColor: 'var(--accent-color)', width: '16px', height: '16px' }}
                     />
-                    啟用全域快捷鍵
-                    <span style={{ color: '#888', fontSize: '12px' }}>關閉時只會在 KHelper 視窗內生效</span>
+                    {t('settings.hotkeys.enableGlobal')}
+                    <span style={{ color: '#888', fontSize: '12px' }}>{t('settings.hotkeys.globalDisabledDescription')}</span>
                 </label>
 
                 <div
@@ -292,19 +294,23 @@ const HotkeysSettingsSection: React.FC = () => {
                         paddingBottom: '8px',
                     }}
                 >
-                    <div>功能</div>
-                    <div>本機快捷鍵</div>
-                    <div>全域快捷鍵</div>
-                    <div>狀態</div>
+                    <div>{t('settings.hotkeys.function')}</div>
+                    <div>{t('settings.hotkeys.local')}</div>
+                    <div>{t('settings.hotkeys.global')}</div>
+                    <div>{t('settings.hotkeys.status.title')}</div>
                     <div />
                 </div>
 
                 {(['playback', 'custom'] as const).map((group) => (
                     <div key={group} style={{ marginTop: group === 'custom' ? '18px' : 0 }}>
                         <div style={{ color: 'var(--accent-color)', fontSize: '13px', fontWeight: 700, padding: '6px 0' }}>
-                            {GROUP_LABELS[group]}
+                            {getHotkeyGroupLabel(t, group)}
                         </div>
-                        {groupedActions[group].map(({ action, label, description }) => renderActionRow(action, label, description))}
+                        {groupedActions[group].map(({ action }) => renderActionRow(
+                            action,
+                            getHotkeyActionLabel(t, action),
+                            getHotkeyActionDescription(t, action)
+                        ))}
                     </div>
                 ))}
             </div>

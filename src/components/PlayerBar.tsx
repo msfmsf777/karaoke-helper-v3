@@ -611,6 +611,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
           </button>
           {showSpeedPopup && (
             <PlaybackControlPopup
+              kind="speed"
               title={t('shell.player.speed')}
               value={speed}
               min={0.5}
@@ -653,6 +654,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
           </button>
           {showPitchPopup && (
             <PlaybackControlPopup
+              kind="pitch"
               title={t('shell.player.pitch')}
               value={pitch}
               min={-12}

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { SeparationJob } from '../jobs/separationJobs';
 import { getAllJobs, subscribeJobUpdates, cancelSeparationJob, retrySeparationJob, removeSeparationJob } from '../jobs/separationJobs';
 import { loadAllSongs, SongMeta } from '../library/songLibrary';
@@ -10,13 +11,6 @@ interface TaskPaneDropdownProps {
 }
 
 /* ── Status helpers ─────────────────────────────────────────── */
-
-const sepStatusLabels: Record<SeparationJob['status'], string> = {
-  queued: '排程中',
-  running: '處理中',
-  succeeded: '已完成',
-  failed: '失敗',
-};
 
 const sepStatusColor = (status: SeparationJob['status']) => {
   switch (status) {
@@ -31,6 +25,7 @@ const sepStatusColor = (status: SeparationJob['status']) => {
 /* ── Copy-to-clipboard button ──────────────────────────────── */
 
 const CopyErrorButton: React.FC<{ text: string }> = ({ text }) => {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async (e: React.MouseEvent) => {
@@ -68,7 +63,7 @@ const CopyErrorButton: React.FC<{ text: string }> = ({ text }) => {
         flexShrink: 0,
       }}
     >
-      {copied ? '已複製 ✓' : '複製錯誤'}
+      {copied ? t('tasks.copied') : t('tasks.copyError')}
     </button>
   );
 };
@@ -76,6 +71,7 @@ const CopyErrorButton: React.FC<{ text: string }> = ({ text }) => {
 /* ── Inline error block ─────────────────────────────────────── */
 
 const ErrorBlock: React.FC<{ message: string; defaultExpanded?: boolean }> = ({ message, defaultExpanded = false }) => {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(defaultExpanded);
 
   return (
@@ -92,7 +88,7 @@ const ErrorBlock: React.FC<{ message: string; defaultExpanded?: boolean }> = ({ 
         }}
       >
         <span style={{ fontSize: '9px', transition: 'transform 0.2s', transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)', display: 'inline-block' }}>▶</span>
-        {expanded ? '隱藏錯誤' : '查看錯誤'}
+        {expanded ? t('tasks.hideError') : t('tasks.viewError')}
       </div>
       {expanded && (
         <div style={{
@@ -136,6 +132,7 @@ const ProgressBar: React.FC<{ value: number; color?: string }> = ({ value, color
 /* ── Main component ─────────────────────────────────────────── */
 
 const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate }) => {
+  const { t } = useTranslation();
   /* Separation jobs state */
   const [sepJobs, setSepJobs] = useState<SeparationJob[]>([]);
   const [songs, setSongs] = useState<Record<string, SongMeta>>({});
@@ -232,6 +229,14 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
     onClose();
   };
 
+  const getSepStatusLabel = (status: SeparationJob['status']) => t(`tasks.separationStatus.${status}`);
+
+  const getQualityLabel = (quality: SeparationJob['quality']) => {
+    if (quality === 'high') return 'HQ';
+    if (quality === 'fast') return t('tasks.quality.fast');
+    return t('tasks.quality.normal');
+  };
+
   return (
     <div style={{
       position: 'absolute',
@@ -269,7 +274,7 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
         justifyContent: 'space-between',
         flexShrink: 0,
       }}>
-        <div style={{ fontWeight: 600, fontSize: '14px', color: '#fff' }}>處理中任務</div>
+        <div style={{ fontWeight: 600, fontSize: '14px', color: '#fff' }}>{t('tasks.title')}</div>
         <button
           onClick={onClose}
           style={{
@@ -299,7 +304,7 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
               alignItems: 'center',
               gap: '6px',
             }}>
-              下載
+              {t('tasks.download')}
               {activeDownloads.length > 0 && (
                 <span style={{
                   fontSize: '11px',
@@ -337,7 +342,7 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
                     marginLeft: '8px',
                     flexShrink: 0,
                   }}>
-                    {job.status === 'queued' ? '排隊中...' : `${job.progress.toFixed(1)}%`}
+                    {job.status === 'queued' ? t('tasks.queuedDownload') : `${job.progress.toFixed(1)}%`}
                   </div>
                 </div>
                 {job.status !== 'queued' && <ProgressBar value={job.progress} />}
@@ -374,7 +379,7 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
                     gap: '4px',
                   }}>
                     <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ff8b8b', display: 'inline-block' }} />
-                    失敗
+                    {t('tasks.failed')}
                   </div>
                 </div>
                 {job.error && <ErrorBlock message={job.error} defaultExpanded={false} />}
@@ -411,7 +416,7 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
                     gap: '4px',
                   }}>
                     <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#8be28b', display: 'inline-block' }} />
-                    已完成
+                    {t('tasks.completed')}
                   </div>
                 </div>
               </div>
@@ -434,7 +439,7 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
               onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >
-              <span>▸</span> 查看所有下載結果
+              <span>▸</span> {t('tasks.viewAllDownloads')}
             </div>
           </div>
         )}
@@ -451,7 +456,7 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
               alignItems: 'center',
               gap: '6px',
             }}>
-              歌曲分離
+              {t('tasks.separation')}
               {activeSepJobs.length > 0 && (
                 <span style={{
                   fontSize: '11px',
@@ -503,14 +508,14 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
                       background: sepStatusColor(job.status),
                       display: 'inline-block',
                     }} />
-                    {sepStatusLabels[job.status]}
+                    {getSepStatusLabel(job.status)}
                   </div>
                 </div>
 
                 {/* Quality badge + action buttons */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
                   <div style={{ fontSize: '11px', color: '#666' }}>
-                    {job.quality === 'high' ? 'HQ' : job.quality === 'fast' ? '快速' : '標準'}
+                    {getQualityLabel(job.quality)}
                   </div>
                   <div style={{ display: 'flex', gap: '4px' }}>
                     {/* Cancel button for queued/running */}
@@ -529,7 +534,7 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
                         }}
                         onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,80,80,0.1)'}
                         onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                      >取消</button>
+                      >{t('tasks.actions.cancel')}</button>
                     )}
                     {/* Retry button for failed */}
                     {job.status === 'failed' && (
@@ -547,7 +552,7 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
                         }}
                         onMouseEnter={e => e.currentTarget.style.background = 'rgba(224,160,64,0.1)'}
                         onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                      >重試</button>
+                      >{t('tasks.actions.retry')}</button>
                     )}
                     {/* Remove button for failed */}
                     {job.status === 'failed' && (
@@ -565,7 +570,7 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
                         }}
                         onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                         onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                      >移除</button>
+                      >{t('tasks.actions.remove')}</button>
                     )}
                   </div>
                 </div>
@@ -612,7 +617,7 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
                     gap: '4px',
                   }}>
                     <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#8be28b', display: 'inline-block' }} />
-                    已完成
+                    {t('tasks.completed')}
                     <button
                       onClick={(e) => { e.stopPropagation(); removeSeparationJob(job.id); }}
                       style={{
@@ -628,7 +633,7 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
                   </div>
                 </div>
                 <div style={{ fontSize: '11px', color: '#555', marginTop: '2px' }}>
-                  {job.quality === 'high' ? 'HQ' : job.quality === 'fast' ? '快速' : '標準'}
+                  {getQualityLabel(job.quality)}
                 </div>
               </div>
             ))}
@@ -643,7 +648,7 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
             color: '#666',
             fontSize: '13px',
           }}>
-            目前沒有任務
+            {t('tasks.empty')}
           </div>
         )}
       </div>

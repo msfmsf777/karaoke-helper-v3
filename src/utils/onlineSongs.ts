@@ -1,4 +1,9 @@
 import type { DownloadJob, SongMeta, SongType } from '../../shared/songTypes';
+import i18n from '../i18n';
+import {
+    formatViewCount as formatLocalizedViewCount,
+    getLyricsStatusLabel,
+} from '../i18n/domainLabels';
 
 export interface YouTubeResultLike {
     videoId: string;
@@ -119,19 +124,9 @@ export const formatDuration = (seconds?: unknown): string => {
 };
 
 export const formatViewCount = (views?: number): string => {
-    if (!views) return '';
-    if (views >= 10000) return `${(views / 10000).toFixed(1)}萬次觀看`;
-    return `${views.toLocaleString('zh-TW')}次觀看`;
+    return formatLocalizedViewCount(i18n.t, views);
 };
 
 export const lyricsLabel = (status?: SongMeta['lyrics_status']) => {
-    switch (status) {
-        case 'text_only':
-            return '純文字';
-        case 'synced':
-            return '已對齊';
-        case 'none':
-        default:
-            return '無';
-    }
+    return getLyricsStatusLabel(i18n.t, status, true);
 };

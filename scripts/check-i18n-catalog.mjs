@@ -58,7 +58,7 @@ function collectStaticCodeKeys() {
   const keys = new Set();
   const callPattern = /\b(?:t|overlayText)\(\s*['"`]([^'"`$]+)['"`]/g;
   const memberCallPattern = /\b(?:i18n|i18nInstance)\.t\(\s*['"`]([^'"`$]+)['"`]/g;
-  const catalogKeyLiteralPattern = /['"`]((?:common|domain|language|lyrics|miniPlayer|overlays|settings|shell|songList|songManagement)\.[A-Za-z0-9_.-]+)['"`]/g;
+  const catalogKeyLiteralPattern = /['"`]((?:about|common|domain|language|lyrics|miniPlayer|overlays|playbackControl|settings|shell|songList|songManagement|tasks|updatesPopup)\.[A-Za-z0-9_.-]+)['"`]/g;
   const addKey = (key) => {
     if (/\.(?:json|ts|tsx|js|mjs|cjs|png|svg)$/i.test(key)) return;
     keys.add(key);

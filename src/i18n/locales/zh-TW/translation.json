@@ -21,7 +21,8 @@
     "unknown": "未知",
     "none": "無",
     "default": "預設",
-    "copied": "已複製"
+    "copied": "已複製",
+    "close": "關閉"
   },
   "settings": {
     "language": {
@@ -61,7 +62,107 @@
     },
     "overlay": {
       "unsavedLeaveConfirm": "直播覆蓋模板有尚未儲存的變更，確定要離開編輯器嗎？"
+    },
+    "hotkeys": {
+      "title": "快捷鍵",
+      "resetRecommended": "還原建議預設",
+      "resetRecommendedTitle": "只還原有建議預設值的快捷鍵，不會覆蓋未設定預設值的自訂快捷鍵",
+      "enableGlobal": "啟用全域快捷鍵",
+      "globalDisabledDescription": "關閉時只會在 KHelper 視窗內生效",
+      "function": "功能",
+      "local": "本機快捷鍵",
+      "global": "全域快捷鍵",
+      "recordingHint": "按下快捷鍵，Esc 取消，Backspace 清除",
+      "recordHint": "點擊後輸入快捷鍵",
+      "recording": "請按快捷鍵...",
+      "mediaKey": "媒體鍵",
+      "clearShortcut": "清除這個快捷鍵設定",
+      "status": {
+        "title": "狀態",
+        "duplicateGlobal": "重複快捷鍵",
+        "duplicateLocal": "本機快捷鍵重複",
+        "globalDisabled": "全域快捷鍵未啟用",
+        "applied": "已套用"
+      }
+    },
+    "calibration": {
+      "title": "雙輸出同步校準",
+      "purposeTitle": "【目的】",
+      "purpose": "調整延遲，讓「串流監聽（Loopback）」與「耳機直接監聽」的 Click 聲在時間上完全重疊。",
+      "preparationTitle": "【準備】",
+      "obsMonitoringTitle": "開啟 OBS 監聽：",
+      "obsMonitoring": "在 OBS 混音器點擊齒輪 ⚙ → 進階音訊屬性 → 將您的音訊來源設為「僅監聽」或「監聽並輸出」。",
+      "sampleRateTitle": "確認取樣率：",
+      "sampleRate": "請查看設定選單中，所選裝置方塊右上角的 Hz 標籤。確保所有裝置與 OBS 設定的取樣率一致（如 48000 Hz）。",
+      "operationTitle": "【操作】",
+      "operation": "點擊下方「開始測試」，調整滑桿直到兩個聲音重疊成一個。",
+      "streamDelay": "← 串流延遲 (Stream)",
+      "monitorDelay": "耳機延遲 (Monitor) →",
+      "stopTest": "停止測試",
+      "startTest": "開始測試",
+      "saveApply": "儲存並套用"
     }
+  },
+  "about": {
+    "descriptionLine1": "專為 Vtuber、實況主打造的全能 K 歌小幫手",
+    "descriptionLine2": "若遇 Bug 或有功能建議，更推薦前往 Discord 回報。",
+    "links": {
+      "website": {
+        "title": "官方網站",
+        "label": "官網"
+      },
+      "twitter": {
+        "title": "追隨製作者就是最好的支持~",
+        "label": "追隨製作者"
+      },
+      "discord": {
+        "title": "加入 Discord 社群",
+        "label": "DC社群"
+      },
+      "report": {
+        "title": "去 GitHub 回報問題 / 提功能建議",
+        "label": "回報問題"
+      }
+    }
+  },
+  "updatesPopup": {
+    "title": "有新版本可用",
+    "noReleaseNotes": "此版本沒有提供更新說明。",
+    "error": "更新失敗。請檢查網路連線或稍後再試。",
+    "ignore": "忽略此版本",
+    "download": "前往下載頁面"
+  },
+  "tasks": {
+    "title": "處理中任務",
+    "download": "下載",
+    "separation": "歌曲分離",
+    "queuedDownload": "排隊中...",
+    "failed": "失敗",
+    "completed": "已完成",
+    "viewAllDownloads": "查看所有下載結果",
+    "copyError": "複製錯誤",
+    "copied": "已複製 ✓",
+    "hideError": "隱藏錯誤",
+    "viewError": "查看錯誤",
+    "empty": "目前沒有任務",
+    "actions": {
+      "cancel": "取消",
+      "retry": "重試",
+      "remove": "移除"
+    },
+    "separationStatus": {
+      "queued": "排程中",
+      "running": "處理中",
+      "succeeded": "已完成",
+      "failed": "失敗"
+    },
+    "quality": {
+      "fast": "快速",
+      "normal": "標準"
+    }
+  },
+  "playbackControl": {
+    "clickToEdit": "點擊編輯"
   },
   "domain": {
     "songType": {

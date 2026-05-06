@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import audioEngine, { OutputRole } from '../audio/AudioEngine';
 import { useUserData } from '../contexts/UserDataContext';
 
@@ -17,12 +18,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   headphoneDeviceId,
   onChangeDevice,
 }) => {
+  const { t } = useTranslation();
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { separationQuality, setSeparationQuality } = useUserData();
 
-  const refreshDevices = async () => {
+  const refreshDevices = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -30,26 +32,26 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       setDevices(list);
     } catch (err) {
       console.error('[Settings] Failed to enumerate devices', err);
-      setError('無法取得音訊輸出裝置清單');
+      setError(t('settings.audio.loadError'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     if (!open) return;
     refreshDevices();
-  }, [open]);
+  }, [open, refreshDevices]);
 
   const deviceOptions = useMemo(() => {
     return [
-      { deviceId: '', label: '系統預設' },
+      { deviceId: '', label: t('settings.audio.systemDefault') },
       ...devices.map((d, idx) => ({
         deviceId: d.deviceId,
-        label: d.label || `裝置 ${idx + 1}`,
+        label: d.label || t('settings.audio.device', { index: idx + 1 }),
       })),
     ];
-  }, [devices]);
+  }, [devices, t]);
 
   if (!open) return null;
 
@@ -78,7 +80,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <h2 style={{ margin: 0, fontSize: '20px', color: '#fff' }}>設定</h2>
+          <h2 style={{ margin: 0, fontSize: '20px', color: '#fff' }}>{t('common.settings')}</h2>
           <button
             onClick={refreshDevices}
             style={{
@@ -92,16 +94,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             }}
             disabled={loading}
           >
-            {loading ? '掃描中...' : '重新掃描'}
+            {loading ? t('settings.audio.scanning') : t('settings.audio.scan')}
           </button>
         </div>
         <p style={{ margin: '0 0 16px', color: '#b3b3b3', fontSize: '14px' }}>
-          選擇 觀眾輸出（Stream）與 耳機輸出 的播放裝置。雙輸出共用同一份音訊內容，之後會再加入人聲/伴奏分離。
+          {t('settings.audio.description')}
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
             <label style={{ display: 'block', marginBottom: '8px', color: '#b3b3b3', fontSize: '13px' }}>
-              觀眾輸出裝置
+              {t('settings.audio.streamOutput')}
             </label>
             <select
               value={streamDeviceId ?? ''}
@@ -125,7 +127,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
           <div>
             <label style={{ display: 'block', marginBottom: '8px', color: '#b3b3b3', fontSize: '13px' }}>
-              耳機輸出裝置
+              {t('settings.audio.headphoneOutput')}
             </label>
             <select
               value={headphoneDeviceId ?? ''}
@@ -149,7 +151,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
           <div style={{ borderTop: '1px solid #3a3a3a', paddingTop: '16px', marginTop: '8px' }}>
             <label style={{ display: 'block', marginBottom: '12px', color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>
-              分離品質 (Separation Quality)
+              {t('settings.separation.title')}
             </label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ddd', fontSize: '13px', cursor: 'pointer' }}>
@@ -160,7 +162,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   checked={separationQuality === 'fast'}
                   onChange={() => setSeparationQuality('fast')}
                 />
-                快速（較省資源，音質略低）
+                {t('settings.separation.fast')} - {t('settings.separation.fastDescription')}
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ddd', fontSize: '13px', cursor: 'pointer' }}>
                 <input
@@ -170,7 +172,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   checked={separationQuality === 'normal'}
                   onChange={() => setSeparationQuality('normal')}
                 />
-                標準（推薦）
+                {t('settings.separation.normal')} - {t('settings.separation.normalDescription')}
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ddd', fontSize: '13px', cursor: 'pointer' }}>
                 <input
@@ -180,7 +182,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   checked={separationQuality === 'high'}
                   onChange={() => setSeparationQuality('high')}
                 />
-                高品質（較慢，音質最佳）
+                {t('settings.separation.high')} - {t('settings.separation.highDescription')}
               </label>
             </div>
           </div>
@@ -200,7 +202,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               cursor: 'pointer',
             }}
           >
-            關閉
+            {t('common.close')}
           </button>
         </div>
       </div>

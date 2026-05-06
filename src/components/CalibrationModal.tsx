@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import audioEngine, { DualAudioEngine } from '../audio/AudioEngine';
 import { saveAudioOffset } from '../settings/devicePreferences';
 
@@ -9,6 +10,10 @@ interface CalibrationModalProps {
     initialOffset: number;
     onOffsetChange: (newOffset: number) => void;
 }
+
+type DisposableAudioEngine = DualAudioEngine & {
+    dispose?: () => void;
+};
 
 // Generate a simple click track (2 clicks per second, 120BPM equivalent)
 // 1 second long buffer, click at 0.0 and 0.5
@@ -71,6 +76,7 @@ const CalibrationModal: React.FC<CalibrationModalProps> = ({
     initialOffset,
     onOffsetChange
 }) => {
+    const { t } = useTranslation();
     const [offset, setOffset] = useState(initialOffset);
     const [isPlaying, setIsPlaying] = useState(false);
     const [clickBlobUrl, setClickBlobUrl] = useState<string | null>(null);
@@ -97,13 +103,12 @@ const CalibrationModal: React.FC<CalibrationModalProps> = ({
 
         return () => {
             if (engineRef.current) {
-                engineRef.current.stop();
-                if (typeof (engineRef.current as any).dispose === 'function') {
-                    (engineRef.current as any).dispose();
-                }
+                const engine = engineRef.current as DisposableAudioEngine;
+                engine.stop();
+                engine.dispose?.();
             }
         };
-    }, []);
+    }, [headphoneDeviceId, initialOffset, streamDeviceId]);
 
     // Generate blob on mount
     useEffect(() => {
@@ -225,7 +230,7 @@ const CalibrationModal: React.FC<CalibrationModalProps> = ({
                 }}
             >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h2 style={{ margin: 0, fontSize: '20px' }}>雙輸出同步校準</h2>
+                    <h2 style={{ margin: 0, fontSize: '20px' }}>{t('settings.calibration.title')}</h2>
                     <div
                         ref={beatRef}
                         style={{
@@ -250,20 +255,20 @@ const CalibrationModal: React.FC<CalibrationModalProps> = ({
                     maxHeight: '180px',
                     overflowY: 'auto'
                 }}>
-                    <div style={{ fontWeight: 'bold', color: '#fff', marginBottom: '4px' }}>【目的】</div>
+                    <div style={{ fontWeight: 'bold', color: '#fff', marginBottom: '4px' }}>{t('settings.calibration.purposeTitle')}</div>
                     <div style={{ marginBottom: '8px' }}>
-                        調整延遲，讓「串流監聽（Loopback）」與「耳機直接監聽」的 Click 聲在時間上完全重疊。
+                        {t('settings.calibration.purpose')}
                     </div>
 
-                    <div style={{ fontWeight: 'bold', color: '#fff', marginBottom: '4px' }}>【準備】</div>
+                    <div style={{ fontWeight: 'bold', color: '#fff', marginBottom: '4px' }}>{t('settings.calibration.preparationTitle')}</div>
                     <ul style={{ margin: '0 0 8px 16px', padding: 0 }}>
-                        <li><b>開啟 OBS 監聽：</b>在 OBS 混音器點擊齒輪 <span style={{ fontFamily: 'Segoe UI Symbol' }}>⚙</span> → 進階音訊屬性 → 將您的音訊來源設為 <b>「僅監聽」或「監聽並輸出」</b>。</li>
-                        <li><b>確認取樣率：</b>請查看設定選單中，所選裝置方塊右上角的 <b>Hz 標籤</b>。確保所有裝置與 OBS 設定的取樣率一致（如 48000 Hz）。</li>
+                        <li><b>{t('settings.calibration.obsMonitoringTitle')}</b>{t('settings.calibration.obsMonitoring')}</li>
+                        <li><b>{t('settings.calibration.sampleRateTitle')}</b>{t('settings.calibration.sampleRate')}</li>
                     </ul>
 
-                    <div style={{ fontWeight: 'bold', color: '#fff', marginBottom: '4px' }}>【操作】</div>
+                    <div style={{ fontWeight: 'bold', color: '#fff', marginBottom: '4px' }}>{t('settings.calibration.operationTitle')}</div>
                     <ul style={{ margin: '0 0 0 16px', padding: 0 }}>
-                        <li>點擊下方「開始測試」，調整滑桿直到兩個聲音重疊成一個。</li>
+                        <li>{t('settings.calibration.operation')}</li>
                     </ul>
                 </div>
 
@@ -317,8 +322,8 @@ const CalibrationModal: React.FC<CalibrationModalProps> = ({
                                 color: '#aaa',
                                 fontWeight: 'bold'
                             }}>
-                                <span>← 串流延遲 (Stream)</span>
-                                <span>耳機延遲 (Monitor) →</span>
+                                <span>{t('settings.calibration.streamDelay')}</span>
+                                <span>{t('settings.calibration.monitorDelay')}</span>
                             </div>
                         </div>
 
@@ -353,7 +358,7 @@ const CalibrationModal: React.FC<CalibrationModalProps> = ({
                                 cursor: 'pointer'
                             }}
                         >
-                            取消
+                            {t('common.cancel')}
                         </button>
                     </div>
 
@@ -373,7 +378,7 @@ const CalibrationModal: React.FC<CalibrationModalProps> = ({
                                 boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
                             }}
                         >
-                            {isPlaying ? '停止測試' : '開始測試'}
+                            {isPlaying ? t('settings.calibration.stopTest') : t('settings.calibration.startTest')}
                         </button>
                     </div>
 
@@ -391,7 +396,7 @@ const CalibrationModal: React.FC<CalibrationModalProps> = ({
                                 cursor: 'pointer'
                             }}
                         >
-                            儲存並套用
+                            {t('settings.calibration.saveApply')}
                         </button>
                     </div>
                 </div>

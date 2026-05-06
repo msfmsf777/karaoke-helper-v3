@@ -6,15 +6,16 @@ import DiscordIcon from '../assets/icons/discord.svg';
 import BugIcon from '../assets/icons/bug.svg';
 import { useUpdater } from '../contexts/UpdaterContext';
 import pkg from '../../package.json';
+import { useTranslation } from 'react-i18next';
 
 // Configuration for social links - Edit here to change links
 const SOCIAL_LINKS = [
     {
         id: 'website',
         url: 'https://github.com/msfmsf777/karaoke-helper-v3', // TODO: Enter official site URL
-        title: '官方網站',
+        titleKey: 'about.links.website.title',
         icon: WebIcon,
-        label: '官網',
+        labelKey: 'about.links.website.label',
         bgColor: 'var(--accent-color)',
         iconSize: 22,
         border: 'none',
@@ -22,9 +23,9 @@ const SOCIAL_LINKS = [
     {
         id: 'twitter',
         url: 'https://x.com/msfmsf777', // TODO: Enter X (Twitter) URL
-        title: '追隨製作者就是最好的支持~',
+        titleKey: 'about.links.twitter.title',
         icon: XIcon,
-        label: '追隨製作者',
+        labelKey: 'about.links.twitter.label',
         bgColor: '#000',
         iconSize: 20,
         border: '1px solid #333',
@@ -32,9 +33,9 @@ const SOCIAL_LINKS = [
     {
         id: 'discord',
         url: 'https://discord.gg/96zfTcBgZG', // TODO: Enter Discord invite URL
-        title: '加入 Discord 社群',
+        titleKey: 'about.links.discord.title',
         icon: DiscordIcon,
-        label: 'DC社群',
+        labelKey: 'about.links.discord.label',
         bgColor: '#5865F2',
         iconSize: 26,
         border: 'none',
@@ -42,9 +43,9 @@ const SOCIAL_LINKS = [
     {
         id: 'report',
         url: 'https://github.com/msfmsf777/karaoke-helper-v3/issues/new', // TODO: Enter issue report URL
-        title: '去 GitHub 回報問題 / 提功能建議',
+        titleKey: 'about.links.report.title',
         icon: BugIcon,
-        label: '回報問題',
+        labelKey: 'about.links.report.label',
         bgColor: '#ff4d4d',
         iconSize: 22,
         border: 'none',
@@ -57,6 +58,7 @@ interface AboutPopupProps {
 }
 
 const AboutPopup: React.FC<AboutPopupProps> = ({ open, onClose }) => {
+    const { t } = useTranslation();
     const [visible, setVisible] = useState(false);
     const { checkForUpdates, status } = useUpdater();
 
@@ -146,7 +148,7 @@ const AboutPopup: React.FC<AboutPopupProps> = ({ open, onClose }) => {
                         }
                     }}
                 >
-                    {status === 'checking' ? '檢查中...' : '檢查更新'}
+                    {status === 'checking' ? t('settings.updates.checking') : t('settings.updates.check')}
                 </button>
 
                 {/* Close Button */}
@@ -201,9 +203,9 @@ const AboutPopup: React.FC<AboutPopupProps> = ({ open, onClose }) => {
 
                 {/* Description */}
                 <p style={{ margin: '0 0 24px', fontSize: '13px', lineHeight: '1.6', color: '#ccc', maxWidth: '95%' }}>
-                    專為Vtuber、實況主打造的全能K歌小幫手
+                    {t('about.descriptionLine1')}
                     <br />
-                    若遇 Bug 或有功能建議，更推薦前往 Discord 回報。
+                    {t('about.descriptionLine2')}
                 </p>
 
                 {/* Links */}
@@ -216,7 +218,7 @@ const AboutPopup: React.FC<AboutPopupProps> = ({ open, onClose }) => {
                                     window.api.openExternal(link.url);
                                 }
                             }}
-                            title={link.title}
+                            title={t(link.titleKey)}
                             style={{
                                 display: 'flex',
                                 flexDirection: 'column',
@@ -241,9 +243,9 @@ const AboutPopup: React.FC<AboutPopupProps> = ({ open, onClose }) => {
                                 justifyContent: 'center',
                                 border: link.border
                             }}>
-                                <img src={link.icon} alt={link.label} style={{ width: `${link.iconSize}px`, height: `${link.iconSize}px` }} />
+                                <img src={link.icon} alt={t(link.labelKey)} style={{ width: `${link.iconSize}px`, height: `${link.iconSize}px` }} />
                             </div>
-                            <span>{link.label}</span>
+                            <span>{t(link.labelKey)}</span>
                         </div>
                     ))}
                 </div>

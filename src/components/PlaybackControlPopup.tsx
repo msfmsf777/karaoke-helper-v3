@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface PlaybackControlPopupProps {
+    kind: 'speed' | 'pitch';
     title: string;
     value: number;
     min: number;
@@ -13,6 +15,7 @@ interface PlaybackControlPopupProps {
 }
 
 const PlaybackControlPopup: React.FC<PlaybackControlPopupProps> = ({
+    kind,
     title,
     value,
     min,
@@ -23,6 +26,7 @@ const PlaybackControlPopup: React.FC<PlaybackControlPopupProps> = ({
     onReset,
     onClose,
 }) => {
+    const { t } = useTranslation();
     const [isEditing, setIsEditing] = useState(false);
     const [editValue, setEditValue] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);
@@ -48,17 +52,9 @@ const PlaybackControlPopup: React.FC<PlaybackControlPopupProps> = ({
     }, [isEditing]);
 
     const handleStartEdit = () => {
-        // For editing, we want the raw number, not the formatted label
-        // But for speed (0.5-2.0), user probably wants to type percentage (50-200)
-        // Let's assume the parent handles the conversion if needed, or we just edit the raw value?
-        // The requirement says: "Accept numeric values; interpret as percentage (e.g. 80 → 80%)."
-        // So for speed, we edit in percentage space. For pitch, in semitones.
-        // It's cleaner if we let the user type what they see.
-        // So we'll parse the formatted label or just use a multiplier prop?
-        // Let's try to be smart: if title is '變速', we multiply by 100.
-
+        // Let users edit the same units they see: percent for speed, semitones for pitch.
         let initialEditVal = value;
-        if (title === '變速') {
+        if (kind === 'speed') {
             initialEditVal = Math.round(value * 100);
         }
         setEditValue(initialEditVal.toString());
@@ -68,7 +64,7 @@ const PlaybackControlPopup: React.FC<PlaybackControlPopupProps> = ({
     const handleCommitEdit = () => {
         let num = parseFloat(editValue);
         if (!isNaN(num)) {
-            if (title === '變速') {
+            if (kind === 'speed') {
                 num = num / 100;
             }
             // Clamp
@@ -104,9 +100,8 @@ const PlaybackControlPopup: React.FC<PlaybackControlPopupProps> = ({
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '12px',
-                // @ts-ignore
                 WebkitAppRegion: 'no-drag',
-            }}
+            } as React.CSSProperties}
         >
             {/* Top Row */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -140,7 +135,7 @@ const PlaybackControlPopup: React.FC<PlaybackControlPopupProps> = ({
                             cursor: 'pointer',
                             borderBottom: '1px dashed #666',
                         }}
-                        title="Click to edit"
+                        title={t('playbackControl.clickToEdit')}
                     >
                         {formatLabel(value)}
                     </span>
@@ -156,7 +151,7 @@ const PlaybackControlPopup: React.FC<PlaybackControlPopupProps> = ({
                         fontSize: '16px',
                         padding: '0 4px',
                     }}
-                    title="Reset"
+                    title={t('common.reset')}
                 >
                     ↺
                 </button>

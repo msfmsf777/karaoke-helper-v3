@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useUpdater } from '../contexts/UpdaterContext';
 
 interface UpdatePopupProps {
@@ -7,6 +8,7 @@ interface UpdatePopupProps {
 }
 
 const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose }) => {
+    const { t } = useTranslation();
     const { status, updateInfo, openReleasePage, ignoreVersion } = useUpdater();
     const [isClosing, setIsClosing] = useState(false);
 
@@ -47,9 +49,8 @@ const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose }) => {
             zIndex: 2000,
             opacity: isClosing ? 0 : 1,
             transition: 'opacity 0.2s',
-            // @ts-ignore
             WebkitAppRegion: 'no-drag'
-        }}>
+        } as React.CSSProperties}>
             <div style={{
                 backgroundColor: '#252525',
                 borderRadius: '12px',
@@ -73,7 +74,7 @@ const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose }) => {
                 }}>
                     <div>
                         <h2 style={{ margin: 0, fontSize: '18px', color: '#fff' }}>
-                            有新版本可用
+                            {t('updatesPopup.title')}
                         </h2>
                         <div style={{ fontSize: '13px', color: 'var(--accent-color)', marginTop: '4px' }}>
                             v{updateInfo.version}
@@ -125,7 +126,7 @@ const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose }) => {
                             <div>
                                 {Array.isArray(updateInfo.releaseNotes)
                                     ? updateInfo.releaseNotes.map((n, i) => <div key={i}>{n.note}</div>)
-                                    : '此版本沒有提供更新說明。'}
+                                    : t('updatesPopup.noReleaseNotes')}
                             </div>
                         )}
                     </div>
@@ -141,7 +142,7 @@ const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose }) => {
                             color: '#ff4444',
                             fontSize: '13px'
                         }}>
-                            更新失敗。請檢查網路連線或稍後再試。
+                            {t('updatesPopup.error')}
                         </div>
                     )}
                 </div>
@@ -168,7 +169,7 @@ const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose }) => {
                             marginRight: 'auto'
                         }}
                     >
-                        忽略此版本
+                        {t('updatesPopup.ignore')}
                     </button>
                     <button
                         onClick={handleClose}
@@ -182,7 +183,7 @@ const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose }) => {
                             fontSize: '14px'
                         }}
                     >
-                        取消
+                        {t('common.cancel')}
                     </button>
                     <button
                         onClick={handleGoToDownload}
@@ -197,7 +198,7 @@ const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose }) => {
                             fontWeight: 'bold'
                         }}
                     >
-                        前往下載頁面
+                        {t('updatesPopup.download')}
                     </button>
                 </div>
             </div>
