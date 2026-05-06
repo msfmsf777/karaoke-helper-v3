@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import FitText from './FitText';
 
 interface PlaybackControlPopupProps {
     kind: 'speed' | 'pitch';
@@ -105,7 +106,20 @@ const PlaybackControlPopup: React.FC<PlaybackControlPopupProps> = ({
         >
             {/* Top Row */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#aaa' }}>{title}</span>
+                <FitText
+                    text={title}
+                    baseFontSize={14}
+                    minFontSize={10}
+                    style={{
+                        color: '#aaa',
+                        fontWeight: 'bold',
+                        lineHeight: 1.1,
+                        flex: '1 1 auto',
+                        width: 'auto',
+                        minWidth: 0,
+                        maxWidth: '108px',
+                    }}
+                />
 
                 {isEditing ? (
                     <input

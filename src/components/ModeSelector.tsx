@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PlaybackMode } from '../contexts/QueueContext';
 import ModeOrderIcon from '../assets/icons/mode_order.svg';
 import ModeRepeatIcon from '../assets/icons/mode_repeat_one.svg';
@@ -12,6 +13,7 @@ interface ModeSelectorProps {
 }
 
 const ModeSelector: React.FC<ModeSelectorProps> = ({ currentMode, onSelect, onClose }) => {
+    const { t } = useTranslation();
     const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -25,10 +27,10 @@ const ModeSelector: React.FC<ModeSelectorProps> = ({ currentMode, onSelect, onCl
     }, [onClose]);
 
     const options: { mode: PlaybackMode; label: string; icon: string }[] = [
-        { mode: 'normal', label: '順序播放', icon: ModeOrderIcon },
-        { mode: 'repeat_one', label: '單曲循環', icon: ModeRepeatIcon },
-        { mode: 'random', label: '隨機播放', icon: ModeRandomIcon },
-        { mode: 'stream', label: '直播模式', icon: ModeStreamIcon },
+        { mode: 'normal', label: t('shell.player.order'), icon: ModeOrderIcon },
+        { mode: 'repeat_one', label: t('shell.player.repeatOne'), icon: ModeRepeatIcon },
+        { mode: 'random', label: t('shell.player.random'), icon: ModeRandomIcon },
+        { mode: 'stream', label: t('shell.player.stream'), icon: ModeStreamIcon },
     ];
 
     return (
@@ -50,9 +52,8 @@ const ModeSelector: React.FC<ModeSelectorProps> = ({ currentMode, onSelect, onCl
                 minWidth: '140px',
                 display: 'flex',
                 flexDirection: 'column',
-                // @ts-ignore
                 WebkitAppRegion: 'no-drag',
-            }}
+            } as React.CSSProperties}
         >
             {options.map((option) => (
                 <div

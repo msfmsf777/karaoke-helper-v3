@@ -12,6 +12,7 @@ import VolumeLowIcon from '../../assets/icons/volume_low.svg';
 import VolumeMuteIcon from '../../assets/icons/volume_mute.svg';
 import PlaylistIcon from '../../assets/icons/playlist.svg';
 import ScrollingText from '../ScrollingText';
+import FitText from '../FitText';
 import CloseIcon from '../../assets/icons/cancel.svg';
 import { localPathToFileUrl } from '../../utils/localFileUrl';
 
@@ -195,7 +196,7 @@ const MergedVolumeControl: React.FC<{
                     transition: 'opacity 0.2s ease, transform 0.2s ease'
                 }}>
                 {/* Instrumental */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)', transform: show ? 'translateX(0)' : 'translateX(6px)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '32px', minWidth: '32px', maxWidth: '32px', transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)', transform: show ? 'translateX(0)' : 'translateX(6px)' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '4px', height: show ? 'auto' : 0, overflow: 'hidden', paddingBottom: '4px' }}>
                         <input
                             value={String(Math.round(sliderInstVal * 100))}
@@ -223,11 +224,21 @@ const MergedVolumeControl: React.FC<{
                     <button onClick={toggleInst} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}>
                         <img src={(props.instMuted || sliderInstVal === 0) ? VolumeMuteIcon : (sliderInstVal < 0.5 ? VolumeLowIcon : VolumeHighIcon)} style={{ width: '20px', height: '20px', filter: 'brightness(0) invert(1)' }} />
                     </button>
-                    <span style={{ fontSize: '10px', color: '#aaa', lineHeight: '1' }}>{t('shell.player.instrumental')}</span>
+                    <FitText
+                        text={t('shell.player.instrumental')}
+                        baseFontSize={10}
+                        minFontSize={8}
+                        style={{
+                            color: '#aaa',
+                            lineHeight: '1',
+                            textAlign: 'center',
+                            width: '32px',
+                        }}
+                    />
                 </div>
 
                 {/* Vocal */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)', transform: show ? 'translateX(0)' : 'translateX(-6px)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '32px', minWidth: '32px', maxWidth: '32px', transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)', transform: show ? 'translateX(0)' : 'translateX(-6px)' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '4px', height: show ? 'auto' : 0, overflow: 'hidden', paddingBottom: '4px' }}>
                         <input
                             value={String(Math.round(sliderVocalVal * 100))}
@@ -255,7 +266,17 @@ const MergedVolumeControl: React.FC<{
                     <button onClick={toggleVocal} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}>
                         <img src={(props.vocalMuted || sliderVocalVal === 0) ? VolumeMuteIcon : (sliderVocalVal < 0.5 ? VolumeLowIcon : VolumeHighIcon)} style={{ width: '20px', height: '20px', filter: 'brightness(0) invert(1)' }} />
                     </button>
-                    <span style={{ fontSize: '10px', color: '#aaa', lineHeight: '1' }}>{t('shell.player.vocal')}</span>
+                    <FitText
+                        text={t('shell.player.vocal')}
+                        baseFontSize={10}
+                        minFontSize={8}
+                        style={{
+                            color: '#aaa',
+                            lineHeight: '1',
+                            textAlign: 'center',
+                            width: '32px',
+                        }}
+                    />
                 </div>
             </div>
         </div>
@@ -329,7 +350,20 @@ const MiniPlaybackControl: React.FC<{
         }} onMouseDown={(e) => e.stopPropagation()}>
             {/* Top Row: Title, Value/Input, Reset */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#aaa' }}>{title}</span>
+                <FitText
+                    text={title}
+                    baseFontSize={12}
+                    minFontSize={9}
+                    style={{
+                        color: '#aaa',
+                        fontWeight: 'bold',
+                        lineHeight: 1.1,
+                        flex: '1 1 auto',
+                        width: 'auto',
+                        minWidth: 0,
+                        maxWidth: '90px',
+                    }}
+                />
                 {isEditing ? (
                     <input
                         ref={inputRef}

@@ -8,6 +8,7 @@ import { loadVolumePreferences, saveVolumePreferences } from '../settings/volume
 import PlaybackControlPopup from './PlaybackControlPopup';
 import VolumeControlPopup from './VolumeControlPopup';
 import ScrollingText from './ScrollingText';
+import FitText from './FitText';
 import AddToPlaylistMenu from './AddToPlaylistMenu';
 import ModeSelector from './ModeSelector';
 import ArtworkTile from './ArtworkTile';
@@ -607,7 +608,16 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
             disabled={isControlsDisabled}
           >
             <img src={SpeedIcon} alt="Speed" style={{ width: '24px', height: '24px', marginBottom: '2px', display: 'block' }} />
-            <span style={{ fontSize: '10px', lineHeight: 1 }}>{t('shell.player.speed')}</span>
+            <FitText
+              text={t('shell.player.speed')}
+              baseFontSize={10}
+              minFontSize={8}
+              style={{
+                lineHeight: 1,
+                textAlign: 'center',
+                width: '44px',
+              }}
+            />
           </button>
           {showSpeedPopup && (
             <PlaybackControlPopup
@@ -650,7 +660,16 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
             disabled={isControlsDisabled}
           >
             <img src={PitchIcon} alt="Pitch" style={{ width: '24px', height: '24px', marginBottom: '2px', display: 'block' }} />
-            <span style={{ fontSize: '10px', lineHeight: 1 }}>{t('shell.player.pitch')}</span>
+            <FitText
+              text={t('shell.player.pitch')}
+              baseFontSize={10}
+              minFontSize={8}
+              style={{
+                lineHeight: 1,
+                textAlign: 'center',
+                width: '44px',
+              }}
+            />
           </button>
           {showPitchPopup && (
             <PlaybackControlPopup

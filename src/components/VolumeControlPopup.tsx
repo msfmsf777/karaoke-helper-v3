@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import VolumeLowIcon from '../assets/icons/volume_low.svg';
 import VolumeHighIcon from '../assets/icons/volume_high.svg';
 import VolumeMuteIcon from '../assets/icons/volume_mute.svg';
+import FitText from './FitText';
 
 interface VolumeControlPopupProps {
     label: string;
@@ -48,7 +49,7 @@ const VolumeControlPopup: React.FC<VolumeControlPopupProps> = ({
     };
 
     const handleCommitEdit = () => {
-        let num = parseInt(editValue, 10);
+        const num = parseInt(editValue, 10);
         if (!isNaN(num)) {
             const clamped = Math.max(0, Math.min(num, 100));
             onChange(clamped);
@@ -101,9 +102,8 @@ const VolumeControlPopup: React.FC<VolumeControlPopupProps> = ({
                     transition: 'all 0.2s ease-out',
                     paddingBottom: isHovered ? '4px' : '0',
                     zIndex: 1000, // Ensure it overlaps other elements when expanded
-                    // @ts-ignore
                     WebkitAppRegion: 'no-drag',
-                }}
+                } as React.CSSProperties}
             >
                 {/* Slider Section (Hidden by default, expands up) */}
                 <div
@@ -167,13 +167,13 @@ const VolumeControlPopup: React.FC<VolumeControlPopupProps> = ({
                             value={volume}
                             onChange={(e) => onChange(Number(e.target.value))}
                             style={{
-                                writingMode: 'bt-lr' as any, /* IE/Edge */
+                                writingMode: 'bt-lr' as unknown as React.CSSProperties['writingMode'], /* IE/Edge */
                                 WebkitAppearance: 'slider-vertical', /* WebKit */
                                 width: '8px',
                                 height: '100%',
                                 accentColor: 'var(--accent-color, #1db954)',
                                 cursor: 'pointer',
-                            }}
+                            } as React.CSSProperties}
                         />
                     </div>
                 </div>
@@ -198,7 +198,16 @@ const VolumeControlPopup: React.FC<VolumeControlPopupProps> = ({
                     title={`${label}: ${volume}%`}
                 >
                     <span style={{ marginBottom: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '24px' }}>{getIcon()}</span>
-                    <span style={{ fontSize: '10px', lineHeight: 1 }}>{label}</span>
+                    <FitText
+                        text={label}
+                        baseFontSize={10}
+                        minFontSize={8}
+                        style={{
+                            lineHeight: 1,
+                            textAlign: 'center',
+                            width: '44px',
+                        }}
+                    />
                 </button>
             </div>
         </div>

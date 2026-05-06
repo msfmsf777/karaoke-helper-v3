@@ -8,6 +8,7 @@ import HotkeysSettingsSection from './HotkeysSettingsSection';
 import OverlayTemplateSettingsSection, { OverlayTemplateEditor } from './OverlayTemplateSettingsSection';
 import { OverlayKind } from '../../shared/overlayTemplates';
 import { LANGUAGE_OPTIONS, SupportedLanguage } from '../../shared/i18n';
+import WebIcon from '../assets/icons/web.svg';
 
 // Lazy loading DebugUpdaterUI
 const DebugUpdaterUI = React.lazy(() => import('./DebugUpdaterUI'));
@@ -213,7 +214,13 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 
                     {/* Section: Language */}
                     <section style={{ marginBottom: '40px' }}>
-                        <h2 style={{ margin: '0 0 16px', fontSize: '18px', color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: '12px' }}>
+                        <h2 style={{ margin: '0 0 16px', fontSize: '18px', color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <img
+                                src={WebIcon}
+                                alt=""
+                                aria-hidden="true"
+                                style={{ width: '18px', height: '18px', filter: 'brightness(0) invert(1)', opacity: 0.9, flexShrink: 0 }}
+                            />
                             {t('settings.language.title')}
                         </h2>
                         <p style={{ margin: '0 0 16px', color: '#aaa', fontSize: '14px', lineHeight: '1.6' }}>
