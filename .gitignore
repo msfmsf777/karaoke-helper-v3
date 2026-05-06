@@ -41,3 +41,6 @@ resources/python-runtime/
 # Testing
 coverage/
 test-results/
+
+# Generated localization type reference files
+scripts/generated/

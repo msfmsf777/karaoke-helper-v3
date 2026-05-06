@@ -281,7 +281,7 @@
   "songManagement": {
     "libraryTitle": "Library",
     "libraryDescription": "All added songs appear here. Filter, sort, and play them directly.",
-    "addSong": "+ Add Song",
+    "addSongButton": "+ Add Song",
     "libraryEmpty": "No songs yet. Use \"+ Add Song\" in the top right to start building your setlist.",
     "favoritesTitle": "Favorites",
     "favoritesDescription": "Favorited songs appear here. Filter, sort, and play them directly.",

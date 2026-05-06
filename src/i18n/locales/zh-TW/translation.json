@@ -281,7 +281,7 @@
   "songManagement": {
     "libraryTitle": "歌曲庫",
     "libraryDescription": "所有已加入的歌曲會顯示在這裡，可直接篩選、排序並播放。",
-    "addSong": "＋ 新增歌曲",
+    "addSongButton": "＋ 新增歌曲",
     "libraryEmpty": "尚未有歌曲，點右上角「＋ 新增歌曲」開始建立你的歌單。",
     "favoritesTitle": "我的最愛",
     "favoritesDescription": "收藏的歌曲會顯示在這裡，可直接篩選、排序並播放。",

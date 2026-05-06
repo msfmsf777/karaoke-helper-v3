@@ -52,7 +52,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenLyrics, onOpenAddSong }
             e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
           }}
         >
-          {t('songManagement.addSong')}
+          {t('songManagement.addSongButton')}
         </button>
       </div>
 
