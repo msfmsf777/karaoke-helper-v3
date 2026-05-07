@@ -1,0 +1,12 @@
+{
+  "settings": {
+    "language": {
+      "title": "Bahasa Antarmuka",
+      "description": "Pilih bahasa tampilan untuk KHelper. Jika belum ada bahasa yang dipilih, KHelper akan mendeteksi bahasa sistem terlebih dahulu.",
+      "label": "Bahasa",
+      "searchPlaceholder": "Cari bahasa",
+      "noResults": "Tidak ada bahasa yang cocok",
+      "current": "Bahasa saat ini"
+    }
+  }
+}

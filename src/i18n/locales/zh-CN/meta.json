@@ -1,0 +1,9 @@
+{
+  "code": "zh-CN",
+  "nativeName": "简体中文",
+  "englishName": "Simplified Chinese",
+  "flag": "cn",
+  "direction": "ltr",
+  "enabled": true,
+  "aliases": ["zh-Hans", "zh-Hans-CN", "zh-SG"]
+}

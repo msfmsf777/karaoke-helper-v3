@@ -1,0 +1,12 @@
+{
+  "settings": {
+    "language": {
+      "title": "界面语言",
+      "description": "选择 KHelper 的显示语言。若尚未选择，会先根据系统语言自动判断。",
+      "label": "语言",
+      "searchPlaceholder": "搜索语言",
+      "noResults": "找不到符合的语言",
+      "current": "目前语言"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "settings": {
+    "language": {
+      "title": "インターフェース言語",
+      "description": "KHelper の表示言語を選択します。未選択の場合は、システム言語から自動判定します。",
+      "label": "言語",
+      "searchPlaceholder": "言語を検索",
+      "noResults": "一致する言語がありません",
+      "current": "現在の言語"
+    }
+  }
+}

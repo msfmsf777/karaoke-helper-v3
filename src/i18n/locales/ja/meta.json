@@ -1,0 +1,9 @@
+{
+  "code": "ja",
+  "nativeName": "日本語",
+  "englishName": "Japanese",
+  "flag": "jp",
+  "direction": "ltr",
+  "enabled": true,
+  "aliases": ["ja-JP"]
+}

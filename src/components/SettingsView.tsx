@@ -7,8 +7,8 @@ import { getAudioOffset, loadOutputDevicePreferences, saveStreamEnabledPreferenc
 import HotkeysSettingsSection from './HotkeysSettingsSection';
 import OverlayTemplateSettingsSection, { OverlayTemplateEditor } from './OverlayTemplateSettingsSection';
 import { OverlayKind } from '../../shared/overlayTemplates';
-import { LANGUAGE_OPTIONS, SupportedLanguage } from '../../shared/i18n';
 import WebIcon from '../assets/icons/web.svg';
+import LanguageSelector from './LanguageSelector';
 
 // Lazy loading DebugUpdaterUI
 const DebugUpdaterUI = React.lazy(() => import('./DebugUpdaterUI'));
@@ -229,26 +229,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                         <label style={{ display: 'block', color: '#ddd', fontSize: '14px', fontWeight: 'bold', marginBottom: '8px' }}>
                             {t('settings.language.label')}
                         </label>
-                        <select
-                            value={language}
-                            onChange={(event) => setLanguage(event.target.value as SupportedLanguage)}
-                            style={{
-                                width: '100%',
-                                maxWidth: '320px',
-                                padding: '10px 12px',
-                                backgroundColor: '#2a2a2a',
-                                color: '#fff',
-                                border: '1px solid #444',
-                                borderRadius: '6px',
-                                outline: 'none'
-                            }}
-                        >
-                            {LANGUAGE_OPTIONS.map((option) => (
-                                <option key={option.code} value={option.code}>
-                                    {option.nativeName}
-                                </option>
-                            ))}
-                        </select>
+                        <LanguageSelector value={language} onChange={setLanguage} />
                     </section>
 
                     {/* Section: Audio Devices */}

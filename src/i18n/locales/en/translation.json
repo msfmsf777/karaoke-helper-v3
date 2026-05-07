@@ -28,7 +28,10 @@
     "language": {
       "title": "Interface Language",
       "description": "Choose the display language for KHelper. If no language has been selected, KHelper auto-detects it from your system language.",
-      "label": "Language"
+      "label": "Language",
+      "searchPlaceholder": "Search languages",
+      "noResults": "No matching languages",
+      "current": "Current language"
     },
     "audio": {
       "loadError": "Unable to get the audio output device list",
@@ -345,6 +348,23 @@
   "miniPlayer": {
     "speedTitle": "Speed: {{value}}x",
     "pitchTitle": "Pitch: {{value}}"
+  },
+  "electron": {
+    "tray": {
+      "checkingUpdates": "Checking for updates...",
+      "checkUpdates": "Check for Updates",
+      "openMainWindow": "Open Main Window",
+      "settings": "Settings",
+      "quit": "Quit"
+    },
+    "dialog": {
+      "deleteSong": {
+        "title": "Delete Song",
+        "message": "Delete this song? This cannot be undone."
+      },
+      "cancel": "Cancel",
+      "delete": "Delete"
+    }
   },
   "songList": {
     "empty": "No songs",

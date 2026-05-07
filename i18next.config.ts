@@ -1,7 +1,10 @@
 import { defineConfig } from 'i18next-cli';
+import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES } from './shared/i18n';
+
+const locales = [...SUPPORTED_LANGUAGES];
 
 export default defineConfig({
-  locales: ['zh-TW', 'en'],
+  locales,
   extract: {
     input: [
       'src/**/*.{ts,tsx}',
@@ -20,8 +23,8 @@ export default defineConfig({
     keySeparator: '.',
     nsSeparator: ':',
     functions: ['t', '*.t', 'i18n.t', 'i18nInstance.t'],
-    primaryLanguage: 'zh-TW',
-    secondaryLanguages: ['en'],
+    primaryLanguage: DEFAULT_LANGUAGE,
+    secondaryLanguages: locales.filter((locale) => locale !== DEFAULT_LANGUAGE),
     removeUnusedKeys: false,
     disablePlurals: true,
     sort: false,
@@ -30,6 +33,7 @@ export default defineConfig({
       'about.*',
       'common.*',
       'domain.*',
+      'electron.*',
       'language.*',
       'lyrics.*',
       'miniPlayer.*',

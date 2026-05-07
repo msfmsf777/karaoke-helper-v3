@@ -7,10 +7,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/generate-i18n-registry.mjs",
     "build": "node scripts/clean-build.mjs && tsc && vite build && electron-builder --win",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "i18n:check": "node scripts/check-i18n-catalog.mjs",
+    "i18n:generate-registry": "node scripts/generate-i18n-registry.mjs",
+    "i18n:check": "node scripts/generate-i18n-registry.mjs --check && node scripts/check-i18n-catalog.mjs",
     "i18n:status": "i18next-cli status",
     "i18n:extract": "i18next-cli extract",
     "i18n:extract:check": "i18next-cli extract --dry-run --ci",

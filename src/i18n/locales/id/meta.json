@@ -1,0 +1,9 @@
+{
+  "code": "id",
+  "nativeName": "Bahasa Indonesia",
+  "englishName": "Indonesian",
+  "flag": "id",
+  "direction": "ltr",
+  "enabled": true,
+  "aliases": ["id-ID"]
+}

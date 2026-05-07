@@ -3,24 +3,20 @@ import path from 'node:path';
 
 const root = process.cwd();
 const defaultLanguage = 'zh-TW';
+const generalFallbackLanguage = 'en';
 const localeRoot = path.join(root, 'src', 'i18n', 'locales');
+const flagsRoot = path.join(root, 'src', 'assets', 'flags');
 const sourceRoots = ['src', 'shared', 'electron'];
 const sourceExtensions = new Set(['.ts', '.tsx']);
-const supportedLanguagesSource = fs.readFileSync(path.join(root, 'shared', 'i18n.ts'), 'utf8');
-const supportedLanguagesMatch = supportedLanguagesSource.match(/SUPPORTED_LANGUAGES\s*=\s*\[([^\]]+)\]/);
+const errors = [];
 
-if (!supportedLanguagesMatch) {
-  throw new Error('Unable to read SUPPORTED_LANGUAGES from shared/i18n.ts');
-}
-
-const supportedLanguages = [...supportedLanguagesMatch[1].matchAll(/['"]([^'"]+)['"]/g)].map(match => match[1]);
-
-function readCatalog(language) {
-  const filePath = path.join(localeRoot, language, 'translation.json');
-  if (!fs.existsSync(filePath)) {
-    throw new Error(`Missing locale file: ${path.relative(root, filePath)}`);
+function readJson(filePath) {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch (error) {
+    errors.push(`Invalid JSON: ${path.relative(root, filePath)} (${error.message})`);
+    return {};
   }
-  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
 
 function flattenKeys(value, prefix = '') {
@@ -36,6 +32,19 @@ function getValue(value, key) {
       ? current[part]
       : undefined
   ), value);
+}
+
+function placeholderSet(value) {
+  if (typeof value !== 'string') return new Set();
+  return new Set([...value.matchAll(/\{\{\s*([A-Za-z0-9_.-]+)\s*\}\}/g)].map(match => match[1]));
+}
+
+function sameSet(left, right) {
+  if (left.size !== right.size) return false;
+  for (const value of left) {
+    if (!right.has(value)) return false;
+  }
+  return true;
 }
 
 function walkFiles(dir, files = []) {
@@ -58,7 +67,7 @@ function collectStaticCodeKeys() {
   const keys = new Set();
   const callPattern = /\b(?:t|overlayText)\(\s*['"`]([^'"`$]+)['"`]/g;
   const memberCallPattern = /\b(?:i18n|i18nInstance)\.t\(\s*['"`]([^'"`$]+)['"`]/g;
-  const catalogKeyLiteralPattern = /['"`]((?:about|common|domain|language|lyrics|miniPlayer|overlays|playbackControl|settings|shell|songList|songManagement|tasks|updatesPopup)\.[A-Za-z0-9_.-]+)['"`]/g;
+  const catalogKeyLiteralPattern = /['"`]((?:about|common|domain|electron|language|lyrics|miniPlayer|overlays|playbackControl|settings|shell|songList|songManagement|tasks|updatesPopup)\.[A-Za-z0-9_.-]+)['"`]/g;
   const addKey = (key) => {
     if (/\.(?:json|ts|tsx|js|mjs|cjs|png|svg)$/i.test(key)) return;
     keys.add(key);
@@ -78,20 +87,91 @@ function collectStaticCodeKeys() {
   return keys;
 }
 
-const catalogs = Object.fromEntries(supportedLanguages.map(language => [language, readCatalog(language)]));
-const defaultCatalog = catalogs[defaultLanguage];
+function loadLocales() {
+  if (!fs.existsSync(localeRoot)) {
+    errors.push('Missing locale root: src/i18n/locales');
+    return [];
+  }
+
+  const collator = new Intl.Collator('en', { numeric: true, sensitivity: 'base' });
+  return fs.readdirSync(localeRoot, { withFileTypes: true })
+    .filter(entry => entry.isDirectory())
+    .map((entry) => {
+      const code = entry.name;
+      const metaPath = path.join(localeRoot, code, 'meta.json');
+      const translationPath = path.join(localeRoot, code, 'translation.json');
+
+      if (!fs.existsSync(metaPath)) {
+        errors.push(`${code} missing meta.json`);
+      }
+      if (!fs.existsSync(translationPath)) {
+        errors.push(`${code} missing translation.json`);
+      }
+
+      const meta = fs.existsSync(metaPath) ? readJson(metaPath) : {};
+      const catalog = fs.existsSync(translationPath) ? readJson(translationPath) : {};
+
+      if (meta.code !== code) errors.push(`${code}/meta.json code must match folder name`);
+      for (const field of ['nativeName', 'englishName', 'flag', 'direction']) {
+        if (typeof meta[field] !== 'string' || meta[field].trim() === '') {
+          errors.push(`${code}/meta.json missing string field: ${field}`);
+        }
+      }
+      if (meta.enabled !== true) errors.push(`${code}/meta.json enabled must be true`);
+      if (meta.direction !== 'ltr' && meta.direction !== 'rtl') errors.push(`${code}/meta.json direction must be "ltr" or "rtl"`);
+      if (!Array.isArray(meta.aliases) || meta.aliases.some(alias => typeof alias !== 'string')) {
+        errors.push(`${code}/meta.json aliases must be an array of strings`);
+      }
+      if (typeof meta.flag === 'string' && !fs.existsSync(path.join(flagsRoot, `${meta.flag}.svg`))) {
+        errors.push(`${code}/meta.json references missing flag: src/assets/flags/${meta.flag}.svg`);
+      }
+
+      return { code, meta, catalog };
+    })
+    .sort((a, b) => collator.compare(a.code, b.code));
+}
+
+const locales = loadLocales();
+const supportedLanguages = locales.map(locale => locale.code);
+
+if (!supportedLanguages.includes(defaultLanguage)) errors.push(`Missing default locale: ${defaultLanguage}`);
+if (!supportedLanguages.includes(generalFallbackLanguage)) errors.push(`Missing general fallback locale: ${generalFallbackLanguage}`);
+
+const catalogs = Object.fromEntries(locales.map(locale => [locale.code, locale.catalog]));
+const defaultCatalog = catalogs[defaultLanguage] ?? {};
+const fallbackCatalog = catalogs[generalFallbackLanguage] ?? {};
 const defaultKeys = new Set(flattenKeys(defaultCatalog));
-const errors = [];
+const fallbackKeys = new Set(flattenKeys(fallbackCatalog));
+
+for (const key of defaultKeys) {
+  if (!fallbackKeys.has(key)) {
+    errors.push(`${generalFallbackLanguage} missing fallback key: ${key}`);
+  }
+}
 
 for (const language of supportedLanguages) {
   const languageKeys = new Set(flattenKeys(catalogs[language]));
-  for (const key of defaultKeys) {
-    if (!languageKeys.has(key)) errors.push(`${language} missing key: ${key}`);
-  }
+  const mustBeComplete = language === defaultLanguage || language === generalFallbackLanguage;
+
   for (const key of languageKeys) {
-    if (!defaultKeys.has(key)) errors.push(`${language} has extra key not in ${defaultLanguage}: ${key}`);
+    if (!defaultKeys.has(key)) {
+      errors.push(`${language} has extra key not in ${defaultLanguage}: ${key}`);
+      continue;
+    }
+
     const value = getValue(catalogs[language], key);
     if (typeof value === 'string' && value.trim() === '') errors.push(`${language} has empty value: ${key}`);
+
+    const defaultValue = getValue(defaultCatalog, key);
+    if (typeof value === 'string' && typeof defaultValue === 'string' && !sameSet(placeholderSet(value), placeholderSet(defaultValue))) {
+      errors.push(`${language} placeholder mismatch: ${key}`);
+    }
+  }
+
+  if (mustBeComplete) {
+    for (const key of defaultKeys) {
+      if (!languageKeys.has(key)) errors.push(`${language} missing required key: ${key}`);
+    }
   }
 }
 
@@ -105,4 +185,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`i18n catalog check passed for ${supportedLanguages.join(', ')} (${defaultKeys.size} keys).`);
+console.log(`i18n catalog check passed for ${supportedLanguages.join(', ')} (${defaultKeys.size} source keys, fallback via ${generalFallbackLanguage} -> ${defaultLanguage}).`);

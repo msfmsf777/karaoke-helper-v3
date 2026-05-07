@@ -1,0 +1,9 @@
+{
+  "code": "zh-TW",
+  "nativeName": "繁體中文",
+  "englishName": "Traditional Chinese",
+  "flag": "tw",
+  "direction": "ltr",
+  "enabled": true,
+  "aliases": ["zh", "zh-Hant", "zh-Hant-TW", "zh-HK", "zh-MO"]
+}

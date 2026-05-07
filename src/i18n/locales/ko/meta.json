@@ -1,0 +1,9 @@
+{
+  "code": "ko",
+  "nativeName": "한국어",
+  "englishName": "Korean",
+  "flag": "kr",
+  "direction": "ltr",
+  "enabled": true,
+  "aliases": ["ko-KR"]
+}

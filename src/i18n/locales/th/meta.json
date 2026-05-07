@@ -1,0 +1,9 @@
+{
+  "code": "th",
+  "nativeName": "ไทย",
+  "englishName": "Thai",
+  "flag": "th",
+  "direction": "ltr",
+  "enabled": true,
+  "aliases": ["th-TH"]
+}

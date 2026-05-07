@@ -1,0 +1,9 @@
+{
+  "code": "en",
+  "nativeName": "English",
+  "englishName": "English",
+  "flag": "us",
+  "direction": "ltr",
+  "enabled": true,
+  "aliases": ["en-US", "en-GB", "en-CA", "en-AU"]
+}
