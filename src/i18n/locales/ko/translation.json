@@ -1,12 +1,860 @@
 {
+  "language": {
+    "zhTW": "중국어 번체",
+    "en": "영어"
+  },
+  "common": {
+    "appName": "KHelper V3",
+    "loading": "로드 중",
+    "save": "저장",
+    "cancel": "취소",
+    "confirm": "확인",
+    "delete": "삭제",
+    "edit": "편집",
+    "copy": "복사",
+    "play": "플레이",
+    "retry": "재시도",
+    "reset": "재설정",
+    "back": "뒤로",
+    "search": "검색",
+    "settings": "설정",
+    "unknown": "알 수 없음",
+    "none": "없음",
+    "default": "기본값",
+    "copied": "복사됨",
+    "close": "닫기"
+  },
   "settings": {
     "language": {
       "title": "인터페이스 언어",
-      "description": "KHelper 표시 언어를 선택합니다. 선택한 언어가 없으면 시스템 언어를 먼저 자동 감지합니다.",
+      "description": "KHelper의 표시 언어를 선택하세요. 언어를 선택하지 않은 경우 KHelper는 시스템 언어에서 자동으로 감지합니다.",
       "label": "언어",
       "searchPlaceholder": "언어 검색",
-      "noResults": "일치하는 언어가 없습니다",
+      "noResults": "일치하는 언어가 없습니다.",
       "current": "현재 언어"
+    },
+    "audio": {
+      "loadError": "오디오 출력 장치 목록을 가져올 수 없습니다.",
+      "title": "오디오 출력 장치",
+      "scan": "다시 스캔",
+      "scanning": "스캔 중...",
+      "description": "청중이 오디오를 듣는 위치(스트림)와 오디오를 듣는 위치(헤드폰)를 선택합니다.",
+      "separationDescription": "분리된 곡에서는 스트림에 반주만 출력하고 헤드폰에는 보컬과 반주 트랙을 모두 출력합니다.",
+      "systemDefault": "시스템 기본값",
+      "device": "기기 {{index}}",
+      "streamOutput": "시청자 출력(스트림)",
+      "headphoneOutput": "헤드폰 출력",
+      "syncOffset": "이중 출력 동기화 오프셋:",
+      "calibrate": "교정"
+    },
+    "separation": {
+      "title": "보컬 분리 품질",
+      "fast": "빠르게",
+      "fastDescription": "약간 낮은 품질로 더 적은 리소스를 사용하고 가장 빠르게 완료됩니다.",
+      "normal": "보통",
+      "normalDescription": "추천합니다. 속도와 품질의 균형을 유지합니다.",
+      "high": "고품질",
+      "highDescription": "시간은 더 걸리지만 최상의 분리 결과를 제공합니다."
+    },
+    "updates": {
+      "title": "소프트웨어 업데이트",
+      "check": "업데이트 확인",
+      "checking": "확인 중...",
+      "neverChecked": "확인하지 않음",
+      "lastChecked": "마지막 확인: {{time}}"
+    },
+    "overlay": {
+      "unsavedLeaveConfirm": "라이브 오버레이 템플릿에 저장되지 않은 변경사항이 있습니다. 편집자를 떠나시겠습니까?"
+    },
+    "hotkeys": {
+      "title": "단축키",
+      "resetRecommended": "권장 기본값 복원",
+      "resetRecommendedTitle": "권장 기본값으로 단축키만 복원하세요. 기본값이 없는 사용자 정의 단축키는 덮어쓰이지 않습니다.",
+      "enableGlobal": "글로벌 단축키 활성화",
+      "globalDisabledDescription": "끄면 바로가기가 KHelper 창 내부에서만 작동합니다.",
+      "function": "기능",
+      "local": "로컬 단축키",
+      "global": "글로벌 단축키",
+      "recordingHint": "단축키를 누르고, 취소하려면 Esc를 누르고, 지우려면 백스페이스를 누르세요.",
+      "recordHint": "클릭한 후 바로가기를 누르세요.",
+      "recording": "단축키를 누르세요...",
+      "mediaKey": "미디어 키",
+      "clearShortcut": "이 단축키 지우기",
+      "status": {
+        "title": "상태",
+        "duplicateGlobal": "중복된 단축키",
+        "duplicateLocal": "중복된 로컬 바로가기",
+        "globalDisabled": "전역 단축키가 비활성화되었습니다.",
+        "applied": "적용됨"
+      }
+    },
+    "calibration": {
+      "title": "이중 출력 동기화 교정",
+      "purposeTitle": "목적",
+      "purpose": "스트림 모니터 루프백과 직접 헤드폰 클릭이 완벽하게 정렬되도록 지연을 조정합니다.",
+      "preparationTitle": "설정",
+      "obsMonitoringTitle": "OBS 모니터링을 활성화합니다.",
+      "obsMonitoring": "OBS 믹서에서 기어 ⚙ → 고급 오디오 속성을 클릭하고 → 오디오 소스를 모니터 전용 또는 모니터 및 출력으로 설정합니다.",
+      "sampleRateTitle": "샘플링 속도 확인:",
+      "sampleRate": "설정에서 선택한 각 장치 카드의 오른쪽 상단에 있는 Hz 배지를 확인하세요. 모든 장치와 OBS이 48000Hz와 같은 동일한 샘플링 속도를 사용하는지 확인하세요.",
+      "operationTitle": "작동",
+      "operation": "아래 테스트 시작을 클릭한 다음 두 번의 클릭이 하나의 소리로 겹쳐질 때까지 슬라이더를 조정합니다.",
+      "streamDelay": "← 스트림 지연",
+      "monitorDelay": "모니터 지연 →",
+      "stopTest": "테스트 중지",
+      "startTest": "테스트 시작",
+      "saveApply": "저장 및 적용"
+    }
+  },
+  "about": {
+    "descriptionLine1": "VTuber과 스트리머를 위한 올인원 노래방 도우미",
+    "descriptionLine2": "버그나 기능 아이디어가 있는 경우 Discord에 연락하는 것이 가장 좋습니다.",
+    "links": {
+      "website": {
+        "title": "공식 홈페이지",
+        "label": "웹사이트"
+      },
+      "twitter": {
+        "title": "제작자를 팔로우하세요",
+        "label": "팔로우"
+      },
+      "discord": {
+        "title": "Discord 커뮤니티에 가입하세요",
+        "label": "Discord"
+      },
+      "report": {
+        "title": "GitHub에 문제를 신고하거나 기능을 요청하세요.",
+        "label": "신고"
+      }
+    }
+  },
+  "updatesPopup": {
+    "title": "새 버전 사용 가능",
+    "noReleaseNotes": "이 버전에는 릴리스 노트가 제공되지 않았습니다.",
+    "error": "업데이트에 실패했습니다. 네트워크 연결을 확인하거나 나중에 다시 시도하세요.",
+    "ignore": "이 버전 무시",
+    "download": "다운로드 페이지 열기"
+  },
+  "tasks": {
+    "title": "활성 작업",
+    "download": "다운로드",
+    "separation": "노래 분리",
+    "queuedDownload": "대기 중...",
+    "failed": "실패",
+    "completed": "완료됨",
+    "viewAllDownloads": "모든 다운로드 결과 보기",
+    "copyError": "복사 오류",
+    "copied": "복사됨 ✓",
+    "hideError": "오류 숨기기",
+    "viewError": "오류 보기",
+    "empty": "활성 작업 없음",
+    "actions": {
+      "cancel": "취소",
+      "retry": "재시도",
+      "remove": "제거"
+    },
+    "separationStatus": {
+      "queued": "대기 중",
+      "running": "처리",
+      "succeeded": "완료됨",
+      "failed": "실패"
+    },
+    "quality": {
+      "fast": "빠르게",
+      "normal": "보통"
+    }
+  },
+  "playbackControl": {
+    "clickToEdit": "편집하려면 클릭하세요"
+  },
+  "domain": {
+    "songType": {
+      "original": "원본",
+      "instrumental": "반주",
+      "all": "모든 유형"
+    },
+    "audioStatus": {
+      "streaming": "온라인",
+      "original_only": "분리되지 않음",
+      "separation_pending": "대기 중",
+      "separating": "분리",
+      "separation_failed": "분리 실패",
+      "separated": "분리됨",
+      "ready": "분리되지 않음",
+      "missing": "분리되지 않음",
+      "error": "오류",
+      "all": "모든 오디오"
+    },
+    "lyricsStatus": {
+      "none": "가사 없음",
+      "text_only": "일반 텍스트",
+      "synced": "동기화됨",
+      "all": "모든 가사",
+      "shortNone": "없음"
+    },
+    "source": {
+      "file": "로컬 파일",
+      "youtube": "YouTube",
+      "all": "모든 소스"
+    },
+    "favorite": {
+      "all": "모든 즐겨찾기",
+      "favorite": "즐겨찾기",
+      "not_favorite": "즐겨찾기 아님"
+    },
+    "downloadStatus": {
+      "queued": "대기 중",
+      "downloading": "다운로드 중",
+      "processing": "처리",
+      "completed": "완료됨",
+      "failed": "실패"
+    },
+    "hotkeys": {
+      "groups": {
+        "playback": "재생",
+        "custom": "맞춤 단축키"
+      },
+      "unset": "설정되지 않음",
+      "failures": {
+        "plainGlobal": "전역 단축키에는 수정자가 포함되어야 합니다.",
+        "duplicate": "중복된 단축키",
+        "occupied": "다른 앱에서 사용됨"
+      },
+      "actions": {
+        "playPause": {
+          "label": "재생/일시 정지",
+          "description": "현재 노래 재생 전환"
+        },
+        "nextTrack": {
+          "label": "다음 트랙",
+          "description": "대기열의 다음 노래 재생"
+        },
+        "previousTrack": {
+          "label": "이전 트랙",
+          "description": "대기열의 이전 노래 재생"
+        },
+        "toggleMiniPlayer": {
+          "label": "미니 플레이어",
+          "description": "미니 플레이어 표시 또는 숨기기"
+        },
+        "focusSearch": {
+          "label": "검색",
+          "description": "상위 검색 필드에 집중"
+        },
+        "toggleStreamMode": {
+          "label": "스트림 모드",
+          "description": "스트림 모드 시작 또는 종료"
+        },
+        "instrumentalVolumeUp": {
+          "label": "악기 볼륨 +",
+          "description": "악기 볼륨을 5% 높입니다."
+        },
+        "instrumentalVolumeDown": {
+          "label": "악기 볼륨 -",
+          "description": "기기 볼륨을 5% 낮춥니다."
+        },
+        "vocalVolumeUp": {
+          "label": "보컬 볼륨 +",
+          "description": "보컬 볼륨을 5% 높입니다."
+        },
+        "vocalVolumeDown": {
+          "label": "보컬 볼륨 -",
+          "description": "보컬 볼륨을 5% 낮춥니다."
+        }
+      }
+    },
+    "viewCount": "{{count}} 조회수",
+    "viewCountTenThousands": "{{count}} 조회수"
+  },
+  "shell": {
+    "nav": {
+      "browse": "찾아보기",
+      "library": "도서관",
+      "downloads": "다운로드",
+      "lyrics": "가사 편집기",
+      "myMusic": "내 음악",
+      "favorites": "즐겨찾기",
+      "recent": "최근 플레이한 게임",
+      "playlists": "내 재생목록",
+      "addPlaylist": "재생목록 추가",
+      "playlistName": "재생목록 이름",
+      "deletePlaylistConfirm": "이 재생목록을 삭제하시겠습니까?"
+    },
+    "topBar": {
+      "searchPlaceholder": "노래/아티스트 검색",
+      "recentSearches": "최근 검색",
+      "clear": "지우기",
+      "noRecentSearches": "최근 검색어가 없습니다",
+      "localMatches": "지역 도서관 경기",
+      "viewAll": "모두 보기 ->",
+      "noLocalMatches": "일치하는 지역 노래가 없습니다.",
+      "youtubeResults": "YouTube 스트림 결과",
+      "suggestions": "검색 제안",
+      "searching": "검색 중...",
+      "noOnlineResults": "관련 검색결과 없음",
+      "showMore": "더보기",
+      "tasks": "작업",
+      "about": "소개",
+      "miniPlayer": "미니 플레이어",
+      "addToPlaylist": "재생목록에 추가",
+      "more": "더보기",
+      "updateFailed": "업데이트 확인 실패",
+      "updateAvailable": "새 버전 사용 가능"
+    },
+    "player": {
+      "noSong": "선택한 노래가 없습니다.",
+      "unknownSong": "알 수 없는 노래",
+      "nextSong": "다음: {{title}}",
+      "emptySetlist": "세트리스트가 비어 있습니다",
+      "order": "순서 재생",
+      "repeatOne": "한 번 반복",
+      "random": "셔플",
+      "stream": "라이브 모드",
+      "enterStream": "라이브 모드 시작",
+      "closeStream": "라이브 모드 닫기",
+      "cloudStreamingTooltip": "온라인 스트리밍 - 다운로드할 때까지 피치, 속도 및 보컬 분리를 사용할 수 없습니다.",
+      "cloudStreaming": "클라우드 스트림",
+      "addFavorite": "즐겨찾기 추가",
+      "removeFavorite": "즐겨찾기 제거",
+      "switchModeHint": "사이드바를 사용하여 모드 전환",
+      "previous": "이전",
+      "next": "다음",
+      "speed": "속도",
+      "speedTooltip": "속도",
+      "speedDisabledTooltip": "온라인 스트림에서는 속도를 사용할 수 없습니다.",
+      "pitch": "피치",
+      "pitchTooltip": "피치",
+      "pitchDisabledTooltip": "온라인 스트림에서는 피치를 사용할 수 없습니다.",
+      "instrumental": "반주",
+      "vocal": "보컬",
+      "queue": "대기열"
+    },
+    "queue": {
+      "title": "대기열",
+      "count": "{{count}} 노래",
+      "clear": "지우기",
+      "confirmClear": "분명합니까?",
+      "empty": "대기열이 비어 있습니다. 라이브러리나 재생 목록에서 노래를 추가하세요.",
+      "remove": "대기열에서 제거",
+      "hint": "지금 이 노래를 재생하려면 두 번 클릭하세요."
+    },
+    "window": {
+      "minimize": "최소화",
+      "maximize": "최대화",
+      "restore": "복원",
+      "close": "닫기"
+    }
+  },
+  "miniPlayer": {
+    "speedTitle": "속도: {{value}}x",
+    "pitchTitle": "피치: {{value}}"
+  },
+  "electron": {
+    "tray": {
+      "checkingUpdates": "업데이트 확인 중...",
+      "checkUpdates": "업데이트 확인",
+      "openMainWindow": "메인 창 열기",
+      "settings": "설정",
+      "quit": "종료"
+    },
+    "dialog": {
+      "deleteSong": {
+        "title": "노래 삭제",
+        "message": "이 노래를 삭제하시겠습니까? 이 작업은 취소할 수 없습니다."
+      },
+      "cancel": "취소",
+      "delete": "삭제"
+    }
+  },
+  "songList": {
+    "empty": "노래 없음",
+    "playVisible": "표시 목록 재생",
+    "added": "추가됨",
+    "addToQueue": "대기열에 추가",
+    "moreActions": "추가 목록 작업",
+    "shuffleVisible": "표시 목록 섞기",
+    "replaceQueue": "대기열 및 플레이 교체",
+    "filteredCount": "{{visible}} / {{total}} 표시 중",
+    "totalCount": "{{count}} 합계",
+    "searchPlaceholder": "이 목록 검색",
+    "searchThisList": "이 목록 검색",
+    "filter": "필터",
+    "clearCondition": "이 조건을 지우려면 클릭하세요.",
+    "clearFilters": "필터 지우기",
+    "sortBy": "{{label}} 기준으로 정렬",
+    "noMatches": "이 필터와 일치하는 노래가 없습니다.",
+    "filterChip": {
+      "type": "유형: {{value}}",
+      "audio": "오디오: {{value}}",
+      "lyrics": "가사: {{value}}",
+      "source": "출처: {{value}}"
+    },
+    "columns": {
+      "titleArtist": "제목 / 아티스트",
+      "favorite": "즐겨찾기",
+      "type": "유형",
+      "audio": "오디오 상태",
+      "lyrics": "가사",
+      "source": "소스",
+      "duration": "기간"
+    }
+  },
+  "songManagement": {
+    "libraryTitle": "도서관",
+    "libraryDescription": "추가된 모든 노래가 여기에 표시됩니다. 직접 필터링하고, 정렬하고, 재생할 수 있습니다.",
+    "addSongButton": "+ 노래 추가",
+    "libraryEmpty": "아직 노래가 없습니다. 세트리스트 작성을 시작하려면 오른쪽 상단의 \"+ 노래 추가\"를 사용하세요.",
+    "favoritesTitle": "즐겨찾기",
+    "favoritesDescription": "즐겨찾는 노래가 여기에 표시됩니다. 직접 필터링하고, 정렬하고, 재생할 수 있습니다.",
+    "favoritesEmpty": "아직 좋아하는 노래가 없습니다.",
+    "historyTitle": "최근 플레이한 게임",
+    "historyDescription": "최근 재생된 노래가 여기에 표시되며 현재 필터링된 목록에서 재생할 수 있습니다.",
+    "historyEmpty": "아직 재생 기록이 없습니다.",
+    "clearHistory": "재생 기록 지우기",
+    "clearHistoryConfirm": "재생 기록을 삭제하시겠습니까?",
+    "playlistNotFound": "재생목록을 찾을 수 없습니다",
+    "renameHint": "이름을 바꾸려면 클릭하세요.",
+    "playlistDescription": "이 재생목록을 정렬하고 필터링하면 현재 보기만 변경됩니다. 저장된 재생목록 순서는 다시 작성되지 않습니다.",
+    "playlistEmpty": "이 재생목록에는 아직 노래가 없습니다. \"재생 목록에 추가...\"를 사용하여 라이브러리 또는 다른 목록에서 노래를 추가하세요.",
+    "deletePlaylist": "이 재생목록 삭제",
+    "deletePlaylistConfirm": "'{{name}}' 재생목록을 삭제하시겠습니까?",
+    "removeFromPlaylist": "재생목록에서 삭제",
+    "unknownArtist": "알 수 없는 아티스트",
+    "addToPlaylistOrQueue": "재생 목록/큐에 추가",
+    "fastBadge": "빠르게",
+    "normalBadge": "보통",
+    "separate": "분리",
+    "selected": "선택됨",
+    "noPlaylists": "재생목록 없음",
+    "newPlaylistName": "새 재생목록 이름",
+    "createPlaylist": "재생목록 만들기",
+    "removeFavorite": "즐겨찾기 제거",
+    "addFavorite": "즐겨찾기 추가",
+    "addToPlaylist": "재생목록에 추가",
+    "addToPlaylistEllipsis": "재생목록에 추가...",
+    "more": "더보기",
+    "renamePlaylist": "이름 바꾸기",
+    "startSeparation": "분리 시작",
+    "restartSeparation": "다시 분리",
+    "separationQuality": {
+      "fast": "빠르게",
+      "normal": "보통",
+      "high": "고품질"
+    },
+    "editLyrics": "가사 편집",
+    "editDetails": "세부정보 편집",
+    "openFolder": "폴더 열기",
+    "deleteSong": "노래 삭제",
+    "copyVideoLink": "비디오 링크 복사",
+    "openInBrowser": "기본 브라우저에서 열기",
+    "editDialog": {
+      "title": "노래 세부정보 편집",
+      "titleLabel": "노래 제목",
+      "artistLabel": "아티스트",
+      "titleRequired": "노래 제목은 비워둘 수 없습니다.",
+      "saveFailed": "저장하지 못했습니다. 나중에 다시 시도해 주세요.",
+      "saving": "저장 중..."
+    },
+    "download": {
+      "title": "다운로드 관리자",
+      "active": "다운로드 중",
+      "failed": "다운로드 실패",
+      "completed": "다운로드됨",
+      "downloaded": "다운로드됨",
+      "queuedEllipsis": "대기 중...",
+      "activeQueued": "대기 중",
+      "activeProcessing": "처리",
+      "activeProgress": "{{progress}}% 다운로드 중",
+      "quality": {
+        "normal": "보통",
+        "high": "고품질",
+        "best": "최고"
+      },
+      "retryFailed": "재시도 실패: {{message}}",
+      "removeConfirm": "이 다운로드 기록을 삭제하시겠습니까?",
+      "errorCopied": "오류 메시지가 복사되었습니다.",
+      "copyError": "복사 오류",
+      "remove": "제거",
+      "emptyHistory": "아직 다운로드 기록이 없습니다",
+      "downloadEllipsis": "다운로드...",
+      "downloadAs": "{{type}}(으)로 다운로드",
+      "customDownload": "맞춤 다운로드",
+      "customDownloadEllipsis": "사용자 정의 다운로드...",
+      "custom": "맞춤",
+      "options": "다운로드 옵션"
+    },
+    "searchResults": {
+      "title": "검색 결과: \"{{term}}\"",
+      "localMatches": "지역 도서관 경기",
+      "noLocalMatches": "\"{{term}}\"과(와) 일치하는 로컬 노래가 없습니다.",
+      "youtubeResults": "YouTube 스트림 결과",
+      "duration": {
+        "any": "모든 기간",
+        "under5": "5분 이내",
+        "5to10": "5~10분",
+        "over10": "10분 이상"
+      },
+      "date": {
+        "any": "언제든지",
+        "week": "이번 주에 업로드됨",
+        "month": "이번 달에 업로드됨",
+        "year": "올해 업로드됨"
+      },
+      "sort": {
+        "relevance": "관련성을 기준으로 정렬",
+        "popularity": "조회수 기준 정렬"
+      },
+      "searchingYoutube": "YouTube 검색 중...",
+      "columns": {
+        "titleChannel": "제목/채널",
+        "download": "다운로드"
+      },
+      "noFilteredYoutube": "현재 필터와 일치하는 YouTube 결과가 없습니다.",
+      "noYoutubeResults": "YouTube 결과가 없습니다.",
+      "scrollMore": "더 많은 것을 로드하려면 아래로 스크롤하세요...",
+      "noMoreYoutube": "더 이상 YouTube 결과가 없습니다.",
+      "loadingMore": "더 많은 YouTube 결과 로드 중..."
+    },
+    "onlineDownload": {
+      "title": "맞춤 다운로드",
+      "titleLabel": "제목",
+      "titlePlaceholder": "노래 제목",
+      "artistLabel": "아티스트",
+      "artistPlaceholder": "아티스트(선택사항)",
+      "typeLabel": "유형",
+      "qualityLabel": "오디오 품질",
+      "quality": {
+        "normal": "일반(공간 절약)",
+        "high": "고품질(표준)",
+        "best": "최고(더 큰 파일)"
+      },
+      "lyricsLabel": "가사",
+      "lyricsMode": {
+        "none": "가사 없음",
+        "paste": "일반 텍스트 붙여넣기",
+        "importSearch": "검색 / 가져오기"
+      },
+      "lyricsPlaceholder": "가사 붙여넣기...",
+      "noLyricsSelected": "선택한 가사가 없습니다.",
+      "import": "가져오기",
+      "searchLyrics": "가사 검색",
+      "enqueue": "다운로드 대기열에 추가",
+      "searchResult": "검색 결과: {{name}} - {{artist}}"
+    },
+    "addSong": {
+      "title": "노래 추가",
+      "localFiles": "로컬 파일",
+      "audioFiles": "오디오 파일",
+      "chooseFiles": "+ 파일 선택",
+      "youtubeLinksLabel": "YouTube 링크(한 줄에 하나씩)",
+      "youtubePlaceholder": "YouTube 링크 붙여넣기...",
+      "paste": "붙여넣기",
+      "linkCount": "{{count}} 링크",
+      "clear": "지우기",
+      "parsing": "파싱 중...",
+      "checkAndImport": "확인하고 가져오기",
+      "lyricsModePasteShort": "붙여넣기",
+      "upload": "업로드",
+      "emptyFiles": "선택한 파일이 없습니다.",
+      "emptyLinks": "가져온 유효한 링크가 없습니다.",
+      "processing": "처리 중...",
+      "confirmAdd": "추가 확인({{count}})",
+      "unsavedConfirm": "저장되지 않은 변경사항이 있습니다. 그래도 닫으시겠어요?"
+    }
+  },
+  "lyrics": {
+    "search": {
+      "title": "가사 검색",
+      "placeholder": "노래/아티스트 검색...",
+      "searching": "검색 중...",
+      "noResults": "결과 없음",
+      "preview": "미리보기",
+      "hidePreview": "미리보기 숨기기",
+      "useLyrics": "이 가사를 사용하세요"
+    },
+    "style": {
+      "title": "인앱 가사 표시",
+      "description": "이러한 설정은 인앱 스트림 보기에만 영향을 미치며 OBS 오버레이 템플릿은 변경하지 않습니다.",
+      "fontSize": "글꼴 크기",
+      "inactiveColor": "비활성 텍스트",
+      "activeColor": "강조표시된 텍스트",
+      "glowColor": "글로우 컬러",
+      "strokeColor": "획 색상",
+      "strokeWidth": "획 폭",
+      "resetDefault": "기본값으로 재설정"
+    },
+    "stream": {
+      "nowPlaying": "지금 재생 중",
+      "confirmResetTitle": "재설정을 확인하려면 다시 클릭하세요.",
+      "resetProgressTitle": "재생 진행 상황 재설정",
+      "confirmReset": "재설정을 확인하시겠습니까?",
+      "notPlaying": "재생 중인 항목 없음",
+      "copyLyricsObs": "가사 OBS 링크 복사",
+      "copySetlistObs": "세트리스트 OBS 링크 복사",
+      "copiedLyricsObs": "가사 OBS 링크를 복사했습니다: {{name}}",
+      "copiedSetlistObs": "세트리스트 OBS 링크를 복사했습니다: {{name}}",
+      "obsTemplateSettings": "OBS 템플릿 설정",
+      "upNext": "다음({{count}})",
+      "played": "재생됨({{count}})",
+      "upNextNoCount": "다음",
+      "playedNoCount": "플레이함",
+      "noPlayedSongs": "아직 재생된 노래가 없습니다.",
+      "requeueTitle": "이 노래를 Up Next 하단에 다시 추가하세요.",
+      "queueEmpty": "먼저 대기열에 노래를 추가하세요.",
+      "nextSongBadge": "다음 •",
+      "removeFromSetlist": "목록에서 제거"
+    },
+    "editor": {
+      "title": "가사 편집기",
+      "songList": "노래 목록",
+      "selectSong": "왼쪽에서 노래를 선택하세요",
+      "confirmResetTimes": "모든 시간 표시를 재설정하시겠습니까? 이 작업은 취소할 수 없습니다.",
+      "confirmOverwrite": "이 노래에는 이미 가사가 있습니다. 기존 가사 파일을 덮어쓰시겠습니까?",
+      "alignControls": "정렬 컨트롤",
+      "alignDescription": "탭 모드가 켜져 있을 때 J를 누르면 현재 재생 시간이 다음 가사 줄에 적용됩니다.",
+      "resetAllTimes": "모든 시간 재설정",
+      "lyricsText": "가사 텍스트",
+      "saving": "저장 중...",
+      "saved": "저장됨",
+      "clearBlank": "공백 지우기",
+      "apply": "적용",
+      "lyricsPlaceholder": "가사를 입력하세요...",
+      "loadingLyrics": "가사 로드 중...",
+      "noLyricsHelp": "아직 가사가 없습니다. 먼저 가사 텍스트를 붙여넣고 저장하세요.",
+      "setToCurrentTime": "현재 재생 시간으로 설정",
+      "applyCurrentTimeTitle": "현재 재생 시간 적용",
+      "applyCurrentTime": "현재 시간 적용",
+      "earlier": "이전",
+      "later": "나중에",
+      "nextTapLine": "다음 탭이 이 라인에 적용됩니다",
+      "addLineBelow": "아래에 한 줄 추가",
+      "clickAgainDelete": "삭제하려면 다시 클릭하세요.",
+      "tapModeTitle": "탭 모드(J)",
+      "tapMode": "탭 모드",
+      "tap": "탭",
+      "saveLrc": "LRC 저장",
+      "messages": {
+        "loadedLrc": "LRC 로드됨",
+        "loadedPlain": "로드된 일반 텍스트",
+        "noLyrics": "가사 없음",
+        "appliedAndReset": "적용 및 재설정",
+        "appliedText": "적용 텍스트",
+        "timesReset": "시간 재설정",
+        "emptyLinesCleared": "빈 줄이 지워졌습니다.",
+        "savedLrc": "LRC에 저장됨(동기화됨 TXT)",
+        "importedLrc": "LRC 가져옴",
+        "importedPlain": "가져온 일반 텍스트",
+        "smartAlignDone": "스마트 정렬 완료"
+      },
+      "errors": {
+        "readFailed": "가사를 읽지 못했습니다.",
+        "loadFailed": "로드하지 못했습니다.",
+        "saveFailed": "저장하지 못했습니다.",
+        "tapFirst": "먼저 정렬하려면 탭하세요.",
+        "importFailed": "가져오지 못했습니다.",
+        "noValidMarkers": "정렬할 수 없음: 유효한 시간 마커를 찾을 수 없습니다.",
+        "invalidTimeline": "계산할 수 없음: 시간 표시가 충분하지 않거나 순서가 잘못되었습니다."
+      },
+      "smartAlign": {
+        "label": "스마트 정렬",
+        "tooltip": "스마트 정렬: 시작 및 종료 시간을 설정한 다음 그 사이의 가사 타이밍을 자동으로 조정합니다.",
+        "startTitle": "스마트 정렬 - 시작 설정",
+        "endTitle": "스마트 정렬 - 종료 설정",
+        "startDescription": "첫 번째 가사 라인의 올바른 시작 시간으로 플레이어를 이동한 다음 아래에서 시작 설정을 클릭하세요.",
+        "endDescription": "마지막 가사 라인의 올바른 시작 시간으로 플레이어를 이동한 다음 아래에서 종료 설정을 클릭하세요. KHelper은 그 사이에 있는 모든 가사의 타이밍을 조정합니다.",
+        "setStart": "시작 설정(오프셋)",
+        "setEnd": "종료 설정(스케일)"
+      },
+      "unsaved": {
+        "title": "저장되지 않은 변경사항",
+        "switchSongMessage": "노래를 전환하면 저장되지 않은 변경사항이 삭제됩니다.",
+        "leavePageMessage": "이 페이지를 나가면 저장되지 않은 변경사항이 삭제됩니다.",
+        "discard": "저장하지 않음",
+        "saveAndContinue": "저장하고 계속하기"
+      }
+    }
+  },
+  "overlays": {
+    "defaults": {
+      "currentLabel": "지금 노래하고 있어요",
+      "upcomingLabel": "다음",
+      "historyLabel": "성",
+      "waitingNext": "다음곡을 기다리며",
+      "notPlaying": "재생 중인 항목 없음",
+      "noUpcoming": "다가오는 노래가 없습니다",
+      "noHistory": "아직 부른 노래가 없습니다.",
+      "defaultLyricsDesign": "기본 가사",
+      "defaultSetlistDesign": "기본 세트리스트",
+      "newLyricsDesign": "새로운 가사 디자인",
+      "newSetlistDesign": "새로운 세트리스트 디자인",
+      "lyricsDesignNumber": "가사 디자인 {{index}}",
+      "setlistDesignNumber": "세트리스트 디자인 {{index}}"
+    },
+    "confirm": {
+      "deleteLyricsDesign": "'{{name}}'을 삭제하시겠습니까? 기존 OBS 링크는 기본 가사 디자인으로 대체됩니다.",
+      "deleteSetlistDesign": "'{{name}}'을 삭제하시겠습니까? 기존 OBS 링크는 기본 세트리스트 디자인으로 대체됩니다.",
+      "deleteDesign": "'{{name}}'을 삭제하시겠습니까? 기존 OBS 링크는 기본 디자인으로 대체됩니다."
+    },
+    "templates": {
+      "classic_list": "클래식 목록",
+      "record_card": "기록 카드",
+      "compact_strip": "컴팩트 스트립",
+      "neon_signboard": "네온간판",
+      "countdown_counter": "카운트다운 보드",
+      "index_grid": "전체 목록",
+      "pager_console": "레트로 호출기",
+      "cassette_deck": "카세트 플레이어",
+      "stage_marquee": "무대 천막",
+      "photo_stack": "폴라로이드 세트리스트",
+      "vertical_column": "수직 스페이서 목록",
+      "spinning_disk_list": "회전하는 디스크 목록"
+    },
+    "ui": {
+      "add": "추가",
+      "revert": "되돌리기",
+      "deleteCurrentDesign": "현재 디자인 삭제",
+      "resetDesign": "이 디자인 재설정",
+      "design": "디자인",
+      "lyrics": "가사",
+      "setlist": "세트리스트",
+      "obsLink": "OBS 링크",
+      "copyObsLink": "OBS 링크 복사",
+      "copiedLyricsObs": "복사된 가사 OBS 링크",
+      "copiedSetlistObs": "복사된 세트리스트 OBS 링크",
+      "title": "라이브 오버레이 템플릿",
+      "description": "OBS에서 사용되는 가사 및 세트리스트 오버레이 템플릿을 구성합니다. 기존 링크는 유효한 상태로 유지되며 내장된 텍스트는 선택한 앱 언어를 따릅니다.",
+      "lyricsDesigns": "가사 오버레이 디자인",
+      "setlistDesigns": "세트리스트 오버레이 디자인",
+      "lyricsOverlay": "가사 오버레이",
+      "setlistOverlay": "세트리스트 오버레이",
+      "lyricsEditor": "가사 오버레이 편집기",
+      "setlistEditor": "세트리스트 오버레이 편집기",
+      "lyricsDesignDescription": "OBS 가사 레이아웃, 애니메이션 및 일본어 지원 표시를 조정합니다.",
+      "setlistDesignDescription": "OBS 세트리스트 템플릿, 라벨, 애니메이션 및 빈 상태를 조정합니다.",
+      "fillHeight": "채우기 높이",
+      "showLineCount": "{{count}} 줄 표시",
+      "sampleLyricsPreview": "샘플 일본어 가사 미리보기",
+      "sampleData": "샘플 데이터",
+      "currentQueue": "현재 대기열",
+      "font": "글꼴",
+      "lineCount": "줄 수",
+      "animation": "애니메이션",
+      "scroll": "스크롤",
+      "fade": "페이드",
+      "slide": "슬라이드",
+      "scale": "규모",
+      "activeSize": "활성 크기",
+      "inactiveSize": "비활성 크기",
+      "lineGap": "라인 갭",
+      "letterSpacing": "문자 간격",
+      "colorsReadability": "색상 및 가독성",
+      "activeColor": "활성 색상",
+      "inactiveColor": "비활성 색상",
+      "passedColor": "성컬러",
+      "strokeColor": "획 색상",
+      "strokeWidth": "획 폭",
+      "glowColor": "글로우 컬러",
+      "glowStrength": "글로우 강도",
+      "japaneseAssist": "일본어 보조",
+      "furigana": "후리가나",
+      "romaji": "로마자",
+      "followApp": "앱 설정 따름",
+      "show": "쇼",
+      "hide": "숨기기",
+      "romajiLetterSpacing": "로마자 문자 간격",
+      "romajiMarginTop": "로마자 상단 여백",
+      "style": "스타일",
+      "preset": "프리셋",
+      "accentColor": "악센트 색상",
+      "textColor": "텍스트 색상",
+      "secondaryText": "보조 텍스트",
+      "visibleContent": "보이는 콘텐츠",
+      "currentSong": "현재 노래",
+      "footerTicker": "바닥글 티커",
+      "counts": "개수",
+      "artist": "아티스트",
+      "numbering": "번호 매기기",
+      "thumbnail": "썸네일",
+      "labelsMotion": "라벨과 모션",
+      "current": "현재",
+      "upcomingTickerLabel": "다가오는 티커 라벨",
+      "density": "밀도",
+      "compact": "콤팩트",
+      "comfortable": "편안함",
+      "frame": "프레임",
+      "solid": "솔리드",
+      "glass": "유리",
+      "neon": "네온",
+      "outerRadius": "외부 반경",
+      "innerRadius": "내부 항목 반경",
+      "columns": "열",
+      "decorationIntensity": "장식 강도",
+      "textureOpacity": "질감",
+      "motionDetail": "데코레이션 모션",
+      "off": "끄기",
+      "subtle": "미묘한",
+      "full": "전체",
+      "textEffect": "텍스트 효과",
+      "normal": "보통",
+      "pixel": "픽셀",
+      "tickerSource": "티커 소스",
+      "historyTickerLabel": "역사 티커 라벨",
+      "footerLabel": "바닥글 라벨",
+      "tickerSpeed": "티커 속도",
+      "cassetteDepth": "카세트 깊이",
+      "diskSpinMode": "디스크 애니메이션",
+      "spin": "스핀",
+      "diskSpinSpeed": "디스크 속도",
+      "lightAnimation": "라이트 애니메이션",
+      "breathe": "숨을 쉬다",
+      "flash": "플래시",
+      "chase": "체이스",
+      "rainbow": "무지개",
+      "lightPalette": "밝은 색상",
+      "warm": "따뜻함",
+      "cool": "멋지다",
+      "lightSpeed": "빛의 속도",
+      "photoTexture": "사진 질감",
+      "cardAngle": "카드 각도",
+      "cardTransition": "카드 전환",
+      "on": "켜짐",
+      "currentGlow": "현재 글로우",
+      "noteColor": "노트 색상",
+      "contentInset": "수평 패딩",
+      "topOffset": "최상위 위치",
+      "itemGap": "아이템 격차",
+      "titleBarOpacity": "제목 표시줄 배경",
+      "dividerOpacity": "분배기",
+      "currentFontSize": "현재 글꼴 크기",
+      "reserveFontSize": "향후 글꼴 크기",
+      "rowGap": "행 간격",
+      "historyOpacity": "기록 불투명도",
+      "diskSize": "디스크 크기",
+      "diskStyle": "디스크 스타일",
+      "vinyl": "비닐",
+      "ring": "반지",
+      "dot": "도트",
+      "thumbnailBorder": "썸네일 테두리",
+      "all": "모두",
+      "listScroll": "목록 스크롤",
+      "scrollSpeed": "스크롤 속도",
+      "pauseTime": "일시정지 시간",
+      "changeAnimation": "노래 변경 애니메이션",
+      "emptyState": "빈 상태",
+      "showWaitingText": "대기 텍스트 표시",
+      "waitingText": "문자 대기 중",
+      "showWaitingSongTitle": "다가오는 노래 제목 표시",
+      "pausePreview": "미리보기 일시중지",
+      "playPreview": "미리보기 재생",
+      "normalMode": "일반 모드",
+      "previewPrevious": "이전 미리보기",
+      "previewNext": "다음 미리보기",
+      "resetPreview": "미리보기 상태 재설정",
+      "copyName": "{{name}} 복사",
+      "id": "ID: {{id}}",
+      "savedObs": "저장된 OBS 템플릿",
+      "obsLinkDescription": "OBS 링크는 선택한 디자인과 앱 언어를 사용합니다.",
+      "emptyStateDescription": "OBS 세트리스트 오버레이가 대기 텍스트를 표시할지, 아무것도 재생되지 않거나 라이브 모드가 대기 중일 때 콘텐츠를 숨길지 여부를 제어합니다."
     }
   }
 }

@@ -1,12 +1,860 @@
 {
+  "language": {
+    "zhTW": "Cina Tradisional",
+    "en": "bahasa Inggris"
+  },
+  "common": {
+    "appName": "KHelper V3",
+    "loading": "Memuat",
+    "save": "Simpan",
+    "cancel": "Batalkan",
+    "confirm": "Konfirmasikan",
+    "delete": "Hapus",
+    "edit": "Sunting",
+    "copy": "Salin",
+    "play": "Mainkan",
+    "retry": "Coba lagi",
+    "reset": "Setel ulang",
+    "back": "Kembali",
+    "search": "Cari",
+    "settings": "Pengaturan",
+    "unknown": "Tidak diketahui",
+    "none": "Tidak ada",
+    "default": "Bawaan",
+    "copied": "Disalin",
+    "close": "Tutup"
+  },
   "settings": {
     "language": {
       "title": "Bahasa Antarmuka",
-      "description": "Pilih bahasa tampilan untuk KHelper. Jika belum ada bahasa yang dipilih, KHelper akan mendeteksi bahasa sistem terlebih dahulu.",
+      "description": "Pilih bahasa tampilan untuk KHelper. Jika tidak ada bahasa yang dipilih, KHelper akan mendeteksinya secara otomatis dari bahasa sistem Anda.",
       "label": "Bahasa",
       "searchPlaceholder": "Cari bahasa",
       "noResults": "Tidak ada bahasa yang cocok",
       "current": "Bahasa saat ini"
+    },
+    "audio": {
+      "loadError": "Tidak dapat memperoleh daftar perangkat output audio",
+      "title": "Perangkat Keluaran Audio",
+      "scan": "Pindai ulang",
+      "scanning": "Memindai...",
+      "description": "Pilih di mana penonton mendengar audio (Stream) dan di mana Anda mendengar audio (Headphone).",
+      "separationDescription": "Untuk lagu terpisah, Stream hanya mengeluarkan instrumental sementara Headphone mengeluarkan trek vokal dan instrumental.",
+      "systemDefault": "Bawaan Sistem",
+      "device": "Perangkat {{index}}",
+      "streamOutput": "Output Penonton (Stream)",
+      "headphoneOutput": "Output Headphone",
+      "syncOffset": "Offset sinkronisasi keluaran ganda:",
+      "calibrate": "Kalibrasi"
+    },
+    "separation": {
+      "title": "Kualitas Pemisahan Vokal",
+      "fast": "Cepat",
+      "fastDescription": "Menggunakan lebih sedikit sumber daya dan menyelesaikan paling cepat, dengan kualitas sedikit lebih rendah.",
+      "normal": "Normal",
+      "normalDescription": "Direkomendasikan. Menyeimbangkan kecepatan dan kualitas.",
+      "high": "Kualitas Tinggi",
+      "highDescription": "Membutuhkan waktu lebih lama, namun memberikan hasil pemisahan terbaik."
+    },
+    "updates": {
+      "title": "Pembaruan Perangkat Lunak",
+      "check": "Periksa Pembaruan",
+      "checking": "Memeriksa...",
+      "neverChecked": "Tidak pernah diperiksa",
+      "lastChecked": "Terakhir diperiksa: {{time}}"
+    },
+    "overlay": {
+      "unsavedLeaveConfirm": "Templat hamparan langsung memiliki perubahan yang belum disimpan. Keluar dari editor?"
+    },
+    "hotkeys": {
+      "title": "Tombol pintas",
+      "resetRecommended": "Kembalikan Default yang Direkomendasikan",
+      "resetRecommendedTitle": "Pulihkan hanya hotkey dengan default yang disarankan. Tombol pintas khusus tanpa default tidak akan ditimpa.",
+      "enableGlobal": "Aktifkan Tombol Pintas Global",
+      "globalDisabledDescription": "Jika tidak aktif, pintasan hanya berfungsi di dalam jendela KHelper",
+      "function": "Fungsi",
+      "local": "Tombol Pintas Lokal",
+      "global": "Tombol Pintas Global",
+      "recordingHint": "Tekan pintasan, Esc untuk membatalkan, Backspace untuk menghapus",
+      "recordHint": "Klik, lalu tekan pintasan",
+      "recording": "Tekan pintasan...",
+      "mediaKey": "Kunci Media",
+      "clearShortcut": "Hapus tombol pintas ini",
+      "status": {
+        "title": "Status",
+        "duplicateGlobal": "Pintasan duplikat",
+        "duplicateLocal": "Gandakan pintasan lokal",
+        "globalDisabled": "Tombol pintas global dinonaktifkan",
+        "applied": "Diterapkan"
+      }
+    },
+    "calibration": {
+      "title": "Kalibrasi Sinkronisasi keluaran ganda",
+      "purposeTitle": "Tujuan",
+      "purpose": "Sesuaikan penundaan sehingga loopback monitor streaming dan klik headphone langsung selaras dengan sempurna.",
+      "preparationTitle": "Pengaturan",
+      "obsMonitoringTitle": "Aktifkan pemantauan OBS:",
+      "obsMonitoring": "Di mixer OBS, klik roda gigi ⚙ → Properti Audio Lanjutan → atur sumber audio Anda ke Monitor Saja atau Monitor dan Output.",
+      "sampleRateTitle": "Konfirmasikan tingkat sampel:",
+      "sampleRate": "Periksa lencana Hz di sudut kanan atas setiap kartu perangkat yang dipilih di Pengaturan. Pastikan setiap perangkat dan OBS menggunakan laju sampel yang sama, misalnya 48000 Hz.",
+      "operationTitle": "Operasi",
+      "operation": "Klik Mulai Tes di bawah, lalu sesuaikan penggeser hingga dua klik tumpang tindih menjadi satu suara.",
+      "streamDelay": "← Penundaan streaming",
+      "monitorDelay": "Keterlambatan monitor →",
+      "stopTest": "Hentikan Tes",
+      "startTest": "Mulai Tes",
+      "saveApply": "Simpan dan Terapkan"
+    }
+  },
+  "about": {
+    "descriptionLine1": "Pembantu karaoke lengkap untuk VTuber dan streamer",
+    "descriptionLine2": "Untuk bug atau ide fitur, Discord adalah tempat terbaik untuk menghubungi kami.",
+    "links": {
+      "website": {
+        "title": "Situs Resmi",
+        "label": "Situs web"
+      },
+      "twitter": {
+        "title": "Ikuti penciptanya",
+        "label": "Ikuti"
+      },
+      "discord": {
+        "title": "Bergabunglah dengan komunitas Discord",
+        "label": "Discord"
+      },
+      "report": {
+        "title": "Laporkan masalah atau minta fitur di GitHub",
+        "label": "Laporkan"
+      }
+    }
+  },
+  "updatesPopup": {
+    "title": "Versi Baru Tersedia",
+    "noReleaseNotes": "Tidak ada catatan rilis yang disediakan untuk versi ini.",
+    "error": "Pembaruan gagal. Periksa koneksi jaringan Anda atau coba lagi nanti.",
+    "ignore": "Abaikan Versi Ini",
+    "download": "Buka Halaman Unduhan"
+  },
+  "tasks": {
+    "title": "Tugas Aktif",
+    "download": "Unduhan",
+    "separation": "Pemisahan Lagu",
+    "queuedDownload": "Mengantri...",
+    "failed": "Gagal",
+    "completed": "Selesai",
+    "viewAllDownloads": "Lihat semua hasil unduhan",
+    "copyError": "Kesalahan Salin",
+    "copied": "Disalin ✓",
+    "hideError": "Sembunyikan Kesalahan",
+    "viewError": "Lihat Kesalahan",
+    "empty": "Tidak ada tugas aktif",
+    "actions": {
+      "cancel": "Batalkan",
+      "retry": "Coba lagi",
+      "remove": "Hapus"
+    },
+    "separationStatus": {
+      "queued": "Mengantri",
+      "running": "Pemrosesan",
+      "succeeded": "Selesai",
+      "failed": "Gagal"
+    },
+    "quality": {
+      "fast": "Cepat",
+      "normal": "Biasa"
+    }
+  },
+  "playbackControl": {
+    "clickToEdit": "Klik untuk mengedit"
+  },
+  "domain": {
+    "songType": {
+      "original": "Asli",
+      "instrumental": "Instrumental",
+      "all": "Semua Jenis"
+    },
+    "audioStatus": {
+      "streaming": "Daring",
+      "original_only": "Tidak Terpisah",
+      "separation_pending": "Menunggu",
+      "separating": "Memisahkan",
+      "separation_failed": "Pemisahan Gagal",
+      "separated": "Terpisah",
+      "ready": "Tidak Terpisah",
+      "missing": "Tidak Terpisah",
+      "error": "Kesalahan",
+      "all": "Semua Audio"
+    },
+    "lyricsStatus": {
+      "none": "Tidak Ada Lirik",
+      "text_only": "Teks Biasa",
+      "synced": "Disinkronkan",
+      "all": "Semua Lirik",
+      "shortNone": "Tidak ada"
+    },
+    "source": {
+      "file": "File Lokal",
+      "youtube": "YouTube",
+      "all": "Semua Sumber"
+    },
+    "favorite": {
+      "all": "Semua Favorit",
+      "favorite": "Favorit",
+      "not_favorite": "Bukan Favorit"
+    },
+    "downloadStatus": {
+      "queued": "Mengantri",
+      "downloading": "Mengunduh",
+      "processing": "Pemrosesan",
+      "completed": "Selesai",
+      "failed": "Gagal"
+    },
+    "hotkeys": {
+      "groups": {
+        "playback": "Pemutaran",
+        "custom": "Pintasan Khusus"
+      },
+      "unset": "Tidak Ditetapkan",
+      "failures": {
+        "plainGlobal": "Tombol pintas global harus menyertakan pengubah",
+        "duplicate": "Pintasan duplikat",
+        "occupied": "Digunakan oleh aplikasi lain"
+      },
+      "actions": {
+        "playPause": {
+          "label": "Putar / Jeda",
+          "description": "Alihkan pemutaran untuk lagu saat ini"
+        },
+        "nextTrack": {
+          "label": "Lagu Berikutnya",
+          "description": "Putar lagu berikutnya dalam antrian"
+        },
+        "previousTrack": {
+          "label": "Lagu Sebelumnya",
+          "description": "Putar lagu sebelumnya dalam antrian"
+        },
+        "toggleMiniPlayer": {
+          "label": "Pemutar Mini",
+          "description": "Tampilkan atau sembunyikan pemutar mini"
+        },
+        "focusSearch": {
+          "label": "Cari",
+          "description": "Fokuskan bidang pencarian teratas"
+        },
+        "toggleStreamMode": {
+          "label": "Mode Live",
+          "description": "Masuk atau keluar dari mode streaming"
+        },
+        "instrumentalVolumeUp": {
+          "label": "Volume Instrumen +",
+          "description": "Naikkan volume instrumen sebesar 5%"
+        },
+        "instrumentalVolumeDown": {
+          "label": "Volume Instrumen -",
+          "description": "Menurunkan volume instrumen sebesar 5%"
+        },
+        "vocalVolumeUp": {
+          "label": "Volume Vokal +",
+          "description": "Naikkan volume vokal sebesar 5%"
+        },
+        "vocalVolumeDown": {
+          "label": "Volume Vokal -",
+          "description": "Menurunkan volume vokal sebesar 5%"
+        }
+      }
+    },
+    "viewCount": "{{count}} penayangan",
+    "viewCountTenThousands": "{{count}} penayangan"
+  },
+  "shell": {
+    "nav": {
+      "browse": "Jelajahi",
+      "library": "Perpustakaan",
+      "downloads": "Unduhan",
+      "lyrics": "Editor Lirik",
+      "myMusic": "Musik Saya",
+      "favorites": "Favorit",
+      "recent": "Baru-baru ini Dimainkan",
+      "playlists": "Daftar Putar Saya",
+      "addPlaylist": "Tambahkan Daftar Putar",
+      "playlistName": "Nama Daftar Putar",
+      "deletePlaylistConfirm": "Hapus daftar putar ini?"
+    },
+    "topBar": {
+      "searchPlaceholder": "Cari lagu/artis",
+      "recentSearches": "Pencarian Terbaru",
+      "clear": "Jelas",
+      "noRecentSearches": "Tidak ada pencarian terbaru",
+      "localMatches": "Pertandingan Perpustakaan Lokal",
+      "viewAll": "Lihat Semua ->",
+      "noLocalMatches": "Tidak ada lagu lokal yang cocok",
+      "youtubeResults": "Hasil Stream YouTube",
+      "suggestions": "Saran Pencarian",
+      "searching": "Mencari...",
+      "noOnlineResults": "Tidak ada hasil terkait",
+      "showMore": "Tampilkan Lebih Banyak",
+      "tasks": "Tugas",
+      "about": "Tentang",
+      "miniPlayer": "Pemutar Mini",
+      "addToPlaylist": "Tambahkan ke Daftar Putar",
+      "more": "Lebih lanjut",
+      "updateFailed": "Pemeriksaan pembaruan gagal",
+      "updateAvailable": "Versi baru tersedia"
+    },
+    "player": {
+      "noSong": "Tidak ada lagu yang dipilih",
+      "unknownSong": "Lagu Tidak Diketahui",
+      "nextSong": "Berikutnya: {{title}}",
+      "emptySetlist": "Daftar set kosong",
+      "order": "Urutan",
+      "repeatOne": "Ulangi Satu",
+      "random": "Acak",
+      "stream": "Mode Live",
+      "enterStream": "Masuk Mode Live",
+      "closeStream": "Tutup Mode Live",
+      "cloudStreamingTooltip": "Streaming online - nada, kecepatan, dan pemisahan vokal tidak tersedia hingga diunduh",
+      "cloudStreaming": "Cloud Stream",
+      "addFavorite": "Tambahkan Favorit",
+      "removeFavorite": "Hapus Favorit",
+      "switchModeHint": "Gunakan sidebar untuk beralih mode",
+      "previous": "Sebelumnya",
+      "next": "Selanjutnya",
+      "speed": "Kecepatan",
+      "speedTooltip": "Kecepatan",
+      "speedDisabledTooltip": "Kecepatan tidak tersedia untuk streaming online",
+      "pitch": "Pitch",
+      "pitchTooltip": "Pitch",
+      "pitchDisabledTooltip": "Pitch tidak tersedia untuk streaming online",
+      "instrumental": "Instrumental",
+      "vocal": "Vokal",
+      "queue": "Antrian"
+    },
+    "queue": {
+      "title": "Antrian",
+      "count": "{{count}} lagu",
+      "clear": "Jelas",
+      "confirmClear": "Jelas?",
+      "empty": "Antriannya kosong. Tambahkan lagu dari perpustakaan atau playlist.",
+      "remove": "Hapus dari antrian",
+      "hint": "Klik dua kali untuk memutar lagu ini sekarang"
+    },
+    "window": {
+      "minimize": "Minimalkan",
+      "maximize": "Maksimalkan",
+      "restore": "Pulihkan",
+      "close": "Tutup"
+    }
+  },
+  "miniPlayer": {
+    "speedTitle": "Kecepatan: {{value}}x",
+    "pitchTitle": "Nada: {{value}}"
+  },
+  "electron": {
+    "tray": {
+      "checkingUpdates": "Memeriksa pembaruan...",
+      "checkUpdates": "Periksa Pembaruan",
+      "openMainWindow": "Buka Jendela Utama",
+      "settings": "Pengaturan",
+      "quit": "Berhenti"
+    },
+    "dialog": {
+      "deleteSong": {
+        "title": "Hapus Lagu",
+        "message": "Hapus lagu ini? Hal ini tidak dapat dibatalkan."
+      },
+      "cancel": "Batalkan",
+      "delete": "Hapus"
+    }
+  },
+  "songList": {
+    "empty": "Tidak ada lagu",
+    "playVisible": "Mainkan Daftar Terlihat",
+    "added": "Ditambahkan",
+    "addToQueue": "Tambahkan ke Antrean",
+    "moreActions": "Tindakan Daftar Lainnya",
+    "shuffleVisible": "Acak Daftar yang Terlihat",
+    "replaceQueue": "Ganti Antrian dan Mainkan",
+    "filteredCount": "Menampilkan {{visible}} / {{total}}",
+    "totalCount": "{{count}} jumlah",
+    "searchPlaceholder": "Cari daftar ini",
+    "searchThisList": "Cari daftar ini",
+    "filter": "Menyaring",
+    "clearCondition": "Klik untuk menghapus kondisi ini",
+    "clearFilters": "Hapus Filter",
+    "sortBy": "Urutkan berdasarkan {{label}}",
+    "noMatches": "Tidak ada lagu yang cocok dengan filter ini",
+    "filterChip": {
+      "type": "Jenis: {{value}}",
+      "audio": "Audio: {{value}}",
+      "lyrics": "Lirik: {{value}}",
+      "source": "Sumber: {{value}}"
+    },
+    "columns": {
+      "titleArtist": "Judul / Artis",
+      "favorite": "Favorit",
+      "type": "Ketik",
+      "audio": "Status Audio",
+      "lyrics": "Lirik",
+      "source": "Sumber",
+      "duration": "Durasi"
+    }
+  },
+  "songManagement": {
+    "libraryTitle": "Perpustakaan",
+    "libraryDescription": "Semua lagu yang ditambahkan muncul di sini. Filter, urutkan, dan putar secara langsung.",
+    "addSongButton": "+ Tambahkan Lagu",
+    "libraryEmpty": "Belum ada lagu. Gunakan \"+ Tambahkan Lagu\" di kanan atas untuk mulai membuat daftar lagu Anda.",
+    "favoritesTitle": "Favorit",
+    "favoritesDescription": "Lagu favorit muncul di sini. Filter, urutkan, dan putar secara langsung.",
+    "favoritesEmpty": "Belum ada lagu favorit",
+    "historyTitle": "Baru-baru ini Dimainkan",
+    "historyDescription": "Lagu yang baru diputar muncul di sini dan dapat diputar ulang dari daftar yang difilter saat ini.",
+    "historyEmpty": "Belum ada riwayat pemutaran",
+    "clearHistory": "Hapus Riwayat Pemutaran",
+    "clearHistoryConfirm": "Hapus riwayat pemutaran?",
+    "playlistNotFound": "Daftar putar tidak ditemukan",
+    "renameHint": "Klik untuk mengganti nama",
+    "playlistDescription": "Menyortir dan memfilter daftar putar ini hanya mengubah tampilan saat ini. Urutan playlist yang disimpan tidak ditulis ulang.",
+    "playlistEmpty": "Daftar putar ini belum memiliki lagu. Tambahkan lagu dari perpustakaan atau daftar lain dengan \"Tambahkan ke Daftar Putar...\"",
+    "deletePlaylist": "Hapus Daftar Putar Ini",
+    "deletePlaylistConfirm": "Hapus daftar putar \"{{name}}\"?",
+    "removeFromPlaylist": "Hapus dari daftar putar",
+    "unknownArtist": "Artis Tidak Dikenal",
+    "addToPlaylistOrQueue": "Tambahkan ke Daftar Putar / Antrean",
+    "fastBadge": "Cepat",
+    "normalBadge": "Normal",
+    "separate": "Pisahkan",
+    "selected": "Dipilih",
+    "noPlaylists": "Tidak ada daftar putar",
+    "newPlaylistName": "Nama daftar putar baru",
+    "createPlaylist": "Buat daftar putar",
+    "removeFavorite": "Hapus Favorit",
+    "addFavorite": "Tambahkan Favorit",
+    "addToPlaylist": "Tambahkan ke Daftar Putar",
+    "addToPlaylistEllipsis": "Tambahkan ke Daftar Putar...",
+    "more": "Lebih lanjut",
+    "renamePlaylist": "Ganti nama",
+    "startSeparation": "Mulai Pemisahan",
+    "restartSeparation": "Pisahkan Lagi",
+    "separationQuality": {
+      "fast": "Cepat",
+      "normal": "Normal",
+      "high": "Kualitas Tinggi"
+    },
+    "editLyrics": "Sunting Lirik",
+    "editDetails": "Sunting Detail",
+    "openFolder": "Buka Folder",
+    "deleteSong": "Hapus Lagu",
+    "copyVideoLink": "Salin Tautan Video",
+    "openInBrowser": "Buka di Peramban Bawaan",
+    "editDialog": {
+      "title": "Edit Detail Lagu",
+      "titleLabel": "Judul Lagu",
+      "artistLabel": "Artis",
+      "titleRequired": "Judul lagu wajib diisi",
+      "saveFailed": "Gagal menyimpan. Silakan coba lagi nanti.",
+      "saving": "Menyimpan..."
+    },
+    "download": {
+      "title": "Pengelola Unduhan",
+      "active": "Mengunduh",
+      "failed": "Pengunduhan Gagal",
+      "completed": "Diunduh",
+      "downloaded": "Diunduh",
+      "queuedEllipsis": "Mengantri...",
+      "activeQueued": "Mengantri",
+      "activeProcessing": "Pemrosesan",
+      "activeProgress": "Mengunduh {{progress}}%",
+      "quality": {
+        "normal": "Biasa",
+        "high": "Kualitas Tinggi",
+        "best": "Terbaik"
+      },
+      "retryFailed": "Coba lagi gagal: {{message}}",
+      "removeConfirm": "Hapus data unduhan ini?",
+      "errorCopied": "Pesan kesalahan disalin",
+      "copyError": "Kesalahan Salin",
+      "remove": "Hapus",
+      "emptyHistory": "Belum ada riwayat unduhan",
+      "downloadEllipsis": "Unduh...",
+      "downloadAs": "Unduh sebagai {{type}}",
+      "customDownload": "Unduhan Khusus",
+      "customDownloadEllipsis": "Unduhan Khusus...",
+      "custom": "Adat",
+      "options": "Opsi Unduhan"
+    },
+    "searchResults": {
+      "title": "Hasil Pencarian: \"{{term}}\"",
+      "localMatches": "Pertandingan Perpustakaan Lokal",
+      "noLocalMatches": "Tidak ada lagu lokal yang cocok dengan \"{{term}}\"",
+      "youtubeResults": "YouTube Hasil Streaming",
+      "duration": {
+        "any": "Durasi Berapapun",
+        "under5": "Kurang dari 5 Menit",
+        "5to10": "5 - 10 Menit",
+        "over10": "Lebih dari 10 Menit"
+      },
+      "date": {
+        "any": "Kapan saja",
+        "week": "Diunggah Minggu Ini",
+        "month": "Diunggah Bulan Ini",
+        "year": "Diunggah Tahun Ini"
+      },
+      "sort": {
+        "relevance": "Urutkan berdasarkan Relevansi",
+        "popularity": "Urutkan berdasarkan Tampilan"
+      },
+      "searchingYoutube": "Mencari YouTube...",
+      "columns": {
+        "titleChannel": "Judul / Saluran",
+        "download": "Unduh"
+      },
+      "noFilteredYoutube": "Tidak ada hasil YouTube yang cocok dengan filter saat ini",
+      "noYoutubeResults": "Tidak ada hasil YouTube yang ditemukan",
+      "scrollMore": "Gulir ke bawah untuk memuat lebih banyak...",
+      "noMoreYoutube": "Tidak ada lagi hasil YouTube",
+      "loadingMore": "Memuat hasil YouTube lainnya..."
+    },
+    "onlineDownload": {
+      "title": "Unduhan Khusus",
+      "titleLabel": "Judul",
+      "titlePlaceholder": "Judul Lagu",
+      "artistLabel": "Artis",
+      "artistPlaceholder": "Artis (opsional)",
+      "typeLabel": "Ketik",
+      "qualityLabel": "Kualitas Audio",
+      "quality": {
+        "normal": "Normal (menghemat ruang)",
+        "high": "Kualitas Tinggi (standar)",
+        "best": "Terbaik (file lebih besar)"
+      },
+      "lyricsLabel": "Lirik",
+      "lyricsMode": {
+        "none": "Tidak Ada Lirik",
+        "paste": "Tempel Teks Biasa",
+        "importSearch": "Cari / Impor"
+      },
+      "lyricsPlaceholder": "Tempel lirik...",
+      "noLyricsSelected": "Tidak ada lirik yang dipilih",
+      "import": "Impor",
+      "searchLyrics": "Cari Lirik",
+      "enqueue": "Tambahkan ke Antrean Unduhan",
+      "searchResult": "Hasil pencarian: {{name}} - {{artist}}"
+    },
+    "addSong": {
+      "title": "Tambahkan Lagu",
+      "localFiles": "File Lokal",
+      "audioFiles": "File Audio",
+      "chooseFiles": "+ Pilih File",
+      "youtubeLinksLabel": "Tautan YouTube (satu per baris)",
+      "youtubePlaceholder": "Tempel tautan YouTube...",
+      "paste": "Tempel",
+      "linkCount": "Tautan {{count}}",
+      "clear": "Jelas",
+      "parsing": "Mengurai...",
+      "checkAndImport": "Periksa dan Impor",
+      "lyricsModePasteShort": "Tempel",
+      "upload": "Unggah",
+      "emptyFiles": "Tidak ada file yang dipilih",
+      "emptyLinks": "Tidak ada tautan valid yang diimpor",
+      "processing": "Memproses...",
+      "confirmAdd": "Konfirmasi Tambah ({{count}})",
+      "unsavedConfirm": "Anda memiliki perubahan yang belum disimpan. Tutup saja?"
+    }
+  },
+  "lyrics": {
+    "search": {
+      "title": "Cari Lirik",
+      "placeholder": "Cari lagu/artis...",
+      "searching": "Mencari...",
+      "noResults": "Tidak ada hasil",
+      "preview": "Pratinjau",
+      "hidePreview": "Sembunyikan Pratinjau",
+      "useLyrics": "Gunakan Lirik Ini"
+    },
+    "style": {
+      "title": "Tampilan Lirik Dalam Aplikasi",
+      "description": "Pengaturan ini hanya memengaruhi tampilan streaming dalam aplikasi dan tidak mengubah template overlay OBS.",
+      "fontSize": "Ukuran Huruf",
+      "inactiveColor": "Teks Tidak Aktif",
+      "activeColor": "Teks yang Disorot",
+      "glowColor": "Warna Cahaya",
+      "strokeColor": "Warna Goresan",
+      "strokeWidth": "Lebar Goresan",
+      "resetDefault": "Atur Ulang ke Default"
+    },
+    "stream": {
+      "nowPlaying": "Sedang Dimainkan",
+      "confirmResetTitle": "Klik lagi untuk mengonfirmasi pengaturan ulang",
+      "resetProgressTitle": "Setel ulang kemajuan pemutaran",
+      "confirmReset": "Konfirmasi Reset?",
+      "notPlaying": "Tidak ada yang dimainkan",
+      "copyLyricsObs": "Salin Tautan OBS Lirik",
+      "copySetlistObs": "Salin Tautan Daftar Set OBS",
+      "copiedLyricsObs": "Tautan OBS lirik disalin: {{name}}",
+      "copiedSetlistObs": "Tautan OBS setlist disalin: {{name}}",
+      "obsTemplateSettings": "Pengaturan Templat OBS",
+      "upNext": "Berikutnya ({{count}})",
+      "played": "Dimainkan ({{count}})",
+      "upNextNoCount": "Selanjutnya",
+      "playedNoCount": "Dimainkan",
+      "noPlayedSongs": "Belum ada lagu yang diputar",
+      "requeueTitle": "Tambahkan lagu ini kembali ke bagian bawah Berikutnya",
+      "queueEmpty": "Tambahkan lagu ke antrian terlebih dahulu",
+      "nextSongBadge": "Berikutnya •",
+      "removeFromSetlist": "Hapus dari daftar"
+    },
+    "editor": {
+      "title": "Editor Lirik",
+      "songList": "Daftar Lagu",
+      "selectSong": "Pilih lagu dari kiri",
+      "confirmResetTimes": "Setel ulang semua penanda waktu? Hal ini tidak dapat dibatalkan.",
+      "confirmOverwrite": "Lagu ini sudah ada liriknya. Timpa file lirik yang ada?",
+      "alignControls": "Kontrol Penyelarasan",
+      "alignDescription": "Saat mode ketuk aktif, tekan J untuk menerapkan waktu playback saat ini ke baris lirik berikutnya.",
+      "resetAllTimes": "Atur Ulang Semua Waktu",
+      "lyricsText": "Teks Lirik",
+      "saving": "Menyimpan...",
+      "saved": "Disimpan",
+      "clearBlank": "Kosongkan Kosong",
+      "apply": "Terapkan",
+      "lyricsPlaceholder": "Masukkan lirik...",
+      "loadingLyrics": "Memuat lirik...",
+      "noLyricsHelp": "Belum ada lirik. Tempel dan simpan teks lirik terlebih dahulu.",
+      "setToCurrentTime": "Atur ke Waktu Pemutaran Saat Ini",
+      "applyCurrentTimeTitle": "Terapkan waktu pemutaran saat ini",
+      "applyCurrentTime": "Terapkan Waktu Saat Ini",
+      "earlier": "Sebelumnya",
+      "later": "Nanti",
+      "nextTapLine": "Ketukan berikutnya akan diterapkan pada baris ini",
+      "addLineBelow": "Tambahkan baris di bawah",
+      "clickAgainDelete": "Klik lagi untuk menghapus",
+      "tapModeTitle": "Ketuk Mode (J)",
+      "tapMode": "Ketuk Modus",
+      "tap": "Ketuk",
+      "saveLrc": "Simpan LRC",
+      "messages": {
+        "loadedLrc": "Dimuat LRC",
+        "loadedPlain": "Memuat teks biasa",
+        "noLyrics": "Tidak ada lirik",
+        "appliedAndReset": "Diterapkan dan diatur ulang",
+        "appliedText": "Teks terapan",
+        "timesReset": "Waktu disetel ulang",
+        "emptyLinesCleared": "Garis kosong dihapus",
+        "savedLrc": "Disimpan LRC (disinkronkan TXT)",
+        "importedLrc": "Impor LRC",
+        "importedPlain": "Teks biasa yang diimpor",
+        "smartAlignDone": "Penyelarasan cerdas selesai"
+      },
+      "errors": {
+        "readFailed": "Gagal membaca lirik",
+        "loadFailed": "Gagal memuat",
+        "saveFailed": "Gagal menyimpan",
+        "tapFirst": "Ketuk untuk menyelaraskan terlebih dahulu",
+        "importFailed": "Gagal mengimpor",
+        "noValidMarkers": "Tidak dapat menyelaraskan: tidak ditemukan penanda waktu yang valid",
+        "invalidTimeline": "Tidak dapat menghitung: penanda waktu tidak cukup atau pesanan tidak valid"
+      },
+      "smartAlign": {
+        "label": "Penyelarasan Cerdas",
+        "tooltip": "Penyelarasan cerdas: mengatur waktu mulai dan berakhir, lalu secara otomatis menyesuaikan waktu lirik di antaranya",
+        "startTitle": "Penyelarasan Cerdas - Atur Mulai",
+        "endTitle": "Penyelarasan Cerdas - Setel Akhir",
+        "startDescription": "Pindahkan pemutar ke waktu mulai yang benar untuk baris lirik pertama, lalu klik Setel Mulai di bawah.",
+        "endDescription": "Pindahkan pemutar ke waktu mulai yang benar untuk baris lirik terakhir, lalu klik Setel Akhir di bawah. KHelper akan menyesuaikan waktu untuk semua lirik di antaranya.",
+        "setStart": "Atur Mulai (Offset)",
+        "setEnd": "Tetapkan Akhir (Skala)"
+      },
+      "unsaved": {
+        "title": "Perubahan yang Belum Disimpan",
+        "switchSongMessage": "Mengganti lagu akan membuang perubahan yang belum disimpan.",
+        "leavePageMessage": "Meninggalkan halaman ini akan membuang perubahan yang belum disimpan.",
+        "discard": "Jangan Simpan",
+        "saveAndContinue": "Simpan dan Lanjutkan"
+      }
+    }
+  },
+  "overlays": {
+    "defaults": {
+      "currentLabel": "Sekarang Bernyanyi",
+      "upcomingLabel": "Selanjutnya",
+      "historyLabel": "Dinyanyikan",
+      "waitingNext": "Menunggu lagu selanjutnya",
+      "notPlaying": "Tidak ada yang dimainkan",
+      "noUpcoming": "Tidak ada lagu yang akan datang",
+      "noHistory": "Belum ada lagu yang dinyanyikan",
+      "defaultLyricsDesign": "Lirik Bawaan",
+      "defaultSetlistDesign": "Daftar Set Default",
+      "newLyricsDesign": "Desain Lirik Baru",
+      "newSetlistDesign": "Desain Daftar Set Baru",
+      "lyricsDesignNumber": "Desain Lirik {{index}}",
+      "setlistDesignNumber": "Desain Daftar Set {{index}}"
+    },
+    "confirm": {
+      "deleteLyricsDesign": "Hapus \"{{name}}\"? Tautan OBS yang ada akan kembali ke desain lirik default.",
+      "deleteSetlistDesign": "Hapus \"{{name}}\"? Tautan OBS yang ada akan kembali ke desain setlist default.",
+      "deleteDesign": "Hapus \"{{name}}\"? Tautan OBS yang ada akan kembali ke desain default."
+    },
+    "templates": {
+      "classic_list": "Daftar Klasik",
+      "record_card": "Kartu Rekam",
+      "compact_strip": "Jalur Kompak",
+      "neon_signboard": "Papan Nama Neon",
+      "countdown_counter": "Papan Hitung Mundur",
+      "index_grid": "Daftar Lengkap",
+      "pager_console": "Pager Retro",
+      "cassette_deck": "Pemutar Kaset",
+      "stage_marquee": "Tenda Panggung",
+      "photo_stack": "Daftar Set Polaroid",
+      "vertical_column": "Daftar Spacer Vertikal",
+      "spinning_disk_list": "Daftar Disk Berputar"
+    },
+    "ui": {
+      "add": "Tambahkan",
+      "revert": "Kembalikan",
+      "deleteCurrentDesign": "Hapus Desain Saat Ini",
+      "resetDesign": "Atur Ulang Desain Ini",
+      "design": "Desain",
+      "lyrics": "Lirik",
+      "setlist": "Daftar lagu",
+      "obsLink": "Tautan OBS",
+      "copyObsLink": "Salin Tautan OBS",
+      "copiedLyricsObs": "Tautan lirik OBS disalin",
+      "copiedSetlistObs": "Tautan daftar set OBS disalin",
+      "title": "Templat Hamparan Langsung",
+      "description": "Konfigurasikan templat overlay lirik dan setlist yang digunakan oleh OBS. Tautan yang ada tetap valid, dan teks bawaan mengikuti bahasa aplikasi yang dipilih.",
+      "lyricsDesigns": "Desain Hamparan Lirik",
+      "setlistDesigns": "Desain Hamparan Daftar Set",
+      "lyricsOverlay": "Hamparan Lirik",
+      "setlistOverlay": "Hamparan Daftar Setel",
+      "lyricsEditor": "Editor Hamparan Lirik",
+      "setlistEditor": "Editor Hamparan Daftar Set",
+      "lyricsDesignDescription": "Sesuaikan tata letak lirik OBS, animasi, dan tampilan bantuan bahasa Jepang.",
+      "setlistDesignDescription": "Sesuaikan template setlist OBS, label, animasi, dan status kosong.",
+      "fillHeight": "Isi Tinggi",
+      "showLineCount": "Tampilkan {{count}} Garis",
+      "sampleLyricsPreview": "Contoh Pratinjau Lirik Bahasa Jepang",
+      "sampleData": "Contoh Data",
+      "currentQueue": "Antrian Saat Ini",
+      "font": "huruf",
+      "lineCount": "Jumlah Garis",
+      "animation": "Animasi",
+      "scroll": "Gulir",
+      "fade": "Memudar",
+      "slide": "Geser",
+      "scale": "Skala",
+      "activeSize": "Ukuran Aktif",
+      "inactiveSize": "Ukuran Tidak Aktif",
+      "lineGap": "Kesenjangan Garis",
+      "letterSpacing": "Spasi Huruf",
+      "colorsReadability": "Warna dan Keterbacaan",
+      "activeColor": "Warna Aktif",
+      "inactiveColor": "Warna Tidak Aktif",
+      "passedColor": "Warna yang Dinyanyikan",
+      "strokeColor": "Warna Goresan",
+      "strokeWidth": "Lebar Goresan",
+      "glowColor": "Warna Cahaya",
+      "glowStrength": "Kekuatan Cahaya",
+      "japaneseAssist": "Bantuan Bahasa Jepang",
+      "furigana": "Furigana",
+      "romaji": "Romaji",
+      "followApp": "Ikuti Pengaturan Aplikasi",
+      "show": "Tunjukkan",
+      "hide": "Sembunyikan",
+      "romajiLetterSpacing": "Spasi Huruf Romaji",
+      "romajiMarginTop": "Margin Teratas Romaji",
+      "style": "Gaya",
+      "preset": "Prasetel",
+      "accentColor": "Warna Aksen",
+      "textColor": "Warna Teks",
+      "secondaryText": "Teks Sekunder",
+      "visibleContent": "Konten Terlihat",
+      "currentSong": "Lagu Saat Ini",
+      "footerTicker": "Ticker Footer",
+      "counts": "Hitungan",
+      "artist": "Artis",
+      "numbering": "Penomoran",
+      "thumbnail": "gambar kecil",
+      "labelsMotion": "Label dan Gerakan",
+      "current": "Saat ini",
+      "upcomingTickerLabel": "Label Ticker Mendatang",
+      "density": "Kepadatan",
+      "compact": "Kompak",
+      "comfortable": "Nyaman",
+      "frame": "Bingkai",
+      "solid": "Padat",
+      "glass": "Kaca",
+      "neon": "neon",
+      "outerRadius": "Radius Luar",
+      "innerRadius": "Radius Item Dalam",
+      "columns": "Kolom",
+      "decorationIntensity": "Intensitas Dekorasi",
+      "textureOpacity": "Tekstur",
+      "motionDetail": "Gerakan Dekorasi",
+      "off": "Mati",
+      "subtle": "Halus",
+      "full": "Penuh",
+      "textEffect": "Efek Teks",
+      "normal": "Biasa",
+      "pixel": "Piksel",
+      "tickerSource": "Sumber Ticker",
+      "historyTickerLabel": "Label Ticker Sejarah",
+      "footerLabel": "Label Catatan Kaki",
+      "tickerSpeed": "Kecepatan Ticker",
+      "cassetteDepth": "Kedalaman Kaset",
+      "diskSpinMode": "Animasi Disk",
+      "spin": "Putar",
+      "diskSpinSpeed": "Kecepatan Disk",
+      "lightAnimation": "Animasi Ringan",
+      "breathe": "Bernafas",
+      "flash": "Kilatan",
+      "chase": "Mengejar",
+      "rainbow": "Pelangi",
+      "lightPalette": "Warna Terang",
+      "warm": "Hangat",
+      "cool": "Keren",
+      "lightSpeed": "Kecepatan Cahaya",
+      "photoTexture": "Tekstur Foto",
+      "cardAngle": "Sudut Kartu",
+      "cardTransition": "Transisi Kartu",
+      "on": "Aktif",
+      "currentGlow": "Cahaya Saat Ini",
+      "noteColor": "Catatan Warna",
+      "contentInset": "Bantalan Horisontal",
+      "topOffset": "Posisi Teratas",
+      "itemGap": "Kesenjangan Barang",
+      "titleBarOpacity": "Latar Belakang Bilah Judul",
+      "dividerOpacity": "Pembagi",
+      "currentFontSize": "Ukuran Font Saat Ini",
+      "reserveFontSize": "Ukuran Font Mendatang",
+      "rowGap": "Kesenjangan Baris",
+      "historyOpacity": "Opasitas Sejarah",
+      "diskSize": "Ukuran Disk",
+      "diskStyle": "Gaya Disk",
+      "vinyl": "vinil",
+      "ring": "Cincin",
+      "dot": "titik",
+      "thumbnailBorder": "Batas Gambar Kecil",
+      "all": "Semua",
+      "listScroll": "Gulir Daftar",
+      "scrollSpeed": "Kecepatan Gulir",
+      "pauseTime": "Jeda Waktu",
+      "changeAnimation": "Animasi Perubahan Lagu",
+      "emptyState": "Keadaan Kosong",
+      "showWaitingText": "Tampilkan Teks Menunggu",
+      "waitingText": "Teks Menunggu",
+      "showWaitingSongTitle": "Tampilkan Judul Lagu Mendatang",
+      "pausePreview": "Jeda Pratinjau",
+      "playPreview": "Putar Pratinjau",
+      "normalMode": "Modus Biasa",
+      "previewPrevious": "Pratinjau Sebelumnya",
+      "previewNext": "Pratinjau Berikutnya",
+      "resetPreview": "Atur Ulang Status Pratinjau",
+      "copyName": "{{name}} Salin",
+      "id": "ID: {{id}}",
+      "savedObs": "Templat OBS yang disimpan",
+      "obsLinkDescription": "Tautan OBS menggunakan desain dan bahasa aplikasi yang dipilih.",
+      "emptyStateDescription": "Mengatur apakah overlay setlist OBS menampilkan teks tunggu atau menyembunyikan konten saat tidak ada yang diputar atau Mode Live sedang menunggu."
     }
   }
 }

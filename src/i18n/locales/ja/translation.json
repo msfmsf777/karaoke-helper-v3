@@ -1,12 +1,860 @@
 {
+  "language": {
+    "zhTW": "繁体字中国語",
+    "en": "英語"
+  },
+  "common": {
+    "appName": "KHelper V3",
+    "loading": "読み込み中",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "confirm": "確認する",
+    "delete": "削除",
+    "edit": "編集",
+    "copy": "コピー",
+    "play": "遊ぶ",
+    "retry": "再試行",
+    "reset": "リセット",
+    "back": "戻る",
+    "search": "検索",
+    "settings": "設定",
+    "unknown": "不明",
+    "none": "なし",
+    "default": "デフォルト",
+    "copied": "コピーされました",
+    "close": "閉じる"
+  },
   "settings": {
     "language": {
       "title": "インターフェース言語",
-      "description": "KHelper の表示言語を選択します。未選択の場合は、システム言語から自動判定します。",
+      "description": "KHelper の表示言語を選択します。言語が選択されていない場合、KHelper はシステム言語から言語を自動検出します。",
       "label": "言語",
-      "searchPlaceholder": "言語を検索",
+      "searchPlaceholder": "検索言語",
       "noResults": "一致する言語がありません",
       "current": "現在の言語"
+    },
+    "audio": {
+      "loadError": "オーディオ出力デバイスのリストを取得できません",
+      "title": "オーディオ出力デバイス",
+      "scan": "再スキャン",
+      "scanning": "スキャン中...",
+      "description": "視聴者向けの音声出力（配信）と、自分用の音声出力（ヘッドフォン）を選択します。",
+      "separationDescription": "分離済みの曲では、配信にはインストゥルメンタルのみを出力し、ヘッドフォンにはボーカルとインストゥルメンタルの両方を出力します。",
+      "systemDefault": "システムのデフォルト",
+      "device": "デバイス{{index}}",
+      "streamOutput": "視聴者出力（配信）",
+      "headphoneOutput": "ヘッドフォン出力",
+      "syncOffset": "デュアル出力同期オフセット:",
+      "calibrate": "校正する"
+    },
+    "separation": {
+      "title": "ボーカル分離品質",
+      "fast": "速い",
+      "fastDescription": "使用するリソースが少なく、最速で終了しますが、品質は若干低くなります。",
+      "normal": "ノーマル",
+      "normalDescription": "おすすめです。スピードと品質のバランスを保ちます。",
+      "high": "高品質",
+      "highDescription": "時間はかかりますが、最良の分離結果が得られます。"
+    },
+    "updates": {
+      "title": "ソフトウェアのアップデート",
+      "check": "アップデートをチェックする",
+      "checking": "確認中...",
+      "neverChecked": "チェックしたことがない",
+      "lastChecked": "最終チェック日: {{time}}"
+    },
+    "overlay": {
+      "unsavedLeaveConfirm": "ライブ オーバーレイ テンプレートに未保存の変更があります。編集者を辞めますか?"
+    },
+    "hotkeys": {
+      "title": "ホットキー",
+      "resetRecommended": "推奨されるデフォルト値に戻す",
+      "resetRecommendedTitle": "推奨されるデフォルトのホットキーのみを復元します。デフォルトのないカスタム ホットキーは上書きされません。",
+      "enableGlobal": "グローバルホットキーを有効にする",
+      "globalDisabledDescription": "オフの場合、ショートカットは KHelper ウィンドウ内でのみ機能します",
+      "function": "機能",
+      "local": "ローカルホットキー",
+      "global": "グローバルホットキー",
+      "recordingHint": "ショートカットを押します。キャンセルするには Esc、クリアするには Backspace を押します。",
+      "recordHint": "クリックしてショートカットを押します",
+      "recording": "ショートカットを押してください...",
+      "mediaKey": "メディアキー",
+      "clearShortcut": "このホットキーをクリアします",
+      "status": {
+        "title": "ステータス",
+        "duplicateGlobal": "ショートカットの重複",
+        "duplicateLocal": "ローカルショートカットが重複しています",
+        "globalDisabled": "グローバルホットキーが無効になっています",
+        "applied": "適用済み"
+      }
+    },
+    "calibration": {
+      "title": "デュアル出力同期キャリブレーション",
+      "purposeTitle": "目的",
+      "purpose": "配信モニターのループバックとヘッドフォンの直接クリックが正確に一致するように遅延を調整します。",
+      "preparationTitle": "セットアップ",
+      "obsMonitoringTitle": "OBS 監視を有効にします。",
+      "obsMonitoring": "OBS ミキサーで、歯車 ⚙ をクリック → [詳細オーディオ プロパティ] → オーディオ ソースを [モニターのみ] または [モニターと出力] に設定します。",
+      "sampleRateTitle": "サンプルレートを確認します。",
+      "sampleRate": "[設定] で選択した各デバイス カードの右上隅にある Hz バッジを確認します。すべてのデバイスと OBS が同じサンプル レート (48000 Hz など) を使用していることを確認してください。",
+      "operationTitle": "操作",
+      "operation": "下の [テストの開始] をクリックし、2 つのクリックが 1 つのサウンドに重なるまでスライダーを調整します。",
+      "streamDelay": "← 配信遅延",
+      "monitorDelay": "モニター遅延 →",
+      "stopTest": "テストの停止",
+      "startTest": "テストの開始",
+      "saveApply": "保存して適用"
+    }
+  },
+  "about": {
+    "descriptionLine1": "VTuber とストリーマー向けのオールインワン カラオケ ヘルパー",
+    "descriptionLine2": "バグや機能のアイデアについては、Discord にご連絡いただくのが最適です。",
+    "links": {
+      "website": {
+        "title": "公式ウェブサイト",
+        "label": "ウェブサイト"
+      },
+      "twitter": {
+        "title": "クリエイターをフォローする",
+        "label": "フォローする"
+      },
+      "discord": {
+        "title": "Discord コミュニティに参加する",
+        "label": "Discord"
+      },
+      "report": {
+        "title": "問題を報告するか、GitHub で機能をリクエストしてください",
+        "label": "レポート"
+      }
+    }
+  },
+  "updatesPopup": {
+    "title": "新しいバージョンが利用可能になりました",
+    "noReleaseNotes": "このバージョンにはリリース ノートは提供されていません。",
+    "error": "アップデートに失敗しました。ネットワーク接続を確認するか、後でもう一度試してください。",
+    "ignore": "このバージョンを無視する",
+    "download": "ダウンロードページを開く"
+  },
+  "tasks": {
+    "title": "アクティブなタスク",
+    "download": "ダウンロード",
+    "separation": "ソングの区切り",
+    "queuedDownload": "待機中...",
+    "failed": "失敗しました",
+    "completed": "完了",
+    "viewAllDownloads": "すべてのダウンロード結果を表示する",
+    "copyError": "コピーエラー",
+    "copied": "コピーしました ✓",
+    "hideError": "エラーを隠す",
+    "viewError": "ビューエラー",
+    "empty": "アクティブなタスクはありません",
+    "actions": {
+      "cancel": "キャンセル",
+      "retry": "再試行",
+      "remove": "削除"
+    },
+    "separationStatus": {
+      "queued": "キューに入れられました",
+      "running": "処理中",
+      "succeeded": "完了",
+      "failed": "失敗しました"
+    },
+    "quality": {
+      "fast": "速い",
+      "normal": "ノーマル"
+    }
+  },
+  "playbackControl": {
+    "clickToEdit": "クリックして編集"
+  },
+  "domain": {
+    "songType": {
+      "original": "オリジナル",
+      "instrumental": "インストゥルメンタル",
+      "all": "全種類"
+    },
+    "audioStatus": {
+      "streaming": "オンライン",
+      "original_only": "分離されていない",
+      "separation_pending": "待っています",
+      "separating": "分離中",
+      "separation_failed": "分離に失敗しました",
+      "separated": "分離済み",
+      "ready": "分離されていない",
+      "missing": "分離されていない",
+      "error": "エラー",
+      "all": "すべてのオーディオ"
+    },
+    "lyricsStatus": {
+      "none": "歌詞なし",
+      "text_only": "プレーンテキスト",
+      "synced": "同期済み",
+      "all": "すべての歌詞",
+      "shortNone": "なし"
+    },
+    "source": {
+      "file": "ローカルファイル",
+      "youtube": "YouTube",
+      "all": "すべてのソース"
+    },
+    "favorite": {
+      "all": "すべてのお気に入り",
+      "favorite": "お気に入り",
+      "not_favorite": "お気に入りではありません"
+    },
+    "downloadStatus": {
+      "queued": "キューに入れられました",
+      "downloading": "ダウンロード中",
+      "processing": "処理中",
+      "completed": "完了",
+      "failed": "失敗しました"
+    },
+    "hotkeys": {
+      "groups": {
+        "playback": "再生",
+        "custom": "カスタムショートカット"
+      },
+      "unset": "未設定",
+      "failures": {
+        "plainGlobal": "グローバル ホットキーには修飾子が含まれている必要があります",
+        "duplicate": "ショートカットの重複",
+        "occupied": "別のアプリで使用されている"
+      },
+      "actions": {
+        "playPause": {
+          "label": "再生/一時停止",
+          "description": "現在の曲の再生を切り替えます"
+        },
+        "nextTrack": {
+          "label": "次のトラック",
+          "description": "キュー内の次の曲を再生します"
+        },
+        "previousTrack": {
+          "label": "前のトラック",
+          "description": "キュー内の前の曲を再生する"
+        },
+        "toggleMiniPlayer": {
+          "label": "ミニプレーヤー",
+          "description": "ミニプレーヤーを表示または非表示にする"
+        },
+        "focusSearch": {
+          "label": "検索",
+          "description": "上部の検索フィールドに焦点を当てる"
+        },
+        "toggleStreamMode": {
+          "label": "ストリームモード",
+          "description": "ストリームモードを開始または終了します"
+        },
+        "instrumentalVolumeUp": {
+          "label": "インストゥルメンタルボリューム +",
+          "description": "楽器の音量を5%上げる"
+        },
+        "instrumentalVolumeDown": {
+          "label": "インストゥルメンタルボリューム -",
+          "description": "楽器の音量を5%下げる"
+        },
+        "vocalVolumeUp": {
+          "label": "声量+",
+          "description": "ボーカル音量を5%上げる"
+        },
+        "vocalVolumeDown": {
+          "label": "声量 -",
+          "description": "ボーカル音量を5%下げる"
+        }
+      }
+    },
+    "viewCount": "{{count}} 回のビュー",
+    "viewCountTenThousands": "{{count}} 回のビュー"
+  },
+  "shell": {
+    "nav": {
+      "browse": "閲覧する",
+      "library": "図書館",
+      "downloads": "ダウンロード",
+      "lyrics": "歌詞エディター",
+      "myMusic": "私の音楽",
+      "favorites": "お気に入り",
+      "recent": "最近プレイした曲",
+      "playlists": "私のプレイリスト",
+      "addPlaylist": "プレイリストを追加",
+      "playlistName": "プレイリスト名",
+      "deletePlaylistConfirm": "このプレイリストを削除しますか?"
+    },
+    "topBar": {
+      "searchPlaceholder": "曲/アーティストを検索する",
+      "recentSearches": "最近の検索",
+      "clear": "クリア",
+      "noRecentSearches": "最近の検索はありません",
+      "localMatches": "地元の図書館の一致",
+      "viewAll": "すべて表示 ->",
+      "noLocalMatches": "一致するローカルソングはありません",
+      "youtubeResults": "YouTube 配信結果",
+      "suggestions": "検索候補",
+      "searching": "検索中...",
+      "noOnlineResults": "関連する結果はありません",
+      "showMore": "もっと見る",
+      "tasks": "タスク",
+      "about": "について",
+      "miniPlayer": "ミニプレーヤー",
+      "addToPlaylist": "プレイリストに追加",
+      "more": "もっと見る",
+      "updateFailed": "更新チェックに失敗しました",
+      "updateAvailable": "新しいバージョンが利用可能になりました"
+    },
+    "player": {
+      "noSong": "曲が選択されていません",
+      "unknownSong": "未知の曲",
+      "nextSong": "次へ: {{title}}",
+      "emptySetlist": "セットリストは空です",
+      "order": "順序再生",
+      "repeatOne": "1 回繰り返します",
+      "random": "シャッフル",
+      "stream": "配信モード",
+      "enterStream": "配信モードに入る",
+      "closeStream": "配信モードを閉じる",
+      "cloudStreamingTooltip": "オンライン ストリーミング - ピッチ、スピード、ボーカルの分離はダウンロードするまで利用できません",
+      "cloudStreaming": "クラウド配信",
+      "addFavorite": "お気に入りを追加",
+      "removeFavorite": "お気に入りを削除",
+      "switchModeHint": "サイドバーを使用してモードを切り替える",
+      "previous": "前へ",
+      "next": "次へ",
+      "speed": "速度",
+      "speedTooltip": "速度",
+      "speedDisabledTooltip": "オンライン配信では速度を利用できません",
+      "pitch": "ピッチ",
+      "pitchTooltip": "ピッチ",
+      "pitchDisabledTooltip": "オンライン配信ではピッチを利用できません",
+      "instrumental": "インストゥルメンタル",
+      "vocal": "ボーカル",
+      "queue": "キュー"
+    },
+    "queue": {
+      "title": "キュー",
+      "count": "{{count}}曲",
+      "clear": "クリア",
+      "confirmClear": "クリアですか？",
+      "empty": "キューは空です。ライブラリまたはプレイリストから曲を追加します。",
+      "remove": "キューから削除",
+      "hint": "ダブルクリックしてこの曲を今すぐ再生します"
+    },
+    "window": {
+      "minimize": "最小化する",
+      "maximize": "最大化する",
+      "restore": "復元",
+      "close": "閉じる"
+    }
+  },
+  "miniPlayer": {
+    "speedTitle": "速度: {{value}}x",
+    "pitchTitle": "ピッチ: {{value}}"
+  },
+  "electron": {
+    "tray": {
+      "checkingUpdates": "アップデートをチェックしています...",
+      "checkUpdates": "アップデートをチェックする",
+      "openMainWindow": "メインウィンドウを開く",
+      "settings": "設定",
+      "quit": "やめる"
+    },
+    "dialog": {
+      "deleteSong": {
+        "title": "曲の削除",
+        "message": "この曲を削除しますか?これを元に戻すことはできません。"
+      },
+      "cancel": "キャンセル",
+      "delete": "削除"
+    }
+  },
+  "songList": {
+    "empty": "曲がありません",
+    "playVisible": "表示可能なリストを再生する",
+    "added": "追加されました",
+    "addToQueue": "キューに追加",
+    "moreActions": "その他のリストアクション",
+    "shuffleVisible": "表示リストをシャッフルする",
+    "replaceQueue": "キューを置き換えてプレイ",
+    "filteredCount": "{{visible}} / {{total}} を表示中",
+    "totalCount": "合計 {{count}}",
+    "searchPlaceholder": "このリストを検索",
+    "searchThisList": "このリストを検索",
+    "filter": "フィルター",
+    "clearCondition": "クリックしてこの条件をクリアします",
+    "clearFilters": "フィルターをクリアする",
+    "sortBy": "{{label}} で並べ替え",
+    "noMatches": "これらのフィルターに一致する曲はありません",
+    "filterChip": {
+      "type": "タイプ: {{value}}",
+      "audio": "オーディオ: {{value}}",
+      "lyrics": "歌詞：{{value}}",
+      "source": "出典: {{value}}"
+    },
+    "columns": {
+      "titleArtist": "タイトル/アーティスト",
+      "favorite": "お気に入り",
+      "type": "種類",
+      "audio": "オーディオステータス",
+      "lyrics": "歌詞",
+      "source": "ソース",
+      "duration": "期間"
+    }
+  },
+  "songManagement": {
+    "libraryTitle": "図書館",
+    "libraryDescription": "追加されたすべての曲がここに表示されます。フィルター、並べ替え、直接再生します。",
+    "addSongButton": "+ 曲を追加",
+    "libraryEmpty": "まだ曲がありません。右上の「+ 曲を追加」を使用して、セットリストの作成を開始します。",
+    "favoritesTitle": "お気に入り",
+    "favoritesDescription": "お気に入りの曲がここに表示されます。フィルター、並べ替え、直接再生します。",
+    "favoritesEmpty": "お気に入りの曲はまだありません",
+    "historyTitle": "最近プレイした曲",
+    "historyDescription": "最近再生した曲がここに表示され、現在のフィルタリングされたリストから再生できます。",
+    "historyEmpty": "再生履歴はまだありません",
+    "clearHistory": "再生履歴をクリアする",
+    "clearHistoryConfirm": "再生履歴を消去しますか?",
+    "playlistNotFound": "プレイリストが見つかりません",
+    "renameHint": "クリックして名前を変更します",
+    "playlistDescription": "このプレイリストの並べ替えとフィルター処理は、現在のビューのみを変更します。保存されたプレイリストの順序は書き換えられません。",
+    "playlistEmpty": "このプレイリストにはまだ曲がありません。 「プレイリストに追加...」を使用して、ライブラリまたは別のリストから曲を追加します。",
+    "deletePlaylist": "このプレイリストを削除",
+    "deletePlaylistConfirm": "プレイリスト「{{name}}」を削除しますか?",
+    "removeFromPlaylist": "プレイリストから削除",
+    "unknownArtist": "不明なアーティスト",
+    "addToPlaylistOrQueue": "プレイリスト/キューに追加",
+    "fastBadge": "速い",
+    "normalBadge": "ノーマル",
+    "separate": "分離",
+    "selected": "選択済み",
+    "noPlaylists": "プレイリストがありません",
+    "newPlaylistName": "新しいプレイリスト名",
+    "createPlaylist": "プレイリストの作成",
+    "removeFavorite": "お気に入りを削除",
+    "addFavorite": "お気に入りを追加",
+    "addToPlaylist": "プレイリストに追加",
+    "addToPlaylistEllipsis": "プレイリストに追加...",
+    "more": "もっと見る",
+    "renamePlaylist": "名前の変更",
+    "startSeparation": "分離の開始",
+    "restartSeparation": "また別れる",
+    "separationQuality": {
+      "fast": "速い",
+      "normal": "ノーマル",
+      "high": "高品質"
+    },
+    "editLyrics": "歌詞を編集する",
+    "editDetails": "詳細の編集",
+    "openFolder": "フォルダーを開く",
+    "deleteSong": "曲の削除",
+    "copyVideoLink": "ビデオリンクをコピー",
+    "openInBrowser": "デフォルトのブラウザで開く",
+    "editDialog": {
+      "title": "曲の詳細を編集する",
+      "titleLabel": "曲名",
+      "artistLabel": "アーティスト",
+      "titleRequired": "曲のタイトルを空にすることはできません",
+      "saveFailed": "保存に失敗しました。後でもう一度試してください。",
+      "saving": "保存中..."
+    },
+    "download": {
+      "title": "ダウンロードマネージャー",
+      "active": "ダウンロード中",
+      "failed": "ダウンロードに失敗しました",
+      "completed": "ダウンロード済み",
+      "downloaded": "ダウンロード済み",
+      "queuedEllipsis": "待機中...",
+      "activeQueued": "キューに入れられました",
+      "activeProcessing": "処理中",
+      "activeProgress": "{{progress}}% をダウンロード中",
+      "quality": {
+        "normal": "ノーマル",
+        "high": "高品質",
+        "best": "ベスト"
+      },
+      "retryFailed": "再試行に失敗しました: {{message}}",
+      "removeConfirm": "このダウンロード記録を削除しますか?",
+      "errorCopied": "エラーメッセージがコピーされました",
+      "copyError": "コピーエラー",
+      "remove": "削除",
+      "emptyHistory": "ダウンロード履歴はまだありません",
+      "downloadEllipsis": "ダウンロード...",
+      "downloadAs": "{{type}} としてダウンロード",
+      "customDownload": "カスタムダウンロード",
+      "customDownloadEllipsis": "カスタムダウンロード...",
+      "custom": "カスタム",
+      "options": "ダウンロードオプション"
+    },
+    "searchResults": {
+      "title": "検索結果: \"{{term}}\"",
+      "localMatches": "地元の図書館の一致",
+      "noLocalMatches": "「{{term}}」に一致するローカル曲はありません",
+      "youtubeResults": "YouTube 配信結果",
+      "duration": {
+        "any": "任意の期間",
+        "under5": "5分以内",
+        "5to10": "5～10分",
+        "over10": "10分以上"
+      },
+      "date": {
+        "any": "いつでも",
+        "week": "今週アップロードされました",
+        "month": "今月アップロードされました",
+        "year": "今年アップロードされました"
+      },
+      "sort": {
+        "relevance": "関連性順に並べ替える",
+        "popularity": "ビューで並べ替え"
+      },
+      "searchingYoutube": "YouTube を検索しています...",
+      "columns": {
+        "titleChannel": "タイトル/チャンネル",
+        "download": "ダウンロード"
+      },
+      "noFilteredYoutube": "現在のフィルターに一致する YouTube 結果はありません",
+      "noYoutubeResults": "YouTube の結果が見つかりませんでした",
+      "scrollMore": "さらに読み込むには下にスクロールしてください...",
+      "noMoreYoutube": "YouTube の結果はもうありません",
+      "loadingMore": "YouTube の結果をさらに読み込んでいます..."
+    },
+    "onlineDownload": {
+      "title": "カスタムダウンロード",
+      "titleLabel": "タイトル",
+      "titlePlaceholder": "曲名",
+      "artistLabel": "アーティスト",
+      "artistPlaceholder": "アーティスト (オプション)",
+      "typeLabel": "種類",
+      "qualityLabel": "オーディオ品質",
+      "quality": {
+        "normal": "通常（省スペース）",
+        "high": "高品質（標準）",
+        "best": "ベスト (より大きなファイル)"
+      },
+      "lyricsLabel": "歌詞",
+      "lyricsMode": {
+        "none": "歌詞なし",
+        "paste": "プレーンテキストを貼り付け",
+        "importSearch": "検索/インポート"
+      },
+      "lyricsPlaceholder": "歌詞を貼り付け...",
+      "noLyricsSelected": "歌詞が選択されていません",
+      "import": "インポート",
+      "searchLyrics": "歌詞の検索",
+      "enqueue": "ダウンロードキューに追加",
+      "searchResult": "検索結果: {{name}} - {{artist}}"
+    },
+    "addSong": {
+      "title": "曲を追加",
+      "localFiles": "ローカルファイル",
+      "audioFiles": "音声ファイル",
+      "chooseFiles": "+ ファイルを選択",
+      "youtubeLinksLabel": "YouTube リンク (1 行に 1 つ)",
+      "youtubePlaceholder": "YouTube リンクを貼り付け...",
+      "paste": "ペースト",
+      "linkCount": "{{count}} リンク",
+      "clear": "クリア",
+      "parsing": "解析中...",
+      "checkAndImport": "確認してインポート",
+      "lyricsModePasteShort": "ペースト",
+      "upload": "アップロード",
+      "emptyFiles": "ファイルが選択されていません",
+      "emptyLinks": "有効なリンクがインポートされていません",
+      "processing": "処理中...",
+      "confirmAdd": "追加の確認 ({{count}})",
+      "unsavedConfirm": "未保存の変更があります。とにかく閉じますか？"
+    }
+  },
+  "lyrics": {
+    "search": {
+      "title": "歌詞の検索",
+      "placeholder": "曲/アーティストを検索...",
+      "searching": "検索中...",
+      "noResults": "結果はありません",
+      "preview": "プレビュー",
+      "hidePreview": "プレビューを非表示にする",
+      "useLyrics": "これらの歌詞を使用してください"
+    },
+    "style": {
+      "title": "アプリ内歌詞表示",
+      "description": "これらの設定はアプリ内の配信ビューにのみ影響し、OBS オーバーレイテンプレートは変更されません。",
+      "fontSize": "フォントサイズ",
+      "inactiveColor": "非アクティブなテキスト",
+      "activeColor": "ハイライトされたテキスト",
+      "glowColor": "グローカラー",
+      "strokeColor": "ストロークの色",
+      "strokeWidth": "ストローク幅",
+      "resetDefault": "デフォルトにリセット"
+    },
+    "stream": {
+      "nowPlaying": "プレイ中",
+      "confirmResetTitle": "もう一度クリックしてリセットを確認します",
+      "resetProgressTitle": "再生の進行状況をリセットする",
+      "confirmReset": "リセットを確認しますか?",
+      "notPlaying": "何も遊んでいない",
+      "copyLyricsObs": "歌詞 OBS リンクをコピー",
+      "copySetlistObs": "セットリスト OBS リンクをコピー",
+      "copiedLyricsObs": "歌詞 OBS リンクをコピーしました: {{name}}",
+      "copiedSetlistObs": "セットリスト OBS リンクをコピーしました: {{name}}",
+      "obsTemplateSettings": "OBS テンプレート設定",
+      "upNext": "次へ ({{count}})",
+      "played": "プレイしました ({{count}})",
+      "upNextNoCount": "次へ",
+      "playedNoCount": "遊んだ",
+      "noPlayedSongs": "まだ再生された曲はありません",
+      "requeueTitle": "この曲を Up Next の一番下に戻します",
+      "queueEmpty": "まず曲をキューに追加します",
+      "nextSongBadge": "次へ •",
+      "removeFromSetlist": "リストから削除"
+    },
+    "editor": {
+      "title": "歌詞エディター",
+      "songList": "曲リスト",
+      "selectSong": "左から曲を選択してください",
+      "confirmResetTimes": "すべてのタイムマーカーをリセットしますか?これを元に戻すことはできません。",
+      "confirmOverwrite": "この曲にはすでに歌詞があります。既存の歌詞ファイルを上書きしますか?",
+      "alignControls": "アライメントコントロール",
+      "alignDescription": "タップ モードがオンの場合、J を押すと、現在の再生時間が次の歌詞行に適用されます。",
+      "resetAllTimes": "常にリセット",
+      "lyricsText": "歌詞テキスト",
+      "saving": "保存中...",
+      "saved": "保存されました",
+      "clearBlank": "ブランクをクリア",
+      "apply": "申し込む",
+      "lyricsPlaceholder": "歌詞を入力してください...",
+      "loadingLyrics": "歌詞を読み込んでいます...",
+      "noLyricsHelp": "まだ歌詞はありません。まず歌詞テキストを貼り付けて保存します。",
+      "setToCurrentTime": "現在の再生時間に設定",
+      "applyCurrentTimeTitle": "現在の再生時間を適用する",
+      "applyCurrentTime": "現在の時刻を適用",
+      "earlier": "以前",
+      "later": "後で",
+      "nextTapLine": "次のタップはこの行に適用されます",
+      "addLineBelow": "以下に行を追加",
+      "clickAgainDelete": "削除するにはもう一度クリックします",
+      "tapModeTitle": "タップモード(J)",
+      "tapMode": "タップモード",
+      "tap": "タップ",
+      "saveLrc": "LRC を保存",
+      "messages": {
+        "loadedLrc": "LRCをロードしました",
+        "loadedPlain": "ロードされたプレーンテキスト",
+        "noLyrics": "歌詞なし",
+        "appliedAndReset": "適用およびリセット",
+        "appliedText": "応用テキスト",
+        "timesReset": "時間がリセットされました",
+        "emptyLinesCleared": "空白行が消去されました",
+        "savedLrc": "保存された LRC (同期された TXT)",
+        "importedLrc": "LRC をインポートしました",
+        "importedPlain": "インポートされたプレーンテキスト",
+        "smartAlignDone": "スマートアライン完了"
+      },
+      "errors": {
+        "readFailed": "歌詞の読み取りに失敗しました",
+        "loadFailed": "ロードに失敗しました",
+        "saveFailed": "保存に失敗しました",
+        "tapFirst": "最初にタップして位置を合わせます",
+        "importFailed": "インポートに失敗しました",
+        "noValidMarkers": "位置合わせできません: 有効な時間マーカーが見つかりません",
+        "invalidTimeline": "計算できません: タイムマーカーが不足しているか、順序が無効です"
+      },
+      "smartAlign": {
+        "label": "スマートアライン",
+        "tooltip": "スマートアライン: 開始時間と終了時間を設定し、その間の歌詞タイミングを自動調整します。",
+        "startTitle": "スマート整列 - 開始の設定",
+        "endTitle": "スマート整列 - 終了の設定",
+        "startDescription": "プレーヤーを歌詞の最初の行の正しい開始時間に移動し、下の「開始を設定」をクリックします。",
+        "endDescription": "プレーヤーを最後の歌詞行の正しい開始時間に移動し、下の [終了を設定] をクリックします。 KHelper は、間にあるすべての歌詞のタイミングを調整します。",
+        "setStart": "開始を設定（オフセット）",
+        "setEnd": "終了を設定（スケール）"
+      },
+      "unsaved": {
+        "title": "未保存の変更",
+        "switchSongMessage": "曲を切り替えると、保存されていない変更は破棄されます。",
+        "leavePageMessage": "このページを離れると、保存されていない変更が破棄されます。",
+        "discard": "保存しないでください",
+        "saveAndContinue": "保存して続行"
+      }
+    }
+  },
+  "overlays": {
+    "defaults": {
+      "currentLabel": "今歌っている",
+      "upcomingLabel": "次へ",
+      "historyLabel": "ソン",
+      "waitingNext": "次の曲を待っています",
+      "notPlaying": "何も遊んでいない",
+      "noUpcoming": "今後の曲はありません",
+      "noHistory": "まだ歌われた曲はありません",
+      "defaultLyricsDesign": "デフォルトの歌詞",
+      "defaultSetlistDesign": "デフォルトのセットリスト",
+      "newLyricsDesign": "新しい歌詞デザイン",
+      "newSetlistDesign": "新しいセットリストデザイン",
+      "lyricsDesignNumber": "歌詞デザイン {{index}}",
+      "setlistDesignNumber": "セットリストデザイン {{index}}"
+    },
+    "confirm": {
+      "deleteLyricsDesign": "「{{name}}」を削除しますか?既存の OBS リンクは、デフォルトの歌詞デザインに戻ります。",
+      "deleteSetlistDesign": "「{{name}}」を削除しますか?既存の OBS リンクは、デフォルトのセットリスト設計に戻ります。",
+      "deleteDesign": "「{{name}}」を削除しますか?既存の OBS リンクはデフォルトのデザインに戻ります。"
+    },
+    "templates": {
+      "classic_list": "クラシックリスト",
+      "record_card": "レコードカード",
+      "compact_strip": "コンパクトストリップ",
+      "neon_signboard": "ネオン看板",
+      "countdown_counter": "カウントダウンボード",
+      "index_grid": "完全なリスト",
+      "pager_console": "レトロなポケベル",
+      "cassette_deck": "カセットプレーヤー",
+      "stage_marquee": "ステージマーキー",
+      "photo_stack": "ポラロイド セットリスト",
+      "vertical_column": "垂直スペーサーリスト",
+      "spinning_disk_list": "スピニングディスク一覧"
+    },
+    "ui": {
+      "add": "追加",
+      "revert": "元に戻す",
+      "deleteCurrentDesign": "現在のデザインを削除",
+      "resetDesign": "このデザインをリセット",
+      "design": "デザイン",
+      "lyrics": "歌詞",
+      "setlist": "セットリスト",
+      "obsLink": "OBS リンク",
+      "copyObsLink": "OBS リンクをコピー",
+      "copiedLyricsObs": "コピーされた歌詞 OBS リンク",
+      "copiedSetlistObs": "セットリスト OBS リンクをコピーしました",
+      "title": "ライブオーバーレイテンプレート",
+      "description": "OBS で使用される歌詞とセットリストのオーバーレイ テンプレートを構成します。既存のリンクは有効のままで、組み込みテキストは選択したアプリ言語に従います。",
+      "lyricsDesigns": "歌詞オーバーレイデザイン",
+      "setlistDesigns": "セットリストオーバーレイデザイン",
+      "lyricsOverlay": "歌詞オーバーレイ",
+      "setlistOverlay": "セットリストオーバーレイ",
+      "lyricsEditor": "歌詞オーバーレイエディター",
+      "setlistEditor": "セットリストオーバーレイエディター",
+      "lyricsDesignDescription": "OBSの歌詞レイアウト、アニメーション、日本語アシスト表示を調整します。",
+      "setlistDesignDescription": "OBS セットリスト テンプレート、ラベル、アニメーション、および空の状態を調整します。",
+      "fillHeight": "充填高さ",
+      "showLineCount": "{{count}} 行を表示",
+      "sampleLyricsPreview": "日本語歌詞のサンプルプレビュー",
+      "sampleData": "サンプルデータ",
+      "currentQueue": "現在のキュー",
+      "font": "フォント",
+      "lineCount": "行数",
+      "animation": "アニメーション",
+      "scroll": "スクロール",
+      "fade": "フェード",
+      "slide": "スライド",
+      "scale": "スケール",
+      "activeSize": "アクティブサイズ",
+      "inactiveSize": "非アクティブなサイズ",
+      "lineGap": "ラインギャップ",
+      "letterSpacing": "文字間隔",
+      "colorsReadability": "色と読みやすさ",
+      "activeColor": "アクティブカラー",
+      "inactiveColor": "非アクティブな色",
+      "passedColor": "サンカラー",
+      "strokeColor": "ストロークの色",
+      "strokeWidth": "ストローク幅",
+      "glowColor": "グローカラー",
+      "glowStrength": "グローの強さ",
+      "japaneseAssist": "日本語アシスト",
+      "furigana": "ふりがな",
+      "romaji": "ローマ字",
+      "followApp": "アプリ設定に従う",
+      "show": "表示する",
+      "hide": "隠す",
+      "romajiLetterSpacing": "ローマ字の文字間隔",
+      "romajiMarginTop": "ローマ字の上マージン",
+      "style": "スタイル",
+      "preset": "プリセット",
+      "accentColor": "アクセントカラー",
+      "textColor": "文字の色",
+      "secondaryText": "二次テキスト",
+      "visibleContent": "可視コンテンツ",
+      "currentSong": "現在の曲",
+      "footerTicker": "フッターティッカー",
+      "counts": "カウント",
+      "artist": "アーティスト",
+      "numbering": "番号付け",
+      "thumbnail": "サムネイル",
+      "labelsMotion": "ラベルとモーション",
+      "current": "現在",
+      "upcomingTickerLabel": "今後のティッカーラベル",
+      "density": "密度",
+      "compact": "コンパクト",
+      "comfortable": "快適",
+      "frame": "フレーム",
+      "solid": "固体",
+      "glass": "ガラス",
+      "neon": "ネオン",
+      "outerRadius": "外半径",
+      "innerRadius": "内部アイテムの半径",
+      "columns": "コラム",
+      "decorationIntensity": "装飾の強さ",
+      "textureOpacity": "テクスチャ",
+      "motionDetail": "デコレーションモーション",
+      "off": "オフ",
+      "subtle": "微妙な",
+      "full": "フル",
+      "textEffect": "テキスト効果",
+      "normal": "ノーマル",
+      "pixel": "ピクセル",
+      "tickerSource": "ティッカーソース",
+      "historyTickerLabel": "履歴ティッカーラベル",
+      "footerLabel": "フッターラベル",
+      "tickerSpeed": "ティッカー速度",
+      "cassetteDepth": "カセットの奥行き",
+      "diskSpinMode": "ディスクアニメーション",
+      "spin": "スピン",
+      "diskSpinSpeed": "ディスク速度",
+      "lightAnimation": "ライトアニメーション",
+      "breathe": "呼吸する",
+      "flash": "フラッシュ",
+      "chase": "チェイス",
+      "rainbow": "レインボー",
+      "lightPalette": "明るい色",
+      "warm": "暖かい",
+      "cool": "クール",
+      "lightSpeed": "光速",
+      "photoTexture": "写真のテクスチャ",
+      "cardAngle": "カードアングル",
+      "cardTransition": "カードの移行",
+      "on": "オン",
+      "currentGlow": "現在のグロー",
+      "noteColor": "音符の色",
+      "contentInset": "水平方向のパディング",
+      "topOffset": "トップポジション",
+      "itemGap": "アイテムギャップ",
+      "titleBarOpacity": "タイトルバーの背景",
+      "dividerOpacity": "ディバイダー",
+      "currentFontSize": "現在のフォント サイズ",
+      "reserveFontSize": "今後のフォントサイズ",
+      "rowGap": "行のギャップ",
+      "historyOpacity": "履歴の不透明度",
+      "diskSize": "ディスクサイズ",
+      "diskStyle": "ディスクスタイル",
+      "vinyl": "ビニール",
+      "ring": "リング",
+      "dot": "ドット",
+      "thumbnailBorder": "サムネイルの枠線",
+      "all": "すべて",
+      "listScroll": "リストスクロール",
+      "scrollSpeed": "スクロール速度",
+      "pauseTime": "一時停止時間",
+      "changeAnimation": "ソングチェンジアニメーション",
+      "emptyState": "空の状態",
+      "showWaitingText": "待機中のテキストを表示",
+      "waitingText": "待機中のテキスト",
+      "showWaitingSongTitle": "今後の曲のタイトルを表示",
+      "pausePreview": "プレビューを一時停止する",
+      "playPreview": "プレビューを再生する",
+      "normalMode": "ノーマルモード",
+      "previewPrevious": "前をプレビュー",
+      "previewNext": "次のプレビュー",
+      "resetPreview": "プレビュー状態をリセット",
+      "copyName": "{{name}} コピー",
+      "id": "ID: {{id}}",
+      "savedObs": "保存された OBS テンプレート",
+      "obsLinkDescription": "OBS リンクでは、選択したデザインとアプリ言語が使用されます。",
+      "emptyStateDescription": "OBS セットリストオーバーレイで待機中のテキストを表示するか、何も再生されていない場合、または配信モードが待機中の場合にコンテンツを非表示にするかを制御します。"
     }
   }
 }

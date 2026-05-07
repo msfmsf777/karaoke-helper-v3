@@ -76,15 +76,25 @@ export const YouTubeDownloadControl: React.FC<YouTubeDownloadControlProps> = ({
 
     if (state.kind === 'active') {
         return (
-            <span style={{ color: '#b8d7ff', fontSize: '12px', whiteSpace: 'nowrap' }}>
-                {getActiveLabel(state, t)}
-            </span>
+            <FitText
+                text={getActiveLabel(state, t)}
+                baseFontSize={12}
+                minFontSize={10}
+                style={{ color: '#b8d7ff', lineHeight: 1.1, textAlign: 'center' }}
+            />
         );
     }
 
     if (state.kind === 'downloaded') {
         if (rowHovered) {
-            return <span style={{ color: '#8be28b', fontSize: '12px', whiteSpace: 'nowrap' }}>{t('songManagement.download.downloaded')}</span>;
+            return (
+                <FitText
+                    text={t('songManagement.download.downloaded')}
+                    baseFontSize={12}
+                    minFontSize={10}
+                    style={{ color: '#8be28b', lineHeight: 1.1, textAlign: 'center' }}
+                />
+            );
         }
         return (
             <span
@@ -127,7 +137,12 @@ export const YouTubeDownloadControl: React.FC<YouTubeDownloadControlProps> = ({
                 }}
             >
                 {state.kind === 'failed' ? (
-                    <span style={{ color: '#ff8b8b', fontSize: '12px' }}>{t('domain.downloadStatus.failed')}</span>
+                    <FitText
+                        text={t('domain.downloadStatus.failed')}
+                        baseFontSize={12}
+                        minFontSize={9}
+                        style={{ color: '#ff8b8b', lineHeight: 1.1, textAlign: 'center', width: '22px' }}
+                    />
                 ) : (
                     <img
                         src={variant === 'status' ? CloudIcon : DownloadIcon}

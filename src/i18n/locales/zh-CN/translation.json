@@ -1,12 +1,860 @@
 {
+  "language": {
+    "zhTW": "繁体中文",
+    "en": "英语"
+  },
+  "common": {
+    "appName": "KHelper V3",
+    "loading": "加载中",
+    "save": "保存",
+    "cancel": "取消",
+    "confirm": "确认",
+    "delete": "删除",
+    "edit": "编辑",
+    "copy": "复制",
+    "play": "播放",
+    "retry": "重试",
+    "reset": "重置",
+    "back": "返回",
+    "search": "搜索",
+    "settings": "设置",
+    "unknown": "未知",
+    "none": "无",
+    "default": "默认",
+    "copied": "已复制",
+    "close": "关闭"
+  },
   "settings": {
     "language": {
       "title": "界面语言",
-      "description": "选择 KHelper 的显示语言。若尚未选择，会先根据系统语言自动判断。",
+      "description": "选择 KHelper 的显示语言。如果未选择语言，KHelper 会自动根据系统语言检测。",
       "label": "语言",
       "searchPlaceholder": "搜索语言",
-      "noResults": "找不到符合的语言",
-      "current": "目前语言"
+      "noResults": "没有匹配的语言",
+      "current": "当前语言"
+    },
+    "audio": {
+      "loadError": "无法获取音频输出设备列表",
+      "title": "音频输出设备",
+      "scan": "重新扫描",
+      "scanning": "正在扫描...",
+      "description": "选择观众听到的音频输出（Stream）以及您自己听到的音频输出（Headphone）。",
+      "separationDescription": "对于已分离的歌曲，Stream 只输出伴奏，Headphone 同时输出人声和伴奏。",
+      "systemDefault": "系统默认值",
+      "device": "设备 {{index}}",
+      "streamOutput": "观众输出（Stream）",
+      "headphoneOutput": "耳机输出",
+      "syncOffset": "双输出同步偏移：",
+      "calibrate": "校准"
+    },
+    "separation": {
+      "title": "人声分离质量",
+      "fast": "快速",
+      "fastDescription": "使用更少的资源，完成速度最快，但质量稍差。",
+      "normal": "标准",
+      "normalDescription": "推荐。平衡速度和质量。",
+      "high": "高品质",
+      "highDescription": "需要更长的时间，但可提供最佳的分离结果。"
+    },
+    "updates": {
+      "title": "软件更新",
+      "check": "检查更新",
+      "checking": "正在检查...",
+      "neverChecked": "从未检查过",
+      "lastChecked": "最后检查：{{time}}"
+    },
+    "overlay": {
+      "unsavedLeaveConfirm": "实时覆盖模板有未保存的更改。要离开编辑器吗？"
+    },
+    "hotkeys": {
+      "title": "热键",
+      "resetRecommended": "恢复推荐的默认值",
+      "resetRecommendedTitle": "仅恢复具有推荐默认值的热键。没有默认值的自定义热键不会被覆盖。",
+      "enableGlobal": "启用全局热键",
+      "globalDisabledDescription": "关闭时，快捷方式仅在 KHelper 窗口内起作用",
+      "function": "功能",
+      "local": "本地热键",
+      "global": "全局热键",
+      "recordingHint": "按快捷键，Esc 取消，Backspace 清除",
+      "recordHint": "单击，然后按快捷键",
+      "recording": "按快捷键...",
+      "mediaKey": "媒体键",
+      "clearShortcut": "清除该热键",
+      "status": {
+        "title": "状态",
+        "duplicateGlobal": "重复的快捷方式",
+        "duplicateLocal": "重复的本地快捷方式",
+        "globalDisabled": "全局热键已禁用",
+        "applied": "应用"
+      }
+    },
+    "calibration": {
+      "title": "双输出同步校准",
+      "purposeTitle": "目的",
+      "purpose": "调整延迟，使流监视器环回和直接耳机点击完美对齐。",
+      "preparationTitle": "设置",
+      "obsMonitoringTitle": "启用 OBS 监控：",
+      "obsMonitoring": "在 OBS 混音器中，单击齿轮 ⚙ → 高级音频属性 → 将音频源设置为仅监听或监听和输出。",
+      "sampleRateTitle": "确认采样率：",
+      "sampleRate": "检查“设置”中每个选定设备卡右上角的 Hz 徽章。确保每个设备和 OBS 使用相同的采样率，例如 48000 Hz。",
+      "operationTitle": "操作",
+      "operation": "单击下面的“开始测试”，然后调整滑块，直到两次点击重叠为一种声音。",
+      "streamDelay": "← 流延迟",
+      "monitorDelay": "监控延迟 →",
+      "stopTest": "停止测试",
+      "startTest": "开始测试",
+      "saveApply": "保存并应用"
+    }
+  },
+  "about": {
+    "descriptionLine1": "适用于 VTuber 和主播的一体化卡拉 OK 助手",
+    "descriptionLine2": "对于错误或功能想法，Discord 是联系我们的最佳地点。",
+    "links": {
+      "website": {
+        "title": "官方网站",
+        "label": "网站"
+      },
+      "twitter": {
+        "title": "关注创作者",
+        "label": "关注"
+      },
+      "discord": {
+        "title": "加入 Discord 社区",
+        "label": "Discord"
+      },
+      "report": {
+        "title": "在 GitHub 报告问题或请求功能",
+        "label": "报告"
+      }
+    }
+  },
+  "updatesPopup": {
+    "title": "新版本上线",
+    "noReleaseNotes": "没有为此版本提供发行说明。",
+    "error": "更新失败。检查您的网络连接或稍后重试。",
+    "ignore": "忽略此版本",
+    "download": "打开下载页面"
+  },
+  "tasks": {
+    "title": "活动任务",
+    "download": "下载",
+    "separation": "歌曲分离",
+    "queuedDownload": "排队...",
+    "failed": "失败",
+    "completed": "已完成",
+    "viewAllDownloads": "查看所有下载结果",
+    "copyError": "复制错误",
+    "copied": "已复制 ✓",
+    "hideError": "隐藏错误",
+    "viewError": "查看错误",
+    "empty": "没有活动任务",
+    "actions": {
+      "cancel": "取消",
+      "retry": "重试",
+      "remove": "删除"
+    },
+    "separationStatus": {
+      "queued": "排队",
+      "running": "处理中",
+      "succeeded": "已完成",
+      "failed": "失败"
+    },
+    "quality": {
+      "fast": "快速",
+      "normal": "标准"
+    }
+  },
+  "playbackControl": {
+    "clickToEdit": "点击编辑"
+  },
+  "domain": {
+    "songType": {
+      "original": "原曲",
+      "instrumental": "伴奏",
+      "all": "所有类型"
+    },
+    "audioStatus": {
+      "streaming": "在线",
+      "original_only": "未分离",
+      "separation_pending": "等待",
+      "separating": "分离",
+      "separation_failed": "分离失败",
+      "separated": "已分离",
+      "ready": "未分离",
+      "missing": "未分离",
+      "error": "错误",
+      "all": "所有音频"
+    },
+    "lyricsStatus": {
+      "none": "没有歌词",
+      "text_only": "纯文本",
+      "synced": "已同步",
+      "all": "所有歌词",
+      "shortNone": "无"
+    },
+    "source": {
+      "file": "本地文件",
+      "youtube": "YouTube",
+      "all": "所有来源"
+    },
+    "favorite": {
+      "all": "所有收藏夹",
+      "favorite": "已收藏",
+      "not_favorite": "未收藏"
+    },
+    "downloadStatus": {
+      "queued": "排队",
+      "downloading": "正在下载",
+      "processing": "处理中",
+      "completed": "已完成",
+      "failed": "失败"
+    },
+    "hotkeys": {
+      "groups": {
+        "playback": "回放",
+        "custom": "自定义快捷键"
+      },
+      "unset": "未设置",
+      "failures": {
+        "plainGlobal": "全局热键必须包含修饰符",
+        "duplicate": "重复的快捷方式",
+        "occupied": "被另一个应用程序使用"
+      },
+      "actions": {
+        "playPause": {
+          "label": "播放/暂停",
+          "description": "切换当前歌曲的播放"
+        },
+        "nextTrack": {
+          "label": "下一曲目",
+          "description": "播放队列中的下一首歌曲"
+        },
+        "previousTrack": {
+          "label": "上一曲目",
+          "description": "播放队列中的上一首歌曲"
+        },
+        "toggleMiniPlayer": {
+          "label": "迷你播放器",
+          "description": "显示或隐藏迷你播放器"
+        },
+        "focusSearch": {
+          "label": "搜索",
+          "description": "聚焦顶部搜索字段"
+        },
+        "toggleStreamMode": {
+          "label": "直播模式",
+          "description": "进入或退出直播模式"
+        },
+        "instrumentalVolumeUp": {
+          "label": "伴奏音量 +",
+          "description": "将乐器音量提高 5%"
+        },
+        "instrumentalVolumeDown": {
+          "label": "乐器音量 -",
+          "description": "乐器音量降低 5%"
+        },
+        "vocalVolumeUp": {
+          "label": "音量+",
+          "description": "音量提高 5%"
+        },
+        "vocalVolumeDown": {
+          "label": "音量 -",
+          "description": "音量降低 5%"
+        }
+      }
+    },
+    "viewCount": "{{count}} 观看次数",
+    "viewCountTenThousands": "{{count}} 观看次数"
+  },
+  "shell": {
+    "nav": {
+      "browse": "浏览",
+      "library": "曲库",
+      "downloads": "下载",
+      "lyrics": "歌词编辑",
+      "myMusic": "我的音乐",
+      "favorites": "收藏夹",
+      "recent": "最近播放",
+      "playlists": "我的播放列表",
+      "addPlaylist": "添加播放列表",
+      "playlistName": "播放列表名称",
+      "deletePlaylistConfirm": "删除该播放列表吗？"
+    },
+    "topBar": {
+      "searchPlaceholder": "搜索歌曲/艺术家",
+      "recentSearches": "最近的搜索",
+      "clear": "清除",
+      "noRecentSearches": "没有最近的搜索",
+      "localMatches": "本地曲库匹配",
+      "viewAll": "查看全部->",
+      "noLocalMatches": "没有匹配的本地歌曲",
+      "youtubeResults": "YouTube 直播结果",
+      "suggestions": "搜索建议",
+      "searching": "正在寻找...",
+      "noOnlineResults": "没有相关结果",
+      "showMore": "显示更多",
+      "tasks": "任务",
+      "about": "关于",
+      "miniPlayer": "迷你播放器",
+      "addToPlaylist": "添加到播放列表",
+      "more": "更多",
+      "updateFailed": "更新检查失败",
+      "updateAvailable": "新版本可用"
+    },
+    "player": {
+      "noSong": "没有选择歌曲",
+      "unknownSong": "未知歌曲",
+      "nextSong": "下一首：{{title}}",
+      "emptySetlist": "曲目列表为空",
+      "order": "顺序播放",
+      "repeatOne": "单曲循环",
+      "random": "随机播放",
+      "stream": "直播模式",
+      "enterStream": "进入直播模式",
+      "closeStream": "关闭直播模式",
+      "cloudStreamingTooltip": "在线串流 - 下载前无法使用变调、变速和人声分离",
+      "cloudStreaming": "云端播放",
+      "addFavorite": "添加收藏夹",
+      "removeFavorite": "删除收藏夹",
+      "switchModeHint": "使用侧边栏切换模式",
+      "previous": "上一页",
+      "next": "下一首",
+      "speed": "速度",
+      "speedTooltip": "速度",
+      "speedDisabledTooltip": "在线串流无法使用变速",
+      "pitch": "变调",
+      "pitchTooltip": "变调",
+      "pitchDisabledTooltip": "在线串流无法使用变调",
+      "instrumental": "伴奏",
+      "vocal": "人声",
+      "queue": "队列"
+    },
+    "queue": {
+      "title": "队列",
+      "count": "{{count}} 歌曲",
+      "clear": "清除",
+      "confirmClear": "清楚吗？",
+      "empty": "队列是空的。从库或播放列表添加歌曲。",
+      "remove": "从队列中删除",
+      "hint": "双击立即播放这首歌"
+    },
+    "window": {
+      "minimize": "最小化",
+      "maximize": "最大化",
+      "restore": "恢复",
+      "close": "关闭"
+    }
+  },
+  "miniPlayer": {
+    "speedTitle": "速度：{{value}}x",
+    "pitchTitle": "间距：{{value}}"
+  },
+  "electron": {
+    "tray": {
+      "checkingUpdates": "正在检查更新...",
+      "checkUpdates": "检查更新",
+      "openMainWindow": "打开主窗口",
+      "settings": "设置",
+      "quit": "退出"
+    },
+    "dialog": {
+      "deleteSong": {
+        "title": "删除歌曲",
+        "message": "删除这首歌？此操作无法撤消。"
+      },
+      "cancel": "取消",
+      "delete": "删除"
+    }
+  },
+  "songList": {
+    "empty": "没有歌曲",
+    "playVisible": "播放可见列表",
+    "added": "已添加",
+    "addToQueue": "添加到队列",
+    "moreActions": "更多列表操作",
+    "shuffleVisible": "随机播放可见列表",
+    "replaceQueue": "替换队列并播放",
+    "filteredCount": "显示 {{visible}} / {{total}}",
+    "totalCount": "{{count}} 总计",
+    "searchPlaceholder": "搜索此列表",
+    "searchThisList": "搜索此列表",
+    "filter": "过滤器",
+    "clearCondition": "单击以清除此条件",
+    "clearFilters": "清除过滤器",
+    "sortBy": "按 {{label}} 排序",
+    "noMatches": "没有歌曲符合这些过滤器",
+    "filterChip": {
+      "type": "类型：{{value}}",
+      "audio": "音频：{{value}}",
+      "lyrics": "歌词：{{value}}",
+      "source": "来源：{{value}}"
+    },
+    "columns": {
+      "titleArtist": "标题/艺术家",
+      "favorite": "已收藏",
+      "type": "类型",
+      "audio": "音频状态",
+      "lyrics": "歌词",
+      "source": "来源",
+      "duration": "持续时间"
+    }
+  },
+  "songManagement": {
+    "libraryTitle": "曲库",
+    "libraryDescription": "所有添加的歌曲都会出现在这里。过滤、排序并直接播放。",
+    "addSongButton": "+ 添加歌曲",
+    "libraryEmpty": "还没有歌曲。使用右上角的“+ 添加歌曲”开始构建您的歌单。",
+    "favoritesTitle": "收藏夹",
+    "favoritesDescription": "最喜欢的歌曲出现在这里。过滤、排序并直接播放。",
+    "favoritesEmpty": "还没有最喜欢的歌曲",
+    "historyTitle": "最近播放",
+    "historyDescription": "最近播放的歌曲出现在此处，并且可以从当前过滤的列表中重播。",
+    "historyEmpty": "还没有播放历史记录",
+    "clearHistory": "清除播放历史记录",
+    "clearHistoryConfirm": "清除播放历史记录？",
+    "playlistNotFound": "未找到播放列表",
+    "renameHint": "点击重命名",
+    "playlistDescription": "排序和过滤此播放列表只会更改当前视图。保存的播放列表顺序不会被重写。",
+    "playlistEmpty": "该播放列表还没有歌曲。使用“添加到播放列表...”从库或其他列表添加歌曲",
+    "deletePlaylist": "删除此播放列表",
+    "deletePlaylistConfirm": "删除播放列表“{{name}}”？",
+    "removeFromPlaylist": "从播放列表中删除",
+    "unknownArtist": "未知艺术家",
+    "addToPlaylistOrQueue": "添加到播放列表/队列",
+    "fastBadge": "快速",
+    "normalBadge": "标准",
+    "separate": "分离",
+    "selected": "已选择",
+    "noPlaylists": "没有播放列表",
+    "newPlaylistName": "新播放列表名称",
+    "createPlaylist": "创建播放列表",
+    "removeFavorite": "删除收藏夹",
+    "addFavorite": "添加收藏夹",
+    "addToPlaylist": "添加到播放列表",
+    "addToPlaylistEllipsis": "添加到播放列表...",
+    "more": "更多",
+    "renamePlaylist": "重命名",
+    "startSeparation": "开始分离",
+    "restartSeparation": "再次分离",
+    "separationQuality": {
+      "fast": "快速",
+      "normal": "标准",
+      "high": "高品质"
+    },
+    "editLyrics": "编辑歌词",
+    "editDetails": "编辑详细信息",
+    "openFolder": "打开文件夹",
+    "deleteSong": "删除歌曲",
+    "copyVideoLink": "复制视频链接",
+    "openInBrowser": "在默认浏览器中打开",
+    "editDialog": {
+      "title": "编辑歌曲详细信息",
+      "titleLabel": "歌曲名称",
+      "artistLabel": "艺术家",
+      "titleRequired": "歌名不能为空",
+      "saveFailed": "保存失败。请稍后重试。",
+      "saving": "正在保存..."
+    },
+    "download": {
+      "title": "下载管理器",
+      "active": "正在下载",
+      "failed": "下载失败",
+      "completed": "已下载",
+      "downloaded": "已下载",
+      "queuedEllipsis": "排队...",
+      "activeQueued": "排队",
+      "activeProcessing": "处理中",
+      "activeProgress": "正在下载 {{progress}}%",
+      "quality": {
+        "normal": "标准",
+        "high": "高品质",
+        "best": "最佳"
+      },
+      "retryFailed": "重试失败：{{message}}",
+      "removeConfirm": "删除这个下载记录吗？",
+      "errorCopied": "已复制错误消息",
+      "copyError": "复制错误",
+      "remove": "删除",
+      "emptyHistory": "还没有下载历史记录",
+      "downloadEllipsis": "下载...",
+      "downloadAs": "下载为 {{type}}",
+      "customDownload": "定制下载",
+      "customDownloadEllipsis": "自定义下载...",
+      "custom": "定制",
+      "options": "下载选项"
+    },
+    "searchResults": {
+      "title": "搜索结果：“{{term}}”",
+      "localMatches": "本地曲库匹配",
+      "noLocalMatches": "没有本地歌曲匹配“{{term}}”",
+      "youtubeResults": "YouTube 直播结果",
+      "duration": {
+        "any": "任何持续时间",
+        "under5": "5分钟以内",
+        "5to10": "5 - 10 分钟",
+        "over10": "10多分钟"
+      },
+      "date": {
+        "any": "任何时间",
+        "week": "本周上传",
+        "month": "本月上传",
+        "year": "今年上传"
+      },
+      "sort": {
+        "relevance": "按相关性排序",
+        "popularity": "按观看次数排序"
+      },
+      "searchingYoutube": "正在搜索 YouTube...",
+      "columns": {
+        "titleChannel": "标题/频道",
+        "download": "下载"
+      },
+      "noFilteredYoutube": "没有 YouTube 结果与当前过滤器匹配",
+      "noYoutubeResults": "未找到 YouTube 结果",
+      "scrollMore": "向下滚动以加载更多...",
+      "noMoreYoutube": "没有更多 YouTube 结果",
+      "loadingMore": "正在加载更多 YouTube 结果..."
+    },
+    "onlineDownload": {
+      "title": "定制下载",
+      "titleLabel": "标题",
+      "titlePlaceholder": "歌曲名称",
+      "artistLabel": "艺术家",
+      "artistPlaceholder": "艺术家（可选）",
+      "typeLabel": "类型",
+      "qualityLabel": "音频质量",
+      "quality": {
+        "normal": "普通（节省空间）",
+        "high": "高品质（标准）",
+        "best": "最好（较大的文件）"
+      },
+      "lyricsLabel": "歌词",
+      "lyricsMode": {
+        "none": "没有歌词",
+        "paste": "粘贴纯文本",
+        "importSearch": "搜索/导入"
+      },
+      "lyricsPlaceholder": "粘贴歌词...",
+      "noLyricsSelected": "未选择歌词",
+      "import": "进口",
+      "searchLyrics": "搜索歌词",
+      "enqueue": "添加到下载队列",
+      "searchResult": "搜索结果：{{name}} - {{artist}}"
+    },
+    "addSong": {
+      "title": "添加歌曲",
+      "localFiles": "本地文件",
+      "audioFiles": "音频文件",
+      "chooseFiles": "+ 选择文件",
+      "youtubeLinksLabel": "YouTube 链接（每行一个）",
+      "youtubePlaceholder": "粘贴 YouTube 链接...",
+      "paste": "粘贴",
+      "linkCount": "{{count}} 链接",
+      "clear": "清除",
+      "parsing": "正在解析...",
+      "checkAndImport": "检查并导入",
+      "lyricsModePasteShort": "粘贴",
+      "upload": "上传",
+      "emptyFiles": "未选择文件",
+      "emptyLinks": "未导入有效链接",
+      "processing": "处理中...",
+      "confirmAdd": "确认添加 ({{count}})",
+      "unsavedConfirm": "您有未保存的更改。还是关闭吧？"
+    }
+  },
+  "lyrics": {
+    "search": {
+      "title": "搜索歌词",
+      "placeholder": "搜索歌曲/艺术家...",
+      "searching": "正在寻找...",
+      "noResults": "没有结果",
+      "preview": "预览",
+      "hidePreview": "隐藏预览",
+      "useLyrics": "使用这些歌词"
+    },
+    "style": {
+      "title": "应用内歌词显示",
+      "description": "这些设置仅影响应用内流视图，不会更改 OBS 叠加模板。",
+      "fontSize": "字体大小",
+      "inactiveColor": "非活动文本",
+      "activeColor": "突出显示的文本",
+      "glowColor": "发光颜色",
+      "strokeColor": "描边颜色",
+      "strokeWidth": "笔划宽度",
+      "resetDefault": "重置为默认值"
+    },
+    "stream": {
+      "nowPlaying": "正在播放",
+      "confirmResetTitle": "再次点击确认重置",
+      "resetProgressTitle": "重置播放进度",
+      "confirmReset": "确认重置？",
+      "notPlaying": "未播放",
+      "copyLyricsObs": "复制歌词 OBS 链接",
+      "copySetlistObs": "复制歌单 OBS 链接",
+      "copiedLyricsObs": "复制歌词OBS链接：{{name}}",
+      "copiedSetlistObs": "复制的歌单 OBS 链接：{{name}}",
+      "obsTemplateSettings": "OBS 模板设置",
+      "upNext": "下一个 ({{count}})",
+      "played": "已唱 ({{count}})",
+      "upNextNoCount": "下一个",
+      "playedNoCount": "已唱",
+      "noPlayedSongs": "还没有播放歌曲",
+      "requeueTitle": "将这首歌重新加入待唱列表底部",
+      "queueEmpty": "首先将歌曲添加到队列中",
+      "nextSongBadge": "下一首 •",
+      "removeFromSetlist": "从列表中删除"
+    },
+    "editor": {
+      "title": "歌词编辑",
+      "songList": "歌曲列表",
+      "selectSong": "从左侧选择一首歌曲",
+      "confirmResetTimes": "重置所有时间标记？此操作无法撤消。",
+      "confirmOverwrite": "这首歌已经有歌词了。覆盖现有的歌词文件？",
+      "alignControls": "对齐控制",
+      "alignDescription": "当敲击模式打开时，按下 J 将当前播放时间应用到下一行歌词。",
+      "resetAllTimes": "重置所有时间",
+      "lyricsText": "歌词文字",
+      "saving": "正在保存...",
+      "saved": "已保存",
+      "clearBlank": "清除空白",
+      "apply": "申请",
+      "lyricsPlaceholder": "输入歌词...",
+      "loadingLyrics": "正在加载歌词...",
+      "noLyricsHelp": "还没有歌词。首先粘贴并保存歌词文本。",
+      "setToCurrentTime": "设置为当前播放时间",
+      "applyCurrentTimeTitle": "应用当前播放时间",
+      "applyCurrentTime": "应用当前时间",
+      "earlier": "早些时候",
+      "later": "后来",
+      "nextTapLine": "下一次点击将应用于该行",
+      "addLineBelow": "在下面添加一行",
+      "clickAgainDelete": "再次点击即可删除",
+      "tapModeTitle": "点击模式 (J)",
+      "tapMode": "点击模式",
+      "tap": "点击",
+      "saveLrc": "保存 LRC",
+      "messages": {
+        "loadedLrc": "已加载 LRC",
+        "loadedPlain": "加载纯文本",
+        "noLyrics": "没有歌词",
+        "appliedAndReset": "应用并重置",
+        "appliedText": "应用文本",
+        "timesReset": "时间重置",
+        "emptyLinesCleared": "空白行已清除",
+        "savedLrc": "已保存 LRC（已同步 TXT）",
+        "importedLrc": "导入 LRC",
+        "importedPlain": "导入的纯文本",
+        "smartAlignDone": "智能对齐完成"
+      },
+      "errors": {
+        "readFailed": "无法读取歌词",
+        "loadFailed": "加载失败",
+        "saveFailed": "保存失败",
+        "tapFirst": "首先点击对齐",
+        "importFailed": "导入失败",
+        "noValidMarkers": "无法对齐：未找到有效的时间标记",
+        "invalidTimeline": "无法计算：时间标记不足或顺序无效"
+      },
+      "smartAlign": {
+        "label": "智能对齐",
+        "tooltip": "智能对齐：设置开始和结束时间，然后自动调整歌词时间",
+        "startTitle": "智能对齐 - 设置开始",
+        "endTitle": "智能对齐 - 设置结束",
+        "startDescription": "将播放器移至第一句歌词的正确开始时间，然后单击下面的“设置开始”。",
+        "endDescription": "将播放器移动到最后一句歌词的正确开始时间，然后单击下面的“设置结束”。 KHelper 将调整其间所有歌词的时间。",
+        "setStart": "设置开始（偏移）",
+        "setEnd": "设置结束（比例）"
+      },
+      "unsaved": {
+        "title": "未保存的更改",
+        "switchSongMessage": "切换歌曲将丢弃未保存的更改。",
+        "leavePageMessage": "离开此页面将放弃未保存的更改。",
+        "discard": "不保存",
+        "saveAndContinue": "保存并继续"
+      }
+    }
+  },
+  "overlays": {
+    "defaults": {
+      "currentLabel": "现在唱歌",
+      "upcomingLabel": "下一个",
+      "historyLabel": "宋",
+      "waitingNext": "等待下一首歌曲",
+      "notPlaying": "未播放",
+      "noUpcoming": "没有即将推出的歌曲",
+      "noHistory": "还没有唱过的歌曲",
+      "defaultLyricsDesign": "默认歌词",
+      "defaultSetlistDesign": "默认歌单",
+      "newLyricsDesign": "新歌词设计",
+      "newSetlistDesign": "新歌单设计",
+      "lyricsDesignNumber": "歌词设计{{index}}",
+      "setlistDesignNumber": "歌单设计{{index}}"
+    },
+    "confirm": {
+      "deleteLyricsDesign": "删除“{{name}}”？现有的 OBS 链接将回退到默认的歌词设计。",
+      "deleteSetlistDesign": "删除“{{name}}”？现有的 OBS 链接将回退到默认的歌单设计。",
+      "deleteDesign": "删除“{{name}}”？现有的 OBS 链接将回退到默认设计。"
+    },
+    "templates": {
+      "classic_list": "经典清单",
+      "record_card": "记录卡",
+      "compact_strip": "紧凑型条带",
+      "neon_signboard": "霓虹灯招牌",
+      "countdown_counter": "倒计时板",
+      "index_grid": "完整列表",
+      "pager_console": "复古寻呼机",
+      "cassette_deck": "卡式录音机",
+      "stage_marquee": "舞台帐篷",
+      "photo_stack": "宝丽来专辑列表",
+      "vertical_column": "垂直间隔列表",
+      "spinning_disk_list": "旋转磁盘列表"
+    },
+    "ui": {
+      "add": "添加",
+      "revert": "恢复",
+      "deleteCurrentDesign": "删除当前设计",
+      "resetDesign": "重置此设计",
+      "design": "设计",
+      "lyrics": "歌词",
+      "setlist": "歌单",
+      "obsLink": "OBS 链接",
+      "copyObsLink": "复制 OBS 链接",
+      "copiedLyricsObs": "复制歌词 OBS 链接",
+      "copiedSetlistObs": "复制的歌单 OBS 链接",
+      "title": "实时叠加模板",
+      "description": "配置 OBS 使用的歌词和歌单叠加模板。现有链接保持有效，内置文本遵循所选的应用程序语言。",
+      "lyricsDesigns": "歌词叠加设计",
+      "setlistDesigns": "歌单叠加设计",
+      "lyricsOverlay": "歌词叠加",
+      "setlistOverlay": "歌单叠加",
+      "lyricsEditor": "歌词叠加编辑器",
+      "setlistEditor": "歌单叠加编辑器",
+      "lyricsDesignDescription": "调整OBS歌词布局、动画和日语辅助显示。",
+      "setlistDesignDescription": "调整 OBS 歌单模板、标签、动画和空状态。",
+      "fillHeight": "填充高度",
+      "showLineCount": "显示 {{count}} 行",
+      "sampleLyricsPreview": "日语歌词预览示例",
+      "sampleData": "样本数据",
+      "currentQueue": "当前队列",
+      "font": "字体",
+      "lineCount": "行数",
+      "animation": "动画",
+      "scroll": "滚动",
+      "fade": "淡出",
+      "slide": "幻灯片",
+      "scale": "规模",
+      "activeSize": "有效尺寸",
+      "inactiveSize": "非活动尺寸",
+      "lineGap": "线间隙",
+      "letterSpacing": "字母间距",
+      "colorsReadability": "颜色和可读性",
+      "activeColor": "活性颜色",
+      "inactiveColor": "非活动颜色",
+      "passedColor": "宋色",
+      "strokeColor": "描边颜色",
+      "strokeWidth": "笔划宽度",
+      "glowColor": "发光颜色",
+      "glowStrength": "发光强度",
+      "japaneseAssist": "日语协助",
+      "furigana": "假名注音",
+      "romaji": "罗马字",
+      "followApp": "跟随应用设置",
+      "show": "显示",
+      "hide": "隐藏",
+      "romajiLetterSpacing": "罗马字字母间距",
+      "romajiMarginTop": "罗马字上边距",
+      "style": "风格",
+      "preset": "预设",
+      "accentColor": "强调色",
+      "textColor": "文字颜色",
+      "secondaryText": "次要文本",
+      "visibleContent": "可见内容",
+      "currentSong": "当前歌曲",
+      "footerTicker": "页脚代码",
+      "counts": "计数",
+      "artist": "艺术家",
+      "numbering": "编号",
+      "thumbnail": "缩略图",
+      "labelsMotion": "标签和动作",
+      "current": "当前",
+      "upcomingTickerLabel": "即将推出的股票标签",
+      "density": "密度",
+      "compact": "紧凑型",
+      "comfortable": "舒适",
+      "frame": "框架",
+      "solid": "固体",
+      "glass": "玻璃",
+      "neon": "霓虹灯",
+      "outerRadius": "外径",
+      "innerRadius": "内部项目半径",
+      "columns": "专栏",
+      "decorationIntensity": "装修强度",
+      "textureOpacity": "纹理",
+      "motionDetail": "装修动议",
+      "off": "关闭",
+      "subtle": "微妙",
+      "full": "满",
+      "textEffect": "文字效果",
+      "normal": "标准",
+      "pixel": "像素",
+      "tickerSource": "股票代码来源",
+      "historyTickerLabel": "历史股票标签",
+      "footerLabel": "页脚标签",
+      "tickerSpeed": "股票行情速度",
+      "cassetteDepth": "盒式深度",
+      "diskSpinMode": "磁盘动画",
+      "spin": "旋转",
+      "diskSpinSpeed": "磁盘速度",
+      "lightAnimation": "灯光动画",
+      "breathe": "呼吸",
+      "flash": "闪光灯",
+      "chase": "蔡斯",
+      "rainbow": "彩虹",
+      "lightPalette": "浅色",
+      "warm": "温暖",
+      "cool": "酷",
+      "lightSpeed": "光速",
+      "photoTexture": "照片纹理",
+      "cardAngle": "卡角",
+      "cardTransition": "卡牌转换",
+      "on": "开",
+      "currentGlow": "当前辉光",
+      "noteColor": "注意颜色",
+      "contentInset": "水平填充",
+      "topOffset": "最高位置",
+      "itemGap": "项目差距",
+      "titleBarOpacity": "标题栏背景",
+      "dividerOpacity": "分频器",
+      "currentFontSize": "当前字体大小",
+      "reserveFontSize": "即将推出的字体大小",
+      "rowGap": "行距",
+      "historyOpacity": "历史不透明",
+      "diskSize": "磁盘大小",
+      "diskStyle": "磁盘样式",
+      "vinyl": "乙烯基",
+      "ring": "戒指",
+      "dot": "点",
+      "thumbnailBorder": "缩略图边框",
+      "all": "全部",
+      "listScroll": "列表滚动",
+      "scrollSpeed": "滚动速度",
+      "pauseTime": "暂停时间",
+      "changeAnimation": "歌曲变化动画",
+      "emptyState": "空状态",
+      "showWaitingText": "显示等待文本",
+      "waitingText": "等待文本",
+      "showWaitingSongTitle": "显示即将推出的歌曲标题",
+      "pausePreview": "暂停预览",
+      "playPreview": "播放预览",
+      "normalMode": "普通模式",
+      "previewPrevious": "预览 上一页",
+      "previewNext": "预览下一首",
+      "resetPreview": "重置预览状态",
+      "copyName": "{{name}} 复制",
+      "id": "ID：{{id}}",
+      "savedObs": "已保存的 OBS 模板",
+      "obsLinkDescription": "OBS 链接使用选定的设计和应用程序语言。",
+      "emptyStateDescription": "控制当没有播放内容或直播模式等待中时，OBS 歌单覆盖是否显示等待文字或隐藏内容。"
     }
   }
 }

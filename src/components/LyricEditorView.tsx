@@ -15,6 +15,7 @@ import {
 } from '../library/lyrics';
 import { getAudioStatusLabel, getLyricsStatusLabel, getSongTypeLabel } from '../i18n/domainLabels';
 
+import FitText from './FitText';
 import LyricsSearchPane from './LyricsSearchPane';
 
 import TapModeIcon from '../assets/icons/tap_mode.svg';
@@ -1435,7 +1436,18 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                                         }}
                                     >
                                         <img src={SmartAlignIcon} alt="Smart Align" style={{ width: '20px', height: '20px' }} />
-                                        <span style={{ fontSize: '9px', fontWeight: 600, marginTop: '2px', whiteSpace: 'nowrap' }}>{t('lyrics.editor.smartAlign.label')}</span>
+                                        <FitText
+                                            text={t('lyrics.editor.smartAlign.label')}
+                                            baseFontSize={9}
+                                            minFontSize={7}
+                                            style={{
+                                                fontWeight: 600,
+                                                marginTop: '2px',
+                                                lineHeight: 1,
+                                                textAlign: 'center',
+                                                width: '42px',
+                                            }}
+                                        />
                                     </button>
                                 </div>
                             )}

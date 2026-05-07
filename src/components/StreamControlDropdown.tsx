@@ -109,7 +109,17 @@ const StreamControlDropdown: React.FC<StreamControlDropdownProps> = ({ onCopy, o
                 onMouseEnter={(event) => event.currentTarget.style.backgroundColor = '#333'}
                 onMouseLeave={(event) => event.currentTarget.style.backgroundColor = 'transparent'}
             >
-                <span>{label}</span>
+                <span
+                    title={label}
+                    style={{
+                        minWidth: 0,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                    }}
+                >
+                    {label}
+                </span>
                 <span style={{ color: '#aaa' }}>›</span>
             </button>
             {activeSubmenu === kind && renderDesignSubmenu(kind)}

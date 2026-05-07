@@ -1,12 +1,860 @@
 {
+  "language": {
+    "zhTW": "จีนดั้งเดิม",
+    "en": "อังกฤษ"
+  },
+  "common": {
+    "appName": "KHelper V3",
+    "loading": "กำลังโหลด",
+    "save": "บันทึก",
+    "cancel": "ยกเลิก",
+    "confirm": "ยืนยัน",
+    "delete": "ลบ",
+    "edit": "แก้ไข",
+    "copy": "คัดลอก",
+    "play": "เล่น",
+    "retry": "ลองอีกครั้ง",
+    "reset": "รีเซ็ต",
+    "back": "กลับ",
+    "search": "ค้นหา",
+    "settings": "การตั้งค่า",
+    "unknown": "ไม่ทราบ",
+    "none": "ไม่มี",
+    "default": "ค่าเริ่มต้น",
+    "copied": "คัดลอกแล้ว",
+    "close": "ปิด"
+  },
   "settings": {
     "language": {
       "title": "ภาษาอินเทอร์เฟซ",
-      "description": "เลือกภาษาที่ใช้แสดงผลใน KHelper หากยังไม่ได้เลือกภาษา KHelper จะตรวจหาภาษาจากระบบก่อน",
+      "description": "เลือกภาษาที่แสดงสำหรับ KHelper หากไม่มีการเลือกภาษา KHelper จะตรวจจับภาษาดังกล่าวโดยอัตโนมัติจากภาษาของระบบของคุณ",
       "label": "ภาษา",
       "searchPlaceholder": "ค้นหาภาษา",
-      "noResults": "ไม่พบภาษาที่ตรงกัน",
+      "noResults": "ไม่มีภาษาที่ตรงกัน",
       "current": "ภาษาปัจจุบัน"
+    },
+    "audio": {
+      "loadError": "ไม่สามารถรับรายการอุปกรณ์เอาท์พุตเสียงได้",
+      "title": "อุปกรณ์ส่งสัญญาณเสียง",
+      "scan": "สแกนอีกครั้ง",
+      "scanning": "กำลังสแกน...",
+      "description": "เลือกตำแหน่งที่ผู้ฟังได้ยินเสียง (สตรีม) และตำแหน่งที่คุณจะได้ยินเสียง (หูฟัง)",
+      "separationDescription": "สำหรับเพลงที่แยกกัน สตรีมจะส่งสัญญาณออกเป็นเสียงเครื่องดนตรีเท่านั้น ในขณะที่หูฟังจะส่งสัญญาณออกทั้งเสียงร้องและเพลงบรรเลง",
+      "systemDefault": "ค่าเริ่มต้นของระบบ",
+      "device": "อุปกรณ์ {{index}}",
+      "streamOutput": "ผลลัพธ์ของผู้ชม (สตรีม)",
+      "headphoneOutput": "เอาต์พุตหูฟัง",
+      "syncOffset": "ออฟเซ็ตการซิงค์เอาต์พุตคู่:",
+      "calibrate": "ปรับเทียบ"
+    },
+    "separation": {
+      "title": "คุณภาพการแยกเสียงร้อง",
+      "fast": "เร็ว",
+      "fastDescription": "ใช้ทรัพยากรน้อยลงและเสร็จเร็วที่สุดโดยมีคุณภาพต่ำกว่าเล็กน้อย",
+      "normal": "ปกติ",
+      "normalDescription": "แนะนำ. ความเร็วและคุณภาพสมดุลกัน",
+      "high": "คุณภาพสูง",
+      "highDescription": "ใช้เวลานานกว่าแต่ให้ผลลัพธ์การแยกที่ดีที่สุด"
+    },
+    "updates": {
+      "title": "อัพเดตซอฟต์แวร์",
+      "check": "ตรวจสอบการอัปเดต",
+      "checking": "กำลังตรวจสอบ...",
+      "neverChecked": "ไม่เคยตรวจสอบ",
+      "lastChecked": "ตรวจสอบล่าสุด: {{time}}"
+    },
+    "overlay": {
+      "unsavedLeaveConfirm": "เทมเพลตการแสดงข้อมูลสดมีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก ออกจากบรรณาธิการ?"
+    },
+    "hotkeys": {
+      "title": "ปุ่มลัด",
+      "resetRecommended": "คืนค่าเริ่มต้นที่แนะนำ",
+      "resetRecommendedTitle": "คืนค่าเฉพาะปุ่มลัดด้วยค่าเริ่มต้นที่แนะนำ ปุ่มลัดแบบกำหนดเองที่ไม่มีค่าเริ่มต้นจะไม่ถูกเขียนทับ",
+      "enableGlobal": "เปิดใช้งานปุ่มลัดทั่วโลก",
+      "globalDisabledDescription": "เมื่อปิดอยู่ ทางลัดจะทำงานภายในหน้าต่าง KHelper เท่านั้น",
+      "function": "ฟังก์ชั่น",
+      "local": "ฮอตคีย์ท้องถิ่น",
+      "global": "ฮอตคีย์สากล",
+      "recordingHint": "กดทางลัด, Esc เพื่อยกเลิก, Backspace เพื่อล้าง",
+      "recordHint": "คลิก จากนั้นกดทางลัด",
+      "recording": "กดทางลัด...",
+      "mediaKey": "มีเดียคีย์",
+      "clearShortcut": "ล้างปุ่มลัดนี้",
+      "status": {
+        "title": "สถานะ",
+        "duplicateGlobal": "ทางลัดที่ซ้ำกัน",
+        "duplicateLocal": "ทางลัดในเครื่องที่ซ้ำกัน",
+        "globalDisabled": "ปุ่มลัดส่วนกลางถูกปิดใช้งาน",
+        "applied": "ประยุกต์แล้ว"
+      }
+    },
+    "calibration": {
+      "title": "การสอบเทียบซิงค์เอาต์พุตคู่",
+      "purposeTitle": "วัตถุประสงค์",
+      "purpose": "ปรับการหน่วงเวลาเพื่อให้สตรีมมอนิเตอร์ย้อนกลับและการคลิกหูฟังโดยตรงอยู่ในแนวเดียวกันอย่างสมบูรณ์แบบ",
+      "preparationTitle": "ตั้งค่า",
+      "obsMonitoringTitle": "เปิดใช้งานการตรวจสอบ OBS:",
+      "obsMonitoring": "ในมิกเซอร์ OBS คลิกเฟือง ⚙ → คุณสมบัติเสียงขั้นสูง → ตั้งค่าแหล่งกำเนิดเสียงของคุณเป็น Monitor Only หรือ Monitor and Output",
+      "sampleRateTitle": "ยืนยันอัตราตัวอย่าง:",
+      "sampleRate": "ตรวจสอบป้าย Hz ที่มุมขวาบนของการ์ดอุปกรณ์แต่ละใบที่เลือกในการตั้งค่า ตรวจสอบให้แน่ใจว่าอุปกรณ์ทุกเครื่องและ OBS ใช้อัตราการสุ่มตัวอย่างเท่ากัน เช่น 48000 Hz",
+      "operationTitle": "การดำเนินงาน",
+      "operation": "คลิกเริ่มการทดสอบด้านล่าง จากนั้นปรับแถบเลื่อนจนกระทั่งการคลิกสองครั้งซ้อนทับกันเป็นเสียงเดียว",
+      "streamDelay": "← ความล่าช้าในการสตรีม",
+      "monitorDelay": "ตรวจสอบความล่าช้า →",
+      "stopTest": "หยุดการทดสอบ",
+      "startTest": "เริ่มการทดสอบ",
+      "saveApply": "บันทึกและนำไปใช้"
+    }
+  },
+  "about": {
+    "descriptionLine1": "ตัวช่วยคาราโอเกะแบบครบวงจรสำหรับ VTubers และสตรีมเมอร์",
+    "descriptionLine2": "สำหรับข้อบกพร่องหรือแนวคิดเกี่ยวกับคุณลักษณะ Discord คือช่องทางที่ดีที่สุดในการติดต่อเรา",
+    "links": {
+      "website": {
+        "title": "เว็บไซต์อย่างเป็นทางการ",
+        "label": "เว็บไซต์"
+      },
+      "twitter": {
+        "title": "ติดตามผู้สร้าง",
+        "label": "ติดตาม"
+      },
+      "discord": {
+        "title": "เข้าร่วมชุมชน Discord",
+        "label": "Discord"
+      },
+      "report": {
+        "title": "รายงานปัญหาหรือขอคุณสมบัติใน GitHub",
+        "label": "รายงาน"
+      }
+    }
+  },
+  "updatesPopup": {
+    "title": "มีเวอร์ชันใหม่แล้ว",
+    "noReleaseNotes": "ไม่มีบันทึกประจำรุ่นสำหรับเวอร์ชันนี้",
+    "error": "การอัปเดตล้มเหลว ตรวจสอบการเชื่อมต่อเครือข่ายของคุณหรือลองอีกครั้งในภายหลัง",
+    "ignore": "ละเว้นเวอร์ชันนี้",
+    "download": "เปิดหน้าดาวน์โหลด"
+  },
+  "tasks": {
+    "title": "งานที่ใช้งานอยู่",
+    "download": "ดาวน์โหลด",
+    "separation": "เพลงแยก",
+    "queuedDownload": "เข้าคิว...",
+    "failed": "ล้มเหลว",
+    "completed": "เสร็จสิ้น",
+    "viewAllDownloads": "ดูผลการดาวน์โหลดทั้งหมด",
+    "copyError": "เกิดข้อผิดพลาดในการคัดลอก",
+    "copied": "คัดลอก ✓",
+    "hideError": "ซ่อนข้อผิดพลาด",
+    "viewError": "ดูข้อผิดพลาด",
+    "empty": "ไม่มีงานที่กำลังดำเนินอยู่",
+    "actions": {
+      "cancel": "ยกเลิก",
+      "retry": "ลองอีกครั้ง",
+      "remove": "ลบ"
+    },
+    "separationStatus": {
+      "queued": "เข้าคิว",
+      "running": "กำลังประมวลผล",
+      "succeeded": "เสร็จสิ้น",
+      "failed": "ล้มเหลว"
+    },
+    "quality": {
+      "fast": "รวดเร็ว",
+      "normal": "ปกติ"
+    }
+  },
+  "playbackControl": {
+    "clickToEdit": "คลิกเพื่อแก้ไข"
+  },
+  "domain": {
+    "songType": {
+      "original": "ต้นฉบับ",
+      "instrumental": "ดนตรีบรรเลง",
+      "all": "ทุกประเภท"
+    },
+    "audioStatus": {
+      "streaming": "ออนไลน์",
+      "original_only": "ยังไม่แยกเสียง",
+      "separation_pending": "กำลังรอ",
+      "separating": "แยก",
+      "separation_failed": "แยกเสียงไม่สำเร็จ",
+      "separated": "แยกเสียงแล้ว",
+      "ready": "ไม่แยกจากกัน",
+      "missing": "ไม่แยกจากกัน",
+      "error": "เกิดข้อผิดพลาด",
+      "all": "เสียงทั้งหมด"
+    },
+    "lyricsStatus": {
+      "none": "ไม่มีเนื้อเพลง",
+      "text_only": "ข้อความธรรมดา",
+      "synced": "ซิงค์แล้ว",
+      "all": "เนื้อเพลงทั้งหมด",
+      "shortNone": "ไม่มี"
+    },
+    "source": {
+      "file": "ไฟล์ในเครื่อง",
+      "youtube": "YouTube",
+      "all": "แหล่งที่มาทั้งหมด"
+    },
+    "favorite": {
+      "all": "รายการโปรดทั้งหมด",
+      "favorite": "ของโปรด",
+      "not_favorite": "ไม่ใช่รายการโปรด"
+    },
+    "downloadStatus": {
+      "queued": "เข้าคิว",
+      "downloading": "กำลังดาวน์โหลด",
+      "processing": "กำลังประมวลผล",
+      "completed": "เสร็จสิ้น",
+      "failed": "ล้มเหลว"
+    },
+    "hotkeys": {
+      "groups": {
+        "playback": "การเล่น",
+        "custom": "ทางลัดแบบกำหนดเอง"
+      },
+      "unset": "ไม่ได้ตั้งค่า",
+      "failures": {
+        "plainGlobal": "ปุ่มลัดส่วนกลางจะต้องมีตัวแก้ไข",
+        "duplicate": "ทางลัดที่ซ้ำกัน",
+        "occupied": "ใช้โดยแอปอื่น"
+      },
+      "actions": {
+        "playPause": {
+          "label": "เล่น / หยุดชั่วคราว",
+          "description": "สลับการเล่นเพลงปัจจุบัน"
+        },
+        "nextTrack": {
+          "label": "แทร็กถัดไป",
+          "description": "เล่นเพลงถัดไปในคิว"
+        },
+        "previousTrack": {
+          "label": "แทร็กก่อนหน้า",
+          "description": "เล่นเพลงก่อนหน้าในคิว"
+        },
+        "toggleMiniPlayer": {
+          "label": "มินิเพลเยอร์",
+          "description": "แสดงหรือซ่อนเครื่องเล่นขนาดเล็ก"
+        },
+        "focusSearch": {
+          "label": "ค้นหา",
+          "description": "เน้นช่องค้นหาด้านบน"
+        },
+        "toggleStreamMode": {
+          "label": "โหมดสตรีม",
+          "description": "เข้าหรือออกจากโหมดสตรีม"
+        },
+        "instrumentalVolumeUp": {
+          "label": "ระดับเสียงเครื่องดนตรี +",
+          "description": "เพิ่มระดับเสียงเครื่องดนตรี 5%"
+        },
+        "instrumentalVolumeDown": {
+          "label": "ระดับเสียงเครื่องดนตรี -",
+          "description": "ลดระดับเสียงเครื่องดนตรีลง 5%"
+        },
+        "vocalVolumeUp": {
+          "label": "ระดับเสียงร้อง +",
+          "description": "เพิ่มระดับเสียงร้อง 5%"
+        },
+        "vocalVolumeDown": {
+          "label": "ระดับเสียงร้อง -",
+          "description": "ลดระดับเสียงร้องลง 5%"
+        }
+      }
+    },
+    "viewCount": "{{count}} การดู",
+    "viewCountTenThousands": "{{count}} การดู"
+  },
+  "shell": {
+    "nav": {
+      "browse": "เรียกดู",
+      "library": "ห้องสมุด",
+      "downloads": "ดาวน์โหลด",
+      "lyrics": "บรรณาธิการเนื้อเพลง",
+      "myMusic": "เพลงของฉัน",
+      "favorites": "รายการโปรด",
+      "recent": "เพิ่งเล่น",
+      "playlists": "เพลย์ลิสต์ของฉัน",
+      "addPlaylist": "เพิ่มเพลย์ลิสต์",
+      "playlistName": "ชื่อเพลย์ลิสต์",
+      "deletePlaylistConfirm": "ลบเพลย์ลิสต์นี้ใช่ไหม"
+    },
+    "topBar": {
+      "searchPlaceholder": "ค้นหาเพลง/ศิลปิน",
+      "recentSearches": "การค้นหาล่าสุด",
+      "clear": "ชัดเจน",
+      "noRecentSearches": "ไม่มีการค้นหาล่าสุด",
+      "localMatches": "การแข่งขันห้องสมุดท้องถิ่น",
+      "viewAll": "ดูทั้งหมด ->",
+      "noLocalMatches": "ไม่มีเพลงท้องถิ่นที่ตรงกัน",
+      "youtubeResults": "YouTube ผลลัพธ์สตรีม",
+      "suggestions": "คำแนะนำการค้นหา",
+      "searching": "กำลังค้นหา...",
+      "noOnlineResults": "ไม่มีผลลัพธ์ที่เกี่ยวข้อง",
+      "showMore": "แสดงเพิ่มเติม",
+      "tasks": "งาน",
+      "about": "เกี่ยวกับ",
+      "miniPlayer": "มินิเพลเยอร์",
+      "addToPlaylist": "เพิ่มลงในเพลย์ลิสต์",
+      "more": "เพิ่มเติม",
+      "updateFailed": "การตรวจสอบการอัปเดตล้มเหลว",
+      "updateAvailable": "มีเวอร์ชันใหม่แล้ว"
+    },
+    "player": {
+      "noSong": "ไม่ได้เลือกเพลง",
+      "unknownSong": "เพลงที่ไม่รู้จัก",
+      "nextSong": "ถัดไป: {{title}}",
+      "emptySetlist": "รายการเซ็ตว่างเปล่า",
+      "order": "เล่นตามลำดับ",
+      "repeatOne": "ทำซ้ำหนึ่ง",
+      "random": "สับเปลี่ยน",
+      "stream": "โหมดไลฟ์",
+      "enterStream": "เข้าสู่โหมดไลฟ์",
+      "closeStream": "ปิดโหมดไลฟ์",
+      "cloudStreamingTooltip": "การสตรีมออนไลน์ - ระดับเสียง ความเร็ว และการแยกเสียงพูดไม่พร้อมใช้งานจนกว่าจะดาวน์โหลด",
+      "cloudStreaming": "คลาวด์สตรีม",
+      "addFavorite": "เพิ่มรายการโปรด",
+      "removeFavorite": "ลบรายการโปรด",
+      "switchModeHint": "ใช้แถบด้านข้างเพื่อสลับโหมด",
+      "previous": "ก่อนหน้า",
+      "next": "ถัดไป",
+      "speed": "ความเร็ว",
+      "speedTooltip": "ความเร็ว",
+      "speedDisabledTooltip": "ความเร็วไม่พร้อมใช้งานสำหรับการสตรีมออนไลน์",
+      "pitch": "คีย์",
+      "pitchTooltip": "คีย์",
+      "pitchDisabledTooltip": "การเสนอขายไม่พร้อมใช้งานสำหรับสตรีมออนไลน์",
+      "instrumental": "ดนตรีบรรเลง",
+      "vocal": "เสียงร้อง",
+      "queue": "คิว"
+    },
+    "queue": {
+      "title": "คิว",
+      "count": "{{count}} เพลง",
+      "clear": "ชัดเจน",
+      "confirmClear": "ชัดเจนไหม?",
+      "empty": "คิวว่างแล้ว. เพิ่มเพลงจากไลบรารีหรือเพลย์ลิสต์",
+      "remove": "เอาออกจากคิว",
+      "hint": "ดับเบิลคลิกเพื่อเล่นเพลงนี้ทันที"
+    },
+    "window": {
+      "minimize": "ย่อเล็กสุด",
+      "maximize": "ขยายใหญ่สุด",
+      "restore": "คืนค่า",
+      "close": "ปิด"
+    }
+  },
+  "miniPlayer": {
+    "speedTitle": "ความเร็ว: {{value}}x",
+    "pitchTitle": "นำเสนอ: {{value}}"
+  },
+  "electron": {
+    "tray": {
+      "checkingUpdates": "กำลังตรวจสอบการอัปเดต...",
+      "checkUpdates": "ตรวจสอบการอัปเดต",
+      "openMainWindow": "เปิดหน้าต่างหลัก",
+      "settings": "การตั้งค่า",
+      "quit": "เลิก"
+    },
+    "dialog": {
+      "deleteSong": {
+        "title": "ลบเพลง",
+        "message": "ลบเพลงนี้ใช่ไหม สิ่งนี้ไม่สามารถยกเลิกได้"
+      },
+      "cancel": "ยกเลิก",
+      "delete": "ลบ"
+    }
+  },
+  "songList": {
+    "empty": "ไม่มีเพลง",
+    "playVisible": "เล่นรายการที่มองเห็นได้",
+    "added": "เพิ่มแล้ว",
+    "addToQueue": "เพิ่มเข้าคิว",
+    "moreActions": "การดำเนินการรายการเพิ่มเติม",
+    "shuffleVisible": "สับเปลี่ยนรายการที่มองเห็นได้",
+    "replaceQueue": "แทนที่คิวและการเล่น",
+    "filteredCount": "กำลังแสดง {{visible}} / {{total}}",
+    "totalCount": "{{count}} ทั้งหมด",
+    "searchPlaceholder": "ค้นหารายการนี้",
+    "searchThisList": "ค้นหารายการนี้",
+    "filter": "ตัวกรอง",
+    "clearCondition": "คลิกเพื่อล้างเงื่อนไขนี้",
+    "clearFilters": "ล้างตัวกรอง",
+    "sortBy": "จัดเรียงตาม {{label}}",
+    "noMatches": "ไม่มีเพลงที่ตรงกับตัวกรองเหล่านี้",
+    "filterChip": {
+      "type": "ประเภท: {{value}}",
+      "audio": "เสียง: {{value}}",
+      "lyrics": "เนื้อเพลง: {{value}}",
+      "source": "ที่มา: {{value}}"
+    },
+    "columns": {
+      "titleArtist": "ชื่อเรื่อง / ศิลปิน",
+      "favorite": "ของโปรด",
+      "type": "ประเภท",
+      "audio": "สถานะเสียง",
+      "lyrics": "เนื้อเพลง",
+      "source": "แหล่งที่มา",
+      "duration": "ระยะเวลา"
+    }
+  },
+  "songManagement": {
+    "libraryTitle": "ห้องสมุด",
+    "libraryDescription": "เพลงที่เพิ่มทั้งหมดจะปรากฏที่นี่ กรอง จัดเรียง และเล่นโดยตรง",
+    "addSongButton": "+ เพิ่มเพลง",
+    "libraryEmpty": "ยังไม่มีเพลง. ใช้ \"+ เพิ่มเพลง\" ที่มุมขวาบนเพื่อเริ่มสร้างรายการเพลงของคุณ",
+    "favoritesTitle": "รายการโปรด",
+    "favoritesDescription": "เพลงโปรดปรากฏที่นี่ กรอง จัดเรียง และเล่นโดยตรง",
+    "favoritesEmpty": "ยังไม่มีเพลงโปรด",
+    "historyTitle": "เพิ่งเล่น",
+    "historyDescription": "เพลงที่เล่นล่าสุดจะปรากฏที่นี่และสามารถเล่นซ้ำได้จากรายการที่กรองในปัจจุบัน",
+    "historyEmpty": "ยังไม่มีประวัติการเล่น",
+    "clearHistory": "ล้างประวัติการเล่น",
+    "clearHistoryConfirm": "ล้างประวัติการเล่นใช่ไหม",
+    "playlistNotFound": "ไม่พบเพลย์ลิสต์",
+    "renameHint": "คลิกเพื่อเปลี่ยนชื่อ",
+    "playlistDescription": "การจัดเรียงและการกรองเพลย์ลิสต์นี้จะเปลี่ยนมุมมองปัจจุบันเท่านั้น ลำดับเพลย์ลิสต์ที่บันทึกไว้จะไม่ถูกเขียนใหม่",
+    "playlistEmpty": "เพลย์ลิสต์นี้ยังไม่มีเพลง เพิ่มเพลงจากไลบรารีหรือรายการอื่นด้วย \"เพิ่มลงในเพลย์ลิสต์...\"",
+    "deletePlaylist": "ลบเพลย์ลิสต์นี้",
+    "deletePlaylistConfirm": "ลบเพลย์ลิสต์ \"{{name}}\" หรือไม่",
+    "removeFromPlaylist": "ลบออกจากเพลย์ลิสต์",
+    "unknownArtist": "ศิลปินที่ไม่รู้จัก",
+    "addToPlaylistOrQueue": "เพิ่มลงในเพลย์ลิสต์ / คิว",
+    "fastBadge": "เร็ว",
+    "normalBadge": "ปกติ",
+    "separate": "แยก",
+    "selected": "เลือกแล้ว",
+    "noPlaylists": "ไม่มีเพลย์ลิสต์",
+    "newPlaylistName": "ชื่อเพลย์ลิสต์ใหม่",
+    "createPlaylist": "สร้างเพลย์ลิสต์",
+    "removeFavorite": "ลบรายการโปรด",
+    "addFavorite": "เพิ่มรายการโปรด",
+    "addToPlaylist": "เพิ่มลงในเพลย์ลิสต์",
+    "addToPlaylistEllipsis": "เพิ่มลงในเพลย์ลิสต์...",
+    "more": "เพิ่มเติม",
+    "renamePlaylist": "เปลี่ยนชื่อ",
+    "startSeparation": "เริ่มแยกทาง",
+    "restartSeparation": "แยกกันอีกแล้ว",
+    "separationQuality": {
+      "fast": "เร็ว",
+      "normal": "ปกติ",
+      "high": "คุณภาพสูง"
+    },
+    "editLyrics": "แก้ไขเนื้อเพลง",
+    "editDetails": "แก้ไขรายละเอียด",
+    "openFolder": "เปิดโฟลเดอร์",
+    "deleteSong": "ลบเพลง",
+    "copyVideoLink": "คัดลอกลิงค์วิดีโอ",
+    "openInBrowser": "เปิดในเบราว์เซอร์เริ่มต้น",
+    "editDialog": {
+      "title": "แก้ไขรายละเอียดเพลง",
+      "titleLabel": "ชื่อเพลง",
+      "artistLabel": "ศิลปิน",
+      "titleRequired": "ชื่อเพลงต้องไม่เว้นว่าง",
+      "saveFailed": "บันทึกไม่สำเร็จ โปรดลองอีกครั้งในภายหลัง",
+      "saving": "กำลังบันทึก..."
+    },
+    "download": {
+      "title": "ตัวจัดการการดาวน์โหลด",
+      "active": "กำลังดาวน์โหลด",
+      "failed": "ดาวน์โหลดล้มเหลว",
+      "completed": "ดาวน์โหลดแล้ว",
+      "downloaded": "ดาวน์โหลดแล้ว",
+      "queuedEllipsis": "เข้าคิว...",
+      "activeQueued": "เข้าคิว",
+      "activeProcessing": "กำลังประมวลผล",
+      "activeProgress": "กำลังดาวน์โหลด {{progress}}%",
+      "quality": {
+        "normal": "ปกติ",
+        "high": "คุณภาพสูง",
+        "best": "ดีที่สุด"
+      },
+      "retryFailed": "ลองอีกครั้งล้มเหลว: {{message}}",
+      "removeConfirm": "ลบบันทึกการดาวน์โหลดนี้หรือไม่",
+      "errorCopied": "คัดลอกข้อความแสดงข้อผิดพลาดแล้ว",
+      "copyError": "เกิดข้อผิดพลาดในการคัดลอก",
+      "remove": "ลบ",
+      "emptyHistory": "ยังไม่มีประวัติการดาวน์โหลด",
+      "downloadEllipsis": "ดาวน์โหลด...",
+      "downloadAs": "ดาวน์โหลดเป็น {{type}}",
+      "customDownload": "ดาวน์โหลดแบบกำหนดเอง",
+      "customDownloadEllipsis": "ดาวน์โหลดแบบกำหนดเอง...",
+      "custom": "กำหนดเอง",
+      "options": "ตัวเลือกการดาวน์โหลด"
+    },
+    "searchResults": {
+      "title": "ผลการค้นหา: \"{{term}}\"",
+      "localMatches": "การแข่งขันห้องสมุดท้องถิ่น",
+      "noLocalMatches": "ไม่มีเพลงท้องถิ่นที่ตรงกับ \"{{term}}\"",
+      "youtubeResults": "YouTube ผลลัพธ์สตรีม",
+      "duration": {
+        "any": "ระยะเวลาใดก็ได้",
+        "under5": "ต่ำกว่า 5 นาที",
+        "5to10": "5 - 10 นาที",
+        "over10": "กว่า 10 นาที"
+      },
+      "date": {
+        "any": "เวลาใดก็ได้",
+        "week": "อัปโหลดในสัปดาห์นี้",
+        "month": "อัพโหลดในเดือนนี้",
+        "year": "อัปโหลดในปีนี้"
+      },
+      "sort": {
+        "relevance": "จัดเรียงตามความเกี่ยวข้อง",
+        "popularity": "จัดเรียงตามจำนวนการดู"
+      },
+      "searchingYoutube": "กำลังค้นหา YouTube...",
+      "columns": {
+        "titleChannel": "ชื่อ / ช่อง",
+        "download": "ดาวน์โหลด"
+      },
+      "noFilteredYoutube": "ไม่มีผลลัพธ์ YouTube ที่ตรงกับตัวกรองปัจจุบัน",
+      "noYoutubeResults": "ไม่พบผลลัพธ์ YouTube",
+      "scrollMore": "เลื่อนลงเพื่อโหลดเพิ่มเติม...",
+      "noMoreYoutube": "ไม่มีผลลัพธ์ YouTube อีกต่อไป",
+      "loadingMore": "กำลังโหลดผลลัพธ์ YouTube เพิ่มเติม..."
+    },
+    "onlineDownload": {
+      "title": "ดาวน์โหลดแบบกำหนดเอง",
+      "titleLabel": "ชื่อเรื่อง",
+      "titlePlaceholder": "ชื่อเพลง",
+      "artistLabel": "ศิลปิน",
+      "artistPlaceholder": "ศิลปิน (ไม่บังคับ)",
+      "typeLabel": "ประเภท",
+      "qualityLabel": "คุณภาพเสียง",
+      "quality": {
+        "normal": "ปกติ (ประหยัดพื้นที่)",
+        "high": "คุณภาพสูง (มาตรฐาน)",
+        "best": "ดีที่สุด (ไฟล์ขนาดใหญ่)"
+      },
+      "lyricsLabel": "เนื้อเพลง",
+      "lyricsMode": {
+        "none": "ไม่มีเนื้อเพลง",
+        "paste": "วางข้อความธรรมดา",
+        "importSearch": "ค้นหา / นำเข้า"
+      },
+      "lyricsPlaceholder": "วางเนื้อเพลง...",
+      "noLyricsSelected": "ไม่ได้เลือกเนื้อเพลง",
+      "import": "นำเข้า",
+      "searchLyrics": "ค้นหาเนื้อเพลง",
+      "enqueue": "เพิ่มลงในคิวดาวน์โหลด",
+      "searchResult": "ผลการค้นหา: {{name}} - {{artist}}"
+    },
+    "addSong": {
+      "title": "เพิ่มเพลง",
+      "localFiles": "ไฟล์ในเครื่อง",
+      "audioFiles": "ไฟล์เสียง",
+      "chooseFiles": "+ เลือกไฟล์",
+      "youtubeLinksLabel": "YouTube ลิงก์ (หนึ่งรายการต่อบรรทัด)",
+      "youtubePlaceholder": "วางลิงก์ YouTube...",
+      "paste": "วาง",
+      "linkCount": "{{count}} ลิงก์",
+      "clear": "ชัดเจน",
+      "parsing": "กำลังแยกวิเคราะห์...",
+      "checkAndImport": "ตรวจสอบและนำเข้า",
+      "lyricsModePasteShort": "วาง",
+      "upload": "อัปโหลด",
+      "emptyFiles": "ไม่ได้เลือกไฟล์",
+      "emptyLinks": "ไม่มีการนำเข้าลิงก์ที่ถูกต้อง",
+      "processing": "กำลังประมวลผล...",
+      "confirmAdd": "ยืนยันการเพิ่ม ({{count}})",
+      "unsavedConfirm": "คุณมีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก ปิดรึยังคะ?"
+    }
+  },
+  "lyrics": {
+    "search": {
+      "title": "ค้นหาเนื้อเพลง",
+      "placeholder": "ค้นหาเพลง/ศิลปิน...",
+      "searching": "กำลังค้นหา...",
+      "noResults": "ไม่มีผลลัพธ์",
+      "preview": "ดูตัวอย่าง",
+      "hidePreview": "ซ่อนการแสดงตัวอย่าง",
+      "useLyrics": "ใช้เนื้อเพลงเหล่านี้"
+    },
+    "style": {
+      "title": "การแสดงเนื้อเพลงในแอป",
+      "description": "การตั้งค่าเหล่านี้ส่งผลต่อมุมมองสตรีมในแอปเท่านั้น และจะไม่เปลี่ยนเทมเพลตซ้อนทับ OBS",
+      "fontSize": "ขนาดตัวอักษร",
+      "inactiveColor": "ข้อความที่ไม่ใช้งาน",
+      "activeColor": "ข้อความที่เน้นสี",
+      "glowColor": "สีเรืองแสง",
+      "strokeColor": "สีเส้นโครงร่าง",
+      "strokeWidth": "ความกว้างของเส้นขีด",
+      "resetDefault": "รีเซ็ตเป็นค่าเริ่มต้น"
+    },
+    "stream": {
+      "nowPlaying": "กำลังเล่นอยู่",
+      "confirmResetTitle": "คลิกอีกครั้งเพื่อยืนยันการรีเซ็ต",
+      "resetProgressTitle": "รีเซ็ตความคืบหน้าในการเล่น",
+      "confirmReset": "ยืนยันการรีเซ็ต?",
+      "notPlaying": "ไม่มีอะไรเล่น",
+      "copyLyricsObs": "คัดลอกลิงก์ OBS เนื้อเพลง",
+      "copySetlistObs": "คัดลอกลิงก์ OBS เซ็ตลิสต์",
+      "copiedLyricsObs": "คัดลอกลิงก์ OBS เนื้อเพลงแล้ว: {{name}}",
+      "copiedSetlistObs": "คัดลอกลิงก์ OBS เซ็ตลิสต์แล้ว: {{name}}",
+      "obsTemplateSettings": "การตั้งค่าเทมเพลต OBS",
+      "upNext": "ถัดไป ({{count}})",
+      "played": "เล่นแล้ว ({{count}})",
+      "upNextNoCount": "ต่อไป",
+      "playedNoCount": "เล่นแล้ว",
+      "noPlayedSongs": "ยังไม่มีเพลงที่เล่น",
+      "requeueTitle": "เพิ่มเพลงนี้กลับที่ด้านล่างของรายการถัดไป",
+      "queueEmpty": "เพิ่มเพลงเข้าคิวก่อน",
+      "nextSongBadge": "ถัดไป •",
+      "removeFromSetlist": "ลบออกจากรายการ"
+    },
+    "editor": {
+      "title": "บรรณาธิการเนื้อเพลง",
+      "songList": "รายการเพลง",
+      "selectSong": "เลือกเพลงจากด้านซ้าย",
+      "confirmResetTimes": "รีเซ็ตเครื่องหมายเวลาทั้งหมดไหม สิ่งนี้ไม่สามารถยกเลิกได้",
+      "confirmOverwrite": "เพลงนี้มีเนื้อเพลงอยู่แล้ว เขียนทับไฟล์เนื้อเพลงที่มีอยู่หรือไม่",
+      "alignControls": "การควบคุมการจัดตำแหน่ง",
+      "alignDescription": "เมื่อเปิดโหมดแตะ ให้กด J เพื่อใช้เวลาเล่นปัจจุบันกับเนื้อเพลงถัดไป",
+      "resetAllTimes": "รีเซ็ตเวลาทั้งหมด",
+      "lyricsText": "ข้อความเนื้อเพลง",
+      "saving": "กำลังบันทึก...",
+      "saved": "บันทึกแล้ว",
+      "clearBlank": "ล้างข้อมูลว่าง",
+      "apply": "สมัคร",
+      "lyricsPlaceholder": "ใส่เนื้อเพลง...",
+      "loadingLyrics": "กำลังโหลดเนื้อเพลง...",
+      "noLyricsHelp": "ยังไม่มีเนื้อเพลง วางและบันทึกข้อความเนื้อเพลงก่อน",
+      "setToCurrentTime": "ตั้งเป็นเวลาเล่นปัจจุบัน",
+      "applyCurrentTimeTitle": "ใช้เวลาเล่นปัจจุบัน",
+      "applyCurrentTime": "ใช้เวลาปัจจุบัน",
+      "earlier": "ก่อนหน้านี้",
+      "later": "ต่อมา",
+      "nextTapLine": "การแตะครั้งต่อไปจะมีผลกับบรรทัดนี้",
+      "addLineBelow": "เพิ่มบรรทัดด้านล่าง",
+      "clickAgainDelete": "คลิกอีกครั้งเพื่อลบ",
+      "tapModeTitle": "แตะโหมด (J)",
+      "tapMode": "แตะโหมด",
+      "tap": "แตะ",
+      "saveLrc": "บันทึก LRC",
+      "messages": {
+        "loadedLrc": "โหลดแล้ว LRC",
+        "loadedPlain": "โหลดข้อความธรรมดาแล้ว",
+        "noLyrics": "ไม่มีเนื้อเพลง",
+        "appliedAndReset": "ใช้และรีเซ็ตแล้ว",
+        "appliedText": "ข้อความประยุกต์",
+        "timesReset": "รีเซ็ตเวลาแล้ว",
+        "emptyLinesCleared": "ล้างบรรทัดว่างแล้ว",
+        "savedLrc": "บันทึก LRC (ซิงค์ TXT)",
+        "importedLrc": "นำเข้า LRC",
+        "importedPlain": "นำเข้าข้อความธรรมดา",
+        "smartAlignDone": "การจัดตำแหน่งอัจฉริยะเสร็จสมบูรณ์"
+      },
+      "errors": {
+        "readFailed": "ไม่สามารถอ่านเนื้อเพลงได้",
+        "loadFailed": "โหลดไม่สำเร็จ",
+        "saveFailed": "บันทึกไม่สำเร็จ",
+        "tapFirst": "แตะเพื่อจัดตำแหน่งก่อน",
+        "importFailed": "ไม่สามารถนำเข้าได้",
+        "noValidMarkers": "ไม่สามารถจัดตำแหน่ง: ไม่พบเครื่องหมายเวลาที่ถูกต้อง",
+        "invalidTimeline": "ไม่สามารถคำนวณ: เครื่องหมายเวลาไม่เพียงพอหรือลำดับไม่ถูกต้อง"
+      },
+      "smartAlign": {
+        "label": "จัดตำแหน่งอัจฉริยะ",
+        "tooltip": "จัดตำแหน่งอัจฉริยะ: ตั้งเวลาเริ่มต้นและสิ้นสุด จากนั้นปรับจังหวะเนื้อเพลงโดยอัตโนมัติ",
+        "startTitle": "Smart Align - ตั้งค่าเริ่มต้น",
+        "endTitle": "Smart Align - ตั้งค่าสิ้นสุด",
+        "startDescription": "ย้ายเครื่องเล่นไปยังเวลาเริ่มต้นที่ถูกต้องสำหรับเนื้อเพลงท่อนแรก จากนั้นคลิกตั้งค่าเริ่มต้นด้านล่าง",
+        "endDescription": "ย้ายเครื่องเล่นไปยังเวลาเริ่มต้นที่ถูกต้องสำหรับท่อนเนื้อเพลงสุดท้าย จากนั้นคลิก Set End ด้านล่าง KHelper จะปรับจังหวะเวลาสำหรับเนื้อเพลงทั้งหมดในระหว่างนั้น",
+        "setStart": "ตั้งค่าเริ่มต้น (ออฟเซ็ต)",
+        "setEnd": "ตั้งค่าสิ้นสุด (สเกล)"
+      },
+      "unsaved": {
+        "title": "การเปลี่ยนแปลงที่ไม่ได้บันทึก",
+        "switchSongMessage": "การสลับเพลงจะละทิ้งการเปลี่ยนแปลงที่ยังไม่ได้บันทึก",
+        "leavePageMessage": "การออกจากหน้านี้จะเป็นการยกเลิกการเปลี่ยนแปลงที่ยังไม่ได้บันทึก",
+        "discard": "อย่าบันทึก",
+        "saveAndContinue": "บันทึกและดำเนินการต่อ"
+      }
+    }
+  },
+  "overlays": {
+    "defaults": {
+      "currentLabel": "ตอนนี้กำลังร้องเพลง",
+      "upcomingLabel": "ต่อไป",
+      "historyLabel": "ซอง",
+      "waitingNext": "รอเพลงต่อไปครับ",
+      "notPlaying": "ไม่มีอะไรเล่น",
+      "noUpcoming": "ไม่มีเพลงที่กำลังจะมาถึง",
+      "noHistory": "ยังไม่มีเพลงร้อง.",
+      "defaultLyricsDesign": "เนื้อเพลงเริ่มต้น",
+      "defaultSetlistDesign": "รายการเซ็ตเริ่มต้น",
+      "newLyricsDesign": "การออกแบบเนื้อเพลงใหม่",
+      "newSetlistDesign": "การออกแบบเซ็ตลิสต์ใหม่",
+      "lyricsDesignNumber": "การออกแบบเนื้อเพลง {{index}}",
+      "setlistDesignNumber": "การออกแบบเซ็ตลิสต์ {{index}}"
+    },
+    "confirm": {
+      "deleteLyricsDesign": "ลบ \"{{name}}\" หรือไม่ ลิงก์ OBS ที่มีอยู่จะกลับไปใช้การออกแบบเนื้อเพลงเริ่มต้น",
+      "deleteSetlistDesign": "ลบ \"{{name}}\" หรือไม่ ลิงก์ OBS ที่มีอยู่จะกลับไปใช้การออกแบบรายการเซ็ตเริ่มต้น",
+      "deleteDesign": "ลบ \"{{name}}\" หรือไม่ ลิงก์ OBS ที่มีอยู่จะกลับไปใช้การออกแบบเริ่มต้น"
+    },
+    "templates": {
+      "classic_list": "รายการคลาสสิก",
+      "record_card": "บันทึกการ์ด",
+      "compact_strip": "แถบขนาดกะทัดรัด",
+      "neon_signboard": "ป้ายไฟนีออน",
+      "countdown_counter": "คณะกรรมการนับถอยหลัง",
+      "index_grid": "รายการทั้งหมด",
+      "pager_console": "เรโทรเพจเจอร์",
+      "cassette_deck": "เครื่องเล่นเทป",
+      "stage_marquee": "เวทีกระโจม",
+      "photo_stack": "รายการเซ็ตโพลารอยด์",
+      "vertical_column": "รายการตัวเว้นวรรคแนวตั้ง",
+      "spinning_disk_list": "รายการดิสก์ปั่น"
+    },
+    "ui": {
+      "add": "เพิ่ม",
+      "revert": "เปลี่ยนกลับ",
+      "deleteCurrentDesign": "ลบการออกแบบปัจจุบัน",
+      "resetDesign": "รีเซ็ตการออกแบบนี้",
+      "design": "การออกแบบ",
+      "lyrics": "เนื้อเพลง",
+      "setlist": "รายการเซ็ตลิสต์",
+      "obsLink": "OBS ลิงก์",
+      "copyObsLink": "คัดลอกลิงก์ OBS",
+      "copiedLyricsObs": "คัดลอกเนื้อเพลง OBS ลิงก์แล้ว",
+      "copiedSetlistObs": "คัดลอกลิงก์รายการชุด OBS แล้ว",
+      "title": "เทมเพลตการซ้อนทับแบบสด",
+      "description": "กำหนดค่าเทมเพลตการซ้อนทับเนื้อเพลงและรายการเซ็ตลิสต์ที่ใช้โดย OBS ลิงก์ที่มีอยู่จะยังคงใช้งานได้ และข้อความในตัวจะเป็นไปตามภาษาของแอปที่เลือก",
+      "lyricsDesigns": "การออกแบบการซ้อนทับเนื้อเพลง",
+      "setlistDesigns": "การออกแบบการซ้อนทับรายการ Setlist",
+      "lyricsOverlay": "เนื้อเพลงซ้อนทับ",
+      "setlistOverlay": "การซ้อนทับรายการเซ็ตลิสต์",
+      "lyricsEditor": "ตัวแก้ไขการซ้อนทับเนื้อเพลง",
+      "setlistEditor": "ตัวแก้ไขการซ้อนทับ Setlist",
+      "lyricsDesignDescription": "ปรับเค้าโครงเนื้อเพลง OBS ภาพเคลื่อนไหว และการแสดงความช่วยเหลือภาษาญี่ปุ่น",
+      "setlistDesignDescription": "ปรับเทมเพลตรายการเซ็ต OBS ป้ายกำกับ ภาพเคลื่อนไหว และสถานะว่าง",
+      "fillHeight": "เติมความสูง",
+      "showLineCount": "แสดง {{count}} เส้น",
+      "sampleLyricsPreview": "ตัวอย่างเนื้อเพลงภาษาญี่ปุ่นตัวอย่าง",
+      "sampleData": "ข้อมูลตัวอย่าง",
+      "currentQueue": "คิวปัจจุบัน",
+      "font": "แบบอักษร",
+      "lineCount": "จำนวนบรรทัด",
+      "animation": "แอนิเมชั่น",
+      "scroll": "เลื่อน",
+      "fade": "จางลง",
+      "slide": "สไลด์",
+      "scale": "สเกล",
+      "activeSize": "ขนาดที่ใช้งานอยู่",
+      "inactiveSize": "ขนาดที่ไม่ได้ใช้งาน",
+      "lineGap": "ช่องว่างเส้น",
+      "letterSpacing": "การเว้นวรรคจดหมาย",
+      "colorsReadability": "สีและความสามารถในการอ่าน",
+      "activeColor": "สีที่ใช้งานอยู่",
+      "inactiveColor": "สีที่ไม่ใช้งาน",
+      "passedColor": "ซองสี",
+      "strokeColor": "สีเส้นโครงร่าง",
+      "strokeWidth": "ความกว้างของเส้นขีด",
+      "glowColor": "สีเรืองแสง",
+      "glowStrength": "ความแข็งแกร่งเรืองแสง",
+      "japaneseAssist": "ตัวช่วยภาษาญี่ปุ่น",
+      "furigana": "ฟุริกานะ",
+      "romaji": "โรมาจิ",
+      "followApp": "ตามแอป",
+      "show": "แสดง",
+      "hide": "ซ่อน",
+      "romajiLetterSpacing": "การเว้นวรรคตัวอักษรโรมาจิ",
+      "romajiMarginTop": "มาร์จิ้นบนสุดของโรมาจิ",
+      "style": "สไตล์",
+      "preset": "ที่ตั้งไว้ล่วงหน้า",
+      "accentColor": "สีเน้น",
+      "textColor": "สีข้อความ",
+      "secondaryText": "ข้อความรอง",
+      "visibleContent": "เนื้อหาที่มองเห็นได้",
+      "currentSong": "เพลงปัจจุบัน",
+      "footerTicker": "ทิกเกอร์ส่วนท้าย",
+      "counts": "นับ",
+      "artist": "ศิลปิน",
+      "numbering": "การนับเลข",
+      "thumbnail": "ภาพขนาดย่อ",
+      "labelsMotion": "ป้ายกำกับและการเคลื่อนไหว",
+      "current": "ปัจจุบัน",
+      "upcomingTickerLabel": "ป้ายกำกับทิกเกอร์ที่กำลังจะมีขึ้น",
+      "density": "ความหนาแน่น",
+      "compact": "กะทัดรัด",
+      "comfortable": "สะดวกสบาย",
+      "frame": "กรอบ",
+      "solid": "แข็ง",
+      "glass": "แก้ว",
+      "neon": "นีออน",
+      "outerRadius": "รัศมีภายนอก",
+      "innerRadius": "รัศมีรายการภายใน",
+      "columns": "คอลัมน์",
+      "decorationIntensity": "ความเข้มของการตกแต่ง",
+      "textureOpacity": "พื้นผิว",
+      "motionDetail": "การเคลื่อนไหวการตกแต่ง",
+      "off": "ปิด",
+      "subtle": "บอบบาง",
+      "full": "เต็ม",
+      "textEffect": "เอฟเฟกต์ข้อความ",
+      "normal": "ปกติ",
+      "pixel": "พิกเซล",
+      "tickerSource": "แหล่งที่มาของทิกเกอร์",
+      "historyTickerLabel": "ป้ายชื่อประวัติ",
+      "footerLabel": "ป้ายส่วนท้าย",
+      "tickerSpeed": "ความเร็วทิกเกอร์",
+      "cassetteDepth": "ความลึกของคาสเซ็ตต์",
+      "diskSpinMode": "ดิสก์แอนิเมชั่น",
+      "spin": "สปิน",
+      "diskSpinSpeed": "ความเร็วของดิสก์",
+      "lightAnimation": "แอนิเมชั่นแสง",
+      "breathe": "หายใจเข้า",
+      "flash": "แฟลช",
+      "chase": "เชส",
+      "rainbow": "สายรุ้ง",
+      "lightPalette": "สีอ่อน",
+      "warm": "อบอุ่น",
+      "cool": "เจ๋ง",
+      "lightSpeed": "ความเร็วแสง",
+      "photoTexture": "พื้นผิวภาพถ่าย",
+      "cardAngle": "มุมการ์ด",
+      "cardTransition": "การเปลี่ยนบัตร",
+      "on": "เปิด",
+      "currentGlow": "เรืองแสงในปัจจุบัน",
+      "noteColor": "หมายเหตุสี",
+      "contentInset": "ช่องว่างภายในแนวนอน",
+      "topOffset": "ตำแหน่งสูงสุด",
+      "itemGap": "ช่องว่างรายการ",
+      "titleBarOpacity": "พื้นหลังแถบชื่อเรื่อง",
+      "dividerOpacity": "ตัวแบ่ง",
+      "currentFontSize": "ขนาดตัวอักษรปัจจุบัน",
+      "reserveFontSize": "ขนาดตัวอักษรที่กำลังจะมีขึ้น",
+      "rowGap": "ช่องว่างแถว",
+      "historyOpacity": "ความทึบของประวัติศาสตร์",
+      "diskSize": "ขนาดดิสก์",
+      "diskStyle": "สไตล์ดิสก์",
+      "vinyl": "ไวนิล",
+      "ring": "แหวน",
+      "dot": "จุด",
+      "thumbnailBorder": "เส้นขอบภาพขนาดย่อ",
+      "all": "ทั้งหมด",
+      "listScroll": "รายการเลื่อน",
+      "scrollSpeed": "ความเร็วในการเลื่อน",
+      "pauseTime": "เวลาหยุดชั่วคราว",
+      "changeAnimation": "ภาพเคลื่อนไหวเปลี่ยนเพลง",
+      "emptyState": "สถานะว่างเปล่า",
+      "showWaitingText": "แสดงข้อความรอ",
+      "waitingText": "รอข้อความ",
+      "showWaitingSongTitle": "แสดงชื่อเพลงที่กำลังจะมีขึ้น",
+      "pausePreview": "หยุดดูตัวอย่างชั่วคราว",
+      "playPreview": "เล่นตัวอย่าง",
+      "normalMode": "โหมดปกติ",
+      "previewPrevious": "ดูตัวอย่างก่อนหน้า",
+      "previewNext": "ดูตัวอย่าง ถัดไป",
+      "resetPreview": "รีเซ็ตสถานะแสดงตัวอย่าง",
+      "copyName": "{{name}} สำเนา",
+      "id": "รหัส: {{id}}",
+      "savedObs": "บันทึกเทมเพลต OBS แล้ว",
+      "obsLinkDescription": "ลิงก์ OBS ใช้การออกแบบและภาษาของแอปที่เลือก",
+      "emptyStateDescription": "ควบคุมว่าโอเวอร์เลย์เซ็ตลิสต์ OBS จะแสดงข้อความรอหรือซ่อนเนื้อหาเมื่อไม่มีอะไรเล่นอยู่หรือโหมดไลฟ์กำลังรออยู่"
     }
   }
 }

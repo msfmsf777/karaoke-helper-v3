@@ -224,11 +224,22 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ value, onChange }) 
                   <img src={option.flagSrc} alt="" aria-hidden="true" style={{ width: '28px', height: '18px', borderRadius: '3px', objectFit: 'cover', flexShrink: 0 }} />
                 )}
                 <span style={{ display: 'flex', alignItems: 'baseline', gap: '6px', minWidth: 0, flex: 1 }}>
-                  <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{option.nativeName}</span>
+                  <span style={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{option.nativeName}</span>
                   <span style={{ color: '#bbb', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{option.localizedName}</span>
                 </span>
                 {option.code === value && (
-                  <span style={{ color: 'var(--accent-color)', fontSize: '12px', flexShrink: 0 }}>
+                  <span
+                    title={t('settings.language.current')}
+                    style={{
+                      color: 'var(--accent-color)',
+                      fontSize: '12px',
+                      flexShrink: 0,
+                      maxWidth: '88px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
                     {t('settings.language.current')}
                   </span>
                 )}
