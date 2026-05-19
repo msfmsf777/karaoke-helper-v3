@@ -24,7 +24,16 @@ const isMiniPlayer = hash.includes('mini-player');
 const isOverlay = isSetlist || isLyrics;
 
 if (isOverlay || isMiniPlayer) {
+  document.documentElement.style.background = 'transparent';
+  document.body.style.background = 'transparent';
   document.body.style.backgroundColor = 'transparent';
+  document.body.style.overflow = 'hidden';
+
+  const root = document.getElementById('root');
+  if (root) {
+    root.style.background = 'transparent';
+    root.style.backgroundColor = 'transparent';
+  }
 }
 
 let ComponentToRender: React.ComponentType = App;
