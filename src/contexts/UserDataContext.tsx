@@ -65,6 +65,25 @@ interface UserDataContextType {
     setOverlayTemplates: (config: OverlayTemplatesConfig) => void;
 }
 
+type LoadedSettings = {
+    separationQuality: 'high' | 'normal' | 'fast';
+    language?: SupportedLanguage;
+    lyricStyles?: LyricStyleConfig;
+    songPreferences?: Record<string, { furigana?: boolean; romaji?: boolean }>;
+    hotkeys?: HotkeyConfig;
+    songListViews?: SongListViewConfigs;
+    overlayTemplates?: OverlayTemplatesConfig;
+};
+
+type SettingsLoadResult = {
+    settings: LoadedSettings;
+    status: 'ok' | 'missing' | 'restored-from-backup' | 'corrupt-defaulted';
+    sourcePath: string;
+    backupPath?: string;
+    quarantinedPath?: string;
+    unsafeToAutoPersist: boolean;
+};
+
 const UserDataContext = createContext<UserDataContextType | null>(null);
 
 export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -75,6 +94,8 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [separationQuality, setSeparationQuality] = useState<'high' | 'normal' | 'fast'>('normal');
     const { currentSongId } = useQueue();
     const isInitialized = useRef(false);
+    const loadedSettingsSnapshot = useRef<string | null>(null);
+    const unsafeSettingsLoad = useRef(false);
 
     const [recentSearches, setRecentSearches] = useState<string[]>([]);
     const [lyricStyles, setLyricStyles] = useState<LyricStyleConfig>(DEFAULT_LYRIC_STYLES);
@@ -83,45 +104,80 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [songListViews, setSongListViews] = useState<SongListViewConfigs>({});
     const [overlayTemplates, setOverlayTemplates] = useState<OverlayTemplatesConfig>(() => mergeOverlayTemplatesConfig());
 
+    const createSettingsPayload = useCallback(() => ({
+        separationQuality,
+        language,
+        lyricStyles,
+        songPreferences,
+        hotkeys,
+        songListViews,
+        overlayTemplates,
+    }), [separationQuality, language, lyricStyles, songPreferences, hotkeys, songListViews, overlayTemplates]);
+
     // Load data on startup
     useEffect(() => {
         if (isInitialized.current) return;
 
         const load = async () => {
             try {
-                const [favs, hist, pl, settings] = await Promise.all([
+                const [favs, hist, pl, settingsResult] = await Promise.all([
                     window.khelper?.userData.loadFavorites() || [],
                     window.khelper?.userData.loadHistory() || [],
                     window.khelper?.userData.loadPlaylists() || [],
-                    (window.khelper?.userData.loadSettings() || Promise.resolve({ separationQuality: 'normal' })) as Promise<{
-                        separationQuality: 'high' | 'normal' | 'fast';
-                        language?: SupportedLanguage;
-                        lyricStyles?: LyricStyleConfig;
-                        songPreferences?: Record<string, { furigana?: boolean; romaji?: boolean }>;
-                        hotkeys?: HotkeyConfig;
-                        songListViews?: SongListViewConfigs;
-                        overlayTemplates?: OverlayTemplatesConfig;
-                    }>
+                    (window.khelper?.userData.loadSettingsWithMeta
+                        ? window.khelper.userData.loadSettingsWithMeta()
+                        : (window.khelper?.userData.loadSettings() || Promise.resolve({ separationQuality: 'normal' }))
+                            .then((settings: LoadedSettings) => ({
+                                settings,
+                                status: 'ok',
+                                sourcePath: '',
+                                unsafeToAutoPersist: false,
+                            }))) as Promise<SettingsLoadResult>
                 ]);
+                const settings = settingsResult.settings;
                 setFavorites(Array.from(new Set(favs)));
                 setHistory(Array.from(new Set(hist)));
                 setPlaylists(pl);
                 const nextLanguage = normalizeLanguage(settings.language ?? i18n.language);
+                const nextSeparationQuality = (settings.separationQuality as 'high' | 'normal' | 'fast') || 'normal';
+                const nextLyricStyles = settings.lyricStyles ? { ...DEFAULT_LYRIC_STYLES, ...settings.lyricStyles } : DEFAULT_LYRIC_STYLES;
+                const nextSongPreferences = settings.songPreferences ?? {};
+                const nextHotkeys = mergeHotkeyConfig(settings.hotkeys);
+                const nextSongListViews = mergeSongListViewConfigs(settings.songListViews);
+                const nextOverlayTemplates = mergeOverlayTemplatesConfig(settings.overlayTemplates, settings.lyricStyles);
+                loadedSettingsSnapshot.current = JSON.stringify({
+                    separationQuality: nextSeparationQuality,
+                    language: nextLanguage,
+                    lyricStyles: nextLyricStyles,
+                    songPreferences: nextSongPreferences,
+                    hotkeys: nextHotkeys,
+                    songListViews: nextSongListViews,
+                    overlayTemplates: nextOverlayTemplates,
+                });
+                unsafeSettingsLoad.current = settingsResult.unsafeToAutoPersist;
+                if (settingsResult.status === 'restored-from-backup') {
+                    console.warn('[UserData] Restored settings from backup', {
+                        sourcePath: settingsResult.sourcePath,
+                        backupPath: settingsResult.backupPath,
+                        quarantinedPath: settingsResult.quarantinedPath,
+                    });
+                } else if (settingsResult.unsafeToAutoPersist) {
+                    console.warn('[UserData] Loaded default settings without auto-persist', {
+                        status: settingsResult.status,
+                        sourcePath: settingsResult.sourcePath,
+                        quarantinedPath: settingsResult.quarantinedPath,
+                    });
+                }
                 setLanguageState(nextLanguage);
                 if (i18n.language !== nextLanguage) {
                     await i18n.changeLanguage(nextLanguage);
                 }
-                setSeparationQuality((settings.separationQuality as 'high' | 'normal' | 'fast') || 'normal');
-                const settingsWithStyles = settings as { separationQuality: string; lyricStyles?: LyricStyleConfig; songPreferences?: Record<string, { furigana?: boolean; romaji?: boolean }> };
-                if (settingsWithStyles.lyricStyles) {
-                    setLyricStyles({ ...DEFAULT_LYRIC_STYLES, ...settingsWithStyles.lyricStyles });
-                }
-                if (settingsWithStyles.songPreferences) {
-                    setSongPreferences(settingsWithStyles.songPreferences);
-                }
-                setHotkeys(mergeHotkeyConfig(settings.hotkeys));
-                setSongListViews(mergeSongListViewConfigs(settings.songListViews));
-                setOverlayTemplates(mergeOverlayTemplatesConfig(settings.overlayTemplates, settings.lyricStyles));
+                setSeparationQuality(nextSeparationQuality);
+                setLyricStyles(nextLyricStyles);
+                setSongPreferences(nextSongPreferences);
+                setHotkeys(nextHotkeys);
+                setSongListViews(nextSongListViews);
+                setOverlayTemplates(nextOverlayTemplates);
 
                 // Load recent searches from localStorage
                 const savedRecent = localStorage.getItem('khelper_recent_searches');
@@ -170,10 +226,23 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // Save settings (quality + in-app lyrics styles + songPrefs + hotkeys + song list views + overlay templates) on change
     useEffect(() => {
         if (!isInitialized.current) return;
-        window.khelper?.userData.saveSettings({ separationQuality, language, lyricStyles, songPreferences, hotkeys, songListViews, overlayTemplates }).catch(err =>
+        const payload = createSettingsPayload();
+        const serializedPayload = JSON.stringify(payload);
+        if (loadedSettingsSnapshot.current) {
+            if (serializedPayload === loadedSettingsSnapshot.current) {
+                loadedSettingsSnapshot.current = null;
+                return;
+            }
+            loadedSettingsSnapshot.current = null;
+        }
+        if (unsafeSettingsLoad.current) {
+            console.warn('[UserData] Persisting first explicit settings change after unsafe settings load');
+            unsafeSettingsLoad.current = false;
+        }
+        window.khelper?.userData.saveSettings(payload).catch(err =>
             console.error('[UserData] Failed to save settings', err)
         );
-    }, [separationQuality, language, lyricStyles, songPreferences, hotkeys, songListViews, overlayTemplates]);
+    }, [createSettingsPayload]);
 
     // Save recent searches on change
     useEffect(() => {

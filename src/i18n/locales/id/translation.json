@@ -691,9 +691,14 @@
       "setlistDesignNumber": "Desain Daftar Set {{index}}"
     },
     "confirm": {
-      "deleteLyricsDesign": "Hapus \"{{name}}\"? Tautan OBS yang ada akan kembali ke desain lirik default.",
-      "deleteSetlistDesign": "Hapus \"{{name}}\"? Tautan OBS yang ada akan kembali ke desain setlist default.",
-      "deleteDesign": "Hapus \"{{name}}\"? Tautan OBS yang ada akan kembali ke desain default."
+      "deleteLyricsDesign": "Hapus \"{{name}}\"? Tautan OBS yang sudah memakai desain ini akan menampilkan pemberitahuan template tidak ditemukan.",
+      "deleteSetlistDesign": "Hapus \"{{name}}\"? Tautan OBS yang sudah memakai desain ini akan menampilkan pemberitahuan template tidak ditemukan.",
+      "deleteDesign": "Hapus \"{{name}}\"? Tautan OBS yang sudah memakai desain ini akan menampilkan pemberitahuan template tidak ditemukan."
+    },
+    "missingTemplate": {
+      "title": "Template overlay siaran tidak ditemukan",
+      "description": "Tautan OBS ini mengarah ke template yang sudah tidak ada. Salin tautan OBS baru dari Pengaturan KHelper.",
+      "requestedId": "ID desain yang diminta: {{id}}"
     },
     "templates": {
       "classic_list": "Daftar Klasik",
@@ -787,6 +792,7 @@
       "neon": "neon",
       "outerRadius": "Radius Luar",
       "innerRadius": "Radius Item Dalam",
+      "overallOpacity": "Opasitas Keseluruhan",
       "columns": "Kolom",
       "decorationIntensity": "Intensitas Dekorasi",
       "textureOpacity": "Tekstur",

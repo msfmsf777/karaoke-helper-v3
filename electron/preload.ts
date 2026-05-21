@@ -187,6 +187,7 @@ contextBridge.exposeInMainWorld('khelper', {
     loadPlaylists: (): Promise<any[]> => ipcRenderer.invoke('userData:load-playlists'),
     saveSettings: (settings: any): Promise<void> => ipcRenderer.invoke('userData:save-settings', settings),
     loadSettings: (): Promise<any> => ipcRenderer.invoke('userData:load-settings'),
+    loadSettingsWithMeta: (): Promise<unknown> => ipcRenderer.invoke('userData:load-settings-with-meta'),
   },
   updater: {
     check: () => ipcRenderer.invoke('updater:check'),

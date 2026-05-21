@@ -16,7 +16,8 @@
     "i18n:status": "i18next-cli status",
     "i18n:extract": "i18next-cli extract",
     "i18n:extract:check": "i18next-cli extract --dry-run --ci",
-    "i18n:types": "i18next-cli types"
+    "i18n:types": "i18next-cli types",
+    "test:persistence": "vitest run tests/userData.settings.test.ts"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
@@ -28,12 +29,14 @@
     "react-i18next": "^17.0.6",
     "react-virtuoso": "^4.14.1",
     "soundtouchjs": "^0.2.1",
+    "ws": "^8.20.1",
     "youtubei.js": "^17.0.1"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
     "@types/react": "^18.2.64",
     "@types/react-dom": "^18.2.21",
+    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^7.1.1",
     "@typescript-eslint/parser": "^7.1.1",
     "@vitejs/plugin-react": "^4.2.1",
@@ -46,7 +49,8 @@
     "typescript": "^5.2.2",
     "vite": "^5.1.6",
     "vite-plugin-electron": "^0.28.6",
-    "vite-plugin-electron-renderer": "^0.14.5"
+    "vite-plugin-electron-renderer": "^0.14.5",
+    "vitest": "^4.1.6"
   },
   "main": "dist-electron/main.js",
   "build": {

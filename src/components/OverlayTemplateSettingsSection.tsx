@@ -203,6 +203,7 @@ const OVERLAY_UI_TEXT_KEYS: Record<string, string> = {
 };
 
 const overlayUiText = (t: TFunction, text: string) => {
+  if (text.startsWith('overlays.')) return t(text);
   const key = OVERLAY_UI_TEXT_KEYS[text];
   return key ? t(key) : text;
 };
@@ -1211,6 +1212,7 @@ const SetlistInspector: React.FC<{
       config: {
         ...createDefaultSetlistConfig(templateId),
         fontFamily: current.config.fontFamily,
+        overallOpacity: current.config.overallOpacity,
       },
     }));
   };
@@ -1300,6 +1302,15 @@ const SetlistInspector: React.FC<{
             <RangeControl label="內部項目圓角" min={0} max={32} value={config.innerRadius} onChange={(innerRadius) => updateConfig({ innerRadius })} />
           </>
         )}
+        <RangeControl
+          label="overlays.ui.overallOpacity"
+          min={0}
+          max={1}
+          step={0.05}
+          value={config.overallOpacity}
+          displayValue={`${Math.round(config.overallOpacity * 100)}%`}
+          onChange={(overallOpacity) => updateConfig({ overallOpacity })}
+        />
         {capabilities.gridColumns && (
           <RangeControl label="欄數" min={2} max={6} value={config.gridColumns} onChange={(gridColumns) => updateConfig({ gridColumns })} />
         )}

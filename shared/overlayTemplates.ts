@@ -112,6 +112,7 @@ export interface SetlistOverlayTemplateConfig {
   frameStyle: SetlistFrameStyle;
   outerRadius: number;
   innerRadius: number;
+  overallOpacity: number;
   autoScroll: boolean;
   autoScrollSpeed: number;
   autoScrollPauseMs: number;
@@ -1332,6 +1333,7 @@ export function createDefaultSetlistConfig(
     frameStyle: 'neon',
     outerRadius: 20,
     innerRadius: 10,
+    overallOpacity: 0.38,
     autoScroll: true,
     autoScrollSpeed: 4,
     autoScrollPauseMs: 1200,
@@ -1350,6 +1352,7 @@ export function createDefaultSetlistConfig(
       showThumbnails: true,
       density: 'compact',
       frameStyle: 'glass',
+      overallOpacity: 0.52,
       outerRadius: 22,
       innerRadius: 18,
       autoScroll: false,
@@ -1366,6 +1369,7 @@ export function createDefaultSetlistConfig(
       showDuration: false,
       density: 'compact',
       frameStyle: 'glass',
+      overallOpacity: 0.52,
       outerRadius: 14,
       innerRadius: 10,
       currentLabel: 'NOW',
@@ -1377,6 +1381,7 @@ export function createDefaultSetlistConfig(
   } else if (templateId === 'neon_signboard') {
     Object.assign(templateDefaults, {
       frameStyle: 'neon',
+      overallOpacity: 0.38,
       outerRadius: 24,
       innerRadius: 12,
       currentLabel: '歌唱中',
@@ -1395,6 +1400,7 @@ export function createDefaultSetlistConfig(
       upcomingLabel: 'REMAINING',
       historyLabel: 'FINISHED',
       frameStyle: 'solid',
+      overallOpacity: 0.86,
       autoScrollSpeed: 3,
       autoScrollPauseMs: 1400,
     });
@@ -1408,6 +1414,7 @@ export function createDefaultSetlistConfig(
       showDuration: false,
       density: 'compact',
       frameStyle: 'glass',
+      overallOpacity: 0.52,
       outerRadius: 14,
       innerRadius: 8,
       currentLabel: 'NOW SINGING',
@@ -1423,6 +1430,7 @@ export function createDefaultSetlistConfig(
       showDuration: false,
       density: 'compact',
       frameStyle: 'solid',
+      overallOpacity: 1,
       outerRadius: 30,
       innerRadius: 14,
       currentLabel: 'ON AIR',
@@ -1448,6 +1456,7 @@ export function createDefaultSetlistConfig(
       showDuration: true,
       density: 'compact',
       frameStyle: 'glass',
+      overallOpacity: 0.9,
       outerRadius: 26,
       innerRadius: 16,
       currentLabel: 'NOW PLAYING',
@@ -1472,6 +1481,7 @@ export function createDefaultSetlistConfig(
       showDuration: false,
       density: 'comfortable',
       frameStyle: 'neon',
+      overallOpacity: 0.38,
       outerRadius: 20,
       innerRadius: 10,
       currentLabel: 'NOW SINGING',
@@ -1497,6 +1507,7 @@ export function createDefaultSetlistConfig(
       showDuration: true,
       density: 'compact',
       frameStyle: 'glass',
+      overallOpacity: 0.9,
       outerRadius: 18,
       innerRadius: 8,
       currentLabel: 'NOW',
@@ -1522,6 +1533,7 @@ export function createDefaultSetlistConfig(
       showDuration: false,
       density: 'compact',
       frameStyle: 'glass',
+      overallOpacity: 0,
       outerRadius: 0,
       innerRadius: 4,
       currentLabel: 'NOW',
@@ -1551,6 +1563,7 @@ export function createDefaultSetlistConfig(
       showDuration: false,
       density: 'compact',
       frameStyle: 'glass',
+      overallOpacity: 0.6,
       outerRadius: 18,
       innerRadius: 12,
       currentLabel: 'NOW',
@@ -1694,6 +1707,7 @@ function migrateCombinedToSetlistDesign(design: LegacyCombinedDesign, index: num
       frameStyle: normalizeFrameStyle(setlistConfig.frameStyle, defaults.frameStyle),
       outerRadius: clamp((setlistConfig as any).outerRadius, 0, 48, legacyRadii.outerRadius),
       innerRadius: clamp((setlistConfig as any).innerRadius, 0, 32, legacyRadii.innerRadius),
+      overallOpacity: clamp((setlistConfig as any).overallOpacity, 0, 1, defaults.overallOpacity),
       showDuration: Boolean((setlistConfig as any).showDuration ?? defaults.showDuration),
       autoScrollSpeed: normalizeSetlistScrollSpeed((setlistConfig as any).autoScrollSpeed, defaults.autoScrollSpeed),
       changeAnimation: (['none', 'fade', 'slide'].includes(String(setlistConfig.changeAnimation)) ? setlistConfig.changeAnimation : defaults.changeAnimation) as SetlistChangeAnimation,
@@ -1750,6 +1764,7 @@ function mergeSetlistDesign(design: Partial<SetlistOverlayDesign> | null | undef
       showDuration: Boolean(config.showDuration ?? configDefaults.showDuration),
       outerRadius: clamp(config.outerRadius, 0, 48, legacyRadii.outerRadius),
       innerRadius: clamp(config.innerRadius, 0, 32, legacyRadii.innerRadius),
+      overallOpacity: clamp(config.overallOpacity, 0, 1, configDefaults.overallOpacity),
       autoScrollSpeed: normalizeSetlistScrollSpeed(config.autoScrollSpeed, configDefaults.autoScrollSpeed),
       autoScrollPauseMs: clamp(config.autoScrollPauseMs, 0, 5000, configDefaults.autoScrollPauseMs),
       changeAnimation: (['none', 'fade', 'slide'].includes(String(config.changeAnimation)) ? config.changeAnimation : configDefaults.changeAnimation) as SetlistChangeAnimation,
@@ -1826,4 +1841,67 @@ export function findSetlistOverlayDesign(config: OverlayTemplatesConfig, designI
     ?? config.setlistDesigns.find((design) => design.id === config.activeSetlistDesignId)
     ?? config.setlistDesigns[0]
     ?? createDefaultSetlistDesign();
+}
+
+export function getLyricsOverlayDesignById(config: OverlayTemplatesConfig, designId?: string | null): LyricsOverlayDesign | undefined {
+  if (!designId) return undefined;
+  return config.lyricsDesigns.find((design) => design.id === designId);
+}
+
+export function getSetlistOverlayDesignById(config: OverlayTemplatesConfig, designId?: string | null): SetlistOverlayDesign | undefined {
+  if (!designId) return undefined;
+  return config.setlistDesigns.find((design) => design.id === designId);
+}
+
+export type OverlayDesignResolution =
+  | {
+    status: 'ok';
+    kind: OverlayKind;
+    requestedDesignId?: string;
+    designId: string;
+    design: LyricsOverlayDesign | SetlistOverlayDesign;
+  }
+  | {
+    status: 'missing';
+    kind: OverlayKind;
+    requestedDesignId: string;
+  };
+
+export function resolveOverlayDesign(
+  config: OverlayTemplatesConfig,
+  kind: OverlayKind,
+  requestedDesignId?: string | null
+): OverlayDesignResolution {
+  if (requestedDesignId) {
+    const design = kind === 'setlist'
+      ? getSetlistOverlayDesignById(config, requestedDesignId)
+      : getLyricsOverlayDesignById(config, requestedDesignId);
+
+    if (!design) {
+      return {
+        status: 'missing',
+        kind,
+        requestedDesignId,
+      };
+    }
+
+    return {
+      status: 'ok',
+      kind,
+      requestedDesignId,
+      designId: design.id,
+      design,
+    };
+  }
+
+  const design = kind === 'setlist'
+    ? findSetlistOverlayDesign(config, DEFAULT_OVERLAY_DESIGN_ID)
+    : findLyricsOverlayDesign(config, DEFAULT_OVERLAY_DESIGN_ID);
+
+  return {
+    status: 'ok',
+    kind,
+    designId: design.id,
+    design,
+  };
 }

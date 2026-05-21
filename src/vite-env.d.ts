@@ -17,7 +17,7 @@ interface Window {
     openExternal: (url: string) => Promise<void>;
     openOverlayWindow: () => void;
     sendOverlayUpdate: (payload: { type?: string; songId?: string; currentTime?: number; isPlaying?: boolean; queue?: string[]; currentIndex?: number; isStreamWaiting?: boolean; playbackMode?: 'normal' | 'repeat_one' | 'random' | 'stream'; language?: import('../shared/i18n').SupportedLanguage }) => void;
-    subscribeOverlayUpdates: (callback: (payload: { type?: string; songId?: string; currentTime?: number; isPlaying?: boolean; queue?: string[]; currentIndex?: number; isStreamWaiting?: boolean; playbackMode?: 'normal' | 'repeat_one' | 'random' | 'stream'; language?: import('../shared/i18n').SupportedLanguage; kind?: 'lyrics' | 'setlist'; designId?: string; design?: any; overlayTemplates?: import('../shared/overlayTemplates').OverlayTemplatesConfig }) => void) => () => void;
+    subscribeOverlayUpdates: (callback: (payload: { type?: string; status?: 'ok' | 'missing'; songId?: string; currentTime?: number; isPlaying?: boolean; queue?: string[]; currentIndex?: number; isStreamWaiting?: boolean; playbackMode?: 'normal' | 'repeat_one' | 'random' | 'stream'; language?: import('../shared/i18n').SupportedLanguage; kind?: 'lyrics' | 'setlist'; requestedDesignId?: string; designId?: string; design?: any; overlayTemplates?: import('../shared/overlayTemplates').OverlayTemplatesConfig }) => void) => () => void;
     sendOverlayStyleUpdate: (style: any) => void;
     subscribeOverlayStyleUpdates: (callback: (style: any) => void) => () => void;
     sendOverlayPreferenceUpdate: (prefs: { furiganaEnabled: boolean; romajiEnabled: boolean }) => void;
@@ -107,6 +107,7 @@ interface Window {
       loadPlaylists: () => Promise<any[]>;
       saveSettings: (settings: any) => Promise<void>;
       loadSettings: () => Promise<any>;
+      loadSettingsWithMeta: () => Promise<unknown>;
     };
     windowOps: {
       minimize: () => void;

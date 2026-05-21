@@ -3,6 +3,8 @@ import { app, BrowserWindow, dialog, ipcMain, shell, Tray, Menu, nativeImage, sc
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import fs from 'node:fs'
+import http from 'node:http'
+import { WebSocket, WebSocketServer } from 'ws'
 
 // Static Imports to ensure bundling
 import {
@@ -17,14 +19,15 @@ import { readRawLyrics, readSyncedLyrics, writeRawLyrics, writeSyncedLyrics } fr
 import { loadQueue, saveQueue } from './queue'
 import { enrichLyrics } from './lyricEnrichment'
 import {
-  loadFavorites, loadHistory, loadPlaylists, loadSettings,
+  loadFavorites, loadHistory, loadPlaylists, loadSettings, loadSettingsWithMeta,
   saveFavorites, saveHistory, savePlaylists, saveSettings
 } from './userData'
 import { initUpdater, checkForUpdates, onStatusChange } from './updater'
 import type { HotkeyAction, HotkeyConfig } from '../shared/hotkeys'
 import { applyGlobalHotkeys, getHotkeyRegistrationStatus, unregisterGlobalHotkeys } from './hotkeys'
-import { DEFAULT_OVERLAY_DESIGN_ID, findLyricsOverlayDesign, findSetlistOverlayDesign, mergeOverlayTemplatesConfig } from '../shared/overlayTemplates'
+import { resolveOverlayDesign, mergeOverlayTemplatesConfig } from '../shared/overlayTemplates'
 import { getElectronLanguage, setElectronLanguage, tElectron } from './i18n'
+import { OverlayTransport, OverlayTransportPayload } from './overlayTransport'
 
 // Disable native swipe navigation (fixes sidebar drag sliding the screen)
 app.commandLine.appendSwitch('disable-features', 'OverscrollHistoryNavigation')
@@ -787,17 +790,18 @@ ipcMain.handle('userData:save-settings', async (_event, settings: any) => {
   applyHotkeysFromSettings(settings?.hotkeys)
   if (settings?.overlayTemplates) {
     const overlayTemplates = mergeOverlayTemplatesConfig(settings.overlayTemplates, settings.lyricStyles)
-    const data = JSON.stringify({ type: 'overlay-template-config', overlayTemplates, language: getElectronLanguage() })
-    // @ts-ignore
-    for (const client of clients) {
-      // @ts-ignore
-      client.write(`data: ${data}\n\n`)
-    }
+    const payload = { type: 'overlay-template-config', overlayTemplates, language: getElectronLanguage() }
+    lastOverlayTemplateConfig = payload
+    overlayTransport.broadcast(payload)
   }
 })
 
 ipcMain.handle('userData:load-settings', async () => {
   return loadSettings()
+})
+
+ipcMain.handle('userData:load-settings-with-meta', async () => {
+  return loadSettingsWithMeta()
 })
 
 ipcMain.handle('hotkeys:get-status', async () => {
@@ -945,6 +949,7 @@ if (!gotTheLock) {
 
     // Lazy load this too if needed, or just remove if not critical
     // console.log('[Library] base songs dir:', getSongsBaseDir()) 
+    startOverlayServer()
     createWindow()
     const settings = await loadSettings()
     setElectronLanguage(settings.language)
@@ -953,18 +958,23 @@ if (!gotTheLock) {
   })
 }
 
-
-const clients: Set<Response> = new Set()
-
 // State cache for new clients
 // Moved from bottom of file to here for scope access in server
 let lastPlaybackInfo: any = null;
 let lastSetlistInfo: any = null;
 let lastStyle: any = null;
 let lastPreferences: any = null;
+let lastOverlayTemplateConfig: OverlayTransportPayload | null = null;
 
-// Create a simple HTTP server to serve the overlay and SSE
-import http from 'node:http'
+const getCachedOverlayPayloads = (): OverlayTransportPayload[] => [
+  lastOverlayTemplateConfig,
+  lastStyle ? { type: 'style', style: lastStyle } : null,
+  lastPreferences ? { type: 'preference', prefs: lastPreferences } : null,
+  lastPlaybackInfo,
+  lastSetlistInfo,
+].filter((payload): payload is OverlayTransportPayload => Boolean(payload))
+
+const overlayTransport = new OverlayTransport(getCachedOverlayPayloads)
 
 const OVERLAY_PORT = 10001
 
@@ -991,43 +1001,22 @@ const server = http.createServer((req, res) => {
   }
 
   if (pathname === '/events') {
-    // ... (keep existing SSE logic)
-    // SSE Endpoint
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
     })
-    res.write('data: {"type":"connected"}\n\n')
 
     // Keep connection alive
     const keepAlive = setInterval(() => {
       res.write(': keep-alive\n\n')
     }, 15000)
 
-    // Send cached state if available
-    if (lastStyle) {
-      res.write(`data: ${JSON.stringify({ type: 'style', style: lastStyle })}\n\n`);
-    }
-    if (lastPreferences) {
-      res.write(`data: ${JSON.stringify({ type: 'preference', prefs: lastPreferences })}\n\n`);
-    }
-    if (lastPlaybackInfo) {
-      res.write(`data: ${JSON.stringify(lastPlaybackInfo)}\n\n`);
-    }
-    if (lastSetlistInfo) {
-      res.write(`data: ${JSON.stringify(lastSetlistInfo)}\n\n`);
-    }
-
-    // Add to clients
-    const client = res as unknown as Response // Type casting for simplicity in this context
-    // @ts-ignore
-    clients.add(client)
+    const dispose = overlayTransport.addSseClient(res)
 
     req.on('close', () => {
       clearInterval(keepAlive)
-      // @ts-ignore
-      clients.delete(client)
+      dispose()
     })
     return
   }
@@ -1093,15 +1082,11 @@ const server = http.createServer((req, res) => {
 
     loadSettings().then((settings) => {
       const overlayTemplates = mergeOverlayTemplatesConfig(settings.overlayTemplates, settings.lyricStyles)
-      const design = kind === 'setlist'
-        ? findSetlistOverlayDesign(overlayTemplates, designId ?? DEFAULT_OVERLAY_DESIGN_ID)
-        : findLyricsOverlayDesign(overlayTemplates, designId ?? DEFAULT_OVERLAY_DESIGN_ID)
+      const resolution = resolveOverlayDesign(overlayTemplates, kind, designId)
       res.writeHead(200, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({
         type: 'overlay-template-config',
-        kind,
-        designId: design.id,
-        design,
+        ...resolution,
         language: settings.language,
       }))
     }).catch((err) => {
@@ -1315,6 +1300,12 @@ const server = http.createServer((req, res) => {
 })
 
 server.on('error', (e: any) => {
+  overlayServerStarted = false
+  if (overlayHeartbeat) {
+    clearInterval(overlayHeartbeat)
+    overlayHeartbeat = null
+  }
+
   if (e.code === 'EADDRINUSE') {
     console.warn(`[OverlayServer] Port ${OVERLAY_PORT} is already in use. Overlay server might effectively be unavailable or running in another instance.`);
   } else {
@@ -1322,13 +1313,85 @@ server.on('error', (e: any) => {
   }
 });
 
-server.listen(OVERLAY_PORT, () => {
-  console.log(`[OverlayServer] Listening on port ${OVERLAY_PORT}`)
-  console.log(`[OverlayServer] Serving from: ${RENDERER_DIST}`)
+const webSocketServer = new WebSocketServer({ noServer: true })
+let overlayServerStarted = false
+let overlayHeartbeat: ReturnType<typeof setInterval> | null = null
+
+type OverlayWebSocket = WebSocket & { isAlive?: boolean }
+
+server.on('upgrade', (req, socket, head) => {
+  const urlObj = new URL(req.url || '/', `http://localhost:${OVERLAY_PORT}`)
+  if (urlObj.pathname !== '/events') {
+    socket.destroy()
+    return
+  }
+
+  webSocketServer.handleUpgrade(req, socket, head, (ws) => {
+    webSocketServer.emit('connection', ws, req)
+  })
 })
 
+webSocketServer.on('connection', (socket) => {
+  const ws = socket as OverlayWebSocket
+  ws.isAlive = true
+  ws.on('pong', () => {
+    ws.isAlive = true
+  })
+
+  const dispose = overlayTransport.addWebSocketClient(ws)
+  ws.on('close', dispose)
+  ws.on('error', dispose)
+})
+
+function startOverlayHeartbeat() {
+  if (overlayHeartbeat) return
+  overlayHeartbeat = setInterval(() => {
+    webSocketServer.clients.forEach((socket) => {
+      const ws = socket as OverlayWebSocket
+      if (ws.isAlive === false) {
+        overlayTransport.removeWebSocketClient(ws)
+        ws.terminate()
+        return
+      }
+
+      ws.isAlive = false
+      ws.ping()
+    })
+  }, 30000)
+}
+
+function startOverlayServer() {
+  if (overlayServerStarted) return
+  overlayServerStarted = true
+  startOverlayHeartbeat()
+  server.listen(OVERLAY_PORT, () => {
+    console.log(`[OverlayServer] Listening on port ${OVERLAY_PORT}`)
+    console.log(`[OverlayServer] Serving from: ${RENDERER_DIST}`)
+  })
+}
+
+function stopOverlayServer() {
+  if (overlayHeartbeat) {
+    clearInterval(overlayHeartbeat)
+    overlayHeartbeat = null
+  }
+
+  webSocketServer.clients.forEach((socket) => {
+    const ws = socket as OverlayWebSocket
+    overlayTransport.removeWebSocketClient(ws)
+    ws.terminate()
+  })
+
+  webSocketServer.close()
+  if (overlayServerStarted) {
+    server.close(() => {
+      overlayServerStarted = false
+    })
+  }
+}
+
 app.on('before-quit', () => {
-  server.close();
+  stopOverlayServer()
 });
 
 ipcMain.on('window:open-overlay', () => {
@@ -1343,44 +1406,21 @@ ipcMain.on('overlay:update', (_event, payload) => {
   } else {
     lastPlaybackInfo = typedPayload
   }
-  // Broadcast to all SSE clients
-  const data = JSON.stringify(typedPayload)
-  // @ts-ignore
-  for (const client of clients) {
-    // @ts-ignore
-    client.write(`data: ${data}\n\n`)
-  }
+  overlayTransport.broadcast(typedPayload)
 })
 
 ipcMain.on('overlay:style-update', (_event, style) => {
   lastStyle = style;
-  // Broadcast to all SSE clients
-  const data = JSON.stringify({ type: 'style', style })
-  // @ts-ignore
-  for (const client of clients) {
-    // @ts-ignore
-    client.write(`data: ${data}\n\n`)
-  }
+  overlayTransport.broadcast({ type: 'style', style })
 })
 
 ipcMain.on('overlay:preference-update', (_event, prefs) => {
   lastPreferences = prefs;
-  // Broadcast to all SSE clients
-  const data = JSON.stringify({ type: 'preference', prefs })
-  // @ts-ignore
-  for (const client of clients) {
-    // @ts-ignore
-    client.write(`data: ${data}\n\n`)
-  }
+  overlayTransport.broadcast({ type: 'preference', prefs })
 })
 
 ipcMain.on('overlay:scroll-update', (_event, scrollY: number) => {
   // Broadcast scroll update (no need to cache strictly, but good for immediate sync if we wanted)
   // For scrolling, we just broadcast.
-  const data = JSON.stringify({ type: 'scroll', scrollTop: scrollY })
-  // @ts-ignore
-  for (const client of clients) {
-    // @ts-ignore
-    client.write(`data: ${data}\n\n`)
-  }
+  overlayTransport.broadcast({ type: 'scroll', scrollTop: scrollY })
 })

@@ -1,9 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import { SongMeta, EnrichedLyricLine } from '../../shared/songTypes';
 import { EditableLyricLine, linesFromRawText, parseLrc, readRawLyrics, readSyncedLyrics } from '../library/lyrics';
-import { DEFAULT_OVERLAY_DESIGN_ID, findLyricsOverlayDesign, LyricsOverlayDesign } from '../../shared/overlayTemplates';
+import { DEFAULT_OVERLAY_DESIGN_ID, findLyricsOverlayDesign, getLyricsOverlayDesignById, LyricsOverlayDesign, OverlayTemplatesConfig } from '../../shared/overlayTemplates';
 import { TemplatedLyricsOverlay } from './overlayTemplates/OverlayTemplateRenderers';
+import MissingOverlayTemplateNotice from './MissingOverlayTemplateNotice';
 import i18n from '../i18n';
+import { subscribeOverlayServerUpdates } from '../utils/overlayUpdateTransport';
+
+interface LyricsOverlayUpdatePayload {
+    type?: string;
+    status?: 'ok' | 'missing';
+    language?: string;
+    overlayTemplates?: OverlayTemplatesConfig;
+    kind?: 'lyrics' | 'setlist';
+    requestedDesignId?: string;
+    designId?: string;
+    design?: LyricsOverlayDesign;
+    prefs?: {
+        furiganaEnabled: boolean;
+        romajiEnabled: boolean;
+    };
+    songId?: string;
+    currentTime?: number;
+}
 
 const OverlayWindow: React.FC = () => {
     const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
@@ -16,6 +35,7 @@ const OverlayWindow: React.FC = () => {
     const [enrichedLines, setEnrichedLines] = useState<EnrichedLyricLine[] | null>(null);
     const [furiganaEnabled, setFuriganaEnabled] = useState(false);
     const [romajiEnabled, setRomajiEnabled] = useState(false);
+    const [missingDesignId, setMissingDesignId] = useState<string | null>(null);
     const designId = new URLSearchParams(window.location.search).get('design');
     const baseUrl = window.location.port === '5173' ? 'http://localhost:10001' : '';
 
@@ -26,6 +46,12 @@ const OverlayWindow: React.FC = () => {
                 if (!response.ok) throw new Error('Failed to fetch overlay config');
                 const payload = await response.json();
                 if (payload.language) void i18n.changeLanguage(payload.language);
+                if (payload.status === 'missing') {
+                    setMissingDesignId(payload.requestedDesignId ?? designId);
+                    setDesign(null);
+                    return;
+                }
+                setMissingDesignId(null);
                 setDesign(payload.design);
             } catch (err) {
                 console.error('[Overlay] Failed to load template config', err);
@@ -45,8 +71,19 @@ const OverlayWindow: React.FC = () => {
                 if (payload.type === 'overlay-template-config') {
                     if (payload.language) void i18n.changeLanguage(payload.language);
                     if (payload.overlayTemplates) {
-                        setDesign(findLyricsOverlayDesign(payload.overlayTemplates, designId ?? DEFAULT_OVERLAY_DESIGN_ID));
+                        if (designId) {
+                            const nextDesign = getLyricsOverlayDesignById(payload.overlayTemplates, designId);
+                            setMissingDesignId(nextDesign ? null : designId);
+                            setDesign(nextDesign ?? null);
+                        } else {
+                            setMissingDesignId(null);
+                            setDesign(findLyricsOverlayDesign(payload.overlayTemplates, DEFAULT_OVERLAY_DESIGN_ID));
+                        }
+                    } else if (payload.status === 'missing' && payload.kind === 'lyrics' && payload.requestedDesignId === designId) {
+                        setMissingDesignId(payload.requestedDesignId);
+                        setDesign(null);
                     } else if (payload.kind === 'lyrics' && (!payload.designId || payload.designId === designId)) {
+                        setMissingDesignId(null);
                         setDesign(payload.design);
                     }
                     return;
@@ -68,49 +105,44 @@ const OverlayWindow: React.FC = () => {
                 removeListener();
                 removePrefListener();
             };
-        } else {
-            // Browser / OBS Mode: Use SSE
-            // If running on port 5173 (Vite Dev), connect to port 10001
-            const baseUrl = window.location.port === '5173' ? 'http://localhost:10001' : '';
-            const eventSource = new EventSource(`${baseUrl}/events`);
-
-            eventSource.onmessage = (event) => {
-                try {
-                    const payload = JSON.parse(event.data);
-                    if (payload.type === 'connected') return;
-
-                    if (payload.type === 'preference') {
-                        setFuriganaEnabled(payload.prefs.furiganaEnabled);
-                        setRomajiEnabled(payload.prefs.romajiEnabled);
-                        return;
-                    }
-
-                    if (payload.type === 'overlay-template-config') {
-                        if (payload.language) void i18n.changeLanguage(payload.language);
-                        if (payload.overlayTemplates) {
-                            setDesign(findLyricsOverlayDesign(payload.overlayTemplates, designId ?? DEFAULT_OVERLAY_DESIGN_ID));
-                        } else if (payload.kind === 'lyrics' && (!payload.designId || payload.designId === designId)) {
-                            setDesign(payload.design);
-                        }
-                        return;
-                    }
-
-                    if (payload.type === 'setlist') return;
-
-                    const { songId, currentTime: time } = payload;
-                    if (typeof time === 'number') setCurrentTime(time);
-                    if (songId !== currentTrackId) {
-                        setCurrentTrackId(songId || null);
-                    }
-                } catch (e) {
-                    console.error('Failed to parse SSE message', e);
-                }
-            };
-
-            return () => {
-                eventSource.close();
-            };
         }
+
+        return subscribeOverlayServerUpdates<LyricsOverlayUpdatePayload>(baseUrl, (payload) => {
+            if (payload.type === 'preference' && payload.prefs) {
+                setFuriganaEnabled(payload.prefs.furiganaEnabled);
+                setRomajiEnabled(payload.prefs.romajiEnabled);
+                return;
+            }
+
+            if (payload.type === 'overlay-template-config') {
+                if (payload.language) void i18n.changeLanguage(payload.language);
+                if (payload.overlayTemplates) {
+                    if (designId) {
+                        const nextDesign = getLyricsOverlayDesignById(payload.overlayTemplates, designId);
+                        setMissingDesignId(nextDesign ? null : designId);
+                        setDesign(nextDesign ?? null);
+                    } else {
+                        setMissingDesignId(null);
+                        setDesign(findLyricsOverlayDesign(payload.overlayTemplates, DEFAULT_OVERLAY_DESIGN_ID));
+                    }
+                } else if (payload.status === 'missing' && payload.kind === 'lyrics' && payload.requestedDesignId === designId) {
+                    setMissingDesignId(payload.requestedDesignId);
+                    setDesign(null);
+                } else if (payload.kind === 'lyrics' && (!payload.designId || payload.designId === designId)) {
+                    setMissingDesignId(null);
+                    setDesign(payload.design ?? null);
+                }
+                return;
+            }
+
+            if (payload.type === 'setlist') return;
+
+            const { songId, currentTime: time } = payload;
+            if (typeof time === 'number') setCurrentTime(time);
+            if (songId !== currentTrackId) {
+                setCurrentTrackId(songId || null);
+            }
+        });
     }, [currentTrackId, baseUrl, designId]);
 
     useEffect(() => {
@@ -229,7 +261,9 @@ const OverlayWindow: React.FC = () => {
                 cursor: 'move',
             } as React.CSSProperties} />
 
-            {design && (
+            {missingDesignId ? (
+                <MissingOverlayTemplateNotice requestedDesignId={missingDesignId} />
+            ) : design && (
                 <TemplatedLyricsOverlay
                     design={design}
                     status={lyricsStatus}

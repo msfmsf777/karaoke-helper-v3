@@ -691,9 +691,14 @@
       "setlistDesignNumber": "セットリストデザイン {{index}}"
     },
     "confirm": {
-      "deleteLyricsDesign": "「{{name}}」を削除しますか?既存の OBS リンクは、デフォルトの歌詞デザインに戻ります。",
-      "deleteSetlistDesign": "「{{name}}」を削除しますか?既存の OBS リンクは、デフォルトのセットリスト設計に戻ります。",
-      "deleteDesign": "「{{name}}」を削除しますか?既存の OBS リンクはデフォルトのデザインに戻ります。"
+      "deleteLyricsDesign": "「{{name}}」を削除しますか? このデザインの既存の OBS リンクには、テンプレートが見つからないという通知が表示されます。",
+      "deleteSetlistDesign": "「{{name}}」を削除しますか? このデザインの既存の OBS リンクには、テンプレートが見つからないという通知が表示されます。",
+      "deleteDesign": "「{{name}}」を削除しますか? このデザインの既存の OBS リンクには、テンプレートが見つからないという通知が表示されます。"
+    },
+    "missingTemplate": {
+      "title": "配信オーバーレイテンプレートが見つかりません",
+      "description": "この OBS リンクが指しているテンプレートは存在しません。KHelper の設定から新しい OBS リンクをコピーしてください。",
+      "requestedId": "要求されたデザイン ID: {{id}}"
     },
     "templates": {
       "classic_list": "クラシックリスト",
@@ -787,6 +792,7 @@
       "neon": "ネオン",
       "outerRadius": "外半径",
       "innerRadius": "内部アイテムの半径",
+      "overallOpacity": "全体の不透明度",
       "columns": "コラム",
       "decorationIntensity": "装飾の強さ",
       "textureOpacity": "テクスチャ",

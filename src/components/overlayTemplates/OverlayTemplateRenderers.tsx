@@ -525,6 +525,7 @@ export const TemplatedLyricsOverlay: React.FC<{
 };
 
 const getFrameStyle = (config: SetlistOverlayTemplateConfig): React.CSSProperties => {
+  const opacity = alphaValue(config.overallOpacity);
   const base: React.CSSProperties = {
     borderRadius: config.outerRadius,
     border: '1px solid transparent',
@@ -534,18 +535,18 @@ const getFrameStyle = (config: SetlistOverlayTemplateConfig): React.CSSPropertie
   if (config.frameStyle === 'solid') {
     return {
       ...base,
-      background: isLightPanel ? 'rgba(255,255,255,0.9)' : 'rgba(8, 12, 18, 0.86)',
+      background: isLightPanel ? withAlpha('#ffffff', opacity) : withAlpha('#080c12', opacity),
       borderColor: isLightPanel ? 'rgba(17,24,39,0.18)' : 'rgba(255,255,255,0.12)',
       boxShadow: isLightPanel ? '0 18px 46px rgba(0,0,0,0.18)' : undefined,
     };
   }
   if (config.frameStyle === 'glass') {
-    return { ...base, background: 'rgba(8, 14, 22, 0.52)', borderColor: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(8px)' };
+    return { ...base, background: withAlpha('#080e16', opacity), borderColor: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(8px)' };
   }
   if (config.frameStyle === 'neon') {
     return {
       ...base,
-      background: 'rgba(0, 0, 0, 0.38)',
+      background: withAlpha('#000000', opacity),
       borderColor: config.accentColor,
       boxShadow: `0 0 20px ${config.accentColor}66`,
     };
@@ -825,6 +826,22 @@ const getSetlistCurrentDisplay = (
 
 const alphaHex = (value: number) => Math.round(Math.max(0, Math.min(1, value)) * 255).toString(16).padStart(2, '0');
 
+const alphaValue = (value: number) => Math.max(0, Math.min(1, Number(value) || 0));
+
+const withAlpha = (color: string, alpha: number) => {
+  const safeAlpha = alphaValue(alpha);
+  const hex = color.trim().match(/^#([\da-f]{6})$/i);
+  if (hex) {
+    const value = hex[1];
+    return `rgba(${parseInt(value.slice(0, 2), 16)}, ${parseInt(value.slice(2, 4), 16)}, ${parseInt(value.slice(4, 6), 16)}, ${safeAlpha})`;
+  }
+
+  const rgba = color.trim().match(/^rgba\(([^,]+),\s*([^,]+),\s*([^,]+),\s*[^)]+\)$/i);
+  if (rgba) return `rgba(${rgba[1]}, ${rgba[2]}, ${rgba[3]}, ${safeAlpha})`;
+
+  return color;
+};
+
 const getTickerDuration = (speed: number) => `${Math.max(10, 42 - Math.max(1, Math.min(10, speed)) * 3)}s`;
 
 const getTextEffectStyle = (config: SetlistOverlayTemplateConfig): React.CSSProperties => {
@@ -886,45 +903,57 @@ export const TemplatedSetlistOverlay: React.FC<{
     historySongs,
     waitingSong,
   };
+  const renderWithOpacity = (content: React.ReactNode) => (
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        background: 'transparent',
+        overflow: 'hidden',
+      }}
+    >
+      {content}
+    </div>
+  );
 
   if (config.templateId === 'compact_strip') {
-    return <CompactStripSetlist config={config} state={state} view={view} preview={preview} />;
+    return renderWithOpacity(<CompactStripSetlist config={config} state={state} view={view} preview={preview} />);
   }
 
   if (config.templateId === 'neon_signboard') {
-    return <NeonSignboardSetlist config={config} state={state} view={view} preview={preview} />;
+    return renderWithOpacity(<NeonSignboardSetlist config={config} state={state} view={view} preview={preview} />);
   }
 
   if (config.templateId === 'countdown_counter') {
-    return <CountdownCounterSetlist config={config} state={state} view={view} preview={preview} />;
+    return renderWithOpacity(<CountdownCounterSetlist config={config} state={state} view={view} preview={preview} />);
   }
 
   if (config.templateId === 'index_grid') {
-    return <IndexGridSetlist config={config} state={state} view={view} preview={preview} />;
+    return renderWithOpacity(<IndexGridSetlist config={config} state={state} view={view} preview={preview} />);
   }
 
   if (config.templateId === 'pager_console') {
-    return <PagerConsoleSetlist config={config} state={state} view={view} preview={preview} />;
+    return renderWithOpacity(<PagerConsoleSetlist config={config} state={state} view={view} preview={preview} />);
   }
 
   if (config.templateId === 'cassette_deck') {
-    return <CassetteDeckSetlist config={config} state={state} view={view} preview={preview} />;
+    return renderWithOpacity(<CassetteDeckSetlist config={config} state={state} view={view} preview={preview} />);
   }
 
   if (config.templateId === 'stage_marquee') {
-    return <StageMarqueeSetlist config={config} state={state} view={view} preview={preview} />;
+    return renderWithOpacity(<StageMarqueeSetlist config={config} state={state} view={view} preview={preview} />);
   }
 
   if (config.templateId === 'photo_stack') {
-    return <PhotoStackSetlist config={config} state={state} view={view} preview={preview} />;
+    return renderWithOpacity(<PhotoStackSetlist config={config} state={state} view={view} preview={preview} />);
   }
 
   if (config.templateId === 'vertical_column') {
-    return <VerticalColumnSetlist config={config} state={state} view={view} preview={preview} />;
+    return renderWithOpacity(<VerticalColumnSetlist config={config} state={state} view={view} preview={preview} />);
   }
 
   if (config.templateId === 'spinning_disk_list') {
-    return <SpinningDiskListSetlist config={config} state={state} view={view} preview={preview} />;
+    return renderWithOpacity(<SpinningDiskListSetlist config={config} state={state} view={view} preview={preview} />);
   }
 
   const hasUpcoming = config.showUpcoming;
@@ -932,7 +961,7 @@ export const TemplatedSetlistOverlay: React.FC<{
   const reserveFlex = hasUpcoming && hasHistory ? 2 : 1;
   const historyFlex = hasUpcoming && hasHistory ? 1 : 1;
 
-  return (
+  return renderWithOpacity(
     <div
       style={{
         width: '100%',
@@ -1468,6 +1497,7 @@ const PagerConsoleSetlist: React.FC<{
   const current = getSetlistCurrentDisplay(config, state, view);
   const lcdColor = config.presetId === 'lime_lcd' ? '#bdd3a5' : config.presetId === 'amber_lcd' ? '#2f2110' : '#0f172a';
   const shellColor = config.presetId === 'lime_lcd' ? '#49698a' : config.presetId === 'amber_lcd' ? '#5b3920' : '#1f2937';
+  const surfaceOpacity = alphaValue(config.overallOpacity);
   const tickerItems = config.templateOptions.tickerSource === 'history' ? view.historySongs : view.upcomingSongs;
   const tickerLabel = config.templateOptions.tickerSource === 'history' ? config.historyLabel : config.upcomingLabel;
   const tickerText = tickerItems.map((song) => `${song.title}${config.showArtist && song.artist ? ` / ${song.artist}` : ''}`).join('   ·   ');
@@ -1495,7 +1525,7 @@ const PagerConsoleSetlist: React.FC<{
         padding: preview ? 28 : 22,
         borderRadius: config.outerRadius,
         border: '3px solid rgba(0,0,0,0.55)',
-        background: `linear-gradient(145deg, ${shellColor}, rgba(255,255,255,0.18)), ${shellColor}`,
+        background: `linear-gradient(145deg, ${withAlpha(shellColor, surfaceOpacity)}, rgba(255,255,255,0.18)), ${withAlpha(shellColor, surfaceOpacity)}`,
         boxShadow: `inset 0 0 0 2px rgba(255,255,255,0.18), 0 20px 48px rgba(0,0,0,0.35)`,
         display: 'grid',
         gridTemplateRows: 'minmax(0, 1fr) auto',
@@ -1509,7 +1539,7 @@ const PagerConsoleSetlist: React.FC<{
           gap: 14,
           padding: preview ? 18 : 14,
           borderRadius: config.innerRadius,
-          background: lcdColor,
+          background: withAlpha(lcdColor, surfaceOpacity),
           color: config.presetId === 'lime_lcd' ? '#344234' : config.textColor,
           boxShadow: `inset 0 0 0 4px rgba(0,0,0,0.45), inset 0 0 28px rgba(0,0,0,${config.templateOptions.textureOpacity})`,
         }}>
@@ -1590,7 +1620,8 @@ const CassetteDeckSetlist: React.FC<{
   const reelSpin = config.templateOptions.diskSpinMode !== 'off' && !state.isStreamWaiting;
   const reelDuration = `${Math.max(1.5, 10 - config.templateOptions.diskSpinSpeed * 0.7)}s`;
   const depth = config.templateOptions.cassetteDepth;
-  const shellLight = config.presetId === 'cream_retro' ? 'rgba(255,247,220,0.92)' : config.presetId === 'noir_tape' ? 'rgba(26,28,32,0.96)' : 'rgba(34,36,48,0.88)';
+  const shellBase = config.presetId === 'cream_retro' ? '#fff7dc' : config.presetId === 'noir_tape' ? '#1a1c20' : '#222430';
+  const shellLight = withAlpha(shellBase, config.overallOpacity);
   const labelBg = config.presetId === 'cream_retro' ? '#fff7d6' : config.presetId === 'noir_tape' ? '#111827' : `${config.accentColor}20`;
 
   return (
@@ -1811,11 +1842,14 @@ const PhotoStackSetlist: React.FC<{
   const current = getSetlistCurrentDisplay(config, state, view);
   const currentSong = current.song;
   const cardTilt = config.templateOptions.decorationIntensity * -4;
-  const paperColor = config.presetId === 'polaroid_white'
-    ? 'rgba(255,255,255,0.95)'
-    : config.presetId === 'sakura_cards'
-      ? 'rgba(255,239,246,0.9)'
-      : 'rgba(26,24,32,0.9)';
+  const paperColor = withAlpha(
+    config.presetId === 'polaroid_white'
+      ? '#ffffff'
+      : config.presetId === 'sakura_cards'
+        ? '#ffeff6'
+        : '#1a1820',
+    config.overallOpacity,
+  );
   const foreground = config.presetId === 'polaroid_white' || config.presetId === 'sakura_cards' ? '#111827' : config.textColor;
   const animation = config.templateOptions.cardTransition === 'slide'
     ? 'khelperSetlistCardSlide 360ms cubic-bezier(.2,.8,.2,1) both'
@@ -1951,6 +1985,9 @@ const VerticalColumnSetlist: React.FC<{
           display: 'grid',
           gridTemplateRows: config.showCurrent ? 'auto minmax(0, 1fr)' : 'minmax(0, 1fr)',
           gap: Math.max(8, options.rowGap + 2),
+          borderRadius: config.outerRadius,
+          background: withAlpha('#080e16', config.overallOpacity),
+          overflow: 'hidden',
         }}>
           {config.showCurrent && (
             <div key={getSetlistCurrentAnimationKey(state, current)} style={{
@@ -1959,7 +1996,7 @@ const VerticalColumnSetlist: React.FC<{
               padding: '8px 12px',
               boxSizing: 'border-box',
               color: config.textColor,
-              background: `rgba(0, 0, 0, ${options.titleBarOpacity})`,
+              background: `rgba(0, 0, 0, ${Math.max(options.titleBarOpacity, alphaValue(config.overallOpacity))})`,
               borderBottom: `1px solid ${config.accentColor}${Math.round(options.dividerOpacity * 255).toString(16).padStart(2, '0')}`,
               animation: getSetlistChangeAnimation(config),
             }}>
@@ -2173,9 +2210,9 @@ const SpinningDiskListSetlist: React.FC<{
                 gap: 10,
                 padding: '7px 10px',
                 borderRadius: config.innerRadius,
-                background: `rgba(12, 10, 18, ${options.rowOpacity})`,
+                background: `rgba(12, 10, 18, ${alphaValue(config.overallOpacity)})`,
                 border: '1px solid rgba(255,255,255,0.1)',
-                opacity: options.rowOpacity,
+                opacity: Math.max(options.rowOpacity, alphaValue(config.overallOpacity)),
                 animation: getSetlistChangeAnimation(config),
               }}>
                 <DiskIcon config={config} active={false} spin={historySpin} song={song} />
@@ -2206,7 +2243,7 @@ const SpinningDiskListSetlist: React.FC<{
             gap: 12,
             padding: '10px 14px',
             borderRadius: config.innerRadius,
-            background: `rgba(12, 10, 18, ${Math.min(0.96, options.rowOpacity + options.currentEmphasis * 0.24)})`,
+            background: `rgba(12, 10, 18, ${Math.max(alphaValue(config.overallOpacity), Math.min(0.96, options.rowOpacity + options.currentEmphasis * 0.24))})`,
             border: `1px solid ${config.accentColor}88`,
             boxShadow: `0 0 ${Math.round(options.currentGlow * 28)}px ${config.accentColor}66`,
             animation: getSetlistChangeAnimation(config),

@@ -691,9 +691,14 @@
       "setlistDesignNumber": "Setlist Design {{index}}"
     },
     "confirm": {
-      "deleteLyricsDesign": "Delete \"{{name}}\"? Existing OBS links will fall back to the default lyrics design.",
-      "deleteSetlistDesign": "Delete \"{{name}}\"? Existing OBS links will fall back to the default setlist design.",
-      "deleteDesign": "Delete \"{{name}}\"? Existing OBS links will fall back to the default design."
+      "deleteLyricsDesign": "Delete \"{{name}}\"? Existing OBS links for this design will show a template-not-found notice.",
+      "deleteSetlistDesign": "Delete \"{{name}}\"? Existing OBS links for this design will show a template-not-found notice.",
+      "deleteDesign": "Delete \"{{name}}\"? Existing OBS links for this design will show a template-not-found notice."
+    },
+    "missingTemplate": {
+      "title": "Overlay template not found",
+      "description": "This OBS link points to a template that no longer exists. Copy a new OBS link from KHelper Settings.",
+      "requestedId": "Requested design ID: {{id}}"
     },
     "templates": {
       "classic_list": "Classic List",
@@ -787,6 +792,7 @@
       "neon": "Neon",
       "outerRadius": "Outer Radius",
       "innerRadius": "Inner Item Radius",
+      "overallOpacity": "Overall Opacity",
       "columns": "Columns",
       "decorationIntensity": "Decoration Intensity",
       "textureOpacity": "Texture",

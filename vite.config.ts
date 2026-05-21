@@ -15,7 +15,7 @@ export default defineConfig({
         vite: {
           build: {
             rollupOptions: {
-              external: ['yt-search']
+              external: ['yt-search', 'ws', 'bufferutil', 'utf-8-validate']
             }
           }
         }

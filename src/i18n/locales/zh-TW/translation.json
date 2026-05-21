@@ -691,9 +691,14 @@
       "setlistDesignNumber": "歌單設計 {{index}}"
     },
     "confirm": {
-      "deleteLyricsDesign": "刪除「{{name}}」？已加入 OBS 的舊連結會回到預設歌詞設計。",
-      "deleteSetlistDesign": "刪除「{{name}}」？已加入 OBS 的舊連結會回到預設歌單設計。",
-      "deleteDesign": "刪除「{{name}}」？已加入 OBS 的舊連結會回到預設設計。"
+      "deleteLyricsDesign": "刪除「{{name}}」？此設計的既有 OBS 連結會顯示模板不存在提示。",
+      "deleteSetlistDesign": "刪除「{{name}}」？此設計的既有 OBS 連結會顯示模板不存在提示。",
+      "deleteDesign": "刪除「{{name}}」？此設計的既有 OBS 連結會顯示模板不存在提示。"
+    },
+    "missingTemplate": {
+      "title": "找不到直播覆蓋模板",
+      "description": "這個 OBS 連結指向的模板已不存在。請從 KHelper 設定複製新的 OBS 連結。",
+      "requestedId": "要求的設計 ID：{{id}}"
     },
     "templates": {
       "classic_list": "經典清單",
@@ -787,6 +792,7 @@
       "neon": "霓虹",
       "outerRadius": "外框圓角",
       "innerRadius": "內部項目圓角",
+      "overallOpacity": "整體透明度",
       "columns": "欄數",
       "decorationIntensity": "裝飾強度",
       "textureOpacity": "材質紋理",

@@ -44,3 +44,6 @@ test-results/
 
 # Generated localization type reference files
 scripts/generated/
+
+# Standalone landing site branch
+/site/

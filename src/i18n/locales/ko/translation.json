@@ -691,9 +691,14 @@
       "setlistDesignNumber": "세트리스트 디자인 {{index}}"
     },
     "confirm": {
-      "deleteLyricsDesign": "'{{name}}'을 삭제하시겠습니까? 기존 OBS 링크는 기본 가사 디자인으로 대체됩니다.",
-      "deleteSetlistDesign": "'{{name}}'을 삭제하시겠습니까? 기존 OBS 링크는 기본 세트리스트 디자인으로 대체됩니다.",
-      "deleteDesign": "'{{name}}'을 삭제하시겠습니까? 기존 OBS 링크는 기본 디자인으로 대체됩니다."
+      "deleteLyricsDesign": "'{{name}}'을 삭제하시겠습니까? 이 디자인의 기존 OBS 링크에는 템플릿을 찾을 수 없다는 안내가 표시됩니다.",
+      "deleteSetlistDesign": "'{{name}}'을 삭제하시겠습니까? 이 디자인의 기존 OBS 링크에는 템플릿을 찾을 수 없다는 안내가 표시됩니다.",
+      "deleteDesign": "'{{name}}'을 삭제하시겠습니까? 이 디자인의 기존 OBS 링크에는 템플릿을 찾을 수 없다는 안내가 표시됩니다."
+    },
+    "missingTemplate": {
+      "title": "방송 오버레이 템플릿을 찾을 수 없습니다",
+      "description": "이 OBS 링크가 가리키는 템플릿이 더 이상 존재하지 않습니다. KHelper 설정에서 새 OBS 링크를 복사해 주세요.",
+      "requestedId": "요청한 디자인 ID: {{id}}"
     },
     "templates": {
       "classic_list": "클래식 목록",
@@ -787,6 +792,7 @@
       "neon": "네온",
       "outerRadius": "외부 반경",
       "innerRadius": "내부 항목 반경",
+      "overallOpacity": "전체 불투명도",
       "columns": "열",
       "decorationIntensity": "장식 강도",
       "textureOpacity": "질감",
