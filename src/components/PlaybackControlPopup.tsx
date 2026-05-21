@@ -105,7 +105,12 @@ const PlaybackControlPopup: React.FC<PlaybackControlPopupProps> = ({
             } as React.CSSProperties}
         >
             {/* Top Row */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)',
+                alignItems: 'center',
+                columnGap: '8px',
+            }}>
                 <FitText
                     text={title}
                     baseFontSize={14}
@@ -138,6 +143,7 @@ const PlaybackControlPopup: React.FC<PlaybackControlPopupProps> = ({
                             fontSize: '14px',
                             textAlign: 'center',
                             padding: '2px',
+                            justifySelf: 'center',
                         }}
                     />
                 ) : (
@@ -148,6 +154,7 @@ const PlaybackControlPopup: React.FC<PlaybackControlPopupProps> = ({
                             fontWeight: 'bold',
                             cursor: 'pointer',
                             borderBottom: '1px dashed #666',
+                            justifySelf: 'center',
                         }}
                         title={t('playbackControl.clickToEdit')}
                     >
@@ -164,6 +171,7 @@ const PlaybackControlPopup: React.FC<PlaybackControlPopupProps> = ({
                         cursor: 'pointer',
                         fontSize: '16px',
                         padding: '0 4px',
+                        justifySelf: 'end',
                     }}
                     title={t('common.reset')}
                 >

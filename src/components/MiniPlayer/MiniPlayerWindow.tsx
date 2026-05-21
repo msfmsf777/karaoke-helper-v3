@@ -349,7 +349,12 @@ const MiniPlaybackControl: React.FC<{
             WebkitAppRegion: 'no-drag'
         }} onMouseDown={(e) => e.stopPropagation()}>
             {/* Top Row: Title, Value/Input, Reset */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)',
+                alignItems: 'center',
+                columnGap: '4px',
+            }}>
                 <FitText
                     text={title}
                     baseFontSize={12}
@@ -381,18 +386,19 @@ const MiniPlaybackControl: React.FC<{
                             fontSize: '11px',
                             textAlign: 'center',
                             padding: '1px',
+                            justifySelf: 'center',
                         }}
                     />
                 ) : (
                     <span
                         onClick={handleStartEdit}
-                        style={{ fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', borderBottom: '1px dashed #666' }}
+                        style={{ fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', borderBottom: '1px dashed #666', justifySelf: 'center' }}
                         title={t('common.edit')}
                     >
                         {formatLabel(value)}
                     </span>
                 )}
-                <button onClick={onReset} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '14px', padding: '0 2px' }} title={t('common.reset')}>
+                <button onClick={onReset} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '14px', padding: '0 2px', justifySelf: 'end' }} title={t('common.reset')}>
                     ↺
                 </button>
             </div>
