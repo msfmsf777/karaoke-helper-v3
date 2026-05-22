@@ -133,7 +133,17 @@
     "noReleaseNotes": "没有为此版本提供发行说明。",
     "error": "更新失败。检查您的网络连接或稍后重试。",
     "ignore": "忽略此版本",
-    "download": "打开下载页面"
+    "download": "打开下载页面",
+    "updateNow": "立即更新",
+    "restart": "重启并更新",
+    "retry": "重试更新",
+    "openDownloadPage": "打开下载页面",
+    "readyToRestart": "更新已下载完成，重启 KHelper 后即可安装。",
+    "progress": "已下载 {{transferred}} / {{total}}",
+    "status": {
+      "downloading": "正在下载更新...",
+      "installing": "正在安装更新..."
+    }
   },
   "tasks": {
     "title": "活动任务",

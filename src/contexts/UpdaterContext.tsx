@@ -2,27 +2,37 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 // Define types based on what we exposed
-export type UpdaterStatus = 'idle' | 'checking' | 'available' | 'error';
+export type UpdaterStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'installing' | 'error';
+
+export interface UpdaterProgress {
+    percent: number;
+    transferred: number;
+    total: number;
+    bytesPerSecond: number;
+}
 
 export interface UpdateInfo {
     version: string;
-    files: any[];
+    files: unknown[];
     path: string;
     sha512: string;
     releaseName?: string;
-    releaseNotes?: string | any[];
+    releaseNotes?: string | Array<{ note?: string }>;
     releaseDate: string;
 }
 
 interface UpdaterState {
     status: UpdaterStatus;
     updateInfo: UpdateInfo | null;
+    progress: UpdaterProgress | null;
     error: string | null;
     lastCheckTime: number | null;
 }
 
 interface UpdaterContextType extends UpdaterState {
     checkForUpdates: (manual?: boolean) => void;
+    downloadUpdate: () => void;
+    installUpdate: () => void;
     openReleasePage: () => void;
     ignoreVersion: (version: string) => void;
     _debugSetState?: (state: Partial<UpdaterState>) => void;
@@ -34,6 +44,7 @@ export const UpdaterProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [state, setState] = useState<UpdaterState>({
         status: 'idle',
         updateInfo: null,
+        progress: null,
         error: null,
         lastCheckTime: null,
     });
@@ -59,6 +70,14 @@ export const UpdaterProvider: React.FC<{ children: React.ReactNode }> = ({ child
         window.khelper?.updater.openReleasePage();
     };
 
+    const downloadUpdate = async () => {
+        window.khelper?.updater.download();
+    };
+
+    const installUpdate = async () => {
+        window.khelper?.updater.install();
+    };
+
     const ignoreVersion = async (version: string) => {
         window.khelper?.updater.ignore(version);
     };
@@ -73,6 +92,8 @@ export const UpdaterProvider: React.FC<{ children: React.ReactNode }> = ({ child
         <UpdaterContext.Provider value={{
             ...state,
             checkForUpdates,
+            downloadUpdate,
+            installUpdate,
             openReleasePage,
             ignoreVersion,
             ...(import.meta.env.DEV ? { _debugSetState } : {})

@@ -7,12 +7,12 @@ interface DebugUpdaterUIProps {
 }
 
 const DebugUpdaterUI: React.FC<DebugUpdaterUIProps> = ({ inline }) => {
-    // Only render in DEV
-    if (import.meta.env.PROD) return null;
-
     const { _debugSetState } = useUpdater();
     const [mockVersion, setMockVersion] = useState('3.1.0');
     const [isOpen, setIsOpen] = useState(false);
+
+    // Only render in DEV
+    if (import.meta.env.PROD) return null;
 
     if (!_debugSetState) return null;
 
@@ -60,6 +60,7 @@ const DebugUpdaterUI: React.FC<DebugUpdaterUIProps> = ({ inline }) => {
                 releaseDate: new Date().toISOString(),
                 releaseNotes: '### Mock Update\nThis is a simulated update for testing UI.',
             },
+            progress: null,
             error: null
         });
     };
@@ -67,6 +68,7 @@ const DebugUpdaterUI: React.FC<DebugUpdaterUIProps> = ({ inline }) => {
     const setError = () => {
         _debugSetState({
             status: 'error',
+            progress: null,
             error: 'Simulated update error occurred.'
         });
     };
@@ -75,6 +77,7 @@ const DebugUpdaterUI: React.FC<DebugUpdaterUIProps> = ({ inline }) => {
         _debugSetState({
             status: 'idle',
             updateInfo: null,
+            progress: null,
             error: null
         });
     };

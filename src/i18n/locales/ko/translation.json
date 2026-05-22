@@ -133,7 +133,17 @@
     "noReleaseNotes": "이 버전에는 릴리스 노트가 제공되지 않았습니다.",
     "error": "업데이트에 실패했습니다. 네트워크 연결을 확인하거나 나중에 다시 시도하세요.",
     "ignore": "이 버전 무시",
-    "download": "다운로드 페이지 열기"
+    "download": "다운로드 페이지 열기",
+    "updateNow": "지금 업데이트",
+    "restart": "다시 시작하여 업데이트",
+    "retry": "업데이트 다시 시도",
+    "openDownloadPage": "다운로드 페이지 열기",
+    "readyToRestart": "업데이트 다운로드가 완료되었습니다. KHelper를 다시 시작하면 설치됩니다.",
+    "progress": "{{transferred}} / {{total}} 다운로드됨",
+    "status": {
+      "downloading": "업데이트를 다운로드하는 중...",
+      "installing": "업데이트를 설치하는 중..."
+    }
   },
   "tasks": {
     "title": "활성 작업",

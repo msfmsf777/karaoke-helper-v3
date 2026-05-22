@@ -133,7 +133,17 @@
     "noReleaseNotes": "此版本沒有提供更新說明。",
     "error": "更新失敗。請檢查網路連線或稍後再試。",
     "ignore": "忽略此版本",
-    "download": "前往下載頁面"
+    "download": "前往下載頁面",
+    "updateNow": "立即更新",
+    "restart": "重新啟動並更新",
+    "retry": "重試更新",
+    "openDownloadPage": "前往下載頁面",
+    "readyToRestart": "更新已下載完成，重新啟動 KHelper 後即可安裝。",
+    "progress": "已下載 {{transferred}} / {{total}}",
+    "status": {
+      "downloading": "正在下載更新...",
+      "installing": "正在安裝更新..."
+    }
   },
   "tasks": {
     "title": "處理中任務",

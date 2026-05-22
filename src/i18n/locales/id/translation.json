@@ -133,7 +133,17 @@
     "noReleaseNotes": "Tidak ada catatan rilis yang disediakan untuk versi ini.",
     "error": "Pembaruan gagal. Periksa koneksi jaringan Anda atau coba lagi nanti.",
     "ignore": "Abaikan Versi Ini",
-    "download": "Buka Halaman Unduhan"
+    "download": "Buka Halaman Unduhan",
+    "updateNow": "Perbarui Sekarang",
+    "restart": "Mulai Ulang untuk Memperbarui",
+    "retry": "Coba Perbarui Lagi",
+    "openDownloadPage": "Buka Halaman Unduhan",
+    "readyToRestart": "Pembaruan selesai diunduh. Mulai ulang KHelper untuk memasangnya.",
+    "progress": "{{transferred}} / {{total}} diunduh",
+    "status": {
+      "downloading": "Mengunduh pembaruan...",
+      "installing": "Memasang pembaruan..."
+    }
   },
   "tasks": {
     "title": "Tugas Aktif",

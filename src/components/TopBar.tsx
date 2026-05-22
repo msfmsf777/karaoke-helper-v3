@@ -162,9 +162,7 @@ const UpdateIndicator: React.FC = () => {
   const { status } = useUpdater();
   const [showPopup, setShowPopup] = useState(false);
 
-  // Show if available OR error
-  // Note: we removed 'downloading' and 'downloaded' states
-  const isVisible = ['available', 'error'].includes(status);
+  const isVisible = ['available', 'downloading', 'downloaded', 'installing', 'error'].includes(status);
 
   if (!isVisible) return null;
 
@@ -172,7 +170,11 @@ const UpdateIndicator: React.FC = () => {
     <>
       <button
         onClick={() => setShowPopup(true)}
-        title={status === 'error' ? t('shell.topBar.updateFailed') : t('shell.topBar.updateAvailable')}
+        title={status === 'error'
+          ? t('shell.topBar.updateFailed')
+          : status === 'downloaded'
+            ? t('updatesPopup.readyToRestart')
+            : t('shell.topBar.updateAvailable')}
         style={{
           background: 'none',
           border: 'none',
@@ -182,7 +184,7 @@ const UpdateIndicator: React.FC = () => {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          opacity: status === 'error' ? 1 : 0.8, // Full opacity for error
+          opacity: status === 'error' || status === 'downloaded' ? 1 : 0.8,
           transition: 'opacity 0.2s',
           position: 'relative',
           gap: '0px',
@@ -197,6 +199,13 @@ const UpdateIndicator: React.FC = () => {
           <img
             src={UpdateIconBase}
             alt="Update"
+            className={
+              status === 'downloading' || status === 'installing'
+                ? 'khelper-update-icon-spinning'
+                : status === 'downloaded'
+                  ? 'khelper-update-icon-pulse'
+                  : undefined
+            }
             style={{
               width: '24px',
               height: '24px',

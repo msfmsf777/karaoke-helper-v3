@@ -60,7 +60,30 @@ interface AboutPopupProps {
 const AboutPopup: React.FC<AboutPopupProps> = ({ open, onClose }) => {
     const { t } = useTranslation();
     const [visible, setVisible] = useState(false);
-    const { checkForUpdates, status } = useUpdater();
+    const { checkForUpdates, downloadUpdate, installUpdate, status } = useUpdater();
+    const isUpdaterBusy = status === 'checking' || status === 'downloading' || status === 'installing';
+    const updateButtonLabel = status === 'checking'
+        ? t('settings.updates.checking')
+        : status === 'downloading'
+            ? t('updatesPopup.status.downloading')
+            : status === 'installing'
+                ? t('updatesPopup.status.installing')
+                : status === 'available'
+                    ? t('updatesPopup.updateNow')
+                    : status === 'downloaded'
+                        ? t('updatesPopup.restart')
+                        : t('settings.updates.check');
+    const handleUpdaterAction = () => {
+        if (status === 'available') {
+            downloadUpdate();
+            return;
+        }
+        if (status === 'downloaded') {
+            installUpdate();
+            return;
+        }
+        checkForUpdates(true);
+    };
 
     useEffect(() => {
         if (open) {
@@ -117,8 +140,8 @@ const AboutPopup: React.FC<AboutPopupProps> = ({ open, onClose }) => {
             >
                 {/* Check Update Button (Top Left) */}
                 <button
-                    onClick={() => checkForUpdates(true)}
-                    disabled={status === 'checking'}
+                    onClick={handleUpdaterAction}
+                    disabled={isUpdaterBusy}
                     style={{
                         position: 'absolute',
                         top: '12px',
@@ -126,7 +149,7 @@ const AboutPopup: React.FC<AboutPopupProps> = ({ open, onClose }) => {
                         background: 'none',
                         border: '1px solid #444',
                         color: '#aaa',
-                        cursor: status === 'checking' ? 'wait' : 'pointer',
+                        cursor: isUpdaterBusy ? 'wait' : 'pointer',
                         padding: '4px 8px',
                         borderRadius: '6px',
                         fontSize: '11px',
@@ -136,19 +159,19 @@ const AboutPopup: React.FC<AboutPopupProps> = ({ open, onClose }) => {
                         transition: 'background-color 0.2s, color 0.2s',
                     }}
                     onMouseEnter={(e) => {
-                        if (status !== 'checking') {
+                        if (!isUpdaterBusy) {
                             e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
                             e.currentTarget.style.color = '#fff';
                         }
                     }}
                     onMouseLeave={(e) => {
-                        if (status !== 'checking') {
+                        if (!isUpdaterBusy) {
                             e.currentTarget.style.backgroundColor = 'transparent';
                             e.currentTarget.style.color = '#aaa';
                         }
                     }}
                 >
-                    {status === 'checking' ? t('settings.updates.checking') : t('settings.updates.check')}
+                    {updateButtonLabel}
                 </button>
 
                 {/* Close Button */}

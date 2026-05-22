@@ -133,7 +133,17 @@
     "noReleaseNotes": "No release notes were provided for this version.",
     "error": "Update failed. Check your network connection or try again later.",
     "ignore": "Ignore This Version",
-    "download": "Open Download Page"
+    "download": "Open Download Page",
+    "updateNow": "Update Now",
+    "restart": "Restart to Update",
+    "retry": "Retry Update",
+    "openDownloadPage": "Open Download Page",
+    "readyToRestart": "Update ready. Restart KHelper to install it.",
+    "progress": "{{transferred}} / {{total}} downloaded",
+    "status": {
+      "downloading": "Downloading update...",
+      "installing": "Installing update..."
+    }
   },
   "tasks": {
     "title": "Active Tasks",

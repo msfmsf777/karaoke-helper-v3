@@ -3,12 +3,12 @@
   "description": "Karaoke Helper Application - Designed for VTubers and Singing Streamers",
   "author": "msfmsf777",
   "private": true,
-  "version": "3.2.0-beta",
+  "version": "3.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "prebuild": "node scripts/generate-i18n-registry.mjs",
-    "build": "node scripts/clean-build.mjs && tsc && vite build && electron-builder --win",
+    "build": "node scripts/clean-build.mjs && tsc && vite build && electron-builder --win && npm run release-notes:generate",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "i18n:generate-registry": "node scripts/generate-i18n-registry.mjs",
@@ -17,6 +17,8 @@
     "i18n:extract": "i18next-cli extract",
     "i18n:extract:check": "i18next-cli extract --dry-run --ci",
     "i18n:types": "i18next-cli types",
+    "release-notes:generate": "node scripts/generate-release-notes.mjs",
+    "release:validate": "node scripts/validate-release-artifacts.mjs",
     "test:persistence": "vitest run tests/userData.settings.test.ts"
   },
   "dependencies": {
@@ -123,9 +125,19 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "deleteAppDataOnUninstall": false,
+      "multiLanguageInstaller": true,
+      "displayLanguageSelector": false,
+      "packElevateHelper": true,
+      "artifactName": "${productName}-Setup-${version}.${ext}",
       "include": "build/installer.nsh",
       "installerLanguages": [
-        "zh_TW"
+        "en_US",
+        "zh_TW",
+        "zh_CN",
+        "ja_JP",
+        "ko_KR",
+        "id_ID",
+        "th_TH"
       ]
     }
   }

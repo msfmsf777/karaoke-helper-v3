@@ -540,23 +540,46 @@ const LastCheckedText: React.FC = () => {
 // Sub-component for clean context usage
 const CheckForUpdatesButton: React.FC = () => {
     const { t } = useTranslation();
-    const { checkForUpdates, status } = useUpdater();
+    const { checkForUpdates, downloadUpdate, installUpdate, status } = useUpdater();
+    const isBusy = status === 'checking' || status === 'downloading' || status === 'installing';
+    const label = status === 'checking'
+        ? t('settings.updates.checking')
+        : status === 'downloading'
+            ? t('updatesPopup.status.downloading')
+            : status === 'installing'
+                ? t('updatesPopup.status.installing')
+                : status === 'available'
+                    ? t('updatesPopup.updateNow')
+                    : status === 'downloaded'
+                        ? t('updatesPopup.restart')
+                        : t('settings.updates.check');
+    const handleClick = () => {
+        if (status === 'available') {
+            downloadUpdate();
+            return;
+        }
+        if (status === 'downloaded') {
+            installUpdate();
+            return;
+        }
+        checkForUpdates(true);
+    };
 
     return (
         <button
-            onClick={() => checkForUpdates(true)}
-            disabled={status === 'checking'}
+            onClick={handleClick}
+            disabled={isBusy}
             style={{
                 background: 'transparent',
                 border: '1px solid #555',
                 color: '#aaa',
                 borderRadius: '8px',
-                cursor: status === 'checking' ? 'wait' : 'pointer',
+                cursor: isBusy ? 'wait' : 'pointer',
                 fontSize: '14px',
                 padding: '8px 20px',
             }}
         >
-            {status === 'checking' ? t('settings.updates.checking') : t('settings.updates.check')}
+            {label}
         </button>
     );
 };

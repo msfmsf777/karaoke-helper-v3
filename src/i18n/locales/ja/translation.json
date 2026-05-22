@@ -133,7 +133,17 @@
     "noReleaseNotes": "このバージョンにはリリース ノートは提供されていません。",
     "error": "アップデートに失敗しました。ネットワーク接続を確認するか、後でもう一度試してください。",
     "ignore": "このバージョンを無視する",
-    "download": "ダウンロードページを開く"
+    "download": "ダウンロードページを開く",
+    "updateNow": "今すぐ更新",
+    "restart": "再起動して更新",
+    "retry": "更新を再試行",
+    "openDownloadPage": "ダウンロードページを開く",
+    "readyToRestart": "更新のダウンロードが完了しました。KHelper を再起動するとインストールされます。",
+    "progress": "{{transferred}} / {{total}} ダウンロード済み",
+    "status": {
+      "downloading": "更新をダウンロードしています...",
+      "installing": "更新をインストールしています..."
+    }
   },
   "tasks": {
     "title": "アクティブなタスク",

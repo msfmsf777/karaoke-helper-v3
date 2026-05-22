@@ -119,6 +119,8 @@ interface Window {
     };
     updater: {
       check: () => Promise<void>;
+      download: () => Promise<void>;
+      install: () => Promise<void>;
       openReleasePage: () => Promise<void>;
       ignore: (version: string) => Promise<void>;
       getStatus: () => Promise<any>;
