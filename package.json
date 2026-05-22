@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "vite",
     "prebuild": "node scripts/generate-i18n-registry.mjs",
-    "build": "node scripts/clean-build.mjs && tsc && vite build && electron-builder --win && npm run release-notes:generate",
+    "build": "npm run build:test",
+    "build:test": "node scripts/build-test.mjs",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "i18n:generate-registry": "node scripts/generate-i18n-registry.mjs",
@@ -19,6 +20,10 @@
     "i18n:types": "i18next-cli types",
     "release-notes:generate": "node scripts/generate-release-notes.mjs",
     "release:validate": "node scripts/validate-release-artifacts.mjs",
+    "release:build": "node scripts/build-release.mjs",
+    "release:github": "node scripts/publish-github-release.mjs",
+    "release:github:dry-run": "node scripts/publish-github-release.mjs --dry-run",
+    "release": "node scripts/release.mjs",
     "test:persistence": "vitest run tests/userData.settings.test.ts"
   },
   "dependencies": {
@@ -43,7 +48,7 @@
     "@typescript-eslint/parser": "^7.1.1",
     "@vitejs/plugin-react": "^4.2.1",
     "electron": "^30.0.1",
-    "electron-builder": "^24.13.3",
+    "electron-builder": "^26.8.1",
     "eslint": "^8.57.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
@@ -54,91 +59,5 @@
     "vite-plugin-electron-renderer": "^0.14.5",
     "vitest": "^4.1.6"
   },
-  "main": "dist-electron/main.js",
-  "build": {
-    "appId": "com.khelper.v3",
-    "productName": "KHelperV3",
-    "icon": "src/assets/images/logo_outer.png",
-    "directories": {
-      "output": "release/${version}"
-    },
-    "files": [
-      "dist",
-      "dist-electron",
-      "package.json"
-    ],
-    "extraResources": [
-      {
-        "from": "resources/python-runtime",
-        "to": "python-runtime",
-        "filter": [
-          "**/*"
-        ]
-      },
-      {
-        "from": "resources/bin",
-        "to": "bin",
-        "filter": [
-          "**/*"
-        ]
-      },
-      {
-        "from": "src/assets/icons",
-        "to": "icons",
-        "filter": [
-          "**/*"
-        ]
-      },
-      {
-        "from": "resources/separation",
-        "to": "separation",
-        "filter": [
-          "**/*"
-        ]
-      },
-      {
-        "from": "resources/lyrics",
-        "to": "lyrics",
-        "filter": [
-          "**/*"
-        ]
-      }
-    ],
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "msfmsf777",
-        "repo": "karaoke-helper-v3"
-      }
-    ],
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
-      ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "deleteAppDataOnUninstall": false,
-      "multiLanguageInstaller": true,
-      "displayLanguageSelector": false,
-      "packElevateHelper": true,
-      "artifactName": "${productName}-Setup-${version}.${ext}",
-      "include": "build/installer.nsh",
-      "installerLanguages": [
-        "en_US",
-        "zh_TW",
-        "zh_CN",
-        "ja_JP",
-        "ko_KR",
-        "id_ID",
-        "th_TH"
-      ]
-    }
-  }
+  "main": "dist-electron/main.js"
 }
