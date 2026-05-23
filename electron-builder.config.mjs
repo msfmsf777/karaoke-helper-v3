@@ -17,10 +17,15 @@ const winConfig = {
 };
 
 if (signingEnabled) {
-  winConfig.azureSignOptions = requiredSigningEnv;
+  winConfig.signtoolOptions = {
+    sign: './scripts/azure-selective-sign.mjs',
+    publisherName: requiredSigningEnv.publisherName,
+    signingHashAlgorithms: ['sha256'],
+  };
 } else {
   winConfig.signtoolOptions = {
     sign: './scripts/noop-windows-sign.mjs',
+    signingHashAlgorithms: ['sha256'],
   };
 }
 

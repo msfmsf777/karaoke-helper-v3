@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { resolveReleaseNotes } from '../shared/releaseNotes';
 
 const catalog = {
-  version: '3.3.0',
+  version: '3.3.0-beta',
   locales: {
     'zh-TW': {
       title: '繁中標題',
@@ -45,7 +45,7 @@ describe('release notes localization', () => {
 
   it('falls back to Traditional Chinese if English is missing', () => {
     const notes = resolveReleaseNotes({
-      version: '3.3.0',
+      version: '3.3.0-beta',
       locales: {
         'zh-TW': catalog.locales['zh-TW'],
       },

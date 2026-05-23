@@ -14,6 +14,7 @@ import {
 const version = getVersion();
 const tag = releaseTag(version);
 const title = `KHelper V${version}`;
+const isPrerelease = version.includes('-');
 const paths = getReleasePaths(version);
 const assetPaths = [paths.installer, paths.blockmap, paths.latest, paths.notes];
 const dryRun = process.argv.includes('--dry-run');
@@ -44,6 +45,7 @@ if (dryRun) {
   console.log(`Release dry run for ${githubRepo} ${tag}`);
   console.log(`Mode: ${releaseExists ? 'update existing release' : 'create draft release'}`);
   console.log(`Title: ${title}`);
+  console.log(`Prerelease: ${isPrerelease ? 'yes' : 'no'}`);
   console.log(`Notes: ${notesFile}`);
   console.log('Assets:');
   for (const asset of relativeAssets) console.log(`- ${asset}`);
@@ -62,10 +64,12 @@ if (gitWarnings.length > 0 && process.env.KH_ALLOW_UNSAFE_RELEASE !== '1') {
 }
 
 if (releaseExists) {
-  run('gh', ['release', 'edit', tag, '--repo', githubRepo, '--title', title, '--notes-file', notesFile]);
+  const editArgs = ['release', 'edit', tag, '--repo', githubRepo, '--title', title, '--notes-file', notesFile];
+  if (isPrerelease) editArgs.push('--prerelease');
+  run('gh', editArgs);
   run('gh', ['release', 'upload', tag, ...relativeAssets, '--repo', githubRepo, '--clobber']);
 } else {
-  run('gh', [
+  const createArgs = [
     'release',
     'create',
     tag,
@@ -77,7 +81,9 @@ if (releaseExists) {
     '--notes-file',
     notesFile,
     '--draft',
-  ]);
+  ];
+  if (isPrerelease) createArgs.push('--prerelease');
+  run('gh', createArgs);
 }
 
 run('gh', ['release', 'view', tag, '--repo', githubRepo, '--web'], { allowFailure: true });

@@ -1,0 +1,187 @@
+{
+  "version": "3.3.0-beta",
+  "locales": {
+    "zh-TW": {
+      "title": "🔥K歌小幫手 v3.3.0 Beta 更新內容🔥",
+      "summary": "此版本將 KHelper 推進為真正多語系的公開測試版，並帶來更高度客製化的 OBS 直播歌單／歌詞系統與多項使用體驗優化。",
+      "sections": [
+        {
+          "title": "🩵新功能🩵",
+          "items": [
+            "✨新增完整多語系介面，支援繁體中文、英文、簡體中文、日文、韓文、印尼文與泰文。",
+            "✨設定頁新增更直覺的語言選擇器，會顯示旗幟、語言原文名稱與目前介面語言中的名稱，並支援搜尋。",
+            "✨OBS 歌單疊圖系統全面重做，新增 12 款可高度自訂的歌單範本，適合不同直播版面使用。",
+            "✨OBS 歌詞與歌單疊圖現在會使用更穩定的即時更新通道，開啟多個瀏覽器來源時也更可靠。",
+            "✨新增應用內更新流程（Beta），可在 KHelper 內下載更新，並透過重新啟動完成安裝。"
+          ]
+        },
+        {
+          "title": "🩵其他使用體驗優化 / Bug 修復🩵",
+          "items": [
+            "🌟主介面、歌曲庫、搜尋結果、下載管理、歌詞編輯器、實況模式、Mini Player、OBS 疊圖與系統選單已完成多語系整理。",
+            "🌟表格、按鈕與緊湊控制區新增文字自動適配，較長的翻譯會在必要時縮小或省略，減少溢出與重疊。",
+            "🌟設定保存改為更安全的流程，加入序列化寫入、備份、損毀設定保留與復原，降低異常關閉造成設定遺失的風險。",
+            "🛠️修正線上歌曲縮圖在歌曲列與 Mini Player 中的顯示細節。",
+            "🛠️更多介面細節與使用體驗優化。"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "title": "🔥KHelper v3.3.0 Beta Update🔥",
+      "summary": "This release moves KHelper into a truly multilingual public beta, with a more customizable OBS setlist/lyrics overlay system and broader usability improvements.",
+      "sections": [
+        {
+          "title": "🩵New Features🩵",
+          "items": [
+            "✨Added a full localized interface for Traditional Chinese, English, Simplified Chinese, Japanese, Korean, Indonesian, and Thai.",
+            "✨Added a clearer language picker in Settings with flags, native language names, localized names, and search.",
+            "✨Reworked the OBS setlist overlay system with 12 highly customizable templates for different stream layouts.",
+            "✨OBS lyrics and setlist overlays now use a more reliable live update channel, especially when multiple Browser Sources are open.",
+            "✨Added an in-app update flow (Beta): download updates inside KHelper and finish installation by restarting the app."
+          ]
+        },
+        {
+          "title": "🩵UX Improvements / Bug Fixes🩵",
+          "items": [
+            "🌟Localized the main app shell, song library, search results, download manager, lyric editor, stream mode, Mini Player, OBS overlays, and Electron menus.",
+            "🌟Added adaptive compact text fitting for dense tables, buttons, and controls so longer translations shrink or truncate only when necessary.",
+            "🌟Hardened settings persistence with serialized writes, backups, corrupt-file preservation, and restore behavior to reduce the risk of lost configuration after unexpected exits.",
+            "🛠️Fixed online song thumbnail display details in song rows and the Mini Player.",
+            "🛠️Additional interface polish and usability improvements."
+          ]
+        }
+      ]
+    },
+    "zh-CN": {
+      "title": "🔥KHelper v3.3.0 Beta 更新内容🔥",
+      "summary": "此版本将 KHelper 推进为真正多语言的公开测试版，并带来更高度自定义的 OBS 直播歌单／歌词系统与多项使用体验优化。",
+      "sections": [
+        {
+          "title": "🩵新功能🩵",
+          "items": [
+            "✨新增完整多语言界面，支持繁体中文、英文、简体中文、日文、韩文、印尼文与泰文。",
+            "✨设置页新增更直观的语言选择器，会显示旗帜、语言原文名称与当前界面语言中的名称，并支持搜索。",
+            "✨OBS 歌单叠图系统全面重做，新增 12 款可高度自定义的歌单模板，适合不同直播布局使用。",
+            "✨OBS 歌词与歌单叠图现在会使用更稳定的实时更新通道，打开多个浏览器来源时也更可靠。",
+            "✨新增应用内更新流程（Beta），可在 KHelper 内下载更新，并通过重启完成安装。"
+          ]
+        },
+        {
+          "title": "🩵其他使用体验优化 / Bug 修复🩵",
+          "items": [
+            "🌟主界面、歌曲库、搜索结果、下载管理、歌词编辑器、直播模式、Mini Player、OBS 叠图与系统菜单已完成多语言整理。",
+            "🌟表格、按钮与紧凑控制区新增文字自动适配，较长的翻译会在必要时缩小或省略，减少溢出与重叠。",
+            "🌟设置保存改为更安全的流程，加入序列化写入、备份、损坏设置保留与恢复，降低异常关闭造成设置丢失的风险。",
+            "🛠️修复在线歌曲缩略图在歌曲列与 Mini Player 中的显示细节。",
+            "🛠️更多界面细节与使用体验优化。"
+          ]
+        }
+      ]
+    },
+    "ja": {
+      "title": "🔥KHelper v3.3.0 Beta アップデート内容🔥",
+      "summary": "このバージョンでは、KHelper を本格的な多言語対応の公開ベータへ進め、よりカスタマイズしやすい OBS セットリスト／歌詞オーバーレイと複数の使いやすさ改善を追加しました。",
+      "sections": [
+        {
+          "title": "🩵新機能🩵",
+          "items": [
+            "✨繁体字中国語、英語、簡体字中国語、日本語、韓国語、インドネシア語、タイ語に対応した多言語インターフェースを追加しました。",
+            "✨設定画面に、国旗、ネイティブ名、現在の表示言語での名前、検索に対応した言語ピッカーを追加しました。",
+            "✨OBS セットリストオーバーレイを全面的に刷新し、配信レイアウトに合わせやすい 12 種類の高度にカスタマイズ可能なテンプレートを追加しました。",
+            "✨OBS 歌詞・セットリストオーバーレイは、複数の Browser Source を開いている場合でも安定しやすいリアルタイム更新方式になりました。",
+            "✨アプリ内更新フロー（Beta）を追加し、KHelper 内で更新をダウンロードして、再起動でインストールを完了できるようにしました。"
+          ]
+        },
+        {
+          "title": "🩵使いやすさの改善 / 不具合修正🩵",
+          "items": [
+            "🌟メイン画面、曲ライブラリ、検索結果、ダウンロード管理、歌詞エディター、配信モード、Mini Player、OBS オーバーレイ、Electron メニューの多言語対応を整理しました。",
+            "🌟密度の高い表、ボタン、操作部にテキスト自動調整を追加し、長い翻訳は必要な場合だけ縮小または省略されます。",
+            "🌟設定保存を強化し、直列化された書き込み、バックアップ、破損ファイルの保持、復元処理により、異常終了後の設定消失リスクを下げました。",
+            "🛠️曲行と Mini Player におけるオンライン曲サムネイル表示の細部を修正しました。",
+            "🛠️その他のインターフェース細部と使いやすさを改善しました。"
+          ]
+        }
+      ]
+    },
+    "ko": {
+      "title": "🔥KHelper v3.3.0 Beta 업데이트 내용🔥",
+      "summary": "이번 버전은 KHelper를 본격적인 다국어 공개 베타로 발전시키며, 더 세밀하게 커스터마이즈할 수 있는 OBS 세트리스트／가사 오버레이와 여러 사용성 개선을 제공합니다.",
+      "sections": [
+        {
+          "title": "🩵새 기능🩵",
+          "items": [
+            "✨번체 중국어, 영어, 간체 중국어, 일본어, 한국어, 인도네시아어, 태국어를 지원하는 전체 다국어 인터페이스를 추가했습니다.",
+            "✨설정에 깃발, 원어 이름, 현재 UI 언어의 이름, 검색을 지원하는 더 직관적인 언어 선택기를 추가했습니다.",
+            "✨OBS 세트리스트 오버레이 시스템을 전면 개편하고, 다양한 방송 레이아웃에 맞출 수 있는 12개의 고급 커스터마이즈 템플릿을 추가했습니다.",
+            "✨OBS 가사와 세트리스트 오버레이가 더 안정적인 실시간 업데이트 채널을 사용하도록 변경되어, 여러 Browser Source를 열어도 더 안정적으로 동작합니다.",
+            "✨앱 내 업데이트 흐름(Beta)을 추가해 KHelper 안에서 업데이트를 다운로드하고, 재시작으로 설치를 완료할 수 있습니다."
+          ]
+        },
+        {
+          "title": "🩵사용성 개선 / 버그 수정🩵",
+          "items": [
+            "🌟메인 화면, 곡 라이브러리, 검색 결과, 다운로드 관리, 가사 편집기, 방송 모드, Mini Player, OBS 오버레이, Electron 메뉴의 다국어 처리를 정리했습니다.",
+            "🌟밀도 높은 표, 버튼, 컨트롤 영역에 자동 텍스트 맞춤을 추가해 긴 번역은 필요한 경우에만 축소되거나 줄임표로 표시됩니다.",
+            "🌟설정 저장을 직렬화된 쓰기, 백업, 손상 파일 보존, 복원 처리로 강화해 예기치 않은 종료 후 설정 손실 위험을 줄였습니다.",
+            "🛠️곡 행과 Mini Player에서 온라인 곡 썸네일이 표시되는 세부 동작을 수정했습니다.",
+            "🛠️그 밖의 인터페이스 세부 사항과 사용성을 개선했습니다."
+          ]
+        }
+      ]
+    },
+    "id": {
+      "title": "🔥Catatan Pembaruan KHelper v3.3.0 Beta🔥",
+      "summary": "Versi ini membawa KHelper ke beta publik yang benar-benar multibahasa, dengan sistem overlay setlist/lirik OBS yang lebih dapat dikustomisasi dan berbagai peningkatan pengalaman penggunaan.",
+      "sections": [
+        {
+          "title": "🩵Fitur Baru🩵",
+          "items": [
+            "✨Menambahkan antarmuka lengkap dalam Bahasa Tionghoa Tradisional, Inggris, Tionghoa Sederhana, Jepang, Korea, Indonesia, dan Thailand.",
+            "✨Menambahkan pemilih bahasa yang lebih jelas di Settings, dengan bendera, nama asli bahasa, nama dalam bahasa UI saat ini, dan pencarian.",
+            "✨Mendesain ulang sistem overlay setlist OBS dengan 12 template yang sangat dapat dikustomisasi untuk berbagai tata letak stream.",
+            "✨Overlay lirik dan setlist OBS kini memakai kanal pembaruan live yang lebih stabil, terutama saat beberapa Browser Source terbuka.",
+            "✨Menambahkan alur update di dalam aplikasi (Beta): unduh update dari KHelper dan selesaikan instalasi dengan restart aplikasi."
+          ]
+        },
+        {
+          "title": "🩵Peningkatan UX / Perbaikan Bug🩵",
+          "items": [
+            "🌟Melokalkan shell aplikasi utama, library lagu, hasil pencarian, pengelola unduhan, editor lirik, Stream Mode, Mini Player, overlay OBS, dan menu Electron.",
+            "🌟Menambahkan penyesuaian teks otomatis untuk tabel, tombol, dan kontrol yang padat, sehingga terjemahan panjang hanya diperkecil atau dipotong saat diperlukan.",
+            "🌟Memperkuat penyimpanan settings dengan penulisan berurutan, backup, penyimpanan file rusak, dan pemulihan untuk mengurangi risiko konfigurasi hilang setelah aplikasi tertutup tidak normal.",
+            "🛠️Memperbaiki detail tampilan thumbnail lagu online di baris lagu dan Mini Player.",
+            "🛠️Penyempurnaan tambahan pada detail antarmuka dan pengalaman penggunaan."
+          ]
+        }
+      ]
+    },
+    "th": {
+      "title": "🔥รายละเอียดอัปเดต KHelper v3.3.0 Beta🔥",
+      "summary": "เวอร์ชันนี้ทำให้ KHelper เป็น public beta ที่รองรับหลายภาษาอย่างจริงจัง พร้อมระบบ OBS setlist/lyrics overlay ที่ปรับแต่งได้มากขึ้น และการปรับปรุงประสบการณ์ใช้งานหลายส่วน",
+      "sections": [
+        {
+          "title": "🩵ฟีเจอร์ใหม่🩵",
+          "items": [
+            "✨เพิ่มอินเทอร์เฟซหลายภาษาแบบครบถ้วน รองรับจีนตัวเต็ม อังกฤษ จีนตัวย่อ ญี่ปุ่น เกาหลี อินโดนีเซีย และไทย",
+            "✨เพิ่มตัวเลือกภาษาใน Settings ที่ชัดเจนขึ้น พร้อมธง ชื่อภาษาตามเจ้าของภาษา ชื่อภาษาใน UI ปัจจุบัน และการค้นหา",
+            "✨ปรับระบบ OBS setlist overlay ใหม่ทั้งหมด พร้อม 12 เทมเพลตที่ปรับแต่งได้ละเอียดสำหรับเลย์เอาต์สตรีมหลายแบบ",
+            "✨OBS lyrics และ setlist overlays ใช้ช่องทางอัปเดตสดที่เสถียรกว่าเดิม โดยเฉพาะเมื่อเปิด Browser Source หลายรายการ",
+            "✨เพิ่มระบบอัปเดตในแอป (Beta) ดาวน์โหลดอัปเดตจากใน KHelper แล้วติดตั้งให้เสร็จด้วยการรีสตาร์ตแอป"
+          ]
+        },
+        {
+          "title": "🩵ปรับปรุง UX / แก้ไขบั๊ก🩵",
+          "items": [
+            "🌟แปลและจัดระบบหลายภาษาให้หน้าหลัก คลังเพลง ผลการค้นหา ตัวจัดการดาวน์โหลด ตัวแก้ไขเนื้อเพลง Stream Mode, Mini Player, OBS overlays และเมนู Electron",
+            "🌟เพิ่มระบบปรับข้อความอัตโนมัติสำหรับตาราง ปุ่ม และคอนโทรลที่มีพื้นที่จำกัด ทำให้คำแปลยาวถูกย่อหรือแสดงจุดไข่ปลาเฉพาะเมื่อจำเป็น",
+            "🌟เพิ่มความปลอดภัยให้การบันทึก settings ด้วยการเขียนแบบเรียงลำดับ สำรองไฟล์ เก็บไฟล์ที่เสียหาย และกู้คืน เพื่อลดความเสี่ยงที่การตั้งค่าหายหลังปิดแอปผิดปกติ",
+            "🛠️แก้ไขรายละเอียดการแสดง thumbnail ของเพลงออนไลน์ในแถวเพลงและ Mini Player",
+            "🛠️ปรับปรุงรายละเอียดอินเทอร์เฟซและประสบการณ์ใช้งานเพิ่มเติม"
+          ]
+        }
+      ]
+    }
+  }
+}

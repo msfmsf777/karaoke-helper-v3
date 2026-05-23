@@ -1,4 +1,4 @@
-import { loadEnvFile, requireEnv, runBuildPipeline } from './release-utils.mjs';
+import { loadEnvFile, requireEnv, runBuildPipeline, runNodeScript } from './release-utils.mjs';
 
 loadEnvFile();
 requireEnv([
@@ -12,4 +12,5 @@ requireEnv([
 ]);
 
 console.log('Building signed release package...');
+runNodeScript('scripts/prepare-trusted-signing.mjs');
 runBuildPipeline({ signed: true });

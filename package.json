@@ -3,7 +3,7 @@
   "description": "Karaoke Helper Application - Designed for VTubers and Singing Streamers",
   "author": "msfmsf777",
   "private": true,
-  "version": "3.3.0",
+  "version": "3.3.0-beta",
   "type": "module",
   "scripts": {
     "dev": "vite",
