@@ -7,6 +7,8 @@ interface AudioContextWithSinkId extends AudioContext {
 // Import SoundTouchJS and Processor code as raw strings
 import soundtouchLib from 'soundtouchjs/dist/soundtouch.js?raw';
 import processorCode from './SoundTouchProcessor.js?raw';
+import { NativeAudioPlayer } from './NativeAudioPlayer';
+import { resolveNativeCompletionRole, resolveNativeStartDelays, resolveOutputGains } from './outputRouting';
 
 export type OutputRole = 'stream' | 'headphone';
 export type TrackType = 'instrumental' | 'vocal';
@@ -261,53 +263,6 @@ class AudioPlayer {
   }
 }
 
-export class NativeAudioPlayer {
-  private el: SinkableAudioElement;
-  private role: OutputRole;
-  public onEnded?: () => void;
-  public loop = false;
-
-  constructor(role: OutputRole) {
-    this.role = role;
-    this.el = new Audio();
-    this.el.crossOrigin = 'anonymous';
-    this.el.onended = () => {
-      if (this.loop) {
-        this.el.currentTime = 0;
-        this.el.play().catch(() => {});
-      } else {
-        this.onEnded?.();
-      }
-    };
-  }
-
-  async loadUrl(url: string) {
-    this.el.src = url;
-    this.el.load();
-  }
-
-  async setSinkId(deviceId: string | null) {
-      if (this.el.setSinkId) {
-          try {
-            await this.el.setSinkId(deviceId || '');
-          } catch(e) { }
-      }
-  }
-
-  play() { this.el.play().catch(()=>{}); }
-  pause() { this.el.pause(); }
-  stop() { this.pause(); this.el.currentTime = 0; }
-  seek(time: number) { this.el.currentTime = time; }
-  setVolume(vol: number) { this.el.volume = Math.min(Math.max(vol, 0), 1); }
-  get currentTime() { return this.el.currentTime; }
-  get duration() { return this.el.duration || 0; }
-  get isPlaying() { return !this.el.paused; }
-  get volume() { return this.el.volume; }
-  get sampleRate() { return 44100; } // Fallback sample rate for native
-  get outputRole() { return this.role; }
-  dispose() { this.stop(); this.el.src = ''; }
-}
-
 export class DualAudioEngine implements AudioEngine {
   private streamPlayer: AudioPlayer;
   private headphonePlayer: AudioPlayer;
@@ -326,6 +281,11 @@ export class DualAudioEngine implements AudioEngine {
   // Track volumes
   private instrVolume = 1.0;
   private vocalVolume = 1.0;
+  private streamOutputGain = 0;
+  private headphoneOutputGain = 1.0;
+  private streamDeviceId: string | null = null;
+  private headphoneDeviceId: string | null = null;
+  private offsetMs = 0;
 
   private volumeCallbacks = new Set<(track: TrackType, volume: number) => void>();
 
@@ -344,16 +304,19 @@ export class DualAudioEngine implements AudioEngine {
       }
     };
     
-    this.nativeHeadphonePlayer.onEnded = () => {
-        if (this.activeMode === 'native') {
-            this.handleEnded();
-        }
+    this.nativeStreamPlayer.onEnded = () => {
+      if (this.activeMode === 'native' && this.getNativeCompletionRole() === 'stream') {
+        this.handleEnded();
+      }
     };
 
-    this.streamPlayer.setVolume(0.8);
-    this.headphonePlayer.setVolume(1.0);
-    this.nativeStreamPlayer.setVolume(0.8);
-    this.nativeHeadphonePlayer.setVolume(1.0);
+    this.nativeHeadphonePlayer.onEnded = () => {
+      if (this.activeMode === 'native' && this.getNativeCompletionRole() === 'headphone') {
+        this.handleEnded();
+      }
+    };
+
+    this.applyTrackVolumes();
   }
 
   private toFileUrl(filePath: string): string {
@@ -371,10 +334,18 @@ export class DualAudioEngine implements AudioEngine {
         const time = this.getCurrentTime();
         
         // Sync native stream player if drifting
-        if (this.activeMode === 'native' && this.nativeStreamPlayer.isPlaying) {
-             const diff = Math.abs(this.nativeStreamPlayer.currentTime - this.nativeHeadphonePlayer.currentTime);
-             if (diff > 0.15) {     // 150ms drift threshold
-                 this.nativeStreamPlayer.seek(this.nativeHeadphonePlayer.currentTime);
+        const nativeRouting = this.getResolvedOutputGains();
+        if (
+          this.activeMode === 'native'
+          && nativeRouting.stream > 0
+          && nativeRouting.headphone > 0
+          && this.nativeStreamPlayer.isPlaying
+          && this.nativeHeadphonePlayer.isPlaying
+        ) {
+             const desiredDiff = this.offsetMs / 1000;
+             const drift = (this.nativeStreamPlayer.currentTime - this.nativeHeadphonePlayer.currentTime) - desiredDiff;
+             if (Math.abs(drift) > 0.15) {
+                 this.nativeStreamPlayer.seek(Math.max(0, this.nativeHeadphonePlayer.currentTime + desiredDiff));
              }
         }
 
@@ -404,9 +375,10 @@ export class DualAudioEngine implements AudioEngine {
     const generation = ++this.loadGeneration;
     this.activeMode = 'native';
     console.log('[AudioEngine] Loading Native Stream:', url);
+    const outputGains = this.getResolvedOutputGains();
     await Promise.all([
-      this.nativeStreamPlayer.loadUrl(url),
-      this.nativeHeadphonePlayer.loadUrl(url)
+      this.nativeStreamPlayer.loadUrl(url, outputGains.stream > 0),
+      this.nativeHeadphonePlayer.loadUrl(url, outputGains.headphone > 0)
     ]);
     if (generation !== this.loadGeneration) return;
     this.applyTrackVolumes();
@@ -472,21 +444,34 @@ export class DualAudioEngine implements AudioEngine {
   private applyTrackVolumes() {
     // Stream: Instr Only (Vocal = 0)
     // Headphone: Instr + Vocal
+    const outputGains = this.getResolvedOutputGains();
 
     // Stream Player
+    this.streamPlayer.setVolume(outputGains.stream);
     this.streamPlayer.setTrackVolumes(this.instrVolume, 0);
-    this.nativeStreamPlayer.setVolume(this.instrVolume);
+    this.nativeStreamPlayer.setVolume(this.instrVolume * outputGains.stream);
 
     // Headphone Player
+    this.headphonePlayer.setVolume(outputGains.headphone);
     this.headphonePlayer.setTrackVolumes(this.instrVolume, this.vocalVolume);
     // For native mode (unseparated streaming), we map the entire track to the "instrumental" control
-    this.nativeHeadphonePlayer.setVolume(this.instrVolume);
+    this.nativeHeadphonePlayer.setVolume(this.instrVolume * outputGains.headphone);
   }
 
   play(): void {
     if (this.activeMode === 'native') {
-        this.nativeStreamPlayer.play();
-        this.nativeHeadphonePlayer.play();
+        const outputGains = this.getResolvedOutputGains();
+        const dualOutputAudible = outputGains.stream > 0 && outputGains.headphone > 0;
+        const delays = resolveNativeStartDelays(this.offsetMs, dualOutputAudible);
+        const position = this.nativeHeadphonePlayer.currentTime;
+
+        this.nativeStreamPlayer.pause();
+        this.nativeHeadphonePlayer.pause();
+        this.nativeStreamPlayer.seek(position);
+        this.nativeHeadphonePlayer.seek(position);
+
+        if (outputGains.stream > 0) this.nativeStreamPlayer.play(delays.stream);
+        if (outputGains.headphone > 0) this.nativeHeadphonePlayer.play(delays.headphone);
     } else {
         this.streamPlayer.play();
         this.headphonePlayer.play();
@@ -521,8 +506,12 @@ export class DualAudioEngine implements AudioEngine {
 
   seek(positionSeconds: number): void {
     if (this.activeMode === 'native') {
+        const shouldResume = this.isPlaying();
+        this.nativeStreamPlayer.pause();
+        this.nativeHeadphonePlayer.pause();
         this.nativeStreamPlayer.seek(positionSeconds);
         this.nativeHeadphonePlayer.seek(positionSeconds);
+        if (shouldResume) this.play();
     } else {
         this.streamPlayer.seek(positionSeconds);
         this.headphonePlayer.seek(positionSeconds);
@@ -539,7 +528,9 @@ export class DualAudioEngine implements AudioEngine {
   }
 
   isPlaying(): boolean {
-    return this.activeMode === 'native' ? this.nativeHeadphonePlayer.isPlaying : this.headphonePlayer.isPlaying;
+    return this.activeMode === 'native'
+      ? this.nativeHeadphonePlayer.isPlaying || this.nativeHeadphonePlayer.isPendingPlay
+      : this.headphonePlayer.isPlaying;
   }
 
   onTimeUpdate(callback: (timeSeconds: number) => void): () => void {
@@ -568,23 +559,29 @@ export class DualAudioEngine implements AudioEngine {
   }
 
   async setOutputDevice(role: OutputRole, deviceId: string | null): Promise<void> {
+    const restartNativePlayback = this.activeMode === 'native' && this.isPlaying();
     if (role === 'stream') {
+      this.streamDeviceId = deviceId;
       await this.streamPlayer.setSinkId(deviceId);
       await this.nativeStreamPlayer.setSinkId(deviceId);
     } else {
+      this.headphoneDeviceId = deviceId;
       await this.headphonePlayer.setSinkId(deviceId);
       await this.nativeHeadphonePlayer.setSinkId(deviceId);
     }
+    this.applyTrackVolumes();
+    if (restartNativePlayback) this.seek(this.getCurrentTime());
   }
 
   setOutputVolume(role: OutputRole, volume: number): void {
+    const restartNativePlayback = this.activeMode === 'native' && this.isPlaying();
     if (role === 'stream') {
-      this.streamPlayer.setVolume(volume);
-      this.nativeStreamPlayer.setVolume(volume);
+      this.streamOutputGain = volume;
     } else {
-      this.headphonePlayer.setVolume(volume);
-      this.nativeHeadphonePlayer.setVolume(volume);
+      this.headphoneOutputGain = volume;
     }
+    this.applyTrackVolumes();
+    if (restartNativePlayback) this.seek(this.getCurrentTime());
   }
 
   setTrackVolume(track: TrackType, volume: number): void {
@@ -600,13 +597,13 @@ export class DualAudioEngine implements AudioEngine {
   setPlaybackTransform(transform: PlaybackTransform): void {
     this.transform = transform;
     this.streamPlayer.setTransform(transform);
-    this.streamPlayer.setTransform(transform);
     this.headphonePlayer.setTransform(transform);
   }
 
   setOffset(offsetMs: number): void {
     // offsetMs > 0 => Delay Monitor (Headphone)
     // offsetMs < 0 => Delay Stream
+    this.offsetMs = offsetMs;
     const abs = Math.abs(offsetMs) / 1000;
 
     if (offsetMs > 0) {
@@ -615,7 +612,10 @@ export class DualAudioEngine implements AudioEngine {
     } else {
       this.headphonePlayer.setDelay(0);
       this.streamPlayer.setDelay(abs);
-      this.streamPlayer.setDelay(abs);
+    }
+
+    if (this.activeMode === 'native' && this.isPlaying()) {
+      this.seek(this.getCurrentTime());
     }
   }
 
@@ -651,6 +651,21 @@ export class DualAudioEngine implements AudioEngine {
 
   getTrackVolume(track: TrackType): number {
     return track === 'instrumental' ? this.instrVolume : this.vocalVolume;
+  }
+
+  private getResolvedOutputGains() {
+    return resolveOutputGains({
+      streamDeviceId: this.streamDeviceId,
+      headphoneDeviceId: this.headphoneDeviceId,
+      streamOutputGain: this.streamOutputGain,
+      headphoneOutputGain: this.headphoneOutputGain,
+    });
+  }
+
+  private getNativeCompletionRole(): OutputRole {
+    const outputGains = this.getResolvedOutputGains();
+    const dualOutputAudible = outputGains.stream > 0 && outputGains.headphone > 0;
+    return resolveNativeCompletionRole(this.offsetMs, dualOutputAudible);
   }
 }
 

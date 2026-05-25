@@ -45,7 +45,8 @@
       "streamOutput": "观众输出（Stream）",
       "headphoneOutput": "耳机输出",
       "syncOffset": "双输出同步偏移：",
-      "calibrate": "校准"
+      "calibrate": "校准",
+      "overlappingOutputWarning": "观众输出与耳机输出当前使用相同设备。为避免声音重叠，观众输出将保持静音；请选择不同设备以启用双输出。"
     },
     "separation": {
       "title": "人声分离质量",

@@ -45,7 +45,8 @@
       "streamOutput": "視聴者出力（配信）",
       "headphoneOutput": "ヘッドフォン出力",
       "syncOffset": "デュアル出力同期オフセット:",
-      "calibrate": "校正する"
+      "calibrate": "校正する",
+      "overlappingOutputWarning": "視聴者出力とヘッドフォン出力が同じデバイスに設定されています。音声の重複を防ぐため、視聴者出力はミュートされます。デュアル出力を使用するには別のデバイスを選択してください。"
     },
     "separation": {
       "title": "ボーカル分離品質",

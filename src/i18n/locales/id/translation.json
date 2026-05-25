@@ -45,7 +45,8 @@
       "streamOutput": "Output Penonton (Stream)",
       "headphoneOutput": "Output Headphone",
       "syncOffset": "Offset sinkronisasi keluaran ganda:",
-      "calibrate": "Kalibrasi"
+      "calibrate": "Kalibrasi",
+      "overlappingOutputWarning": "Output Penonton dan Output Headphone menggunakan perangkat yang sama. Output Penonton dibisukan untuk mencegah audio ganda. Pilih perangkat yang berbeda untuk mengaktifkan output ganda."
     },
     "separation": {
       "title": "Kualitas Pemisahan Vokal",

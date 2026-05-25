@@ -21,6 +21,7 @@
             "🌟主介面、歌曲庫、搜尋結果、下載管理、歌詞編輯器、實況模式、Mini Player、OBS 疊圖與系統選單已完成多語系整理。",
             "🌟表格、按鈕與緊湊控制區新增文字自動適配，較長的翻譯會在必要時縮小或省略，減少溢出與重疊。",
             "🌟設定保存改為更安全的流程，加入序列化寫入、備份、損毀設定保留與復原，降低異常關閉造成設定遺失的風險。",
+            "🌟調整線上串流播放的音訊輸出：停用的觀眾輸出不會因歌曲載入或音量調整而重新發聲，相同裝置的雙輸出會避免重複播放，分離裝置播放則會套用啟動同步與偏移設定。",
             "🛠️修正線上歌曲縮圖在歌曲列與 Mini Player 中的顯示細節。",
             "🛠️更多介面細節與使用體驗優化。"
           ]
@@ -47,6 +48,7 @@
             "🌟Localized the main app shell, song library, search results, download manager, lyric editor, stream mode, Mini Player, OBS overlays, and Electron menus.",
             "🌟Added adaptive compact text fitting for dense tables, buttons, and controls so longer translations shrink or truncate only when necessary.",
             "🌟Hardened settings persistence with serialized writes, backups, corrupt-file preservation, and restore behavior to reduce the risk of lost configuration after unexpected exits.",
+            "🌟Adjusted audio routing for online streams: disabled audience output remains silent through song loads and volume changes, overlapping output devices avoid duplicate playback, and separate-device playback applies synchronized startup and saved offset.",
             "🛠️Fixed online song thumbnail display details in song rows and the Mini Player.",
             "🛠️Additional interface polish and usability improvements."
           ]
@@ -73,6 +75,7 @@
             "🌟主界面、歌曲库、搜索结果、下载管理、歌词编辑器、直播模式、Mini Player、OBS 叠图与系统菜单已完成多语言整理。",
             "🌟表格、按钮与紧凑控制区新增文字自动适配，较长的翻译会在必要时缩小或省略，减少溢出与重叠。",
             "🌟设置保存改为更安全的流程，加入序列化写入、备份、损坏设置保留与恢复，降低异常关闭造成设置丢失的风险。",
+            "🌟调整在线串流播放的音频输出：停用的观众输出不会因歌曲加载或音量调整而重新发声，相同设备的双输出会避免重复播放，分离设备播放则会应用启动同步与偏移设置。",
             "🛠️修复在线歌曲缩略图在歌曲列与 Mini Player 中的显示细节。",
             "🛠️更多界面细节与使用体验优化。"
           ]
@@ -99,6 +102,7 @@
             "🌟メイン画面、曲ライブラリ、検索結果、ダウンロード管理、歌詞エディター、配信モード、Mini Player、OBS オーバーレイ、Electron メニューの多言語対応を整理しました。",
             "🌟密度の高い表、ボタン、操作部にテキスト自動調整を追加し、長い翻訳は必要な場合だけ縮小または省略されます。",
             "🌟設定保存を強化し、直列化された書き込み、バックアップ、破損ファイルの保持、復元処理により、異常終了後の設定消失リスクを下げました。",
+            "🌟オンラインストリームの音声出力を調整しました。無効化した視聴者出力は曲の読み込みや音量変更で再度鳴らず、同一デバイスへの二重出力は重複再生を避け、別デバイスへの出力では開始同期と保存済みオフセットを適用します。",
             "🛠️曲行と Mini Player におけるオンライン曲サムネイル表示の細部を修正しました。",
             "🛠️その他のインターフェース細部と使いやすさを改善しました。"
           ]
@@ -125,6 +129,7 @@
             "🌟메인 화면, 곡 라이브러리, 검색 결과, 다운로드 관리, 가사 편집기, 방송 모드, Mini Player, OBS 오버레이, Electron 메뉴의 다국어 처리를 정리했습니다.",
             "🌟밀도 높은 표, 버튼, 컨트롤 영역에 자동 텍스트 맞춤을 추가해 긴 번역은 필요한 경우에만 축소되거나 줄임표로 표시됩니다.",
             "🌟설정 저장을 직렬화된 쓰기, 백업, 손상 파일 보존, 복원 처리로 강화해 예기치 않은 종료 후 설정 손실 위험을 줄였습니다.",
+            "🌟온라인 스트림 오디오 출력을 조정했습니다. 비활성화한 시청자 출력은 곡 로드나 음량 변경으로 다시 출력되지 않으며, 같은 장치의 이중 출력은 중복 재생을 방지하고 서로 다른 장치 출력에는 시작 동기화와 저장된 오프셋을 적용합니다.",
             "🛠️곡 행과 Mini Player에서 온라인 곡 썸네일이 표시되는 세부 동작을 수정했습니다.",
             "🛠️그 밖의 인터페이스 세부 사항과 사용성을 개선했습니다."
           ]
@@ -151,6 +156,7 @@
             "🌟Melokalkan shell aplikasi utama, library lagu, hasil pencarian, pengelola unduhan, editor lirik, Stream Mode, Mini Player, overlay OBS, dan menu Electron.",
             "🌟Menambahkan penyesuaian teks otomatis untuk tabel, tombol, dan kontrol yang padat, sehingga terjemahan panjang hanya diperkecil atau dipotong saat diperlukan.",
             "🌟Memperkuat penyimpanan settings dengan penulisan berurutan, backup, penyimpanan file rusak, dan pemulihan untuk mengurangi risiko konfigurasi hilang setelah aplikasi tertutup tidak normal.",
+            "🌟Menyesuaikan perutean audio untuk stream online: output penonton yang dinonaktifkan tetap senyap saat lagu dimuat atau volume diubah, perangkat output yang sama menghindari pemutaran ganda, dan output pada perangkat berbeda menerapkan sinkronisasi awal serta offset tersimpan.",
             "🛠️Memperbaiki detail tampilan thumbnail lagu online di baris lagu dan Mini Player.",
             "🛠️Penyempurnaan tambahan pada detail antarmuka dan pengalaman penggunaan."
           ]
@@ -177,6 +183,7 @@
             "🌟แปลและจัดระบบหลายภาษาให้หน้าหลัก คลังเพลง ผลการค้นหา ตัวจัดการดาวน์โหลด ตัวแก้ไขเนื้อเพลง Stream Mode, Mini Player, OBS overlays และเมนู Electron",
             "🌟เพิ่มระบบปรับข้อความอัตโนมัติสำหรับตาราง ปุ่ม และคอนโทรลที่มีพื้นที่จำกัด ทำให้คำแปลยาวถูกย่อหรือแสดงจุดไข่ปลาเฉพาะเมื่อจำเป็น",
             "🌟เพิ่มความปลอดภัยให้การบันทึก settings ด้วยการเขียนแบบเรียงลำดับ สำรองไฟล์ เก็บไฟล์ที่เสียหาย และกู้คืน เพื่อลดความเสี่ยงที่การตั้งค่าหายหลังปิดแอปผิดปกติ",
+            "🌟ปรับการกำหนดเส้นทางเสียงสำหรับการสตรีมเพลงออนไลน์: เอาต์พุตสำหรับผู้ชมที่ปิดไว้จะยังคงเงียบเมื่อโหลดเพลงหรือปรับระดับเสียง การใช้เอาต์พุตอุปกรณ์เดียวกันจะหลีกเลี่ยงการเล่นเสียงซ้ำ และการใช้อุปกรณ์แยกกันจะใช้การซิงค์ตอนเริ่มเล่นพร้อมค่าออฟเซ็ตที่บันทึกไว้",
             "🛠️แก้ไขรายละเอียดการแสดง thumbnail ของเพลงออนไลน์ในแถวเพลงและ Mini Player",
             "🛠️ปรับปรุงรายละเอียดอินเทอร์เฟซและประสบการณ์ใช้งานเพิ่มเติม"
           ]

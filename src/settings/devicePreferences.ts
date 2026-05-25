@@ -40,7 +40,7 @@ export function updateOutputDevicePreference(role: OutputRole, deviceId: string 
     streamDeviceId: null,
     headphoneDeviceId: null,
     deviceOffsets: {},
-    isStreamEnabled: true
+    isStreamEnabled: false
   };
   const next: OutputDevicePreferences =
     role === 'stream'
@@ -55,7 +55,7 @@ export function saveStreamEnabledPreference(enabled: boolean): void {
     streamDeviceId: null,
     headphoneDeviceId: null,
     deviceOffsets: {},
-    isStreamEnabled: true
+    isStreamEnabled: false
   };
   const next = { ...current, isStreamEnabled: enabled };
   saveOutputDevicePreferences(next);
@@ -77,7 +77,7 @@ export function saveAudioOffset(streamId: string | null, headphoneId: string | n
     streamDeviceId: null,
     headphoneDeviceId: null,
     deviceOffsets: {},
-    isStreamEnabled: true
+    isStreamEnabled: false
   };
   if (!prefs.deviceOffsets) prefs.deviceOffsets = {};
 

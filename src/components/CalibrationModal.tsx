@@ -94,6 +94,7 @@ const CalibrationModal: React.FC<CalibrationModalProps> = ({
         // Configure devices
         engine.setOutputDevice('stream', streamDeviceId);
         engine.setOutputDevice('headphone', headphoneDeviceId);
+        engine.setOutputVolume('stream', 1);
 
         // Configure offset
         engine.setOffset(initialOffset);

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import audioEngine, { OutputRole } from '../audio/AudioEngine';
+import { areOutputDevicesOverlapping } from '../audio/outputRouting';
 import { useUserData } from '../contexts/UserDataContext';
 import CalibrationModal from './CalibrationModal';
 import { getAudioOffset, loadOutputDevicePreferences, saveStreamEnabledPreference } from '../settings/devicePreferences';
@@ -42,7 +43,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     const [currentOffset, setCurrentOffset] = useState(0);
 
     // Stream Toggle State
-    const [streamEnabled, setStreamEnabled] = useState(true);
+    const [streamEnabled, setStreamEnabled] = useState(false);
 
     // Sample Rates
     const [streamSampleRate, setStreamSampleRate] = useState(0);
@@ -119,6 +120,10 @@ const SettingsView: React.FC<SettingsViewProps> = ({
         // For simplicity: ON = 1.0, OFF = 0.
         audioEngine.setOutputVolume('stream', enabled ? 1.0 : 0);
     };
+
+    const overlappingOutputs = streamEnabled
+        && areOutputDevicesOverlapping(streamDeviceId, headphoneDeviceId);
+    const calibrationEnabled = streamEnabled && !overlappingOutputs;
 
     const deviceOptions = useMemo(() => {
         return [
@@ -366,6 +371,24 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                             </div>
                         </div>
 
+                        {overlappingOutputs && (
+                            <div
+                                role="status"
+                                style={{
+                                    marginBottom: '16px',
+                                    padding: '12px 16px',
+                                    borderRadius: '8px',
+                                    border: '1px solid rgba(255, 190, 80, 0.45)',
+                                    background: 'rgba(255, 190, 80, 0.1)',
+                                    color: '#f5d28a',
+                                    fontSize: '13px',
+                                    lineHeight: '1.5',
+                                }}
+                            >
+                                {t('settings.audio.overlappingOutputWarning')}
+                            </div>
+                        )}
+
                         {/* Calibration Row - Disabled if Stream OFF */}
                         <div style={{
                             background: '#2a2a2a',
@@ -375,8 +398,8 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            opacity: streamEnabled ? 1 : 0.4,
-                            pointerEvents: streamEnabled ? 'auto' : 'none',
+                            opacity: calibrationEnabled ? 1 : 0.4,
+                            pointerEvents: calibrationEnabled ? 'auto' : 'none',
                             transition: 'opacity 0.2s'
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -392,14 +415,14 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 
                             <button
                                 onClick={() => setShowCalibration(true)}
-                                disabled={!streamEnabled}
+                                disabled={!calibrationEnabled}
                                 style={{
                                     padding: '8px 16px',
                                     backgroundColor: '#444',
                                     color: '#fff',
                                     borderRadius: '6px',
                                     border: 'none',
-                                    cursor: !streamEnabled ? 'not-allowed' : 'pointer',
+                                    cursor: !calibrationEnabled ? 'not-allowed' : 'pointer',
                                     fontSize: '13px'
                                 }}
                             >

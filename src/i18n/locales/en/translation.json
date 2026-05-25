@@ -45,7 +45,8 @@
       "streamOutput": "Audience Output (Stream)",
       "headphoneOutput": "Headphone Output",
       "syncOffset": "Dual-output sync offset:",
-      "calibrate": "Calibrate"
+      "calibrate": "Calibrate",
+      "overlappingOutputWarning": "Audience Output and Headphone Output are using the same device. Audience Output is muted to prevent doubled audio. Select different devices to enable dual output."
     },
     "separation": {
       "title": "Vocal Separation Quality",

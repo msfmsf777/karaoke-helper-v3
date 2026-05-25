@@ -45,7 +45,8 @@
       "streamOutput": "시청자 출력(스트림)",
       "headphoneOutput": "헤드폰 출력",
       "syncOffset": "이중 출력 동기화 오프셋:",
-      "calibrate": "교정"
+      "calibrate": "교정",
+      "overlappingOutputWarning": "시청자 출력과 헤드폰 출력이 같은 장치를 사용하고 있습니다. 중복 재생을 방지하기 위해 시청자 출력을 음소거합니다. 이중 출력을 사용하려면 서로 다른 장치를 선택하세요."
     },
     "separation": {
       "title": "보컬 분리 품질",
