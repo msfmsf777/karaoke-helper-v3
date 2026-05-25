@@ -139,7 +139,7 @@ export function runBuildPipeline({ signed }) {
   runNodeScript('scripts/clean-build.mjs', [], { env });
   runPackageBinary('tsc', [], { env });
   runPackageBinary('vite', ['build'], { env });
-  runPackageBinary('electron-builder', ['--win', '--config', 'electron-builder.config.mjs'], { env });
+  runPackageBinary('electron-builder', ['--win', '--config', 'electron-builder.config.mjs', '--publish', 'never'], { env });
   runNodeScript('scripts/generate-release-notes.mjs', [], { env });
   runNodeScript('scripts/validate-release-artifacts.mjs', [], { env });
 }
