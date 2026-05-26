@@ -77,6 +77,7 @@ export default {
     allowToChangeInstallationDirectory: true,
     deleteAppDataOnUninstall: false,
     multiLanguageInstaller: true,
+    // The installer include presents this selector only for normal installs; updates stay unattended.
     displayLanguageSelector: false,
     packElevateHelper: true,
     artifactName: '${productName}-Setup-${version}.${ext}',

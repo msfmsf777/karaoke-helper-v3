@@ -73,6 +73,42 @@ const DebugUpdaterUI: React.FC<DebugUpdaterUIProps> = ({ inline }) => {
         });
     };
 
+    const setDownloading = () => {
+        setAvailable();
+        _debugSetState({
+            status: 'downloading',
+            progress: {
+                percent: 42,
+                transferred: 42 * 1024 * 1024,
+                total: 100 * 1024 * 1024,
+                bytesPerSecond: 4 * 1024 * 1024,
+            },
+            error: null,
+        });
+    };
+
+    const setDownloaded = () => {
+        setAvailable();
+        _debugSetState({
+            status: 'downloaded',
+            progress: {
+                percent: 100,
+                transferred: 100 * 1024 * 1024,
+                total: 100 * 1024 * 1024,
+                bytesPerSecond: 0,
+            },
+            error: null,
+        });
+    };
+
+    const setInstalling = () => {
+        setDownloaded();
+        _debugSetState({
+            status: 'installing',
+            error: null,
+        });
+    };
+
     const reset = () => {
         _debugSetState({
             status: 'idle',
@@ -111,6 +147,9 @@ const DebugUpdaterUI: React.FC<DebugUpdaterUIProps> = ({ inline }) => {
             />
 
             <button onClick={setAvailable}>Simulate Available</button>
+            <button onClick={setDownloading}>Simulate Downloading (42%)</button>
+            <button onClick={setDownloaded}>Simulate Downloaded</button>
+            <button onClick={setInstalling}>Simulate Installing</button>
             <button onClick={setError}>Simulate Error</button>
             <button onClick={reset}>Reset (Idle)</button>
         </div>

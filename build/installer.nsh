@@ -24,6 +24,36 @@ LangString KHelperVcRuntimeFailed 1042 "Microsoft Visual C++ 재배포 가능 �
 LangString KHelperVcRuntimeFailed 1057 "Penginstal Microsoft Visual C++ Redistributable keluar dengan kode $0."
 LangString KHelperVcRuntimeFailed 1054 "ตัวติดตั้ง Microsoft Visual C++ Redistributable จบการทำงานด้วยรหัส $0"
 
+!macro customInit
+  ; Let fresh-install users choose a supported language without interrupting in-app updates.
+  ${IfNot} ${isUpdated}
+    !insertmacro MUI_LANGDLL_DISPLAY
+  ${EndIf}
+!macroend
+
+!macro customFinishPage
+  Function KHelperLaunchInstalledApp
+    ${If} ${isUpdated}
+      StrCpy $1 "--updated"
+    ${Else}
+      StrCpy $1 ""
+    ${EndIf}
+    ${StdUtils.ExecShellAsUser} $0 "$launchLink" "open" "$1"
+  FunctionEnd
+
+  Function KHelperFinishPagePre
+    ${If} ${isUpdated}
+      Call KHelperLaunchInstalledApp
+      Quit
+    ${EndIf}
+  FunctionEnd
+
+  !define MUI_PAGE_CUSTOMFUNCTION_PRE KHelperFinishPagePre
+  !define MUI_FINISHPAGE_RUN
+  !define MUI_FINISHPAGE_RUN_FUNCTION "KHelperLaunchInstalledApp"
+  !insertmacro MUI_PAGE_FINISH
+!macroend
+
 !macro customInstall
   SetRegView 64
   ClearErrors

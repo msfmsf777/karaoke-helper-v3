@@ -159,10 +159,11 @@ const SearchResultItem: React.FC<{
 
 const UpdateIndicator: React.FC = () => {
   const { t } = useTranslation();
-  const { status } = useUpdater();
+  const { status, progress } = useUpdater();
   const [showPopup, setShowPopup] = useState(false);
 
   const isVisible = ['available', 'downloading', 'downloaded', 'installing', 'error'].includes(status);
+  const downloadPercent = Math.max(0, Math.min(100, progress?.percent ?? 0));
 
   if (!isVisible) return null;
 
@@ -187,35 +188,67 @@ const UpdateIndicator: React.FC = () => {
           opacity: status === 'error' || status === 'downloaded' ? 1 : 0.8,
           transition: 'opacity 0.2s',
           position: 'relative',
-          gap: '0px',
           // @ts-ignore
           WebkitAppRegion: 'no-drag',
         }}
         onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
         onMouseLeave={(e) => e.currentTarget.style.opacity = status === 'error' ? '1' : '0.8'}
       >
-        <div style={{ position: 'relative', display: 'flex' }}>
-          {/* Base Icon - Use imported SVG */}
+        <div style={{ position: 'relative', display: 'flex', width: '24px', height: '24px' }}>
           <img
             src={UpdateIconBase}
             alt="Update"
-            className={
-              status === 'downloading' || status === 'installing'
-                ? 'khelper-update-icon-spinning'
-                : status === 'downloaded'
-                  ? 'khelper-update-icon-pulse'
-                  : undefined
-            }
             style={{
               width: '24px',
               height: '24px',
               display: 'block',
-              // Tint red if error (using filter because it's an img tag)
               filter: status === 'error'
-                ? 'sepia(1) saturate(10000%) hue-rotate(0deg) brightness(80%) saturate(1000%)' // Attempt to make it red
+                ? 'sepia(1) saturate(10000%) hue-rotate(0deg) brightness(80%) saturate(1000%)'
                 : 'none'
             }}
           />
+          {status === 'downloaded' && (
+            <span aria-hidden="true" style={{
+              position: 'absolute',
+              right: '-5px',
+              bottom: '-4px',
+              width: '12px',
+              height: '12px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--accent-color)',
+              border: '2px solid #111',
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '8px',
+              fontWeight: 700,
+              lineHeight: 1,
+            }}>
+              &#10003;
+            </span>
+          )}
+          {status === 'downloading' && (
+            <span aria-hidden="true" style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: '-6px',
+              height: '3px',
+              borderRadius: '999px',
+              backgroundColor: 'rgba(255, 255, 255, 0.16)',
+              overflow: 'hidden',
+            }}>
+              <span style={{
+                display: 'block',
+                width: `${downloadPercent}%`,
+                height: '100%',
+                borderRadius: 'inherit',
+                backgroundColor: 'var(--accent-color)',
+                transition: 'width 0.2s ease',
+              }} />
+            </span>
+          )}
         </div>
       </button>
       {showPopup && <UpdatePopup onClose={() => setShowPopup(false)} />}

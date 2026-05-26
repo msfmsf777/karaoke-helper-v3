@@ -220,7 +220,9 @@ function installDownloadedUpdate() {
 
     setState({ status: 'installing', error: null });
     setTimeout(() => {
-        autoUpdater.quitAndInstall(true, true);
+        // Run the update installer visibly so long package replacement is not an unexplained blank wait.
+        // The NSIS update-only finish hook relaunches KHelper without requiring user input.
+        autoUpdater.quitAndInstall(false);
     }, 100);
 }
 
