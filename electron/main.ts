@@ -28,6 +28,7 @@ import { applyGlobalHotkeys, getHotkeyRegistrationStatus, unregisterGlobalHotkey
 import { resolveOverlayDesign, mergeOverlayTemplatesConfig } from '../shared/overlayTemplates'
 import { getElectronLanguage, setElectronLanguage, tElectron } from './i18n'
 import { OverlayTransport, OverlayTransportPayload } from './overlayTransport'
+import { initializeAnalytics, registerAnalyticsIpc, shutdownAnalytics, trackAnalytics } from './analytics'
 
 // Disable native swipe navigation (fixes sidebar drag sliding the screen)
 app.commandLine.appendSwitch('disable-features', 'OverscrollHistoryNavigation')
@@ -615,6 +616,7 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   killActiveSeparation()
   unregisterGlobalHotkeys()
+  void shutdownAnalytics()
 })
 
 
@@ -936,6 +938,8 @@ if (!gotTheLock) {
 
     console.log('[App] userData path:', app.getPath('userData'))
 
+    registerAnalyticsIpc()
+
     // Initialize Updater
     initUpdater()
 
@@ -955,6 +959,8 @@ if (!gotTheLock) {
     setElectronLanguage(settings.language)
     updateTrayMenu()
     applyHotkeysFromSettings(settings.hotkeys)
+    await initializeAnalytics()
+    await trackAnalytics({ type: 'App.Launched' })
   })
 }
 

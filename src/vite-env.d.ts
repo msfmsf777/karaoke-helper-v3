@@ -109,6 +109,11 @@ interface Window {
       loadSettings: () => Promise<any>;
       loadSettingsWithMeta: () => Promise<unknown>;
     };
+    analytics: {
+      getSettings: () => Promise<import('../shared/analytics').AnalyticsSettings>;
+      setConsent: (consent: Exclude<import('../shared/analytics').AnalyticsConsent, 'unset'>) => Promise<import('../shared/analytics').AnalyticsSettings>;
+      track: (event: import('../shared/analytics').AnalyticsEvent) => Promise<boolean>;
+    };
     windowOps: {
       minimize: () => void;
       maximize: () => void;

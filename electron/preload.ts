@@ -10,6 +10,7 @@ import type {
   SetlistOverlayDesign,
 } from '../shared/overlayTemplates'
 import type { SupportedLanguage } from '../shared/i18n'
+import type { AnalyticsConsent, AnalyticsEvent, AnalyticsSettings } from '../shared/analytics'
 
 type OverlayUpdatePayload = {
   type?: string
@@ -188,6 +189,12 @@ contextBridge.exposeInMainWorld('khelper', {
     saveSettings: (settings: any): Promise<void> => ipcRenderer.invoke('userData:save-settings', settings),
     loadSettings: (): Promise<any> => ipcRenderer.invoke('userData:load-settings'),
     loadSettingsWithMeta: (): Promise<unknown> => ipcRenderer.invoke('userData:load-settings-with-meta'),
+  },
+  analytics: {
+    getSettings: (): Promise<AnalyticsSettings> => ipcRenderer.invoke('analytics:get-settings'),
+    setConsent: (consent: Exclude<AnalyticsConsent, 'unset'>): Promise<AnalyticsSettings> =>
+      ipcRenderer.invoke('analytics:set-consent', consent),
+    track: (event: AnalyticsEvent): Promise<boolean> => ipcRenderer.invoke('analytics:track', event),
   },
   updater: {
     check: () => ipcRenderer.invoke('updater:check'),
