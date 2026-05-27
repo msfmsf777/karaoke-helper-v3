@@ -7,6 +7,7 @@ import BugIcon from '../assets/icons/bug.svg';
 import { useUpdater } from '../contexts/UpdaterContext';
 import pkg from '../../package.json';
 import { useTranslation } from 'react-i18next';
+import { PRIVACY_NOTICE_URL } from '../constants/privacy';
 
 // Configuration for social links - Edit here to change links
 const SOCIAL_LINKS = [
@@ -272,6 +273,22 @@ const AboutPopup: React.FC<AboutPopupProps> = ({ open, onClose }) => {
                         </div>
                     ))}
                 </div>
+                <button
+                    type="button"
+                    onClick={() => void window.api.openExternal(PRIVACY_NOTICE_URL)}
+                    style={{
+                        marginTop: '20px',
+                        padding: 0,
+                        border: 0,
+                        background: 'transparent',
+                        color: '#9cccf8',
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        textDecoration: 'underline',
+                    }}
+                >
+                    {t('settings.privacy.privacyNotice')}
+                </button>
             </div>
         </div>
     );

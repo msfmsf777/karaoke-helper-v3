@@ -13,6 +13,8 @@
 
 > ⚠️ 目前僅支援 **Windows (64-bit)**，其他平台暫不支援。
 
+> 🔒 KHelper 會在應用程式內詢問是否允許選用的隱私保護使用統計；不允許不會影響任何功能。詳情請見 [隱私權聲明 / Privacy Notice](./PRIVACY.md)。
+
 【[直接下載連結](https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v3.2.0-beta/KHelperV3.Setup.3.2.0-beta.exe)】
 
 
@@ -207,6 +209,8 @@
 ## 📌 狀態與授權 (Status & License)
 
 -   本專案目前為 **公開測試 (Public Beta / Pre-release)**。
+
+-   產品改善使用統計為選用功能，僅在應用程式內取得允許後啟用；請參閱 [隱私權聲明 / Privacy Notice](./PRIVACY.md)。
     
 -   二進位安裝檔可供公開試用；原始碼授權與使用條款以 repo 內 LICENSE / NOTICE 為準。
     

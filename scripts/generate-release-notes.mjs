@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import process from 'node:process';
 
 const REQUIRED_LOCALES = ['zh-TW', 'en', 'zh-CN', 'ja', 'ko', 'id', 'th'];
 const DISPLAY_ORDER = ['zh-TW', 'en', 'zh-CN', 'ja', 'ko', 'id', 'th'];
@@ -15,12 +16,15 @@ const LOCALE_LABELS = {
 const GITHUB_REPOSITORY = 'msfmsf777/karaoke-helper-v3';
 const DISCORD_URL = 'https://discord.gg/96zfTcBgZG';
 const README_URL = 'https://github.com/msfmsf777/karaoke-helper-v3?tab=readme-ov-file#%E7%99%BD%E8%8A%99%E5%A6%AE-k-%E6%AD%8C%E5%B0%8F%E5%B9%AB%E6%89%8B-v3-khelper';
+const PRIVACY_URL = 'https://github.com/msfmsf777/karaoke-helper-v3/blob/main/PRIVACY.md';
 const RELEASE_APPENDICES = {
   'zh-TW': {
     support: `**感謝大家支持 K歌小幫手！如果遇到更多 Bug 或有功能請求，歡迎前往 [DC 群組論壇](${DISCORD_URL}) 回報，我都會看到！**`,
     introduction: '簡介',
     tagline: '🔥主播歌回唯一需要的控制台 ( •̀ ω •́ )✧',
     platform: '⚠️ 目前僅在 Windows 10 / 11（64-bit）完成測試',
+    analytics: '🔒 KHelper 會在應用程式內詢問是否允許選用的隱私保護使用統計；不允許不會影響任何功能。',
+    privacy: '隱私權聲明',
     download: '最新版下載連結',
     features: '核心功能',
     items: [
@@ -42,6 +46,8 @@ const RELEASE_APPENDICES = {
     introduction: 'About',
     tagline: '🔥The only command center a karaoke streamer needs ( •̀ ω •́ )✧',
     platform: '⚠️ Currently tested only on Windows 10 / 11 (64-bit)',
+    analytics: '🔒 KHelper asks inside the app whether to allow optional privacy-preserving usage statistics; refusing does not affect any feature.',
+    privacy: 'Privacy Notice',
     download: 'Download the latest release',
     features: 'Core Features',
     items: [
@@ -63,6 +69,8 @@ const RELEASE_APPENDICES = {
     introduction: '简介',
     tagline: '🔥主播歌回唯一需要的控制台 ( •̀ ω •́ )✧',
     platform: '⚠️ 目前仅在 Windows 10 / 11（64-bit）完成测试',
+    analytics: '🔒 KHelper 会在应用内询问是否允许可选的隐私保护使用统计；不允许不会影响任何功能。',
+    privacy: '隐私声明',
     download: '最新版下载链接',
     features: '核心功能',
     items: [
@@ -84,6 +92,8 @@ const RELEASE_APPENDICES = {
     introduction: '概要',
     tagline: '🔥歌枠配信者に必要な、ただ一つのコントロールセンター ( •̀ ω •́ )✧',
     platform: '⚠️ 現在、Windows 10 / 11（64-bit）でのみ動作確認済みです',
+    analytics: '🔒 KHelper はアプリ内で任意のプライバシー保護利用統計を許可するか確認します。許可しなくても機能に影響はありません。',
+    privacy: 'プライバシー通知',
     download: '最新版をダウンロード',
     features: '主な機能',
     items: [
@@ -105,6 +115,8 @@ const RELEASE_APPENDICES = {
     introduction: '소개',
     tagline: '🔥노래 방송 스트리머에게 필요한 단 하나의 컨트롤 센터 ( •̀ ω •́ )✧',
     platform: '⚠️ 현재 Windows 10 / 11 (64-bit)에서만 테스트되었습니다',
+    analytics: '🔒 KHelper는 앱 안에서 선택적 개인정보 보호 사용 통계 허용 여부를 묻습니다. 거부해도 기능에는 영향이 없습니다.',
+    privacy: '개인정보 처리 안내',
     download: '최신 버전 다운로드',
     features: '핵심 기능',
     items: [
@@ -126,6 +138,8 @@ const RELEASE_APPENDICES = {
     introduction: 'Tentang',
     tagline: '🔥Satu-satunya pusat kontrol yang dibutuhkan streamer karaoke ( •̀ ω •́ )✧',
     platform: '⚠️ Saat ini hanya diuji pada Windows 10 / 11 (64-bit)',
+    analytics: '🔒 KHelper meminta izin di dalam aplikasi untuk statistik penggunaan opsional yang menjaga privasi; menolak tidak memengaruhi fitur apa pun.',
+    privacy: 'Pemberitahuan Privasi',
     download: 'Unduh rilis terbaru',
     features: 'Fitur Utama',
     items: [
@@ -147,6 +161,8 @@ const RELEASE_APPENDICES = {
     introduction: 'แนะนำ',
     tagline: '🔥ศูนย์ควบคุมเดียวที่สตรีมเมอร์คาราโอเกะต้องมี ( •̀ ω •́ )✧',
     platform: '⚠️ ปัจจุบันทดสอบแล้วเฉพาะบน Windows 10 / 11 (64-bit)',
+    analytics: '🔒 KHelper จะขออนุญาตภายในแอปสำหรับสถิติการใช้งานแบบเลือกได้ที่คุ้มครองความเป็นส่วนตัว การปฏิเสธไม่กระทบฟีเจอร์ใด ๆ',
+    privacy: 'ประกาศความเป็นส่วนตัว',
     download: 'ดาวน์โหลดเวอร์ชันล่าสุด',
     features: 'ฟีเจอร์หลัก',
     items: [
@@ -285,6 +301,8 @@ function renderReleaseAppendix(locale, version) {
     copy.tagline,
     '',
     `> ${copy.platform}`,
+    '',
+    `${copy.analytics} [${copy.privacy}](${PRIVACY_URL})`,
     '',
     `【[${copy.download}](${downloadUrl})】`,
     '',
