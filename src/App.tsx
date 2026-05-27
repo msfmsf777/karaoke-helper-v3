@@ -28,6 +28,7 @@ const SearchResultsView = lazy(() => import('./components/SearchResultsView'));
 
 const AboutPopup = lazy(() => import('./components/AboutPopup'));
 import MiniPlayerSync from './components/MiniPlayer/MiniPlayerSync';
+import AnalyticsConsentModal from './components/AnalyticsConsentModal';
 
 type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history' | 'download-manager' | 'settings' | string;
 
@@ -542,6 +543,7 @@ function AppContent() {
           <AboutPopup open={showAboutPopup} onClose={() => setShowAboutPopup(false)} />
         )}
       </Suspense>
+      <AnalyticsConsentModal />
 
     </div>
   );

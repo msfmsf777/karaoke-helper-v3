@@ -10,6 +10,7 @@ import OverlayTemplateSettingsSection, { OverlayTemplateEditor } from './Overlay
 import { OverlayKind } from '../../shared/overlayTemplates';
 import WebIcon from '../assets/icons/web.svg';
 import LanguageSelector from './LanguageSelector';
+import { PRIVACY_NOTICE_URL, TELEMETRYDECK_PRIVACY_URL } from '../constants/privacy';
 
 // Lazy loading DebugUpdaterUI
 const DebugUpdaterUI = React.lazy(() => import('./DebugUpdaterUI'));
@@ -23,6 +24,16 @@ interface SettingsViewProps {
     focusRequest?: { section: 'overlayTemplates'; token: number } | null;
 }
 
+const privacyLinkStyle: React.CSSProperties = {
+    border: 0,
+    padding: 0,
+    background: 'transparent',
+    color: '#70bbff',
+    fontSize: '13px',
+    cursor: 'pointer',
+    textDecoration: 'underline',
+};
+
 const SettingsView: React.FC<SettingsViewProps> = ({
     onBack,
     streamDeviceId,
@@ -34,9 +45,11 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const { separationQuality, setSeparationQuality, overlayTemplates, language, setLanguage } = useUserData();
+    const { separationQuality, setSeparationQuality, overlayTemplates, language, setLanguage, analytics, setAnalytics } = useUserData();
     const [overlayEditor, setOverlayEditor] = useState<{ kind: OverlayKind; designId: string } | null>(null);
     const [overlayEditorDirty, setOverlayEditorDirty] = useState(false);
+    const [analyticsSaving, setAnalyticsSaving] = useState(false);
+    const [analyticsError, setAnalyticsError] = useState(false);
 
     // Calibration State
     const [showCalibration, setShowCalibration] = useState(false);
@@ -124,6 +137,21 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     const overlappingOutputs = streamEnabled
         && areOutputDevicesOverlapping(streamDeviceId, headphoneDeviceId);
     const calibrationEnabled = streamEnabled && !overlappingOutputs;
+
+    const handleAnalyticsChange = async (enabled: boolean) => {
+        if (!window.khelper?.analytics || analyticsSaving) return;
+        setAnalyticsSaving(true);
+        setAnalyticsError(false);
+        try {
+            const saved = await window.khelper.analytics.setConsent(enabled ? 'enabled' : 'disabled');
+            setAnalytics(saved);
+        } catch (err) {
+            console.error('[Settings] Failed to update analytics preference', err);
+            setAnalyticsError(true);
+        } finally {
+            setAnalyticsSaving(false);
+        }
+    };
 
     const deviceOptions = useMemo(() => {
         return [
@@ -502,6 +530,52 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                                         <div style={{ color: '#aaa', fontSize: '13px' }}>{t('settings.separation.highDescription')}</div>
                                     </div>
                                 </label>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Section: Privacy & Improvement */}
+                    <section style={{ marginBottom: '40px' }}>
+                        <h2 style={{ margin: '0 0 16px 0', fontSize: '18px', color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: '12px' }}>
+                            {t('settings.privacy.title')}
+                        </h2>
+                        <div style={{ background: '#2a2a2a', padding: '24px', borderRadius: '12px', border: '1px solid #333' }}>
+                            <p style={{ margin: '0 0 18px', color: '#aaa', fontSize: '14px', lineHeight: 1.6 }}>
+                                {t('settings.privacy.description')}
+                            </p>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: analyticsSaving ? 'wait' : 'pointer', marginBottom: '12px' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={analytics.consent === 'enabled'}
+                                    disabled={analyticsSaving}
+                                    onChange={(event) => void handleAnalyticsChange(event.target.checked)}
+                                    style={{ accentColor: 'var(--accent-color)', width: '18px', height: '18px', cursor: analyticsSaving ? 'wait' : 'pointer' }}
+                                />
+                                <span style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold' }}>
+                                    {t('settings.privacy.shareUsage')}
+                                </span>
+                            </label>
+                            <p style={{ margin: '0 0 18px', color: analytics.consent === 'enabled' ? '#76d394' : '#aaa', fontSize: '13px' }}>
+                                {t(analytics.consent === 'enabled' ? 'settings.privacy.enabled' : 'settings.privacy.disabled')}
+                            </p>
+                            <p style={{ margin: '0 0 8px', color: '#c9c9c9', fontSize: '13px', lineHeight: 1.55 }}>
+                                {t('settings.privacy.collected')}
+                            </p>
+                            <p style={{ margin: '0 0 18px', color: '#c9c9c9', fontSize: '13px', lineHeight: 1.55 }}>
+                                {t('settings.privacy.notCollected')}
+                            </p>
+                            {analyticsError && (
+                                <div role="alert" style={{ color: '#ff8e8e', fontSize: '13px', marginBottom: '16px' }}>
+                                    {t('settings.privacy.saveError')}
+                                </div>
+                            )}
+                            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                                <button type="button" onClick={() => void window.api.openExternal(PRIVACY_NOTICE_URL)} style={privacyLinkStyle}>
+                                    {t('settings.privacy.privacyNotice')}
+                                </button>
+                                <button type="button" onClick={() => void window.api.openExternal(TELEMETRYDECK_PRIVACY_URL)} style={privacyLinkStyle}>
+                                    {t('settings.privacy.providerPrivacy')}
+                                </button>
                             </div>
                         </div>
                     </section>

@@ -57,6 +57,18 @@
       "high": "高品質 (High)",
       "highDescription": "處理時間較長，但能提供最佳的分離效果。"
     },
+    "privacy": {
+      "title": "隱私與產品改善",
+      "description": "管理用於改善 KHelper 的選用隱私保護使用統計。",
+      "shareUsage": "分享隱私保護使用統計",
+      "enabled": "分享已啟用，您可隨時關閉。",
+      "disabled": "分享已停用。",
+      "collected": "啟用時會傳送：應用程式版本、介面語言、Windows 版本、功能使用類別與經整理的成功或失敗結果。",
+      "notCollected": "絕不傳送：歌曲或歌詞內容、搜尋文字、檔案路徑、歌單、自訂疊圖文字、音訊裝置、快捷鍵或原始錯誤資訊。",
+      "privacyNotice": "隱私權聲明",
+      "providerPrivacy": "TelemetryDeck 隱私資訊",
+      "saveError": "無法更新此設定。目前未傳送任何使用資料。"
+    },
     "updates": {
       "title": "軟體更新",
       "check": "檢查更新",
@@ -106,6 +118,18 @@
       "startTest": "開始測試",
       "saveApply": "儲存並套用"
     }
+  },
+  "analyticsConsent": {
+    "title": "協助改善 KHelper？",
+    "description": "您是否願意分享隱私保護使用統計，以協助我們決定改善重點並提升穩定性？",
+    "collectedTitle": "只有允許後才會分享",
+    "collected": "應用程式版本、介面語言、Windows 版本、功能使用類別與經整理的成功或失敗結果。",
+    "excludedTitle": "絕不分享",
+    "excluded": "歌曲、歌詞、搜尋文字、檔案、歌單、OBS 自訂內容、音訊裝置、快捷鍵與原始錯誤細節。",
+    "privacyNotice": "閱讀隱私權聲明",
+    "allow": "允許",
+    "decline": "不允許",
+    "error": "無法儲存您的選擇。目前未傳送任何使用資料。"
   },
   "about": {
     "descriptionLine1": "專為 Vtuber、實況主打造的全能 K 歌小幫手",

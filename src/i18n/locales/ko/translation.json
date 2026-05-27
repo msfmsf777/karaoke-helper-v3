@@ -57,6 +57,18 @@
       "high": "고품질",
       "highDescription": "시간은 더 걸리지만 최상의 분리 결과를 제공합니다."
     },
+    "privacy": {
+      "title": "개인정보 보호 및 제품 개선",
+      "description": "KHelper 개선에 사용하는 선택적 개인정보 보호 사용 통계를 관리합니다.",
+      "shareUsage": "개인정보 보호 사용 통계 공유",
+      "enabled": "공유가 활성화되었습니다. 언제든지 끌 수 있습니다.",
+      "disabled": "공유가 비활성화되었습니다.",
+      "collected": "활성화 시 전송: 앱 버전, 표시 언어, Windows 버전, 기능 사용 범주, 정리된 성공 또는 실패 결과.",
+      "notCollected": "전송하지 않음: 노래 또는 가사 내용, 검색어, 파일 경로, 재생 목록, 사용자 지정 오버레이 텍스트, 오디오 장치, 단축키, 원본 오류 정보.",
+      "privacyNotice": "개인정보 처리 안내",
+      "providerPrivacy": "TelemetryDeck 개인정보 보호",
+      "saveError": "이 설정을 업데이트할 수 없습니다. 사용 데이터는 전송되지 않았습니다."
+    },
     "updates": {
       "title": "소프트웨어 업데이트",
       "check": "업데이트 확인",
@@ -106,6 +118,18 @@
       "startTest": "테스트 시작",
       "saveApply": "저장 및 적용"
     }
+  },
+  "analyticsConsent": {
+    "title": "KHelper 개선에 참여하시겠습니까?",
+    "description": "개선 우선순위와 안정성 향상을 위해 개인정보 보호 사용 통계를 공유하시겠습니까?",
+    "collectedTitle": "허용한 경우에만 공유",
+    "collected": "앱 버전, 표시 언어, Windows 버전, 기능 사용 범주, 정리된 성공 또는 실패 결과.",
+    "excludedTitle": "공유하지 않는 정보",
+    "excluded": "노래, 가사, 검색어, 파일, 재생 목록, OBS 사용자 지정 내용, 오디오 장치, 단축키, 원본 오류 세부 정보.",
+    "privacyNotice": "개인정보 처리 안내 읽기",
+    "allow": "허용",
+    "decline": "허용 안 함",
+    "error": "선택을 저장할 수 없습니다. 사용 데이터는 전송되지 않았습니다."
   },
   "about": {
     "descriptionLine1": "VTuber과 스트리머를 위한 올인원 노래방 도우미",

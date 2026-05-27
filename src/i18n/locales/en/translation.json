@@ -57,6 +57,18 @@
       "high": "High Quality",
       "highDescription": "Takes longer, but provides the best separation result."
     },
+    "privacy": {
+      "title": "Privacy & Improvement",
+      "description": "Control optional privacy-preserving usage statistics for improving KHelper.",
+      "shareUsage": "Share privacy-preserving usage statistics",
+      "enabled": "Sharing is enabled. You can turn it off at any time.",
+      "disabled": "Sharing is disabled.",
+      "collected": "When enabled: app version, display language, Windows version, feature-use categories, and sanitized success or failure results.",
+      "notCollected": "Never sent: song or lyric content, searches, file paths, playlists, custom overlay text, audio devices, hotkeys, or raw errors.",
+      "privacyNotice": "Privacy Notice",
+      "providerPrivacy": "TelemetryDeck Privacy",
+      "saveError": "Unable to update this preference. No usage data has been sent."
+    },
     "updates": {
       "title": "Software Updates",
       "check": "Check for Updates",
@@ -106,6 +118,18 @@
       "startTest": "Start Test",
       "saveApply": "Save and Apply"
     }
+  },
+  "analyticsConsent": {
+    "title": "Help improve KHelper?",
+    "description": "Would you like to share privacy-preserving usage statistics to help prioritize improvements and reliability fixes?",
+    "collectedTitle": "Shared only if you allow",
+    "collected": "App version, display language, Windows version, feature-use categories, and sanitized success or failure results.",
+    "excludedTitle": "Never shared",
+    "excluded": "Songs, lyrics, searches, files, playlists, OBS custom content, audio devices, hotkeys, and raw error details.",
+    "privacyNotice": "Read Privacy Notice",
+    "allow": "Allow",
+    "decline": "Do not allow",
+    "error": "Unable to save your choice. No usage data has been sent."
   },
   "about": {
     "descriptionLine1": "An all-in-one karaoke helper for VTubers and streamers",

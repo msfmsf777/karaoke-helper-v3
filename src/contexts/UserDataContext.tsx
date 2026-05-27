@@ -66,6 +66,7 @@ interface UserDataContextType {
     setOverlayTemplates: (config: OverlayTemplatesConfig) => void;
     analytics: AnalyticsSettings;
     setAnalytics: (settings: AnalyticsSettings) => void;
+    settingsLoaded: boolean;
 }
 
 type LoadedSettings = {
@@ -108,6 +109,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [songListViews, setSongListViews] = useState<SongListViewConfigs>({});
     const [overlayTemplates, setOverlayTemplates] = useState<OverlayTemplatesConfig>(() => mergeOverlayTemplatesConfig());
     const [analytics, setAnalytics] = useState<AnalyticsSettings>(() => createDefaultAnalyticsSettings());
+    const [settingsLoaded, setSettingsLoaded] = useState(false);
 
     const createSettingsPayload = useCallback(() => ({
         separationQuality,
@@ -203,6 +205,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 console.error('[UserData] Failed to load user data', err);
             } finally {
                 isInitialized.current = true;
+                setSettingsLoaded(true);
             }
         };
         load();
@@ -410,7 +413,8 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             overlayTemplates,
             setOverlayTemplates,
             analytics,
-            setAnalytics
+            setAnalytics,
+            settingsLoaded
         }}>
             {children}
         </UserDataContext.Provider>

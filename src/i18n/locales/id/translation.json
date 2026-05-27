@@ -57,6 +57,18 @@
       "high": "Kualitas Tinggi",
       "highDescription": "Membutuhkan waktu lebih lama, namun memberikan hasil pemisahan terbaik."
     },
+    "privacy": {
+      "title": "Privasi & Penyempurnaan",
+      "description": "Kelola statistik penggunaan opsional yang menjaga privasi untuk menyempurnakan KHelper.",
+      "shareUsage": "Bagikan statistik penggunaan yang menjaga privasi",
+      "enabled": "Berbagi diaktifkan. Anda dapat menonaktifkannya kapan saja.",
+      "disabled": "Berbagi dinonaktifkan.",
+      "collected": "Jika aktif, yang dikirim: versi aplikasi, bahasa tampilan, versi Windows, kategori penggunaan fitur, serta hasil berhasil atau gagal yang telah disederhanakan.",
+      "notCollected": "Tidak pernah dikirim: isi lagu atau lirik, pencarian, jalur berkas, daftar putar, teks overlay kustom, perangkat audio, tombol pintas, atau kesalahan mentah.",
+      "privacyNotice": "Pemberitahuan Privasi",
+      "providerPrivacy": "Privasi TelemetryDeck",
+      "saveError": "Tidak dapat memperbarui pengaturan ini. Tidak ada data penggunaan yang dikirim."
+    },
     "updates": {
       "title": "Pembaruan Perangkat Lunak",
       "check": "Periksa Pembaruan",
@@ -106,6 +118,18 @@
       "startTest": "Mulai Tes",
       "saveApply": "Simpan dan Terapkan"
     }
+  },
+  "analyticsConsent": {
+    "title": "Bantu menyempurnakan KHelper?",
+    "description": "Apakah Anda ingin membagikan statistik penggunaan yang menjaga privasi untuk membantu menentukan prioritas peningkatan dan perbaikan keandalan?",
+    "collectedTitle": "Dibagikan hanya jika Anda mengizinkan",
+    "collected": "Versi aplikasi, bahasa tampilan, versi Windows, kategori penggunaan fitur, serta hasil berhasil atau gagal yang telah disederhanakan.",
+    "excludedTitle": "Tidak pernah dibagikan",
+    "excluded": "Lagu, lirik, pencarian, berkas, daftar putar, konten kustom OBS, perangkat audio, tombol pintas, dan detail kesalahan mentah.",
+    "privacyNotice": "Baca Pemberitahuan Privasi",
+    "allow": "Izinkan",
+    "decline": "Jangan izinkan",
+    "error": "Tidak dapat menyimpan pilihan Anda. Tidak ada data penggunaan yang dikirim."
   },
   "about": {
     "descriptionLine1": "Pembantu karaoke lengkap untuk VTuber dan streamer",

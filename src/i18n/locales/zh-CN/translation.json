@@ -57,6 +57,18 @@
       "high": "高品质",
       "highDescription": "需要更长的时间，但可提供最佳的分离结果。"
     },
+    "privacy": {
+      "title": "隐私与产品改进",
+      "description": "管理用于改进 KHelper 的可选隐私保护使用统计。",
+      "shareUsage": "分享隐私保护使用统计",
+      "enabled": "分享已启用，您可随时关闭。",
+      "disabled": "分享已停用。",
+      "collected": "启用时会发送：应用版本、界面语言、Windows 版本、功能使用类别以及经整理的成功或失败结果。",
+      "notCollected": "绝不发送：歌曲或歌词内容、搜索文字、文件路径、歌单、自定义叠加层文字、音频设备、快捷键或原始错误信息。",
+      "privacyNotice": "隐私声明",
+      "providerPrivacy": "TelemetryDeck 隐私信息",
+      "saveError": "无法更新此设置。目前未发送任何使用数据。"
+    },
     "updates": {
       "title": "软件更新",
       "check": "检查更新",
@@ -106,6 +118,18 @@
       "startTest": "开始测试",
       "saveApply": "保存并应用"
     }
+  },
+  "analyticsConsent": {
+    "title": "帮助改进 KHelper？",
+    "description": "您是否愿意分享隐私保护使用统计，以帮助我们确定改进重点并提升稳定性？",
+    "collectedTitle": "仅在您允许后分享",
+    "collected": "应用版本、界面语言、Windows 版本、功能使用类别以及经整理的成功或失败结果。",
+    "excludedTitle": "绝不分享",
+    "excluded": "歌曲、歌词、搜索文字、文件、歌单、OBS 自定义内容、音频设备、快捷键和原始错误详情。",
+    "privacyNotice": "阅读隐私声明",
+    "allow": "允许",
+    "decline": "不允许",
+    "error": "无法保存您的选择。目前未发送任何使用数据。"
   },
   "about": {
     "descriptionLine1": "适用于 VTuber 和主播的一体化卡拉 OK 助手",

@@ -5,6 +5,7 @@ import {
   createDefaultAnalyticsSettings,
   isAnalyticsEvent,
   normalizeAnalyticsSettings,
+  shouldPromptForAnalyticsConsent,
 } from '../shared/analytics.ts';
 
 describe('analytics consent settings', () => {
@@ -40,6 +41,18 @@ describe('analytics consent settings', () => {
       noticeVersion: ANALYTICS_NOTICE_VERSION,
       decidedAt: '2026-05-26T00:00:00.000Z',
     });
+  });
+
+  it('prompts only until the current notice has an explicit decision', () => {
+    assert.equal(shouldPromptForAnalyticsConsent(createDefaultAnalyticsSettings()), true);
+    assert.equal(shouldPromptForAnalyticsConsent({
+      consent: 'enabled',
+      noticeVersion: ANALYTICS_NOTICE_VERSION,
+    }), false);
+    assert.equal(shouldPromptForAnalyticsConsent({
+      consent: 'disabled',
+      noticeVersion: ANALYTICS_NOTICE_VERSION,
+    }), false);
   });
 });
 

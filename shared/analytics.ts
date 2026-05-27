@@ -130,6 +130,10 @@ export function normalizeAnalyticsSettings(value: unknown): AnalyticsSettings {
   };
 }
 
+export function shouldPromptForAnalyticsConsent(settings: AnalyticsSettings): boolean {
+  return settings.noticeVersion !== ANALYTICS_NOTICE_VERSION || settings.consent === 'unset';
+}
+
 export function isAnalyticsEvent(value: unknown): value is AnalyticsEvent {
   if (!isRecord(value) || typeof value.type !== 'string') return false;
 
