@@ -95,6 +95,7 @@ const OnlineDownloadPanel: React.FC<OnlineDownloadPanelProps> = ({ target, onClo
             quality,
             lyricsText: lyricsMode === 'paste' ? lyricsText : (lyricsMode === 'import_search' && lyricsFormat === 'txt' ? lyricsText : undefined),
             lyricsLrc: lyricsMode === 'import_search' && lyricsFormat === 'lrc' ? lyricsLrc : undefined,
+            analyticsTarget: 'custom',
         });
 
         onClose();

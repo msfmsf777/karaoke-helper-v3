@@ -171,12 +171,22 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                         backupPath: settingsResult.backupPath,
                         quarantinedPath: settingsResult.quarantinedPath,
                     });
+                    void window.khelper?.analytics.track({
+                        type: 'Reliability.SettingsRecovery',
+                        result: 'restored_backup',
+                    });
                 } else if (settingsResult.unsafeToAutoPersist) {
                     console.warn('[UserData] Loaded default settings without auto-persist', {
                         status: settingsResult.status,
                         sourcePath: settingsResult.sourcePath,
                         quarantinedPath: settingsResult.quarantinedPath,
                     });
+                    if (settingsResult.status === 'corrupt-defaulted') {
+                        void window.khelper?.analytics.track({
+                            type: 'Reliability.SettingsRecovery',
+                            result: 'defaulted_after_corruption',
+                        });
+                    }
                 }
                 setLanguageState(nextLanguage);
                 if (i18n.language !== nextLanguage) {

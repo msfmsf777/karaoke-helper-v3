@@ -68,7 +68,9 @@ const DownloadManagerView: React.FC<DownloadManagerViewProps> = ({ onOpenLyrics 
                 job.title,
                 job.artist,
                 job.type,
-                job.lyricsText
+                job.lyricsText,
+                job.lyricsLrc,
+                job.analyticsTarget
             );
         } catch (err) {
             console.error('Retry failed', err);

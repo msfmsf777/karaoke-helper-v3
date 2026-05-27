@@ -80,7 +80,7 @@ interface Window {
     };
     downloads: {
       validateUrl: (url: string) => Promise<{ videoId: string; title: string; duration?: number; thumbnailUrl?: string } | null>;
-      queueDownload: (url: string, quality: 'best' | 'high' | 'normal', title?: string, artist?: string, type?: import('../shared/songTypes').SongType, lyricsText?: string, lyricsLrc?: string) => Promise<import('../shared/songTypes').DownloadJob>;
+      queueDownload: (url: string, quality: 'best' | 'high' | 'normal', title?: string, artist?: string, type?: import('../shared/songTypes').SongType, lyricsText?: string, lyricsLrc?: string, analyticsTarget?: 'original' | 'instrumental' | 'custom') => Promise<import('../shared/songTypes').DownloadJob>;
       getAllJobs: () => Promise<import('../shared/songTypes').DownloadJob[]>;
       subscribeUpdates: (
         callback: (jobs: import('../shared/songTypes').DownloadJob[]) => void

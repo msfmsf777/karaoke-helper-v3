@@ -103,6 +103,7 @@ export const queueYouTubeDownload = async (params: {
     quality?: 'best' | 'high' | 'normal';
     lyricsText?: string;
     lyricsLrc?: string;
+    analyticsTarget?: 'original' | 'instrumental' | 'custom';
 }) => {
     return window.khelper?.downloads.queueDownload(
         youtubeIdToUrl(params.youtubeId),
@@ -111,7 +112,8 @@ export const queueYouTubeDownload = async (params: {
         params.artist,
         params.type,
         params.lyricsText,
-        params.lyricsLrc
+        params.lyricsLrc,
+        params.analyticsTarget ?? (params.type === '伴奏' ? 'instrumental' : 'original')
     );
 };
 

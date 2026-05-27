@@ -52,6 +52,7 @@ function AppContent() {
   const [pendingView, setPendingView] = useState<View | null>(null);
 
   const mainContentRef = useRef<HTMLDivElement>(null);
+  const streamModeReportedRef = useRef(false);
 
   const { currentSongId, playNext, playPrev, queue, currentIndex, isStreamWaiting, isPlaybackLoading, playbackMode } = useQueue();
   const { getSongById } = useLibrary();
@@ -268,12 +269,17 @@ function AppContent() {
     }
 
     if (newView === 'stream') {
+      if (!streamModeReportedRef.current) {
+        streamModeReportedRef.current = true;
+        void window.khelper?.analytics.track({ type: 'Feature.StreamModeEntered' });
+      }
       setRenderStreamView(true);
       // Small delay to allow render before fading in
       requestAnimationFrame(() => {
         setIsStreamMode(true);
       });
     } else {
+      streamModeReportedRef.current = false;
       if (isStreamMode) {
         // Exiting stream mode
         setIsStreamMode(false);

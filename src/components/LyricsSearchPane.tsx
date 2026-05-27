@@ -27,6 +27,7 @@ const LyricsSearchPane: React.FC<LyricsSearchPaneProps> = ({ isOpen, onClose, in
 
     const handleSearch = async (q: string) => {
         if (!q.trim()) return;
+        void window.khelper?.analytics.track({ type: 'Feature.LyricsActionUsed', action: 'online_search' });
         setSearching(true);
         setResults([]);
         setPreviewId(null);

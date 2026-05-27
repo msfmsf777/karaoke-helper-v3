@@ -168,6 +168,9 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
             if (autoPlay) {
                 await audioEngine.play();
+                if (song.audio_status === 'streaming') {
+                    void window.khelper?.analytics.track({ type: 'Feature.OnlinePlaybackStarted' });
+                }
             }
         } catch (err) {
             if (isCurrentLoad()) {

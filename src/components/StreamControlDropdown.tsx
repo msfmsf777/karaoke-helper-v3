@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ObsLinkIcon from '../assets/icons/obs_link.svg';
 import { useUserData } from '../contexts/UserDataContext';
+import { DEFAULT_OVERLAY_DESIGN_ID, type SetlistTemplateId } from '../../shared/overlayTemplates';
 
 interface StreamControlDropdownProps {
     onCopy: (label: string) => void;
@@ -43,16 +44,21 @@ const StreamControlDropdown: React.FC<StreamControlDropdownProps> = ({ onCopy, o
         }, 300);
     };
 
-    const copyDesignLink = (kind: 'lyrics' | 'setlist', designId: string, designName: string) => {
+    const copyDesignLink = (kind: 'lyrics' | 'setlist', designId: string, designName: string, templateId?: SetlistTemplateId) => {
         const url = `http://localhost:10001/obs/${kind}?design=${encodeURIComponent(designId)}`;
         navigator.clipboard.writeText(url);
+        void window.khelper?.analytics.track(kind === 'setlist'
+            ? { type: 'Feature.ObsLinkCopied', kind, designClass: 'built_in', builtInTemplateId: templateId! }
+            : { type: 'Feature.ObsLinkCopied', kind, designClass: designId === DEFAULT_OVERLAY_DESIGN_ID ? 'built_in' : 'custom' });
         onCopy(t(kind === 'lyrics' ? 'lyrics.stream.copiedLyricsObs' : 'lyrics.stream.copiedSetlistObs', { name: designName }));
         setIsOpen(false);
         setActiveSubmenu(null);
     };
 
     const renderDesignSubmenu = (kind: 'lyrics' | 'setlist') => {
-        const designs = kind === 'lyrics' ? overlayTemplates.lyricsDesigns : overlayTemplates.setlistDesigns;
+        const designs = kind === 'lyrics'
+            ? overlayTemplates.lyricsDesigns.map((design) => ({ design, templateId: undefined }))
+            : overlayTemplates.setlistDesigns.map((design) => ({ design, templateId: design.config.templateId }));
 
         return (
             <div
@@ -73,10 +79,10 @@ const StreamControlDropdown: React.FC<StreamControlDropdownProps> = ({ onCopy, o
                     gap: '2px',
                 }}
             >
-                {designs.map((design) => (
+                {designs.map(({ design, templateId }) => (
                     <button
                         key={design.id}
-                        onClick={() => copyDesignLink(kind, design.id, design.name)}
+                        onClick={() => copyDesignLink(kind, design.id, design.name, templateId)}
                         style={{
                             ...menuButtonStyle,
                             overflow: 'hidden',

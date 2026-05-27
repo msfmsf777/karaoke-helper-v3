@@ -4,6 +4,8 @@ import { app } from 'electron';
 import { spawn } from 'node:child_process';
 import { getSongsBaseDir } from './songLibrary';
 import type { SongMeta, SongType } from '../shared/songTypes';
+import { trackAnalytics } from './analytics';
+import { categorizeAnalyticsFailure, durationBucketFromMilliseconds } from '../shared/analytics';
 
 // --- Types ---
 
@@ -23,6 +25,7 @@ export interface DownloadJob {
     createdAt: string;
     updatedAt: string;
     songId?: string; // ID of the created song in library
+    analyticsTarget?: 'original' | 'instrumental' | 'custom';
 }
 
 // --- Constants & Config ---
@@ -295,7 +298,8 @@ class DownloadJobManager {
         artistOverride?: string,
         type: SongType = '原曲',
         lyricsText?: string,
-        lyricsLrc?: string
+        lyricsLrc?: string,
+        analyticsTarget: 'original' | 'instrumental' | 'custom' = type === '伴奏' ? 'instrumental' : 'original'
     ) {
         // 1. Create preliminary job IMMEDIATELY so UI sees it right away
         const preliminaryId = Date.now().toString();
@@ -308,6 +312,7 @@ class DownloadJobManager {
             type,
             lyricsText,
             lyricsLrc,
+            analyticsTarget,
             status: 'queued',
             progress: 0,
             createdAt: new Date().toISOString(),
@@ -543,6 +548,12 @@ class DownloadJobManager {
             await fs.writeFile(metaFile, JSON.stringify(meta, null, 2));
 
             this.updateJob(job.id, { status: 'completed', progress: 100, songId });
+            void trackAnalytics({
+                type: 'Feature.DownloadFinished',
+                result: 'success',
+                target: job.analyticsTarget ?? (job.type === '伴奏' ? 'instrumental' : 'original'),
+                durationBucket: durationBucketFromMilliseconds(Date.now() - new Date(job.createdAt).getTime()),
+            });
 
             // Invalidate library cache so the new song is picked up
             const { invalidateCache } = await import('./songLibrary');
@@ -554,6 +565,13 @@ class DownloadJobManager {
         } catch (err: any) {
             console.error('Download failed', err);
             this.updateJob(job.id, { status: 'failed', error: err.message });
+            void trackAnalytics({
+                type: 'Feature.DownloadFinished',
+                result: 'failure',
+                target: job.analyticsTarget ?? (job.type === '伴奏' ? 'instrumental' : 'original'),
+                durationBucket: durationBucketFromMilliseconds(Date.now() - new Date(job.createdAt).getTime()),
+                failureCategory: categorizeAnalyticsFailure(err),
+            });
         }
     }
 }

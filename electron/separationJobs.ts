@@ -6,6 +6,8 @@ import type { SongMeta } from '../shared/songTypes';
 import type { SeparationJob } from '../shared/separationTypes';
 import { getPythonPath } from './pythonRuntime';
 import { isModelAvailable, downloadModel, getModelCacheDir, QualityPreset } from './modelManager';
+import { trackAnalytics } from './analytics';
+import { categorizeAnalyticsFailure, durationBucketFromMilliseconds } from '../shared/analytics';
 import { spawn, execSync, ChildProcess } from 'node:child_process';
 import { loadSettings } from './userData';
 
@@ -245,6 +247,8 @@ class SeparationJobManager {
   /* ── Job Execution ───────────────────────────────────────── */
 
   private async executeJob(job: SeparationJob) {
+    const startedAt = Date.now();
+    const quality = (job.quality || 'normal') as QualityPreset;
     try {
       const meta = await getSongMeta(job.songId);
       if (!meta) {
@@ -260,9 +264,6 @@ class SeparationJobManager {
       this.notify();
 
       const { songDir, originalPath } = await this.ensureOriginalPath(meta);
-
-      // Use job quality or default to normal
-      const quality = (job.quality || 'normal') as QualityPreset;
 
       // Check and download model if needed
       if (!(await isModelAvailable(quality))) {
@@ -305,6 +306,12 @@ class SeparationJobManager {
         separation_quality: quality,
       }));
       this.updateJob(job.id, { status: 'succeeded', errorMessage: undefined });
+      void trackAnalytics({
+        type: 'Feature.SeparationFinished',
+        result: 'success',
+        quality,
+        durationBucket: durationBucketFromMilliseconds(Date.now() - startedAt),
+      });
     } catch (err) {
       this.activeProcess = null;
       const wasCancelled = this.cancelledJobIds.delete(job.id);
@@ -319,6 +326,13 @@ class SeparationJobManager {
           last_separation_error: '使用者已取消',
         }));
         this.updateJob(job.id, { status: 'failed', errorMessage: '使用者已取消' });
+        void trackAnalytics({
+          type: 'Feature.SeparationFinished',
+          result: 'failure',
+          quality,
+          durationBucket: durationBucketFromMilliseconds(Date.now() - startedAt),
+          failureCategory: 'interrupted',
+        });
       } else {
         // Genuine failure
         const message = err instanceof Error ? err.message : String(err);
@@ -329,6 +343,13 @@ class SeparationJobManager {
           last_separation_error: message,
         }));
         this.updateJob(job.id, { status: 'failed', errorMessage: message });
+        void trackAnalytics({
+          type: 'Feature.SeparationFinished',
+          result: 'failure',
+          quality,
+          durationBucket: durationBucketFromMilliseconds(Date.now() - startedAt),
+          failureCategory: categorizeAnalyticsFailure(err),
+        });
       }
     } finally {
       this.runningJobId = null;

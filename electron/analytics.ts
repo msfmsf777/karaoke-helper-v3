@@ -97,7 +97,7 @@ async function createSender(clientId: string): Promise<AnalyticsSender | null> {
     appID,
     clientUser: clientId,
     testMode: isTestMode(),
-    subtleCrypto: webcrypto.subtle as unknown as Function,
+    subtleCrypto: webcrypto.subtle as unknown as (...args: never[]) => never,
   });
 
   return {

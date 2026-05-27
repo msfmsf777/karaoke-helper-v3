@@ -220,6 +220,7 @@ const SearchResultsView: React.FC<SearchResultsViewProps> = ({ searchTerm, onOpe
         setDateFilter('any');
         setSortFilter('relevance');
         if (searchTerm.trim()) {
+            void window.khelper?.analytics.track({ type: 'Feature.OnlineSearchUsed' });
             setYtLoading(true);
             window.khelper?.youtube.search(searchTerm).then((res: YouTubeResultLike[]) => {
                 setYtResults(res || []);

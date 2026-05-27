@@ -2,6 +2,8 @@
 import { app, ipcMain, BrowserWindow, shell } from 'electron';
 import { autoUpdater, ProgressInfo, UpdateDownloadedEvent, UpdateInfo } from 'electron-updater';
 import { loadSettings, saveSettings } from './userData';
+import { trackAnalytics } from './analytics';
+import { categorizeAnalyticsFailure } from '../shared/analytics';
 
 // Configure AutoUpdater
 autoUpdater.autoDownload = false;
@@ -37,6 +39,19 @@ let currentState: UpdaterState = {
 // Internal Guards
 let isChecking = false;
 let isDownloading = false;
+let lastFailureSignal: { stage: 'check' | 'download' | 'install'; at: number } | null = null;
+
+function trackUpdateFailure(stage: 'check' | 'download' | 'install', error: unknown) {
+    const now = Date.now();
+    if (lastFailureSignal?.stage === stage && now - lastFailureSignal.at < 1000) return;
+    lastFailureSignal = { stage, at: now };
+    void trackAnalytics({
+        type: 'Update.Result',
+        stage,
+        result: 'failure',
+        failureCategory: categorizeAnalyticsFailure(error),
+    });
+}
 
 // Broadcast helper
 function broadcastStatus() {
@@ -127,11 +142,14 @@ function setupAutoUpdaterEvents() {
             },
             error: null,
         });
+        void trackAnalytics({ type: 'Update.Result', stage: 'download', result: 'success' });
     });
 
     autoUpdater.on('error', (err) => {
+        const stage = isDownloading ? 'download' : currentState.status === 'installing' ? 'install' : 'check';
         console.error('[Updater] Error:', err);
         setState({ status: 'error', error: err.message });
+        trackUpdateFailure(stage, err);
         isChecking = false;
         isDownloading = false;
     });
@@ -163,9 +181,11 @@ async function checkForUpdates({ manual }: { manual: boolean }) {
     try {
         await autoUpdater.checkForUpdates();
         setState({ lastCheckTime: Date.now() });
+        void trackAnalytics({ type: 'Update.Result', stage: 'check', result: 'success' });
     } catch (e: unknown) {
         console.error('[Updater] Failed to check:', e);
         setState({ status: 'error', error: getErrorMessage(e) });
+        trackUpdateFailure('check', e);
     } finally {
         isChecking = false;
     }
@@ -200,6 +220,7 @@ async function downloadUpdate() {
     } catch (e: unknown) {
         console.error('[Updater] Failed to download:', e);
         setState({ status: 'error', error: getErrorMessage(e) });
+        trackUpdateFailure('download', e);
     } finally {
         const statusAfterDownload = currentState.status as UpdaterStatus;
         if (statusAfterDownload !== 'downloaded' && statusAfterDownload !== 'installing') {

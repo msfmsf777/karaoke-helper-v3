@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   ANALYTICS_NOTICE_VERSION,
+  categorizeAnalyticsFailure,
   createDefaultAnalyticsSettings,
+  durationBucketFromMilliseconds,
   isAnalyticsEvent,
   normalizeAnalyticsSettings,
   shouldPromptForAnalyticsConsent,
@@ -92,5 +94,21 @@ describe('analytics event allowlist', () => {
       designClass: 'custom',
       builtInTemplateId: 'my-private-overlay',
     }), false);
+  });
+});
+
+describe('analytics property sanitizers', () => {
+  it('reduces durations to fixed buckets', () => {
+    assert.equal(durationBucketFromMilliseconds(500), 'under_10s');
+    assert.equal(durationBucketFromMilliseconds(10_000), '10s_to_1m');
+    assert.equal(durationBucketFromMilliseconds(60_000), '1m_to_5m');
+    assert.equal(durationBucketFromMilliseconds(300_000), 'over_5m');
+    assert.equal(durationBucketFromMilliseconds(Number.NaN), 'under_10s');
+  });
+
+  it('reduces failures to fixed categories without returning raw details', () => {
+    assert.equal(categorizeAnalyticsFailure(new Error('fetch timed out')), 'network');
+    assert.equal(categorizeAnalyticsFailure(new Error('permission denied writing file')), 'permission');
+    assert.equal(categorizeAnalyticsFailure(new Error('private song title')), 'unknown');
   });
 });

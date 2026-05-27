@@ -194,7 +194,8 @@ const AddSongSidebar: React.FC<AddSongSidebarProps> = ({ isOpen, onClose }) => {
                         entry.artist.trim(),
                         entry.type,
                         entry.lyricsMode === 'paste' ? entry.lyricsText : (entry.lyricsMode === 'import_search' && entry.lyricsFormat === 'txt' ? entry.lyricsText : undefined),
-                        entry.lyricsMode === 'import_search' && entry.lyricsFormat === 'lrc' ? entry.lyricsLrc : undefined
+                        entry.lyricsMode === 'import_search' && entry.lyricsFormat === 'lrc' ? entry.lyricsLrc : undefined,
+                        'custom'
                     );
                 }
                 newEntries[i].status = 'success';

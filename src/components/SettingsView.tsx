@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, Suspense } from 'react';
+import React, { useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import audioEngine, { OutputRole } from '../audio/AudioEngine';
 import { areOutputDevicesOverlapping } from '../audio/outputRouting';
@@ -50,6 +50,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     const [overlayEditorDirty, setOverlayEditorDirty] = useState(false);
     const [analyticsSaving, setAnalyticsSaving] = useState(false);
     const [analyticsError, setAnalyticsError] = useState(false);
+    const overlapReportedRef = useRef(false);
 
     // Calibration State
     const [showCalibration, setShowCalibration] = useState(false);
@@ -137,6 +138,15 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     const overlappingOutputs = streamEnabled
         && areOutputDevicesOverlapping(streamDeviceId, headphoneDeviceId);
     const calibrationEnabled = streamEnabled && !overlappingOutputs;
+
+    useEffect(() => {
+        if (overlappingOutputs && !overlapReportedRef.current) {
+            overlapReportedRef.current = true;
+            void window.khelper?.analytics.track({ type: 'Audio.OutputSafetyTriggered', reason: 'overlapping_devices' });
+        } else if (!overlappingOutputs) {
+            overlapReportedRef.current = false;
+        }
+    }, [overlappingOutputs]);
 
     const handleAnalyticsChange = async (enabled: boolean) => {
         if (!window.khelper?.analytics || analyticsSaving) return;

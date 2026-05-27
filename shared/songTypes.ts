@@ -67,6 +67,7 @@ export interface DownloadJob {
   createdAt: string;
   updatedAt: string;
   songId?: string;
+  analyticsTarget?: 'original' | 'instrumental' | 'custom';
 }
 
 export interface RubySegment {

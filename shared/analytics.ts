@@ -134,6 +134,27 @@ export function shouldPromptForAnalyticsConsent(settings: AnalyticsSettings): bo
   return settings.noticeVersion !== ANALYTICS_NOTICE_VERSION || settings.consent === 'unset';
 }
 
+export function durationBucketFromMilliseconds(milliseconds: number): DurationBucket {
+  const duration = Number.isFinite(milliseconds) ? Math.max(0, milliseconds) : 0;
+  if (duration < 10_000) return 'under_10s';
+  if (duration < 60_000) return '10s_to_1m';
+  if (duration < 300_000) return '1m_to_5m';
+  return 'over_5m';
+}
+
+export function categorizeAnalyticsFailure(error: unknown): FailureCategory {
+  const message = String(error instanceof Error ? error.message : error).toLowerCase();
+
+  if (message.includes('model') || message.includes('onnx')) return 'model_download';
+  if (['network', 'fetch', 'socket', 'timeout', 'timed out', 'http'].some((term) => message.includes(term))) return 'network';
+  if (['cancel', 'abort', 'interrupt'].some((term) => message.includes(term))) return 'interrupted';
+  if (['permission', 'denied', 'eacces', 'eperm'].some((term) => message.includes(term))) return 'permission';
+  if (['spawn', 'python', 'enoent', 'runtime'].some((term) => message.includes(term))) return 'runtime_start';
+  if (['exit code', 'process failed', 'sigterm'].some((term) => message.includes(term))) return 'process_exit';
+  if (['invalid', 'not found', 'unsupported'].some((term) => message.includes(term))) return 'invalid_input';
+  return 'unknown';
+}
+
 export function isAnalyticsEvent(value: unknown): value is AnalyticsEvent {
   if (!isRecord(value) || typeof value.type !== 'string') return false;
 

@@ -52,12 +52,14 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
   const toggleFurigana = useCallback(() => {
     if (currentSongId) {
       setSongPreference(currentSongId, { furigana: !furiganaEnabled });
+      void window.khelper?.analytics.track({ type: 'Feature.LyricsActionUsed', action: 'japanese_assist' });
     }
   }, [currentSongId, furiganaEnabled, setSongPreference]);
 
   const toggleRomaji = useCallback(() => {
     if (currentSongId) {
       setSongPreference(currentSongId, { romaji: !romajiEnabled });
+      void window.khelper?.analytics.track({ type: 'Feature.LyricsActionUsed', action: 'japanese_assist' });
     }
   }, [currentSongId, romajiEnabled, setSongPreference]);
 

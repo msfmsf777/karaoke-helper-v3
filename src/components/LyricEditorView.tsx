@@ -79,6 +79,9 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
     onCancelLeave,
 }) => {
     const { t } = useTranslation();
+    const trackLyricsAction = useCallback((action: 'raw_save' | 'lrc_save' | 'tap_sync' | 'smart_align') => {
+        void window.khelper?.analytics.track({ type: 'Feature.LyricsActionUsed', action });
+    }, []);
     const [songs, setSongs] = useState<SongMeta[]>([]);
     const [loadingSongs, setLoadingSongs] = useState(false);
     const [loadingLyrics, setLoadingLyrics] = useState(false);
@@ -334,13 +337,16 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
             console.log('[Lyrics] Tap ignored: all lines aligned');
             return;
         }
+        if (tapIndex === 0) {
+            trackLyricsAction('tap_sync');
+        }
         const timestamp = currentTime;
         setLines((prev) =>
             prev.map((line, idx) => (idx === tapIndex ? { ...line, timeSeconds: timestamp } : line)),
         );
         setTapIndex((idx) => Math.min(idx + 1, lines.length));
         console.log('[Lyrics] Tap captured', { lineIndex: tapIndex, time: timestamp, text: lines[tapIndex]?.text });
-    }, [currentTime, lines, selectedSongId, tapIndex]);
+    }, [currentTime, lines, selectedSongId, tapIndex, trackLyricsAction]);
 
     useEffect(() => {
         const onKeyDown = (event: KeyboardEvent) => {
@@ -421,13 +427,16 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
 
             updateSongMetaInList({ ...result.meta, lyrics_status: newStatus });
             setLastSavedRawText(rawTextDraft);
+            if (!isAuto) {
+                trackLyricsAction('raw_save');
+            }
         } catch (err) {
             console.error('[Lyrics] Failed to save raw lyrics', err);
             if (!isAuto) setErrorMessage(t('lyrics.editor.errors.saveFailed'));
         } finally {
             setSavingRaw(false);
         }
-    }, [rawTextDraft, lastSavedRawText, selectedSongId, updateSongMetaInList, selectedSong, t]);
+    }, [rawTextDraft, lastSavedRawText, selectedSongId, updateSongMetaInList, selectedSong, t, trackLyricsAction]);
 
     // Auto-save effect
     useEffect(() => {
@@ -479,13 +488,14 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
             // Update snapshot
             setOriginalLinesSnapshot(JSON.stringify(lines.map(l => ({ text: l.text, timeSeconds: l.timeSeconds }))));
             setLastSavedRawText(rawText);
+            trackLyricsAction('lrc_save');
         } catch (err) {
             console.error('[Lyrics] Failed to save synced lyrics', err);
             setErrorMessage(t('lyrics.editor.errors.saveFailed'));
         } finally {
             setSavingLrc(false);
         }
-    }, [lines, selectedSong, selectedSongId, updateSongMetaInList, showTempMessage, t]);
+    }, [lines, selectedSong, selectedSongId, updateSongMetaInList, showTempMessage, t, trackLyricsAction]);
 
     const handleLyricsImport = useCallback(async (content: string, type: 'lrc' | 'txt') => {
         if (!selectedSongId || !selectedSong) return;
@@ -681,7 +691,8 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
         setSmartAlignStep(0);
         showTempMessage(t('lyrics.editor.messages.smartAlignDone'));
         setTapMode(true);
-    }, [currentTime, lines, linesSnapshot, smartAlignStartTime, showTempMessage, t]);
+        trackLyricsAction('smart_align');
+    }, [currentTime, lines, linesSnapshot, smartAlignStartTime, showTempMessage, t, trackLyricsAction]);
 
 
     const isRawChanged = rawTextDraft !== lastSavedRawText;
