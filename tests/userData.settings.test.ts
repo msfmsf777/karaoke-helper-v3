@@ -9,6 +9,7 @@ import {
   createSetlistDesign,
 } from '../shared/overlayTemplates';
 import type { UserSettings } from '../electron/userData';
+import { ANALYTICS_NOTICE_VERSION } from '../shared/analytics';
 
 const electronMock = vi.hoisted(() => ({
   getPath: vi.fn(),
@@ -97,8 +98,26 @@ describe('fail-safe settings persistence', () => {
 
     expect(result.status).toBe('missing');
     expect(result.unsafeToAutoPersist).toBe(true);
+    expect(result.settings.analytics).toEqual({
+      consent: 'unset',
+      noticeVersion: ANALYTICS_NOTICE_VERSION,
+    });
     expect(result.settings.overlayTemplates?.activeLyricsDesignId).toBe(DEFAULT_OVERLAY_DESIGN_ID);
     await expectMissing(settingsPath());
+  });
+
+  it('migrates older settings to unset analytics consent without changing the source file on load', async () => {
+    const legacy = customSettings('pre-analytics');
+    await writeJson(settingsPath(), legacy);
+
+    const result = await loadSettingsWithMeta();
+    const stored = await readJson<UserSettings>(settingsPath());
+
+    expect(result.settings.analytics).toEqual({
+      consent: 'unset',
+      noticeVersion: ANALYTICS_NOTICE_VERSION,
+    });
+    expect(stored.analytics).toBeUndefined();
   });
 
   it('migrates legacy combined overlay designs into lyrics and setlist designs', async () => {

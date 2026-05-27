@@ -5,6 +5,7 @@ import { HotkeyConfig, mergeHotkeyConfig } from '../shared/hotkeys';
 import { SongListViewConfigs, mergeSongListViewConfigs } from '../shared/songListView';
 import { OverlayTemplatesConfig, mergeOverlayTemplatesConfig } from '../shared/overlayTemplates';
 import { SupportedLanguage, normalizeLanguage } from '../shared/i18n';
+import { AnalyticsSettings, createDefaultAnalyticsSettings, normalizeAnalyticsSettings } from '../shared/analytics';
 
 export interface UserData {
     favorites: string[];
@@ -64,6 +65,7 @@ function createDefaultSettings(): UserSettings {
         hotkeys: mergeHotkeyConfig(),
         songListViews: {},
         overlayTemplates: mergeOverlayTemplatesConfig(),
+        analytics: createDefaultAnalyticsSettings(),
     };
 }
 
@@ -76,6 +78,7 @@ function normalizeSettings(settings: Partial<UserSettings> | null | undefined): 
         hotkeys: mergeHotkeyConfig(parsed.hotkeys),
         songListViews: mergeSongListViewConfigs(parsed.songListViews),
         overlayTemplates: mergeOverlayTemplatesConfig(parsed.overlayTemplates, parsed.lyricStyles),
+        analytics: normalizeAnalyticsSettings(parsed.analytics),
     };
 }
 
@@ -303,6 +306,7 @@ export interface UserSettings {
     hotkeys?: HotkeyConfig;
     songListViews?: SongListViewConfigs;
     overlayTemplates?: OverlayTemplatesConfig;
+    analytics?: AnalyticsSettings;
 }
 
 export async function saveSettings(settings: UserSettings): Promise<void> {

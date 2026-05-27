@@ -4,6 +4,7 @@ import { HotkeyConfig, mergeHotkeyConfig } from '../../shared/hotkeys';
 import { SongListViewConfig, SongListViewConfigs, mergeSongListViewConfig, mergeSongListViewConfigs } from '../../shared/songListView';
 import { OverlayTemplatesConfig, mergeOverlayTemplatesConfig } from '../../shared/overlayTemplates';
 import { SupportedLanguage, normalizeLanguage } from '../../shared/i18n';
+import { AnalyticsSettings, createDefaultAnalyticsSettings } from '../../shared/analytics';
 import i18n from '../i18n';
 // import { useLibrary } from './LibraryContext';
 
@@ -63,6 +64,8 @@ interface UserDataContextType {
     setSongListViewConfig: (key: string, config: Partial<SongListViewConfig>) => void;
     overlayTemplates: OverlayTemplatesConfig;
     setOverlayTemplates: (config: OverlayTemplatesConfig) => void;
+    analytics: AnalyticsSettings;
+    setAnalytics: (settings: AnalyticsSettings) => void;
 }
 
 type LoadedSettings = {
@@ -73,6 +76,7 @@ type LoadedSettings = {
     hotkeys?: HotkeyConfig;
     songListViews?: SongListViewConfigs;
     overlayTemplates?: OverlayTemplatesConfig;
+    analytics?: AnalyticsSettings;
 };
 
 type SettingsLoadResult = {
@@ -103,6 +107,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [hotkeys, setHotkeys] = useState<HotkeyConfig>(() => mergeHotkeyConfig());
     const [songListViews, setSongListViews] = useState<SongListViewConfigs>({});
     const [overlayTemplates, setOverlayTemplates] = useState<OverlayTemplatesConfig>(() => mergeOverlayTemplatesConfig());
+    const [analytics, setAnalytics] = useState<AnalyticsSettings>(() => createDefaultAnalyticsSettings());
 
     const createSettingsPayload = useCallback(() => ({
         separationQuality,
@@ -112,7 +117,8 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         hotkeys,
         songListViews,
         overlayTemplates,
-    }), [separationQuality, language, lyricStyles, songPreferences, hotkeys, songListViews, overlayTemplates]);
+        analytics,
+    }), [separationQuality, language, lyricStyles, songPreferences, hotkeys, songListViews, overlayTemplates, analytics]);
 
     // Load data on startup
     useEffect(() => {
@@ -145,6 +151,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 const nextHotkeys = mergeHotkeyConfig(settings.hotkeys);
                 const nextSongListViews = mergeSongListViewConfigs(settings.songListViews);
                 const nextOverlayTemplates = mergeOverlayTemplatesConfig(settings.overlayTemplates, settings.lyricStyles);
+                const nextAnalytics = settings.analytics ?? createDefaultAnalyticsSettings();
                 loadedSettingsSnapshot.current = JSON.stringify({
                     separationQuality: nextSeparationQuality,
                     language: nextLanguage,
@@ -153,6 +160,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                     hotkeys: nextHotkeys,
                     songListViews: nextSongListViews,
                     overlayTemplates: nextOverlayTemplates,
+                    analytics: nextAnalytics,
                 });
                 unsafeSettingsLoad.current = settingsResult.unsafeToAutoPersist;
                 if (settingsResult.status === 'restored-from-backup') {
@@ -178,6 +186,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 setHotkeys(nextHotkeys);
                 setSongListViews(nextSongListViews);
                 setOverlayTemplates(nextOverlayTemplates);
+                setAnalytics(nextAnalytics);
 
                 // Load recent searches from localStorage
                 const savedRecent = localStorage.getItem('khelper_recent_searches');
@@ -399,7 +408,9 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             songListViews,
             setSongListViewConfig,
             overlayTemplates,
-            setOverlayTemplates
+            setOverlayTemplates,
+            analytics,
+            setAnalytics
         }}>
             {children}
         </UserDataContext.Provider>
