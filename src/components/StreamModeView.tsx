@@ -4,8 +4,17 @@ import { useTranslation } from 'react-i18next';
 import LyricsOverlay from './LyricsOverlay';
 import StreamSetlist from './StreamSetlist';
 import LyricStylePopup from './LyricStylePopup';
-import { SongMeta, EnrichedLyricLine } from '../../shared/songTypes';
-import { EditableLyricLine, linesFromRawText, parseLrc, readRawLyrics, readSyncedLyrics } from '../library/lyrics';
+import { SongMeta } from '../../shared/songTypes';
+import {
+  AlignedEnrichedLyricLine,
+  alignEnrichedLyricLines,
+  compactLyricLinesForEnrichment,
+  EditableLyricLine,
+  linesFromRawText,
+  parseLrc,
+  readRawLyrics,
+  readSyncedLyrics,
+} from '../library/lyrics';
 import { useQueue } from '../contexts/QueueContext';
 import { useLibrary } from '../contexts/LibraryContext';
 import { useUserData } from '../contexts/UserDataContext';
@@ -13,6 +22,7 @@ import { isJapanese } from '../utils/japaneseDetection';
 import WindowControls from './WindowControls';
 import StreamControlDropdown from './StreamControlDropdown';
 import audioEngine from '../audio/AudioEngine';
+import type { TextOnlyLyricScrollPayload } from '../../shared/lyricsScrollSync';
 
 interface StreamModeViewProps {
   currentTime: number;
@@ -36,7 +46,7 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
 
   // Japanese Enrichment State
 
-  const [enrichedLines, setEnrichedLines] = useState<EnrichedLyricLine[] | null>(null);
+  const [enrichedLines, setEnrichedLines] = useState<AlignedEnrichedLyricLine[] | null>(null);
 
   const currentSong = currentSongId ? getSongById(currentSongId) : null;
 
@@ -75,11 +85,11 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
 
   // Scroll Sync (Text Only)
   const lastScrollTime = React.useRef(0);
-  const handleScrollChange = (scrollTop: number) => {
+  const handleScrollChange = (payload: TextOnlyLyricScrollPayload) => {
     const now = Date.now();
     if (now - lastScrollTime.current > 50) { // Throttle to ~20fps
       if (window.api) {
-        window.api.sendOverlayScrollUpdate(scrollTop);
+        window.api.sendOverlayScrollUpdate(payload);
       }
       lastScrollTime.current = now;
     }
@@ -125,10 +135,12 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
           const detectedJp = isJapanese(rawText);
 
 
-          if (detectedJp && window.khelper?.lyrics?.enrichLyrics) {
-            window.khelper.lyrics.enrichLyrics(parsedLines.map(l => l.text))
+          const compactLines = compactLyricLinesForEnrichment(parsedLines);
+
+          if (detectedJp && compactLines.texts.length > 0 && window.khelper?.lyrics?.enrichLyrics) {
+            window.khelper.lyrics.enrichLyrics(compactLines.texts)
               .then(enriched => {
-                if (active) setEnrichedLines(enriched);
+                if (active) setEnrichedLines(alignEnrichedLyricLines(parsedLines, enriched));
               })
               .catch(e => console.error('[StreamMode] Enrichment failed', e));
           } else {

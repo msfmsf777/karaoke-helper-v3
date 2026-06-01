@@ -26,6 +26,13 @@ import { initUpdater, checkForUpdates, onStatusChange } from './updater'
 import type { HotkeyAction, HotkeyConfig } from '../shared/hotkeys'
 import { applyGlobalHotkeys, getHotkeyRegistrationStatus, unregisterGlobalHotkeys } from './hotkeys'
 import { resolveOverlayDesign, mergeOverlayTemplatesConfig } from '../shared/overlayTemplates'
+import {
+  alignEnrichedLyricLines,
+  compactLyricLinesForEnrichment,
+  linesFromRawText,
+  parseLrc,
+} from '../shared/lyrics'
+import type { TextOnlyLyricScrollPayload } from '../shared/lyricsScrollSync'
 import { getElectronLanguage, setElectronLanguage, tElectron } from './i18n'
 import { OverlayTransport, OverlayTransportPayload } from './overlayTransport'
 import { initializeAnalytics, registerAnalyticsIpc, shutdownAnalytics, trackAnalytics } from './analytics'
@@ -1042,26 +1049,22 @@ const server = http.createServer((req, res) => {
       readRawLyrics(songId)
     ]).then(async ([synced, raw]) => {
       let enriched = null;
-      const content = synced?.content || raw?.content || '';
+      const parsedLines = synced?.content
+        ? parseLrc(synced.content)
+        : raw?.content
+          ? linesFromRawText(raw.content)
+          : [];
+      const content = parsedLines.map((line) => line.text).join('\n');
 
       // Simple Japanese detection (Hiragana, Katakana, Kanji)
       const hasJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(content);
 
       if (hasJapanese) {
         try {
-          // Parse lines for enrichment
-          let lines: string[] = [];
-          if (synced?.content) {
-            // Simple parse to get text
-            lines = synced.content.split('\n')
-              .map(l => l.replace(/^\[.*?\]/, '').trim())
-              .filter(l => l.length > 0);
-          } else if (raw?.content) {
-            lines = raw.content.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-          }
+          const compactLines = compactLyricLinesForEnrichment(parsedLines);
 
-          if (lines.length > 0) {
-            enriched = await enrichLyrics(lines);
+          if (compactLines.texts.length > 0) {
+            enriched = alignEnrichedLyricLines(parsedLines, await enrichLyrics(compactLines.texts));
           }
         } catch (e) {
           console.error('[OverlayServer] Enrichment failed', e);
@@ -1425,8 +1428,41 @@ ipcMain.on('overlay:preference-update', (_event, prefs) => {
   overlayTransport.broadcast({ type: 'preference', prefs })
 })
 
-ipcMain.on('overlay:scroll-update', (_event, scrollY: number) => {
+const normalizeOverlayScrollPayload = (payload: number | TextOnlyLyricScrollPayload): TextOnlyLyricScrollPayload | null => {
+  if (typeof payload === 'number') {
+    return Number.isFinite(payload) ? { scrollTop: payload } : null
+  }
+
+  if (!payload || typeof payload.scrollTop !== 'number' || !Number.isFinite(payload.scrollTop)) {
+    return null
+  }
+
+  const normalized: TextOnlyLyricScrollPayload = { scrollTop: payload.scrollTop }
+  if (
+    typeof payload.anchorLineIndex === 'number'
+    && Number.isInteger(payload.anchorLineIndex)
+    && payload.anchorLineIndex >= 0
+    && typeof payload.anchorRatio === 'number'
+    && Number.isFinite(payload.anchorRatio)
+  ) {
+    normalized.anchorLineIndex = payload.anchorLineIndex
+    normalized.anchorRatio = Math.min(1, Math.max(0, payload.anchorRatio))
+  }
+
+  return normalized
+}
+
+ipcMain.on('overlay:scroll-update', (_event, scrollUpdate: number | TextOnlyLyricScrollPayload) => {
   // Broadcast scroll update (no need to cache strictly, but good for immediate sync if we wanted)
   // For scrolling, we just broadcast.
-  overlayTransport.broadcast({ type: 'scroll', scrollTop: scrollY })
+  const normalized = normalizeOverlayScrollPayload(scrollUpdate)
+  if (!normalized) return
+
+  const payload = { type: 'scroll', ...normalized }
+  overlayTransport.broadcast(payload)
+  BrowserWindow.getAllWindows().forEach((browserWindow) => {
+    if (!browserWindow.isDestroyed()) {
+      browserWindow.webContents.send('overlay:scroll-update', normalized)
+    }
+  })
 })

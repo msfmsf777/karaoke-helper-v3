@@ -2,6 +2,12 @@ import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EditableLyricLine } from '../library/lyrics';
 import { SongMeta, EnrichedLyricLine } from '../../shared/songTypes';
+import type { AlignedEnrichedLyricLine } from '../../shared/lyrics';
+import {
+    createTextOnlyLyricScrollAnchor,
+    type LyricLineLayout,
+    type TextOnlyLyricScrollPayload,
+} from '../../shared/lyricsScrollSync';
 import { LyricStyleConfig, DEFAULT_LYRIC_STYLES } from '../contexts/UserDataContext';
 
 interface LyricsOverlayProps {
@@ -11,12 +17,12 @@ interface LyricsOverlayProps {
     className?: string;
     onLineClick?: (time: number) => void;
     styleConfig?: LyricStyleConfig;
-    enrichedLines?: EnrichedLyricLine[] | null;
+    enrichedLines?: AlignedEnrichedLyricLine[] | null;
     furiganaEnabled?: boolean;
     romajiEnabled?: boolean;
     onToggleFurigana?: () => void;
     onToggleRomaji?: () => void;
-    onScrollChange?: (scrollTop: number) => void;
+    onScrollChange?: (payload: TextOnlyLyricScrollPayload) => void;
     externalScrollTop?: number | null;
     showControls?: boolean;
 }
@@ -197,6 +203,35 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({
         }
     }
 
+    const getTextOnlyLineLayouts = (container: HTMLElement): LyricLineLayout[] => {
+        const containerRect = container.getBoundingClientRect();
+        return Array.from(container.querySelectorAll<HTMLElement>('[data-lyric-line-index]'))
+            .map((element) => {
+                const index = Number(element.dataset.lyricLineIndex);
+                const rect = element.getBoundingClientRect();
+                if (!Number.isInteger(index) || rect.height <= 0) return null;
+                return {
+                    index,
+                    top: container.scrollTop + rect.top - containerRect.top,
+                    height: rect.height,
+                };
+            })
+            .filter((layout): layout is LyricLineLayout => layout !== null);
+    };
+
+    const handleTextOnlyScroll = (container: HTMLElement) => {
+        const anchor = createTextOnlyLyricScrollAnchor({
+            lineLayouts: getTextOnlyLineLayouts(container),
+            scrollTop: container.scrollTop,
+            viewportHeight: container.clientHeight,
+        });
+
+        onScrollChange?.({
+            scrollTop: container.scrollTop,
+            ...(anchor ?? {}),
+        });
+    };
+
     // Handle user scroll interactions
     const handleUserScroll = () => {
         isUserScrolling.current = true;
@@ -298,7 +333,7 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({
 
             <div
                 ref={containerRef}
-                onScroll={status === 'text_only' ? (e) => onScrollChange?.(e.currentTarget.scrollTop) : undefined}
+                onScroll={status === 'text_only' ? (e) => handleTextOnlyScroll(e.currentTarget) : undefined}
                 onWheel={status === 'synced' ? handleUserScroll : undefined}
                 onTouchMove={status === 'synced' ? handleUserScroll : undefined}
                 style={{
@@ -330,7 +365,12 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({
             `}</style>
                 <div style={{ height: '50vh', flexShrink: 0 }} />
                 {lines.map((line, idx) => (
-                    <div key={line.id} ref={idx === currentIdx ? activeLineRef : null} style={{ marginBottom: status === 'text_only' ? '16px' : undefined, flexShrink: 0 }}>
+                    <div
+                        key={line.id}
+                        ref={idx === currentIdx ? activeLineRef : null}
+                        data-lyric-line-index={idx}
+                        style={{ marginBottom: status === 'text_only' ? '16px' : undefined, flexShrink: 0 }}
+                    >
                         <LyricLine
                             line={line}
                             enriched={enrichedLines?.[idx]}

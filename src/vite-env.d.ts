@@ -17,13 +17,13 @@ interface Window {
     openExternal: (url: string) => Promise<void>;
     openOverlayWindow: () => void;
     sendOverlayUpdate: (payload: { type?: string; songId?: string; currentTime?: number; isPlaying?: boolean; queue?: string[]; currentIndex?: number; isStreamWaiting?: boolean; playbackMode?: 'normal' | 'repeat_one' | 'random' | 'stream'; language?: import('../shared/i18n').SupportedLanguage }) => void;
-    subscribeOverlayUpdates: (callback: (payload: { type?: string; status?: 'ok' | 'missing'; songId?: string; currentTime?: number; isPlaying?: boolean; queue?: string[]; currentIndex?: number; isStreamWaiting?: boolean; playbackMode?: 'normal' | 'repeat_one' | 'random' | 'stream'; language?: import('../shared/i18n').SupportedLanguage; kind?: 'lyrics' | 'setlist'; requestedDesignId?: string; designId?: string; design?: any; overlayTemplates?: import('../shared/overlayTemplates').OverlayTemplatesConfig }) => void) => () => void;
+    subscribeOverlayUpdates: (callback: (payload: { type?: string; status?: 'ok' | 'missing'; songId?: string; currentTime?: number; isPlaying?: boolean; queue?: string[]; currentIndex?: number; isStreamWaiting?: boolean; playbackMode?: 'normal' | 'repeat_one' | 'random' | 'stream'; language?: import('../shared/i18n').SupportedLanguage; kind?: 'lyrics' | 'setlist'; requestedDesignId?: string; designId?: string; design?: any; overlayTemplates?: import('../shared/overlayTemplates').OverlayTemplatesConfig; scrollTop?: number; anchorLineIndex?: number; anchorRatio?: number }) => void) => () => void;
     sendOverlayStyleUpdate: (style: any) => void;
     subscribeOverlayStyleUpdates: (callback: (style: any) => void) => () => void;
     sendOverlayPreferenceUpdate: (prefs: { furiganaEnabled: boolean; romajiEnabled: boolean }) => void;
     subscribeOverlayPreferenceUpdates: (callback: (prefs: { furiganaEnabled: boolean; romajiEnabled: boolean }) => void) => () => void;
-    sendOverlayScrollUpdate: (scrollY: number) => void;
-    subscribeOverlayScrollUpdates: (callback: (scrollY: number) => void) => () => void;
+    sendOverlayScrollUpdate: (payload: number | import('../shared/lyricsScrollSync').TextOnlyLyricScrollPayload) => void;
+    subscribeOverlayScrollUpdates: (callback: (payload: number | import('../shared/lyricsScrollSync').TextOnlyLyricScrollPayload) => void) => () => void;
   };
   khelper?: {
     dialogs: {

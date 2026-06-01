@@ -11,6 +11,7 @@ import type {
 } from '../shared/overlayTemplates'
 import type { SupportedLanguage } from '../shared/i18n'
 import type { AnalyticsConsent, AnalyticsEvent, AnalyticsSettings } from '../shared/analytics'
+import type { TextOnlyLyricScrollPayload } from '../shared/lyricsScrollSync'
 
 type OverlayUpdatePayload = {
   type?: string
@@ -26,7 +27,12 @@ type OverlayUpdatePayload = {
   designId?: string
   design?: LyricsOverlayDesign | SetlistOverlayDesign
   overlayTemplates?: OverlayTemplatesConfig
+  scrollTop?: number
+  anchorLineIndex?: number
+  anchorRatio?: number
 }
+
+type OverlayScrollUpdatePayload = number | TextOnlyLyricScrollPayload
 
 // --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld('ipcRenderer', {
@@ -75,9 +81,9 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.on('overlay:preference-update', listener)
     return () => ipcRenderer.off('overlay:preference-update', listener)
   },
-  sendOverlayScrollUpdate: (scrollY: number) => ipcRenderer.send('overlay:scroll-update', scrollY),
-  subscribeOverlayScrollUpdates: (callback: (scrollY: number) => void) => {
-    const listener = (_event: Electron.IpcRendererEvent, scrollY: number) => callback(scrollY)
+  sendOverlayScrollUpdate: (payload: OverlayScrollUpdatePayload) => ipcRenderer.send('overlay:scroll-update', payload),
+  subscribeOverlayScrollUpdates: (callback: (payload: OverlayScrollUpdatePayload) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, payload: OverlayScrollUpdatePayload) => callback(payload)
     ipcRenderer.on('overlay:scroll-update', listener)
     return () => ipcRenderer.off('overlay:scroll-update', listener)
   },

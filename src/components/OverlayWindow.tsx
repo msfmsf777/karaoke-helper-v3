@@ -1,6 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { SongMeta, EnrichedLyricLine } from '../../shared/songTypes';
-import { EditableLyricLine, linesFromRawText, parseLrc, readRawLyrics, readSyncedLyrics } from '../library/lyrics';
+import React, { useCallback, useEffect, useState } from 'react';
+import { SongMeta } from '../../shared/songTypes';
+import type { TextOnlyLyricScrollAnchor, TextOnlyLyricScrollPayload } from '../../shared/lyricsScrollSync';
+import {
+    AlignedEnrichedLyricLine,
+    alignEnrichedLyricLines,
+    compactLyricLinesForEnrichment,
+    EditableLyricLine,
+    linesFromRawText,
+    parseLrc,
+    readRawLyrics,
+    readSyncedLyrics,
+} from '../library/lyrics';
 import { DEFAULT_OVERLAY_DESIGN_ID, findLyricsOverlayDesign, getLyricsOverlayDesignById, LyricsOverlayDesign, OverlayTemplatesConfig } from '../../shared/overlayTemplates';
 import { TemplatedLyricsOverlay } from './overlayTemplates/OverlayTemplateRenderers';
 import MissingOverlayTemplateNotice from './MissingOverlayTemplateNotice';
@@ -22,6 +32,9 @@ interface LyricsOverlayUpdatePayload {
     };
     songId?: string;
     currentTime?: number;
+    scrollTop?: number;
+    anchorLineIndex?: number;
+    anchorRatio?: number;
 }
 
 const OverlayWindow: React.FC = () => {
@@ -32,12 +45,41 @@ const OverlayWindow: React.FC = () => {
     const [design, setDesign] = useState<LyricsOverlayDesign | null>(null);
 
     // Japanese Enrichment
-    const [enrichedLines, setEnrichedLines] = useState<EnrichedLyricLine[] | null>(null);
+    const [enrichedLines, setEnrichedLines] = useState<AlignedEnrichedLyricLine[] | null>(null);
+    const [externalScrollTop, setExternalScrollTop] = useState<number | null>(null);
+    const [externalScrollAnchor, setExternalScrollAnchor] = useState<TextOnlyLyricScrollAnchor | null>(null);
     const [furiganaEnabled, setFuriganaEnabled] = useState(false);
     const [romajiEnabled, setRomajiEnabled] = useState(false);
     const [missingDesignId, setMissingDesignId] = useState<string | null>(null);
     const designId = new URLSearchParams(window.location.search).get('design');
     const baseUrl = window.location.port === '5173' ? 'http://localhost:10001' : '';
+
+    const applyExternalScrollUpdate = useCallback((payload: number | TextOnlyLyricScrollPayload | LyricsOverlayUpdatePayload) => {
+        if (typeof payload === 'number') {
+            setExternalScrollTop(payload);
+            setExternalScrollAnchor(null);
+            return;
+        }
+
+        if (typeof payload.scrollTop === 'number') {
+            setExternalScrollTop(payload.scrollTop);
+        }
+
+        if (
+            typeof payload.anchorLineIndex === 'number'
+            && Number.isInteger(payload.anchorLineIndex)
+            && payload.anchorLineIndex >= 0
+            && typeof payload.anchorRatio === 'number'
+            && Number.isFinite(payload.anchorRatio)
+        ) {
+            setExternalScrollAnchor({
+                anchorLineIndex: payload.anchorLineIndex,
+                anchorRatio: Math.min(1, Math.max(0, payload.anchorRatio)),
+            });
+        } else {
+            setExternalScrollAnchor(null);
+        }
+    }, []);
 
     useEffect(() => {
         const loadConfig = async () => {
@@ -89,6 +131,10 @@ const OverlayWindow: React.FC = () => {
                     return;
                 }
                 if (payload.type === 'setlist') return;
+                if (payload.type === 'scroll' && typeof payload.scrollTop === 'number') {
+                    applyExternalScrollUpdate(payload);
+                    return;
+                }
                 const { songId, currentTime: time } = payload;
                 if (typeof time === 'number') setCurrentTime(time);
                 if (songId !== currentTrackId) {
@@ -101,9 +147,14 @@ const OverlayWindow: React.FC = () => {
                 setRomajiEnabled(prefs.romajiEnabled);
             });
 
+            const removeScrollListener = window.api.subscribeOverlayScrollUpdates((payload) => {
+                applyExternalScrollUpdate(payload);
+            });
+
             return () => {
                 removeListener();
                 removePrefListener();
+                removeScrollListener();
             };
         }
 
@@ -136,6 +187,10 @@ const OverlayWindow: React.FC = () => {
             }
 
             if (payload.type === 'setlist') return;
+            if (payload.type === 'scroll' && typeof payload.scrollTop === 'number') {
+                applyExternalScrollUpdate(payload);
+                return;
+            }
 
             const { songId, currentTime: time } = payload;
             if (typeof time === 'number') setCurrentTime(time);
@@ -143,7 +198,7 @@ const OverlayWindow: React.FC = () => {
                 setCurrentTrackId(songId || null);
             }
         });
-    }, [currentTrackId, baseUrl, designId]);
+    }, [currentTrackId, baseUrl, designId, applyExternalScrollUpdate]);
 
     useEffect(() => {
         if (!currentTrackId) {
@@ -189,10 +244,11 @@ const OverlayWindow: React.FC = () => {
                     // Let's use a simple regex check here to avoid dependencies if possible,
                     // OR rely on the fact that StreamModeView likely cached it.
                     const hasJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(rawText);
-                    if (hasJapanese && window.khelper.lyrics.enrichLyrics) {
-                        window.khelper.lyrics.enrichLyrics(parsedLines.map(l => l.text))
+                    const compactLines = compactLyricLinesForEnrichment(parsedLines);
+                    if (hasJapanese && compactLines.texts.length > 0 && window.khelper.lyrics.enrichLyrics) {
+                        window.khelper.lyrics.enrichLyrics(compactLines.texts)
                             .then(enriched => {
-                                if (active) setEnrichedLines(enriched);
+                                if (active) setEnrichedLines(alignEnrichedLyricLines(parsedLines, enriched));
                             })
                             .catch(e => console.error('[Overlay] Enrichment failed', e));
                     } else {
@@ -211,7 +267,7 @@ const OverlayWindow: React.FC = () => {
                     if (data.synced) {
                         setLines(parseLrc(data.synced));
                         setLyricsStatus('synced');
-                    } else if (data.raw) {
+                    } else if (typeof data.raw === 'string' && data.raw.trim().length > 0) {
                         setLines(linesFromRawText(data.raw));
                         setLyricsStatus('text_only');
                     } else {
@@ -272,6 +328,8 @@ const OverlayWindow: React.FC = () => {
                     enrichedLines={enrichedLines}
                     furiganaEnabled={furiganaEnabled}
                     romajiEnabled={romajiEnabled}
+                    externalScrollTop={externalScrollTop}
+                    externalScrollAnchor={externalScrollAnchor}
                 />
             )}
         </div>

@@ -2,6 +2,7 @@ import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { EditableLyricLine } from '../../library/lyrics';
+import type { AlignedEnrichedLyricLine } from '../../../shared/lyrics';
 import { EnrichedLyricLine, SongMeta } from '../../../shared/songTypes';
 import {
   LyricsOverlayDesign,
@@ -10,6 +11,15 @@ import {
   SetlistOverlayDesign,
   SetlistOverlayTemplateConfig,
 } from '../../../shared/overlayTemplates';
+import {
+  resolveLyricTimingState,
+  shouldRenderLyricsOverlayContent,
+} from '../../../shared/lyricsOverlayState';
+import {
+  resolveScrollTopForTextOnlyLyricAnchor,
+  type LyricLineLayout,
+  type TextOnlyLyricScrollAnchor,
+} from '../../../shared/lyricsScrollSync';
 import i18nInstance from '../../i18n';
 
 export interface OverlaySongMetadata {
@@ -257,24 +267,15 @@ export function getSampleLyrics() {
   };
 }
 
-const getActiveLineIndex = (lines: EditableLyricLine[], currentTime: number) => {
-  let currentIdx = -1;
-  for (let index = 0; index < lines.length; index += 1) {
-    const time = lines[index].timeSeconds;
-    if (time !== null && time <= currentTime) {
-      currentIdx = index;
-    } else if (time !== null && time > currentTime) {
-      break;
-    }
-  }
-  return currentIdx;
-};
-
 const getVisibleLineRange = (
   lineCount: number,
   currentIdx: number,
   config: LyricsOverlayTemplateConfig
 ) => {
+  if (lineCount <= 0) {
+    return { start: 0, end: -1 };
+  }
+
   if (config.lineMode === 'fill') {
     return { start: 0, end: Math.max(0, lineCount - 1) };
   }
@@ -295,6 +296,10 @@ const renderLyricContent = (
   showRomaji: boolean,
   config: LyricsOverlayTemplateConfig
 ) => {
+  if (line.text.trim().length === 0) {
+    return <div aria-hidden="true">&nbsp;</div>;
+  }
+
   const mainContent = showFurigana && enriched
     ? enriched.ruby.map((segment, index) => (
       segment.furigana ? (
@@ -336,22 +341,39 @@ const getOffsetTopWithin = (element: HTMLElement, ancestor: HTMLElement) => {
   return node === ancestor ? offsetTop : null;
 };
 
+const getTextOnlyLineLayouts = (container: HTMLElement): LyricLineLayout[] => {
+  const containerRect = container.getBoundingClientRect();
+  return Array.from(container.querySelectorAll<HTMLElement>('[data-lyric-line-index]'))
+    .map((element) => {
+      const index = Number(element.dataset.lyricLineIndex);
+      const rect = element.getBoundingClientRect();
+      if (!Number.isInteger(index) || rect.height <= 0) return null;
+      return {
+        index,
+        top: container.scrollTop + rect.top - containerRect.top,
+        height: rect.height,
+      };
+    })
+    .filter((layout): layout is LyricLineLayout => layout !== null);
+};
+
 export const TemplatedLyricsOverlay: React.FC<{
   design: LyricsOverlayDesign;
   status: SongMeta['lyrics_status'];
   lines: EditableLyricLine[];
   currentTime: number;
-  enrichedLines?: EnrichedLyricLine[] | null;
+  enrichedLines?: AlignedEnrichedLyricLine[] | null;
   furiganaEnabled: boolean;
   romajiEnabled: boolean;
-}> = ({ design, status, lines, currentTime, enrichedLines, furiganaEnabled, romajiEnabled }) => {
-  const { t } = useTranslation();
+  externalScrollTop?: number | null;
+  externalScrollAnchor?: TextOnlyLyricScrollAnchor | null;
+}> = ({ design, status, lines, currentTime, enrichedLines, furiganaEnabled, romajiEnabled, externalScrollTop, externalScrollAnchor }) => {
   const config = design.config;
   const activeLineRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
-  const currentIdx = status === 'synced' ? getActiveLineIndex(lines, currentTime) : -1;
-  const visibleRange = getVisibleLineRange(lines.length, currentIdx, config);
+  const { timingAnchorIndex, activeTextIndex } = resolveLyricTimingState(status, lines, currentTime);
+  const visibleRange = getVisibleLineRange(lines.length, timingAnchorIndex, config);
   const showFurigana = config.furiganaPolicy === 'show' || (config.furiganaPolicy === 'follow_app' && furiganaEnabled);
   const showRomaji = config.romajiPolicy === 'show' || (config.romajiPolicy === 'follow_app' && romajiEnabled);
   const usesEntranceAnimation = config.animation === 'fade' || config.animation === 'slide' || config.animation === 'scale';
@@ -359,7 +381,7 @@ export const TemplatedLyricsOverlay: React.FC<{
   useLayoutEffect(() => {
     const scrollContainer = scrollRef.current;
     if (!scrollContainer || status !== 'synced') return;
-    if (currentIdx < 0) {
+    if (timingAnchorIndex < 0) {
       scrollContainer.scrollTo({ top: 0, behavior: 'auto' });
       return;
     }
@@ -398,7 +420,7 @@ export const TemplatedLyricsOverlay: React.FC<{
       if (settleTimer) window.clearTimeout(settleTimer);
     };
   }, [
-    currentIdx,
+    timingAnchorIndex,
     status,
     config.lineMode,
     config.activeFontSize,
@@ -415,12 +437,40 @@ export const TemplatedLyricsOverlay: React.FC<{
     lines.length,
   ]);
 
-  if (status === 'none' || lines.length === 0) {
-    return (
-      <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', color: config.inactiveColor, fontFamily: config.fontFamily }}>
-        {t('domain.lyricsStatus.none')}
-      </div>
-    );
+  useLayoutEffect(() => {
+    const scrollContainer = scrollRef.current;
+    if (!scrollContainer || status !== 'text_only' || externalScrollTop === null || externalScrollTop === undefined) return;
+
+    const maxTop = Math.max(0, scrollContainer.scrollHeight - scrollContainer.clientHeight);
+    const anchorScrollTop = resolveScrollTopForTextOnlyLyricAnchor({
+      anchor: externalScrollAnchor ?? null,
+      lineLayouts: getTextOnlyLineLayouts(scrollContainer),
+      viewportHeight: scrollContainer.clientHeight,
+      maxScrollTop: maxTop,
+    });
+
+    if (anchorScrollTop !== null) {
+      scrollContainer.scrollTop = anchorScrollTop;
+      return;
+    }
+
+    scrollContainer.scrollTop = Math.max(0, Math.min(maxTop, externalScrollTop));
+  }, [
+    externalScrollAnchor,
+    externalScrollTop,
+    status,
+    lines.length,
+    config.inactiveFontSize,
+    config.lineGap,
+    config.letterSpacing,
+    config.romajiLetterSpacing,
+    config.romajiMarginTop,
+    showFurigana,
+    showRomaji,
+  ]);
+
+  if (!shouldRenderLyricsOverlayContent(status, lines)) {
+    return null;
   }
 
   return (
@@ -470,7 +520,7 @@ export const TemplatedLyricsOverlay: React.FC<{
           <div style={{ height: '50%', flexShrink: 0 }} />
           <div
             ref={trackRef}
-            key={usesEntranceAnimation ? `${config.animation}-${currentIdx}` : 'lyric-scroll-track'}
+            key={usesEntranceAnimation ? `${config.animation}-${timingAnchorIndex}` : 'lyric-scroll-track'}
             style={{
               width: '100%',
               transformOrigin: 'center center',
@@ -480,11 +530,15 @@ export const TemplatedLyricsOverlay: React.FC<{
             }}
           >
             {lines.map((line, index) => {
-              const isActive = index === currentIdx || (status === 'text_only' && index === 0);
-              const isPast = status === 'synced' && currentIdx >= 0 && index < currentIdx;
+              const isActive = index === activeTextIndex;
+              const isTimingAnchor = index === timingAnchorIndex;
+              const isPast = status === 'synced' && timingAnchorIndex >= 0 && index < timingAnchorIndex;
               const isVisible = status !== 'synced'
                 || config.lineMode === 'fill'
                 || (index >= visibleRange.start && index <= visibleRange.end);
+              const fontSize = isActive || isTimingAnchor ? config.activeFontSize : config.inactiveFontSize;
+              const lineHeight = showFurigana ? 1.58 : 1.22;
+              const isBlankLine = line.text.trim().length === 0;
               const textShadow = [
                 config.strokeWidth > 0
                   ? `0 0 1px ${config.strokeColor}, -${config.strokeWidth}px 0 ${config.strokeColor}, ${config.strokeWidth}px 0 ${config.strokeColor}, 0 -${config.strokeWidth}px ${config.strokeColor}, 0 ${config.strokeWidth}px ${config.strokeColor}`
@@ -497,12 +551,14 @@ export const TemplatedLyricsOverlay: React.FC<{
               return (
                 <div
                   key={line.id}
-                  ref={isActive ? activeLineRef : null}
+                  ref={isTimingAnchor ? activeLineRef : null}
+                  data-lyric-line-index={index}
                   style={{
                     color: isActive ? config.activeColor : isPast ? config.passedColor : config.inactiveColor,
-                    fontSize: isActive ? config.activeFontSize : config.inactiveFontSize,
+                    fontSize,
                     fontWeight: isActive ? 850 : 600,
-                    lineHeight: showFurigana ? 1.58 : 1.22,
+                    lineHeight,
+                    minHeight: isBlankLine ? Math.ceil(fontSize * lineHeight) : undefined,
                     marginBottom: index === lines.length - 1 ? 0 : config.lineGap,
                     visibility: isVisible ? 'visible' : 'hidden',
                     opacity: isVisible ? isActive ? 1 : isPast ? 0.48 : 0.72 : 0,
