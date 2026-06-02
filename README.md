@@ -15,7 +15,7 @@
 
 > 🔒 KHelper 會在應用程式內詢問是否允許選用的隱私保護使用統計；不允許不會影響任何功能。詳情請見 [隱私權聲明 / Privacy Notice](./PRIVACY.md)。
 
-【[直接下載連結](https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v3.2.0-beta/KHelperV3.Setup.3.2.0-beta.exe)】
+【[直接下載連結](https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v3.3.0-beta/KHelperV3-Setup-3.3.0-beta.exe)】
 
 
 ----------
@@ -78,13 +78,13 @@
 
 ### 一般使用者
 
-1.  前往 GitHub Releases或使用【[最新版本 (V3.2.0-beta) 下載連結](https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v3.2.0-beta/KHelperV3.Setup.3.2.0-beta.exe)】：  
+1.  前往 GitHub Releases或使用【[最新版本 (V3.3.0-beta) 下載連結](https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v3.3.0-beta/KHelperV3-Setup-3.3.0-beta.exe)】：  
     👉 `https://github.com/msfmsf777/karaoke-helper-v3/releases`
     
 2.  找到想要的版本。
     
 3.  下載 Windows 安裝檔，例如：  
-    `KHelperV3.Setup.3.2.0-beta.exe`
+    `KHelperV3-Setup-3.3.0-beta.exe`
     
 4.  執行安裝程式並依照步驟完成安裝。**若遇到 Windows SmartScreen（未簽章），點「更多資訊 → 仍要執行」**。
     
