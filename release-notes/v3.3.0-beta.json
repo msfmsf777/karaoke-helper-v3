@@ -137,25 +137,25 @@
       ]
     },
     "id": {
-      "title": "🔥Catatan Pembaruan KHelper v3.3.0 Beta🔥",
-      "summary": "Versi ini membawa KHelper ke beta publik yang benar-benar multibahasa, dengan sistem overlay setlist/lirik OBS yang lebih dapat dikustomisasi dan berbagai peningkatan pengalaman penggunaan.",
+      "title": "🔥Pembaruan KHelper v3.3.0 Beta🔥",
+      "summary": "Versi ini membawa KHelper ke beta publik multibahasa yang lebih matang, dengan sistem overlay setlist/lirik OBS yang lebih mudah dikustomisasi dan berbagai peningkatan pengalaman penggunaan.",
       "sections": [
         {
-          "title": "🩵Fitur Baru🩵",
+          "title": "🩵Fitur baru🩵",
           "items": [
-            "✨Menambahkan antarmuka lengkap dalam Bahasa Tionghoa Tradisional, Inggris, Tionghoa Sederhana, Jepang, Korea, Indonesia, dan Thailand.",
-            "✨Menambahkan pemilih bahasa yang lebih jelas di Settings, dengan bendera, nama asli bahasa, nama dalam bahasa UI saat ini, dan pencarian.",
+            "✨Menambahkan antarmuka lengkap dalam Bahasa Tionghoa Tradisional, Inggris, Tionghoa Sederhana, Jepang, Korea, Indonesia, dan Thai.",
+            "✨Menambahkan pemilih bahasa yang lebih jelas di Pengaturan, dengan bendera, nama asli bahasa, nama dalam bahasa UI saat ini, dan pencarian.",
             "✨Mendesain ulang sistem overlay setlist OBS dengan 12 template yang sangat dapat dikustomisasi untuk berbagai tata letak stream.",
             "✨Overlay lirik dan setlist OBS kini memakai kanal pembaruan live yang lebih stabil, terutama saat beberapa Browser Source terbuka.",
-            "✨Menambahkan alur update di dalam aplikasi (Beta): unduh update dari KHelper dan selesaikan instalasi dengan restart aplikasi."
+            "✨Menambahkan alur pembaruan di dalam aplikasi (Beta): unduh pembaruan dari KHelper dan selesaikan instalasi dengan memulai ulang aplikasi."
           ]
         },
         {
-          "title": "🩵Peningkatan UX / Perbaikan Bug🩵",
+          "title": "🩵Peningkatan UX / Perbaikan bug🩵",
           "items": [
-            "🌟Melokalkan shell aplikasi utama, library lagu, hasil pencarian, pengelola unduhan, editor lirik, Stream Mode, Mini Player, overlay OBS, dan menu Electron.",
+            "🌟Melokalkan shell aplikasi utama, koleksi lagu, hasil pencarian, pengelola unduhan, editor lirik, Stream Mode, Mini Player, overlay OBS, dan menu Electron.",
             "🌟Menambahkan penyesuaian teks otomatis untuk tabel, tombol, dan kontrol yang padat, sehingga terjemahan panjang hanya diperkecil atau dipotong saat diperlukan.",
-            "🌟Memperkuat penyimpanan settings dengan penulisan berurutan, backup, penyimpanan file rusak, dan pemulihan untuk mengurangi risiko konfigurasi hilang setelah aplikasi tertutup tidak normal.",
+            "🌟Memperkuat penyimpanan pengaturan dengan penulisan berurutan, backup, penyimpanan file rusak, dan pemulihan untuk mengurangi risiko konfigurasi hilang setelah aplikasi tertutup tidak normal.",
             "🌟Menyesuaikan perutean audio untuk stream online: output penonton yang dinonaktifkan tetap senyap saat lagu dimuat atau volume diubah, perangkat output yang sama menghindari pemutaran ganda, dan output pada perangkat berbeda menerapkan sinkronisasi awal serta offset tersimpan.",
             "🛠️Memperbaiki detail tampilan thumbnail lagu online di baris lagu dan Mini Player.",
             "🛠️Penyempurnaan tambahan pada detail antarmuka dan pengalaman penggunaan."
@@ -164,27 +164,27 @@
       ]
     },
     "th": {
-      "title": "🔥รายละเอียดอัปเดต KHelper v3.3.0 Beta🔥",
-      "summary": "เวอร์ชันนี้ทำให้ KHelper เป็น public beta ที่รองรับหลายภาษาอย่างจริงจัง พร้อมระบบ OBS setlist/lyrics overlay ที่ปรับแต่งได้มากขึ้น และการปรับปรุงประสบการณ์ใช้งานหลายส่วน",
+      "title": "🔥อัปเดต KHelper v3.3.0 Beta🔥",
+      "summary": "เวอร์ชันนี้ยกระดับ KHelper เป็นเบต้าสาธารณะที่รองรับหลายภาษาอย่างจริงจัง พร้อมระบบโอเวอร์เลย์เซ็ตลิสต์/เนื้อเพลง OBS ที่ปรับแต่งได้มากขึ้น และการปรับปรุงประสบการณ์ใช้งานอีกหลายส่วน",
       "sections": [
         {
           "title": "🩵ฟีเจอร์ใหม่🩵",
           "items": [
-            "✨เพิ่มอินเทอร์เฟซหลายภาษาแบบครบถ้วน รองรับจีนตัวเต็ม อังกฤษ จีนตัวย่อ ญี่ปุ่น เกาหลี อินโดนีเซีย และไทย",
-            "✨เพิ่มตัวเลือกภาษาใน Settings ที่ชัดเจนขึ้น พร้อมธง ชื่อภาษาตามเจ้าของภาษา ชื่อภาษาใน UI ปัจจุบัน และการค้นหา",
-            "✨ปรับระบบ OBS setlist overlay ใหม่ทั้งหมด พร้อม 12 เทมเพลตที่ปรับแต่งได้ละเอียดสำหรับเลย์เอาต์สตรีมหลายแบบ",
-            "✨OBS lyrics และ setlist overlays ใช้ช่องทางอัปเดตสดที่เสถียรกว่าเดิม โดยเฉพาะเมื่อเปิด Browser Source หลายรายการ",
-            "✨เพิ่มระบบอัปเดตในแอป (Beta) ดาวน์โหลดอัปเดตจากใน KHelper แล้วติดตั้งให้เสร็จด้วยการรีสตาร์ตแอป"
+            "✨เพิ่มอินเทอร์เฟซหลายภาษาที่ครบถ้วน รองรับจีนตัวเต็ม อังกฤษ จีนตัวย่อ ญี่ปุ่น เกาหลี อินโดนีเซีย และไทย",
+            "✨เพิ่มตัวเลือกภาษาในหน้าตั้งค่าที่ใช้ง่ายขึ้น แสดงธง ชื่อภาษาตามต้นฉบับ ชื่อภาษาในภาษาของ UI ปัจจุบัน และรองรับการค้นหา",
+            "✨ออกแบบระบบโอเวอร์เลย์เซ็ตลิสต์ OBS ใหม่ พร้อมเทมเพลตปรับแต่งได้สูง 12 แบบ สำหรับเลย์เอาต์สตรีมที่หลากหลาย",
+            "✨โอเวอร์เลย์เนื้อเพลงและเซ็ตลิสต์ OBS ใช้ช่องทางอัปเดตสดที่เสถียรกว่าเดิม โดยเฉพาะเมื่อเปิด Browser Source หลายรายการ",
+            "✨เพิ่มขั้นตอนอัปเดตในแอป (Beta): ดาวน์โหลดอัปเดตจาก KHelper และติดตั้งให้เสร็จด้วยการเริ่มแอปใหม่"
           ]
         },
         {
           "title": "🩵ปรับปรุง UX / แก้ไขบั๊ก🩵",
           "items": [
-            "🌟แปลและจัดระบบหลายภาษาให้หน้าหลัก คลังเพลง ผลการค้นหา ตัวจัดการดาวน์โหลด ตัวแก้ไขเนื้อเพลง Stream Mode, Mini Player, OBS overlays และเมนู Electron",
-            "🌟เพิ่มระบบปรับข้อความอัตโนมัติสำหรับตาราง ปุ่ม และคอนโทรลที่มีพื้นที่จำกัด ทำให้คำแปลยาวถูกย่อหรือแสดงจุดไข่ปลาเฉพาะเมื่อจำเป็น",
-            "🌟เพิ่มความปลอดภัยให้การบันทึก settings ด้วยการเขียนแบบเรียงลำดับ สำรองไฟล์ เก็บไฟล์ที่เสียหาย และกู้คืน เพื่อลดความเสี่ยงที่การตั้งค่าหายหลังปิดแอปผิดปกติ",
-            "🌟ปรับการกำหนดเส้นทางเสียงสำหรับการสตรีมเพลงออนไลน์: เอาต์พุตสำหรับผู้ชมที่ปิดไว้จะยังคงเงียบเมื่อโหลดเพลงหรือปรับระดับเสียง การใช้เอาต์พุตอุปกรณ์เดียวกันจะหลีกเลี่ยงการเล่นเสียงซ้ำ และการใช้อุปกรณ์แยกกันจะใช้การซิงค์ตอนเริ่มเล่นพร้อมค่าออฟเซ็ตที่บันทึกไว้",
-            "🛠️แก้ไขรายละเอียดการแสดง thumbnail ของเพลงออนไลน์ในแถวเพลงและ Mini Player",
+            "🌟ปรับระบบหลายภาษาสำหรับหน้าหลัก คลังเพลง ผลการค้นหา ตัวจัดการดาวน์โหลด ตัวแก้ไขเนื้อเพลง Stream Mode, Mini Player, โอเวอร์เลย์ OBS และเมนู Electron",
+            "🌟เพิ่มการปรับข้อความอัตโนมัติในตาราง ปุ่ม และพื้นที่ควบคุมที่แน่น เพื่อให้คำแปลยาวถูกย่อหรือครอบตัดเฉพาะเมื่อจำเป็น",
+            "🌟ปรับการบันทึกการตั้งค่าให้ปลอดภัยขึ้นด้วยการเขียนตามลำดับ การสำรองข้อมูล การเก็บไฟล์ที่เสียหาย และการกู้คืน เพื่อลดความเสี่ยงที่การตั้งค่าจะหายหลังปิดแอปผิดปกติ",
+            "🌟ปรับการส่งเสียงของเพลงออนไลน์: เอาต์พุตผู้ชมที่ปิดไว้จะยังเงียบเมื่อโหลดเพลงหรือปรับระดับเสียง อุปกรณ์เอาต์พุตเดียวกันจะหลีกเลี่ยงการเล่นซ้ำ และอุปกรณ์แยกกันจะใช้การซิงค์เริ่มต้นพร้อมค่าออฟเซ็ตที่บันทึกไว้",
+            "🛠️แก้ไขรายละเอียดการแสดงภาพขนาดย่อของเพลงออนไลน์ในแถวเพลงและ Mini Player",
             "🛠️ปรับปรุงรายละเอียดอินเทอร์เฟซและประสบการณ์ใช้งานเพิ่มเติม"
           ]
         }

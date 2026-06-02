@@ -58,9 +58,9 @@
       "highDescription": "Takes longer, but provides the best separation result."
     },
     "privacy": {
-      "title": "Privacy & Improvement",
+      "title": "Privacy and improvement",
       "description": "Control optional privacy-preserving usage statistics for improving KHelper.",
-      "shareUsage": "Share privacy-preserving usage statistics",
+      "shareUsage": "Share privacy-preserving usage stats",
       "enabled": "Sharing is enabled. You can turn it off at any time.",
       "disabled": "Sharing is disabled.",
       "collected": "When enabled: an anonymized installation identifier, app/display/Windows version details, rounded event time, basic technical metadata, feature-use categories, and sanitized results.",
@@ -121,8 +121,8 @@
   },
   "analyticsConsent": {
     "title": "Help improve KHelper?",
-    "description": "Would you like to share privacy-preserving usage statistics to help prioritize improvements and reliability fixes?",
-    "collectedTitle": "Shared only if you allow",
+    "description": "Would you like to share privacy-preserving usage stats to help prioritize improvements and reliability fixes?",
+    "collectedTitle": "Shared only if allowed",
     "collected": "An anonymized installation identifier, app/display/Windows version details, rounded event time, basic technical metadata, feature-use categories, and sanitized results.",
     "excludedTitle": "Never shared",
     "excluded": "Songs, lyrics, searches, files, playlists, OBS custom content, audio devices, hotkeys, and raw error details.",
@@ -154,15 +154,15 @@
     }
   },
   "updatesPopup": {
-    "title": "New Version Available",
+    "title": "New version available",
     "noReleaseNotes": "No release notes were provided for this version.",
     "error": "Update failed. Check your network connection or try again later.",
-    "ignore": "Ignore This Version",
-    "download": "Open Download Page",
-    "updateNow": "Update Now",
-    "restart": "Restart to Update",
-    "retry": "Retry Update",
-    "openDownloadPage": "Open Download Page",
+    "ignore": "Ignore this version",
+    "download": "Open download page",
+    "updateNow": "Update now",
+    "restart": "Restart to update",
+    "retry": "Retry update",
+    "openDownloadPage": "Open download page",
     "readyToRestart": "Update ready. Restart KHelper to install it.",
     "progress": "{{transferred}} / {{total}} downloaded",
     "status": {
@@ -178,10 +178,10 @@
     "failed": "Failed",
     "completed": "Completed",
     "viewAllDownloads": "View all download results",
-    "copyError": "Copy Error",
+    "copyError": "Copy error",
     "copied": "Copied ✓",
-    "hideError": "Hide Error",
-    "viewError": "View Error",
+    "hideError": "Hide error",
+    "viewError": "View error",
     "empty": "No active tasks",
     "actions": {
       "cancel": "Cancel",
@@ -206,36 +206,36 @@
     "songType": {
       "original": "Original",
       "instrumental": "Instrumental",
-      "all": "All Types"
+      "all": "All types"
     },
     "audioStatus": {
       "streaming": "Online",
-      "original_only": "Not Separated",
+      "original_only": "Not separated",
       "separation_pending": "Waiting",
       "separating": "Separating",
-      "separation_failed": "Separation Failed",
+      "separation_failed": "Separation failed",
       "separated": "Separated",
       "ready": "Not Separated",
       "missing": "Not Separated",
       "error": "Error",
-      "all": "All Audio"
+      "all": "All audio"
     },
     "lyricsStatus": {
-      "none": "No Lyrics",
-      "text_only": "Plain Text",
+      "none": "No lyrics",
+      "text_only": "Plain text",
       "synced": "Synced",
-      "all": "All Lyrics",
+      "all": "All lyrics",
       "shortNone": "None"
     },
     "source": {
-      "file": "Local File",
+      "file": "Local file",
       "youtube": "YouTube",
-      "all": "All Sources"
+      "all": "All sources"
     },
     "favorite": {
-      "all": "All Favorites",
+      "all": "All favorites",
       "favorite": "Favorite",
-      "not_favorite": "Not Favorite"
+      "not_favorite": "Not favorite"
     },
     "downloadStatus": {
       "queued": "Queued",
@@ -249,7 +249,7 @@
         "playback": "Playback",
         "custom": "Custom Shortcuts"
       },
-      "unset": "Not Set",
+      "unset": "Not set",
       "failures": {
         "plainGlobal": "Global hotkeys must include a modifier",
         "duplicate": "Duplicate shortcut",
@@ -261,11 +261,11 @@
           "description": "Toggle playback for the current song"
         },
         "nextTrack": {
-          "label": "Next Track",
+          "label": "Next song",
           "description": "Play the next song in the queue"
         },
         "previousTrack": {
-          "label": "Previous Track",
+          "label": "Previous song",
           "description": "Play the previous song in the queue"
         },
         "toggleMiniPlayer": {
@@ -281,12 +281,12 @@
           "description": "Enter or leave stream mode"
         },
         "instrumentalVolumeUp": {
-          "label": "Instrumental Volume +",
-          "description": "Raise instrumental volume by 5%"
+          "label": "Backing volume +",
+          "description": "Raise backing volume by 5%"
         },
         "instrumentalVolumeDown": {
-          "label": "Instrumental Volume -",
-          "description": "Lower instrumental volume by 5%"
+          "label": "Backing volume -",
+          "description": "Lower backing volume by 5%"
         },
         "vocalVolumeUp": {
           "label": "Vocal Volume +",
@@ -320,14 +320,14 @@
       "recentSearches": "Recent Searches",
       "clear": "Clear",
       "noRecentSearches": "No recent searches",
-      "localMatches": "Local Library Matches",
-      "viewAll": "View All ->",
+      "localMatches": "Local matches",
+      "viewAll": "View all",
       "noLocalMatches": "No matching local songs",
-      "youtubeResults": "YouTube Stream Results",
+      "youtubeResults": "Online results",
       "suggestions": "Search Suggestions",
       "searching": "Searching...",
       "noOnlineResults": "No related results",
-      "showMore": "Show More",
+      "showMore": "Show more",
       "tasks": "Tasks",
       "about": "About",
       "miniPlayer": "Mini Player",
@@ -403,7 +403,7 @@
   },
   "songList": {
     "empty": "No songs",
-    "playVisible": "Play Visible List",
+    "playVisible": "Play current list",
     "added": "Added",
     "addToQueue": "Add to Queue",
     "moreActions": "More List Actions",
@@ -414,7 +414,7 @@
     "searchPlaceholder": "Search this list",
     "searchThisList": "Search this list",
     "filter": "Filter",
-    "clearCondition": "Click to clear this condition",
+    "clearCondition": "Clear filter",
     "clearFilters": "Clear Filters",
     "sortBy": "Sort by {{label}}",
     "noMatches": "No songs match these filters",
@@ -455,7 +455,7 @@
     "deletePlaylistConfirm": "Delete playlist \"{{name}}\"?",
     "removeFromPlaylist": "Remove from playlist",
     "unknownArtist": "Unknown Artist",
-    "addToPlaylistOrQueue": "Add to Playlist / Queue",
+    "addToPlaylistOrQueue": "Add to playlist / queue",
     "fastBadge": "Fast",
     "normalBadge": "Normal",
     "separate": "Separate",
@@ -520,7 +520,7 @@
     },
     "searchResults": {
       "title": "Search Results: \"{{term}}\"",
-      "localMatches": "Local Library Matches",
+      "localMatches": "Local matches",
       "noLocalMatches": "No local songs match \"{{term}}\"",
       "youtubeResults": "YouTube Stream Results",
       "duration": {
@@ -536,7 +536,7 @@
         "year": "Uploaded This Year"
       },
       "sort": {
-        "relevance": "Sort by Relevance",
+        "relevance": "Relevance",
         "popularity": "Sort by Views"
       },
       "searchingYoutube": "Searching YouTube...",
@@ -659,8 +659,8 @@
       "setToCurrentTime": "Set to Current Playback Time",
       "applyCurrentTimeTitle": "Apply current playback time",
       "applyCurrentTime": "Apply Current Time",
-      "earlier": "Earlier",
-      "later": "Later",
+      "earlier": "-50ms",
+      "later": "+50ms",
       "nextTapLine": "The next tap will apply to this line",
       "addLineBelow": "Add a line below",
       "clickAgainDelete": "Click again to delete",
@@ -673,10 +673,10 @@
         "loadedPlain": "Loaded plain text",
         "noLyrics": "No lyrics",
         "appliedAndReset": "Applied and reset",
-        "appliedText": "Applied text",
+        "appliedText": "Text applied",
         "timesReset": "Times reset",
         "emptyLinesCleared": "Blank lines cleared",
-        "savedLrc": "Saved LRC (synced TXT)",
+        "savedLrc": "Saved LRC and synced TXT",
         "importedLrc": "Imported LRC",
         "importedPlain": "Imported plain text",
         "smartAlignDone": "Smart align complete"
@@ -685,14 +685,14 @@
         "readFailed": "Failed to read lyrics",
         "loadFailed": "Failed to load",
         "saveFailed": "Failed to save",
-        "tapFirst": "Tap to align first",
+        "tapFirst": "Tap sync first",
         "importFailed": "Failed to import",
         "noValidMarkers": "Cannot align: no valid time markers found",
         "invalidTimeline": "Cannot calculate: not enough time markers or invalid order"
       },
       "smartAlign": {
         "label": "Smart Align",
-        "tooltip": "Smart align: set start and end times, then automatically adjust the lyric timing in between",
+        "tooltip": "Smart Align: set start and end times, then adjust the lyric timing between them",
         "startTitle": "Smart Align - Set Start",
         "endTitle": "Smart Align - Set End",
         "startDescription": "Move the player to the correct start time for the first lyric line, then click Set Start below.",
@@ -761,10 +761,10 @@
       "copyObsLink": "Copy OBS Link",
       "copiedLyricsObs": "Copied lyrics OBS link",
       "copiedSetlistObs": "Copied setlist OBS link",
-      "title": "Live Overlay Templates",
+      "title": "Stream overlay templates",
       "description": "Configure the lyrics and setlist overlay templates used by OBS. Existing links stay valid, and built-in text follows the selected app language.",
-      "lyricsDesigns": "Lyrics Overlay Designs",
-      "setlistDesigns": "Setlist Overlay Designs",
+      "lyricsDesigns": "Lyrics overlay designs",
+      "setlistDesigns": "Setlist overlay designs",
       "lyricsOverlay": "Lyrics Overlay",
       "setlistOverlay": "Setlist Overlay",
       "lyricsEditor": "Lyrics Overlay Editor",
@@ -817,7 +817,7 @@
       "thumbnail": "Thumbnail",
       "labelsMotion": "Labels and Motion",
       "current": "Current",
-      "upcomingTickerLabel": "Upcoming Ticker Label",
+      "upcomingTickerLabel": "Up-next ticker label",
       "density": "Density",
       "compact": "Compact",
       "comfortable": "Comfortable",
@@ -839,13 +839,13 @@
       "normal": "Normal",
       "pixel": "Pixel",
       "tickerSource": "Ticker Source",
-      "historyTickerLabel": "History Ticker Label",
-      "footerLabel": "Footer Label",
+      "historyTickerLabel": "Sung ticker label",
+      "footerLabel": "Bottom-left text",
       "tickerSpeed": "Ticker Speed",
       "cassetteDepth": "Cassette Depth",
-      "diskSpinMode": "Disk Animation",
+      "diskSpinMode": "Record animation",
       "spin": "Spin",
-      "diskSpinSpeed": "Disk Speed",
+      "diskSpinSpeed": "Record speed",
       "lightAnimation": "Light Animation",
       "breathe": "Breathe",
       "flash": "Flash",
@@ -860,18 +860,18 @@
       "cardTransition": "Card Transition",
       "on": "On",
       "currentGlow": "Current Glow",
-      "noteColor": "Note Color",
+      "noteColor": "Music note color",
       "contentInset": "Horizontal Padding",
       "topOffset": "Top Position",
       "itemGap": "Item Gap",
       "titleBarOpacity": "Title Bar Background",
       "dividerOpacity": "Divider",
       "currentFontSize": "Current Font Size",
-      "reserveFontSize": "Upcoming Font Size",
+      "reserveFontSize": "Up-next font size",
       "rowGap": "Row Gap",
       "historyOpacity": "History Opacity",
-      "diskSize": "Disk Size",
-      "diskStyle": "Disk Style",
+      "diskSize": "Record size",
+      "diskStyle": "Record style",
       "vinyl": "Vinyl",
       "ring": "Ring",
       "dot": "Dot",
@@ -884,7 +884,7 @@
       "emptyState": "Empty State",
       "showWaitingText": "Show Waiting Text",
       "waitingText": "Waiting Text",
-      "showWaitingSongTitle": "Show Upcoming Song Title",
+      "showWaitingSongTitle": "Show up-next title",
       "pausePreview": "Pause Preview",
       "playPreview": "Play Preview",
       "normalMode": "Normal Mode",
@@ -895,7 +895,7 @@
       "id": "ID: {{id}}",
       "savedObs": "Saved OBS templates",
       "obsLinkDescription": "OBS links use the selected design and app language.",
-      "emptyStateDescription": "Controls whether the OBS setlist overlay shows waiting text or hides content when nothing is playing or stream mode is waiting."
+      "emptyStateDescription": "Choose whether OBS setlist overlays show waiting text or stay hidden when nothing is playing or Stream Mode is waiting."
     }
   }
 }

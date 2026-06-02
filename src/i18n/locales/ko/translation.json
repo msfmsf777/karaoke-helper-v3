@@ -190,13 +190,13 @@
     },
     "separationStatus": {
       "queued": "대기 중",
-      "running": "처리",
+      "running": "처리 중",
       "succeeded": "완료됨",
       "failed": "실패"
     },
     "quality": {
-      "fast": "빠르게",
-      "normal": "보통"
+      "fast": "빠름",
+      "normal": "표준"
     }
   },
   "playbackControl": {
@@ -210,13 +210,13 @@
     },
     "audioStatus": {
       "streaming": "온라인",
-      "original_only": "분리되지 않음",
+      "original_only": "미분리",
       "separation_pending": "대기 중",
-      "separating": "분리",
+      "separating": "분리 중",
       "separation_failed": "분리 실패",
       "separated": "분리됨",
-      "ready": "분리되지 않음",
-      "missing": "분리되지 않음",
+      "ready": "미분리",
+      "missing": "미분리",
       "error": "오류",
       "all": "모든 오디오"
     },
@@ -281,12 +281,12 @@
           "description": "스트림 모드 시작 또는 종료"
         },
         "instrumentalVolumeUp": {
-          "label": "악기 볼륨 +",
-          "description": "악기 볼륨을 5% 높입니다."
+          "label": "반주 볼륨 +",
+          "description": "반주 볼륨을 5% 올립니다"
         },
         "instrumentalVolumeDown": {
-          "label": "악기 볼륨 -",
-          "description": "기기 볼륨을 5% 낮춥니다."
+          "label": "반주 볼륨 -",
+          "description": "반주 볼륨을 5% 내립니다"
         },
         "vocalVolumeUp": {
           "label": "보컬 볼륨 +",
@@ -304,12 +304,12 @@
   "shell": {
     "nav": {
       "browse": "찾아보기",
-      "library": "도서관",
+      "library": "곡 라이브러리",
       "downloads": "다운로드",
       "lyrics": "가사 편집기",
       "myMusic": "내 음악",
       "favorites": "즐겨찾기",
-      "recent": "최근 플레이한 게임",
+      "recent": "최근 재생",
       "playlists": "내 재생목록",
       "addPlaylist": "재생목록 추가",
       "playlistName": "재생목록 이름",
@@ -320,10 +320,10 @@
       "recentSearches": "최근 검색",
       "clear": "지우기",
       "noRecentSearches": "최근 검색어가 없습니다",
-      "localMatches": "지역 도서관 경기",
-      "viewAll": "모두 보기 ->",
-      "noLocalMatches": "일치하는 지역 노래가 없습니다.",
-      "youtubeResults": "YouTube 스트림 결과",
+      "localMatches": "로컬 일치 항목",
+      "viewAll": "모두 보기",
+      "noLocalMatches": "일치하는 로컬 곡 없음",
+      "youtubeResults": "온라인 결과",
       "suggestions": "검색 제안",
       "searching": "검색 중...",
       "noOnlineResults": "관련 검색결과 없음",
@@ -403,7 +403,7 @@
   },
   "songList": {
     "empty": "노래 없음",
-    "playVisible": "표시 목록 재생",
+    "playVisible": "현재 목록 재생",
     "added": "추가됨",
     "addToQueue": "대기열에 추가",
     "moreActions": "추가 목록 작업",
@@ -659,8 +659,8 @@
       "setToCurrentTime": "현재 재생 시간으로 설정",
       "applyCurrentTimeTitle": "현재 재생 시간 적용",
       "applyCurrentTime": "현재 시간 적용",
-      "earlier": "이전",
-      "later": "나중에",
+      "earlier": "-50ms",
+      "later": "+50ms",
       "nextTapLine": "다음 탭이 이 라인에 적용됩니다",
       "addLineBelow": "아래에 한 줄 추가",
       "clickAgainDelete": "삭제하려면 다시 클릭하세요.",
@@ -673,12 +673,12 @@
         "loadedPlain": "로드된 일반 텍스트",
         "noLyrics": "가사 없음",
         "appliedAndReset": "적용 및 재설정",
-        "appliedText": "적용 텍스트",
+        "appliedText": "텍스트 적용됨",
         "timesReset": "시간 재설정",
         "emptyLinesCleared": "빈 줄이 지워졌습니다.",
-        "savedLrc": "LRC에 저장됨(동기화됨 TXT)",
-        "importedLrc": "LRC 가져옴",
-        "importedPlain": "가져온 일반 텍스트",
+        "savedLrc": "LRC 저장됨(TXT 동기화)",
+        "importedLrc": "LRC를 가져왔습니다",
+        "importedPlain": "일반 텍스트를 가져왔습니다",
         "smartAlignDone": "스마트 정렬 완료"
       },
       "errors": {
@@ -692,7 +692,7 @@
       },
       "smartAlign": {
         "label": "스마트 정렬",
-        "tooltip": "스마트 정렬: 시작 및 종료 시간을 설정한 다음 그 사이의 가사 타이밍을 자동으로 조정합니다.",
+        "tooltip": "스마트 정렬: 시작과 끝 시간을 설정해 중간 가사 시간을 자동 조정합니다",
         "startTitle": "스마트 정렬 - 시작 설정",
         "endTitle": "스마트 정렬 - 종료 설정",
         "startDescription": "첫 번째 가사 라인의 올바른 시작 시간으로 플레이어를 이동한 다음 아래에서 시작 설정을 클릭하세요.",
@@ -702,8 +702,8 @@
       },
       "unsaved": {
         "title": "저장되지 않은 변경사항",
-        "switchSongMessage": "노래를 전환하면 저장되지 않은 변경사항이 삭제됩니다.",
-        "leavePageMessage": "이 페이지를 나가면 저장되지 않은 변경사항이 삭제됩니다.",
+        "switchSongMessage": "곡을 바꾸면 저장하지 않은 변경 사항이 사라집니다.",
+        "leavePageMessage": "이 페이지를 나가면 저장하지 않은 변경 사항이 사라집니다.",
         "discard": "저장하지 않음",
         "saveAndContinue": "저장하고 계속하기"
       }
@@ -711,13 +711,13 @@
   },
   "overlays": {
     "defaults": {
-      "currentLabel": "지금 노래하고 있어요",
+      "currentLabel": "노래 중",
       "upcomingLabel": "다음",
-      "historyLabel": "성",
+      "historyLabel": "부른 곡",
       "waitingNext": "다음곡을 기다리며",
       "notPlaying": "재생 중인 항목 없음",
-      "noUpcoming": "다가오는 노래가 없습니다",
-      "noHistory": "아직 부른 노래가 없습니다.",
+      "noUpcoming": "대기 중인 곡 없음",
+      "noHistory": "아직 부른 곡 없음",
       "defaultLyricsDesign": "기본 가사",
       "defaultSetlistDesign": "기본 세트리스트",
       "newLyricsDesign": "새로운 가사 디자인",
@@ -817,7 +817,7 @@
       "thumbnail": "썸네일",
       "labelsMotion": "라벨과 모션",
       "current": "현재",
-      "upcomingTickerLabel": "다가오는 티커 라벨",
+      "upcomingTickerLabel": "대기곡 티커 라벨",
       "density": "밀도",
       "compact": "콤팩트",
       "comfortable": "편안함",
@@ -839,13 +839,13 @@
       "normal": "보통",
       "pixel": "픽셀",
       "tickerSource": "티커 소스",
-      "historyTickerLabel": "역사 티커 라벨",
-      "footerLabel": "바닥글 라벨",
+      "historyTickerLabel": "부른 곡 티커 라벨",
+      "footerLabel": "왼쪽 아래 텍스트",
       "tickerSpeed": "티커 속도",
       "cassetteDepth": "카세트 깊이",
-      "diskSpinMode": "디스크 애니메이션",
+      "diskSpinMode": "레코드 애니메이션",
       "spin": "스핀",
-      "diskSpinSpeed": "디스크 속도",
+      "diskSpinSpeed": "레코드 속도",
       "lightAnimation": "라이트 애니메이션",
       "breathe": "숨을 쉬다",
       "flash": "플래시",
@@ -860,18 +860,18 @@
       "cardTransition": "카드 전환",
       "on": "켜짐",
       "currentGlow": "현재 글로우",
-      "noteColor": "노트 색상",
+      "noteColor": "음표 색상",
       "contentInset": "수평 패딩",
       "topOffset": "최상위 위치",
       "itemGap": "아이템 격차",
       "titleBarOpacity": "제목 표시줄 배경",
       "dividerOpacity": "분배기",
       "currentFontSize": "현재 글꼴 크기",
-      "reserveFontSize": "향후 글꼴 크기",
+      "reserveFontSize": "대기곡 글자 크기",
       "rowGap": "행 간격",
       "historyOpacity": "기록 불투명도",
-      "diskSize": "디스크 크기",
-      "diskStyle": "디스크 스타일",
+      "diskSize": "레코드 크기",
+      "diskStyle": "레코드 스타일",
       "vinyl": "비닐",
       "ring": "반지",
       "dot": "도트",
@@ -884,7 +884,7 @@
       "emptyState": "빈 상태",
       "showWaitingText": "대기 텍스트 표시",
       "waitingText": "문자 대기 중",
-      "showWaitingSongTitle": "다가오는 노래 제목 표시",
+      "showWaitingSongTitle": "대기곡 제목 표시",
       "pausePreview": "미리보기 일시중지",
       "playPreview": "미리보기 재생",
       "normalMode": "일반 모드",

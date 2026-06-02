@@ -155,7 +155,7 @@
   },
   "updatesPopup": {
     "title": "新しいバージョンが利用可能になりました",
-    "noReleaseNotes": "このバージョンにはリリース ノートは提供されていません。",
+    "noReleaseNotes": "このバージョンの更新内容はありません。",
     "error": "アップデートに失敗しました。ネットワーク接続を確認するか、後でもう一度試してください。",
     "ignore": "このバージョンを無視する",
     "download": "ダウンロードページを開く",
@@ -173,7 +173,7 @@
   "tasks": {
     "title": "アクティブなタスク",
     "download": "ダウンロード",
-    "separation": "ソングの区切り",
+    "separation": "楽曲分離",
     "queuedDownload": "待機中...",
     "failed": "失敗しました",
     "completed": "完了",
@@ -205,18 +205,18 @@
   "domain": {
     "songType": {
       "original": "オリジナル",
-      "instrumental": "インストゥルメンタル",
+      "instrumental": "伴奏",
       "all": "全種類"
     },
     "audioStatus": {
       "streaming": "オンライン",
-      "original_only": "分離されていない",
-      "separation_pending": "待っています",
+      "original_only": "未分離",
+      "separation_pending": "分離待ち",
       "separating": "分離中",
-      "separation_failed": "分離に失敗しました",
+      "separation_failed": "分離失敗",
       "separated": "分離済み",
-      "ready": "分離されていない",
-      "missing": "分離されていない",
+      "ready": "未分離",
+      "missing": "未分離",
       "error": "エラー",
       "all": "すべてのオーディオ"
     },
@@ -251,7 +251,7 @@
       },
       "unset": "未設定",
       "failures": {
-        "plainGlobal": "グローバル ホットキーには修飾子が含まれている必要があります",
+        "plainGlobal": "グローバルショートカットには修飾キーが必要です",
         "duplicate": "ショートカットの重複",
         "occupied": "別のアプリで使用されている"
       },
@@ -261,11 +261,11 @@
           "description": "現在の曲の再生を切り替えます"
         },
         "nextTrack": {
-          "label": "次のトラック",
+          "label": "次の曲",
           "description": "キュー内の次の曲を再生します"
         },
         "previousTrack": {
-          "label": "前のトラック",
+          "label": "前の曲",
           "description": "キュー内の前の曲を再生する"
         },
         "toggleMiniPlayer": {
@@ -281,19 +281,19 @@
           "description": "ストリームモードを開始または終了します"
         },
         "instrumentalVolumeUp": {
-          "label": "インストゥルメンタルボリューム +",
-          "description": "楽器の音量を5%上げる"
+          "label": "伴奏音量 +",
+          "description": "伴奏音量を 5% 上げる"
         },
         "instrumentalVolumeDown": {
-          "label": "インストゥルメンタルボリューム -",
-          "description": "楽器の音量を5%下げる"
+          "label": "伴奏音量 -",
+          "description": "伴奏音量を 5% 下げる"
         },
         "vocalVolumeUp": {
-          "label": "声量+",
+          "label": "ボーカル音量 +",
           "description": "ボーカル音量を5%上げる"
         },
         "vocalVolumeDown": {
-          "label": "声量 -",
+          "label": "ボーカル音量 -",
           "description": "ボーカル音量を5%下げる"
         }
       }
@@ -304,14 +304,14 @@
   "shell": {
     "nav": {
       "browse": "閲覧する",
-      "library": "図書館",
+      "library": "曲ライブラリ",
       "downloads": "ダウンロード",
       "lyrics": "歌詞エディター",
-      "myMusic": "私の音楽",
+      "myMusic": "マイミュージック",
       "favorites": "お気に入り",
-      "recent": "最近プレイした曲",
-      "playlists": "私のプレイリスト",
-      "addPlaylist": "プレイリストを追加",
+      "recent": "最近再生",
+      "playlists": "マイセットリスト",
+      "addPlaylist": "セットリストを追加",
       "playlistName": "プレイリスト名",
       "deletePlaylistConfirm": "このプレイリストを削除しますか?"
     },
@@ -320,10 +320,10 @@
       "recentSearches": "最近の検索",
       "clear": "クリア",
       "noRecentSearches": "最近の検索はありません",
-      "localMatches": "地元の図書館の一致",
-      "viewAll": "すべて表示 ->",
-      "noLocalMatches": "一致するローカルソングはありません",
-      "youtubeResults": "YouTube 配信結果",
+      "localMatches": "ローカル一致",
+      "viewAll": "すべて表示",
+      "noLocalMatches": "一致するローカル曲はありません",
+      "youtubeResults": "オンライン結果",
       "suggestions": "検索候補",
       "searching": "検索中...",
       "noOnlineResults": "関連する結果はありません",
@@ -360,7 +360,7 @@
       "pitch": "ピッチ",
       "pitchTooltip": "ピッチ",
       "pitchDisabledTooltip": "オンライン配信ではピッチを利用できません",
-      "instrumental": "インストゥルメンタル",
+      "instrumental": "伴奏",
       "vocal": "ボーカル",
       "queue": "キュー"
     },
@@ -403,7 +403,7 @@
   },
   "songList": {
     "empty": "曲がありません",
-    "playVisible": "表示可能なリストを再生する",
+    "playVisible": "現在のリストを再生",
     "added": "追加されました",
     "addToQueue": "キューに追加",
     "moreActions": "その他のリストアクション",
@@ -435,7 +435,7 @@
     }
   },
   "songManagement": {
-    "libraryTitle": "図書館",
+    "libraryTitle": "ライブラリ",
     "libraryDescription": "追加されたすべての曲がここに表示されます。フィルター、並べ替え、直接再生します。",
     "addSongButton": "+ 曲を追加",
     "libraryEmpty": "まだ曲がありません。右上の「+ 曲を追加」を使用して、セットリストの作成を開始します。",
@@ -520,7 +520,7 @@
     },
     "searchResults": {
       "title": "検索結果: \"{{term}}\"",
-      "localMatches": "地元の図書館の一致",
+      "localMatches": "ローカル一致",
       "noLocalMatches": "「{{term}}」に一致するローカル曲はありません",
       "youtubeResults": "YouTube 配信結果",
       "duration": {
@@ -623,7 +623,7 @@
       "confirmResetTitle": "もう一度クリックしてリセットを確認します",
       "resetProgressTitle": "再生の進行状況をリセットする",
       "confirmReset": "リセットを確認しますか?",
-      "notPlaying": "何も遊んでいない",
+      "notPlaying": "再生中の曲はありません",
       "copyLyricsObs": "歌詞 OBS リンクをコピー",
       "copySetlistObs": "セットリスト OBS リンクをコピー",
       "copiedLyricsObs": "歌詞 OBS リンクをコピーしました: {{name}}",
@@ -632,7 +632,7 @@
       "upNext": "次へ ({{count}})",
       "played": "プレイしました ({{count}})",
       "upNextNoCount": "次へ",
-      "playedNoCount": "遊んだ",
+      "playedNoCount": "歌唱済み",
       "noPlayedSongs": "まだ再生された曲はありません",
       "requeueTitle": "この曲を Up Next の一番下に戻します",
       "queueEmpty": "まず曲をキューに追加します",
@@ -659,8 +659,8 @@
       "setToCurrentTime": "現在の再生時間に設定",
       "applyCurrentTimeTitle": "現在の再生時間を適用する",
       "applyCurrentTime": "現在の時刻を適用",
-      "earlier": "以前",
-      "later": "後で",
+      "earlier": "-50ms",
+      "later": "+50ms",
       "nextTapLine": "次のタップはこの行に適用されます",
       "addLineBelow": "以下に行を追加",
       "clickAgainDelete": "削除するにはもう一度クリックします",
@@ -673,28 +673,28 @@
         "loadedPlain": "ロードされたプレーンテキスト",
         "noLyrics": "歌詞なし",
         "appliedAndReset": "適用およびリセット",
-        "appliedText": "応用テキスト",
+        "appliedText": "文字を適用しました",
         "timesReset": "時間がリセットされました",
         "emptyLinesCleared": "空白行が消去されました",
-        "savedLrc": "保存された LRC (同期された TXT)",
+        "savedLrc": "LRC を保存（TXT 同期）",
         "importedLrc": "LRC をインポートしました",
-        "importedPlain": "インポートされたプレーンテキスト",
+        "importedPlain": "プレーンテキストをインポートしました",
         "smartAlignDone": "スマートアライン完了"
       },
       "errors": {
         "readFailed": "歌詞の読み取りに失敗しました",
         "loadFailed": "ロードに失敗しました",
         "saveFailed": "保存に失敗しました",
-        "tapFirst": "最初にタップして位置を合わせます",
+        "tapFirst": "先にタップ同期してください",
         "importFailed": "インポートに失敗しました",
         "noValidMarkers": "位置合わせできません: 有効な時間マーカーが見つかりません",
         "invalidTimeline": "計算できません: タイムマーカーが不足しているか、順序が無効です"
       },
       "smartAlign": {
-        "label": "スマートアライン",
-        "tooltip": "スマートアライン: 開始時間と終了時間を設定し、その間の歌詞タイミングを自動調整します。",
-        "startTitle": "スマート整列 - 開始の設定",
-        "endTitle": "スマート整列 - 終了の設定",
+        "label": "スマート整列",
+        "tooltip": "スマート整列：開始と終了を設定し、その間の歌詞タイミングを自動調整します",
+        "startTitle": "スマート整列 - 開始を設定",
+        "endTitle": "スマート整列 - 終了を設定",
         "startDescription": "プレーヤーを歌詞の最初の行の正しい開始時間に移動し、下の「開始を設定」をクリックします。",
         "endDescription": "プレーヤーを最後の歌詞行の正しい開始時間に移動し、下の [終了を設定] をクリックします。 KHelper は、間にあるすべての歌詞のタイミングを調整します。",
         "setStart": "開始を設定（オフセット）",
@@ -711,13 +711,13 @@
   },
   "overlays": {
     "defaults": {
-      "currentLabel": "今歌っている",
+      "currentLabel": "歌唱中",
       "upcomingLabel": "次へ",
-      "historyLabel": "ソン",
+      "historyLabel": "歌唱済み",
       "waitingNext": "次の曲を待っています",
-      "notPlaying": "何も遊んでいない",
-      "noUpcoming": "今後の曲はありません",
-      "noHistory": "まだ歌われた曲はありません",
+      "notPlaying": "再生中の曲はありません",
+      "noUpcoming": "待機中の曲はありません",
+      "noHistory": "歌唱済みの曲はありません",
       "defaultLyricsDesign": "デフォルトの歌詞",
       "defaultSetlistDesign": "デフォルトのセットリスト",
       "newLyricsDesign": "新しい歌詞デザイン",
@@ -761,8 +761,8 @@
       "copyObsLink": "OBS リンクをコピー",
       "copiedLyricsObs": "コピーされた歌詞 OBS リンク",
       "copiedSetlistObs": "セットリスト OBS リンクをコピーしました",
-      "title": "ライブオーバーレイテンプレート",
-      "description": "OBS で使用される歌詞とセットリストのオーバーレイ テンプレートを構成します。既存のリンクは有効のままで、組み込みテキストは選択したアプリ言語に従います。",
+      "title": "配信オーバーレイテンプレート",
+      "description": "OBS で使う歌詞・セットリストのオーバーレイテンプレートを設定します。既存リンクは維持され、内蔵テキストは選択中のアプリ言語に合わせて表示されます。",
       "lyricsDesigns": "歌詞オーバーレイデザイン",
       "setlistDesigns": "セットリストオーバーレイデザイン",
       "lyricsOverlay": "歌詞オーバーレイ",
@@ -770,7 +770,7 @@
       "lyricsEditor": "歌詞オーバーレイエディター",
       "setlistEditor": "セットリストオーバーレイエディター",
       "lyricsDesignDescription": "OBSの歌詞レイアウト、アニメーション、日本語アシスト表示を調整します。",
-      "setlistDesignDescription": "OBS セットリスト テンプレート、ラベル、アニメーション、および空の状態を調整します。",
+      "setlistDesignDescription": "OBS セットリスト画面のテンプレート、ラベル、アニメーション、空状態を調整します。",
       "fillHeight": "充填高さ",
       "showLineCount": "{{count}} 行を表示",
       "sampleLyricsPreview": "日本語歌詞のサンプルプレビュー",
@@ -817,7 +817,7 @@
       "thumbnail": "サムネイル",
       "labelsMotion": "ラベルとモーション",
       "current": "現在",
-      "upcomingTickerLabel": "今後のティッカーラベル",
+      "upcomingTickerLabel": "待機曲ティッカーラベル",
       "density": "密度",
       "compact": "コンパクト",
       "comfortable": "快適",
@@ -839,13 +839,13 @@
       "normal": "ノーマル",
       "pixel": "ピクセル",
       "tickerSource": "ティッカーソース",
-      "historyTickerLabel": "履歴ティッカーラベル",
-      "footerLabel": "フッターラベル",
+      "historyTickerLabel": "歌唱済みティッカーラベル",
+      "footerLabel": "左下テキスト",
       "tickerSpeed": "ティッカー速度",
       "cassetteDepth": "カセットの奥行き",
-      "diskSpinMode": "ディスクアニメーション",
+      "diskSpinMode": "レコードアニメーション",
       "spin": "スピン",
-      "diskSpinSpeed": "ディスク速度",
+      "diskSpinSpeed": "レコード速度",
       "lightAnimation": "ライトアニメーション",
       "breathe": "呼吸する",
       "flash": "フラッシュ",
@@ -860,18 +860,18 @@
       "cardTransition": "カードの移行",
       "on": "オン",
       "currentGlow": "現在のグロー",
-      "noteColor": "音符の色",
+      "noteColor": "音符色",
       "contentInset": "水平方向のパディング",
       "topOffset": "トップポジション",
       "itemGap": "アイテムギャップ",
       "titleBarOpacity": "タイトルバーの背景",
       "dividerOpacity": "ディバイダー",
       "currentFontSize": "現在のフォント サイズ",
-      "reserveFontSize": "今後のフォントサイズ",
+      "reserveFontSize": "待機曲フォントサイズ",
       "rowGap": "行のギャップ",
       "historyOpacity": "履歴の不透明度",
-      "diskSize": "ディスクサイズ",
-      "diskStyle": "ディスクスタイル",
+      "diskSize": "レコードサイズ",
+      "diskStyle": "レコードスタイル",
       "vinyl": "ビニール",
       "ring": "リング",
       "dot": "ドット",
@@ -880,11 +880,11 @@
       "listScroll": "リストスクロール",
       "scrollSpeed": "スクロール速度",
       "pauseTime": "一時停止時間",
-      "changeAnimation": "ソングチェンジアニメーション",
+      "changeAnimation": "曲切り替えアニメーション",
       "emptyState": "空の状態",
       "showWaitingText": "待機中のテキストを表示",
       "waitingText": "待機中のテキスト",
-      "showWaitingSongTitle": "今後の曲のタイトルを表示",
+      "showWaitingSongTitle": "待機曲名を表示",
       "pausePreview": "プレビューを一時停止する",
       "playPreview": "プレビューを再生する",
       "normalMode": "ノーマルモード",
@@ -895,7 +895,7 @@
       "id": "ID: {{id}}",
       "savedObs": "保存された OBS テンプレート",
       "obsLinkDescription": "OBS リンクでは、選択したデザインとアプリ言語が使用されます。",
-      "emptyStateDescription": "OBS セットリストオーバーレイで待機中のテキストを表示するか、何も再生されていない場合、または配信モードが待機中の場合にコンテンツを非表示にするかを制御します。"
+      "emptyStateDescription": "未再生またはライブモード待機中に、OBS セットリストオーバーレイで待機テキストを表示するか内容を隠すかを設定します。"
     }
   }
 }
