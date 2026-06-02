@@ -6,6 +6,11 @@ export interface LyricTimingState {
   activeTextIndex: number;
 }
 
+export interface LyricVisibleLineRange {
+  start: number;
+  end: number;
+}
+
 export function getActiveLineIndex(lines: EditableLyricLine[], currentTime: number): number {
   let currentIdx = -1;
   for (let index = 0; index < lines.length; index += 1) {
@@ -42,4 +47,28 @@ export function shouldRenderLyricsOverlayContent(
   lines: EditableLyricLine[]
 ): boolean {
   return status !== 'none' && lines.length > 0;
+}
+
+export function getTextOnlyVisibleLineRange({
+  lineCount,
+  anchorLineIndex,
+  maxVisibleLines,
+}: {
+  lineCount: number;
+  anchorLineIndex: number;
+  maxVisibleLines: number;
+}): LyricVisibleLineRange {
+  if (lineCount <= 0) {
+    return { start: 0, end: -1 };
+  }
+
+  const visibleCount = Math.max(1, Math.min(lineCount, Math.round(maxVisibleLines || 1)));
+  const safeAnchor = Math.min(lineCount - 1, Math.max(0, Math.round(anchorLineIndex)));
+  const before = Math.floor((visibleCount - 1) / 2);
+  const start = Math.max(0, Math.min(lineCount - visibleCount, safeAnchor - before));
+
+  return {
+    start,
+    end: Math.min(lineCount - 1, start + visibleCount - 1),
+  };
 }

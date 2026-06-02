@@ -6,6 +6,7 @@ import {
   parseLrc,
 } from '../shared/lyrics.ts';
 import {
+  getTextOnlyVisibleLineRange,
   resolveLyricTimingState,
   shouldRenderLyricsOverlayContent,
 } from '../shared/lyricsOverlayState.ts';
@@ -69,6 +70,17 @@ describe('OBS lyrics overlay state', () => {
 
   it('does not render user-visible content for no-lyrics overlays', () => {
     assert.equal(shouldRenderLyricsOverlayContent('none', []), false);
+  });
+
+  it('limits text-only visible lyrics around the scroll anchor line', () => {
+    assert.deepEqual(getTextOnlyVisibleLineRange({
+      lineCount: 10,
+      anchorLineIndex: 5,
+      maxVisibleLines: 4,
+    }), {
+      start: 4,
+      end: 7,
+    });
   });
 });
 

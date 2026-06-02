@@ -12,6 +12,7 @@ import {
   SetlistOverlayTemplateConfig,
 } from '../../../shared/overlayTemplates';
 import {
+  getTextOnlyVisibleLineRange,
   resolveLyricTimingState,
   shouldRenderLyricsOverlayContent,
 } from '../../../shared/lyricsOverlayState';
@@ -374,6 +375,11 @@ export const TemplatedLyricsOverlay: React.FC<{
   const trackRef = useRef<HTMLDivElement | null>(null);
   const { timingAnchorIndex, activeTextIndex } = resolveLyricTimingState(status, lines, currentTime);
   const visibleRange = getVisibleLineRange(lines.length, timingAnchorIndex, config);
+  const textOnlyVisibleRange = getTextOnlyVisibleLineRange({
+    lineCount: lines.length,
+    anchorLineIndex: externalScrollAnchor?.anchorLineIndex ?? 0,
+    maxVisibleLines: config.lineCount,
+  });
   const showFurigana = config.furiganaPolicy === 'show' || (config.furiganaPolicy === 'follow_app' && furiganaEnabled);
   const showRomaji = config.romajiPolicy === 'show' || (config.romajiPolicy === 'follow_app' && romajiEnabled);
   const usesEntranceAnimation = config.animation === 'fade' || config.animation === 'slide' || config.animation === 'scale';
@@ -534,8 +540,9 @@ export const TemplatedLyricsOverlay: React.FC<{
               const isTimingAnchor = index === timingAnchorIndex;
               const isPast = status === 'synced' && timingAnchorIndex >= 0 && index < timingAnchorIndex;
               const isVisible = status !== 'synced'
-                || config.lineMode === 'fill'
-                || (index >= visibleRange.start && index <= visibleRange.end);
+                ? index >= textOnlyVisibleRange.start && index <= textOnlyVisibleRange.end
+                : config.lineMode === 'fill'
+                  || (index >= visibleRange.start && index <= visibleRange.end);
               const fontSize = isActive || isTimingAnchor ? config.activeFontSize : config.inactiveFontSize;
               const lineHeight = showFurigana ? 1.58 : 1.22;
               const isBlankLine = line.text.trim().length === 0;
