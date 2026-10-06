@@ -312,6 +312,8 @@ export class DualAudioEngine implements AudioEngine {
   private streamDeviceId: string | null = null;
   private headphoneDeviceId: string | null = null;
   private offsetMs = 0;
+  private needsInitialStartupSnap = false;
+  private startupSnapTimer: ReturnType<typeof setTimeout> | null = null;
 
   private volumeCallbacks = new Set<(track: TrackType, volume: number) => void>();
 
@@ -384,20 +386,20 @@ export class DualAudioEngine implements AudioEngine {
           const streamTime = this.streamPlayer.currentTime;
           const drift = streamTime - hpTime;
 
-          // Only perform drift adaptation after initial startup warmup (> 0.25s)
-          if (hpTime > 0.25) {
-            if (Math.abs(drift) > 0.35) {
-              // Safety fallback: if drift becomes extreme (> 350ms), snap seek
+          // Only perform drift adaptation after initial warmup and startup snap (> 1.0s)
+          if (hpTime > 1.0) {
+            if (Math.abs(drift) > 0.4) {
+              // Safety fallback: if drift becomes extreme (> 400ms due to system freeze), snap seek
               this.streamPlayer.seek(hpTime);
               this.streamPlayer.setSlew(1.0);
-            } else if (drift < -0.025) {
-              // Stream lags behind headphone by > 25ms: gently micro-slew (+0.5% speedup)
+            } else if (drift < -0.03) {
+              // Stream lags behind headphone by > 30ms: gently micro-slew (+0.5% speedup)
               this.streamPlayer.setSlew(1.005);
-            } else if (drift > 0.025) {
-              // Stream leads headphone by > 25ms: gently micro-slew (-0.5% slowdown)
+            } else if (drift > 0.03) {
+              // Stream leads headphone by > 30ms: gently micro-slew (-0.5% slowdown)
               this.streamPlayer.setSlew(0.995);
             } else {
-              // In sync within +-25ms deadband: normal rate
+              // In sync within +-30ms deadband: normal rate
               this.streamPlayer.setSlew(1.0);
             }
           }
@@ -459,7 +461,7 @@ export class DualAudioEngine implements AudioEngine {
     const instrUrl = this.toFileUrl(instrPath);
     const vocalUrl = vocalPath ? this.toFileUrl(vocalPath) : null;
 
-    // Fetch buffers
+    // Parallel fetch buffers
     const [instrBuf, vocalBuf] = await Promise.all([
       fetch(instrUrl).then(r => r.arrayBuffer()),
       vocalUrl ? fetch(vocalUrl).then(r => r.arrayBuffer()) : Promise.resolve(null)
@@ -471,27 +473,22 @@ export class DualAudioEngine implements AudioEngine {
       return ctx.decodeAudioData(buf.slice(0));
     };
 
-    // Parallel decode for both engines
-    const [streamBuffers, headphoneBuffers] = await Promise.all([
-      (async () => ({
-        instrumental: await decode(this.streamPlayer.audioContext, instrBuf),
-        vocal: await decode(this.streamPlayer.audioContext, vocalBuf),
-      }))(),
-      (async () => ({
-        instrumental: await decode(this.headphonePlayer.audioContext, instrBuf),
-        vocal: await decode(this.headphonePlayer.audioContext, vocalBuf),
-      }))()
+    // Decode instrumental once and vocal once (eliminates 4x redundant decode overhead)
+    const [instrumentalBuffer, vocalBuffer] = await Promise.all([
+      decode(this.headphonePlayer.audioContext, instrBuf),
+      decode(this.headphonePlayer.audioContext, vocalBuf)
     ]);
     if (generation !== this.loadGeneration) return;
 
+    // Load into players: streamPlayer only needs instrumental (vocals are permanently muted)
     await Promise.all([
-      this.streamPlayer.loadBuffers(streamBuffers.instrumental, streamBuffers.vocal),
-      this.headphonePlayer.loadBuffers(headphoneBuffers.instrumental, headphoneBuffers.vocal)
+      this.streamPlayer.loadBuffers(instrumentalBuffer, null),
+      this.headphonePlayer.loadBuffers(instrumentalBuffer, vocalBuffer)
     ]);
     if (generation !== this.loadGeneration) return;
 
-    // Reset transform - REMOVED to allow external control and avoid race/redundancy
-    // this.setPlaybackTransform({ speed: 1.0, transpose: 0 });
+    // Mark for one-time startup snap to 0.0s on initial play
+    this.needsInitialStartupSnap = true;
     this.applyTrackVolumes();
   }
 
@@ -544,11 +541,28 @@ export class DualAudioEngine implements AudioEngine {
         // 3. Trigger playback
         this.streamPlayer.play();
         this.headphonePlayer.play();
+
+        // 4. One-time initial startup snap to 0.0s once hardware streams are actively flowing
+        if (this.needsInitialStartupSnap) {
+          if (this.startupSnapTimer) clearTimeout(this.startupSnapTimer);
+          this.startupSnapTimer = setTimeout(() => {
+            if (this.activeMode === 'soundtouch' && this.isPlaying() && this.needsInitialStartupSnap) {
+              this.streamPlayer.seek(0);
+              this.headphonePlayer.seek(0);
+              this.streamPlayer.setSlew(1.0);
+              this.needsInitialStartupSnap = false;
+            }
+          }, 80);
+        }
     }
     this.startTimer();
   }
 
   pause(): void {
+    if (this.startupSnapTimer) {
+      clearTimeout(this.startupSnapTimer);
+      this.startupSnapTimer = null;
+    }
     if (this.activeMode === 'native') {
         this.nativeStreamPlayer.pause();
         this.nativeHeadphonePlayer.pause();
@@ -563,6 +577,10 @@ export class DualAudioEngine implements AudioEngine {
   }
 
   stop(): void {
+    if (this.startupSnapTimer) {
+      clearTimeout(this.startupSnapTimer);
+      this.startupSnapTimer = null;
+    }
     if (this.activeMode === 'native') {
         this.nativeStreamPlayer.stop();
         this.nativeHeadphonePlayer.stop();
@@ -576,6 +594,11 @@ export class DualAudioEngine implements AudioEngine {
   }
 
   seek(positionSeconds: number): void {
+    if (this.startupSnapTimer) {
+      clearTimeout(this.startupSnapTimer);
+      this.startupSnapTimer = null;
+    }
+    this.needsInitialStartupSnap = false;
     if (this.activeMode === 'native') {
         const shouldResume = this.isPlaying();
         this.nativeStreamPlayer.pause();
