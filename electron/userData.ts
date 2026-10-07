@@ -236,6 +236,16 @@ async function findNewestValidSettingsBackup(): Promise<{ filePath: string; sett
 
 async function saveSettingsNow(settings: UserSettings): Promise<void> {
     const normalized = normalizeSettings(settings);
+    if (!('customSongsPath' in settings)) {
+        try {
+            const current = await readSettingsFile(getUserDataPath(SETTINGS_FILE));
+            if (current.customSongsPath) {
+                normalized.customSongsPath = current.customSongsPath;
+            }
+        } catch {
+            // Ignore if settings file does not exist or cannot be read
+        }
+    }
     await createPreSaveBackupIfNeeded();
     await writeSettingsAtomic(normalized);
     await pruneSettingsBackups();

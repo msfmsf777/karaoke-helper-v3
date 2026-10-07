@@ -1011,8 +1011,6 @@ if (!gotTheLock) {
 
     // Lazy load this too if needed, or just remove if not critical
     // console.log('[Library] base songs dir:', getSongsBaseDir()) 
-    startOverlayServer()
-    createWindow()
     const settings = await loadSettings()
     setElectronLanguage(settings.language)
     setCustomSongsDir(settings.customSongsPath)
@@ -1020,6 +1018,9 @@ if (!gotTheLock) {
     applyHotkeysFromSettings(settings.hotkeys)
     await initializeAnalytics()
     await trackAnalytics({ type: 'App.Launched' })
+
+    startOverlayServer()
+    createWindow()
   })
 }
 

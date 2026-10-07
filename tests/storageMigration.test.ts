@@ -216,4 +216,58 @@ describe('storage migration and path self-healing', () => {
     }
     expect(exists).toBe(false);
   });
+
+  it('preserves foreign files and non-song folders when cleaning', async () => {
+    const { migrationManager } = await import('../electron/migrationManager');
+    const { setCustomSongsDir } = await import('../electron/songLibrary');
+    setCustomSongsDir(customTargetDir);
+
+    const mixedFolder = path.join(tempRoot, 'MixedFolder');
+    const songDir = path.join(mixedFolder, 'song1');
+    const photoDir = path.join(mixedFolder, 'PersonalPhotos');
+    await fs.mkdir(songDir, { recursive: true });
+    await fs.mkdir(photoDir, { recursive: true });
+
+    await fs.writeFile(path.join(songDir, 'meta.json'), JSON.stringify({ id: 'song1', title: 'Test' }));
+    await fs.writeFile(path.join(songDir, 'song.mp3'), 'audio');
+    await fs.writeFile(path.join(photoDir, 'family.jpg'), 'image');
+    await fs.writeFile(path.join(mixedFolder, 'my_notes.txt'), 'text');
+
+    const result = await migrationManager.cleanOldAppDataFolder(mixedFolder);
+    expect(result.success).toBe(true);
+
+    // Verified song directory must be deleted
+    let songExists = true;
+    try {
+      await fs.access(songDir);
+    } catch {
+      songExists = false;
+    }
+    expect(songExists).toBe(false);
+
+    // Non-song folder and files MUST still exist untouched
+    const photoContent = await fs.readFile(path.join(photoDir, 'family.jpg'), 'utf-8');
+    expect(photoContent).toBe('image');
+
+    const notesContent = await fs.readFile(path.join(mixedFolder, 'my_notes.txt'), 'utf-8');
+    expect(notesContent).toBe('text');
+  });
+
+  it('refuses to delete a directory containing no song folders', async () => {
+    const { migrationManager } = await import('../electron/migrationManager');
+    const { setCustomSongsDir } = await import('../electron/songLibrary');
+    setCustomSongsDir(customTargetDir);
+
+    const nonSongFolder = path.join(tempRoot, 'JustDocuments');
+    await fs.mkdir(nonSongFolder, { recursive: true });
+    await fs.writeFile(path.join(nonSongFolder, 'doc.txt'), 'important doc');
+
+    const result = await migrationManager.cleanOldAppDataFolder(nonSongFolder);
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('No valid song folders');
+
+    // Document is completely untouched
+    const docContent = await fs.readFile(path.join(nonSongFolder, 'doc.txt'), 'utf-8');
+    expect(docContent).toBe('important doc');
+  });
 });

@@ -558,9 +558,8 @@ class MigrationManager {
       };
     }
 
-    // 2. Never delete userData directly or drive root!
-    const userData = path.resolve(app.getPath('userData'));
-    if (folderToClean.toLowerCase() === userData.toLowerCase() || folderToClean === path.dirname(folderToClean)) {
+    // 2. Never delete drive root!
+    if (folderToClean === path.dirname(folderToClean)) {
       return {
         success: false,
         freedBytes: 0,
@@ -568,13 +567,124 @@ class MigrationManager {
       };
     }
 
+    // 3. Blacklist system and user standard directories
+    const protectedPaths = new Set<string>();
+    const systemNames = [
+      'userData',
+      'home',
+      'desktop',
+      'documents',
+      'downloads',
+      'music',
+      'pictures',
+      'videos',
+      'appData',
+    ] as const;
+    for (const name of systemNames) {
+      try {
+        const p = app.getPath(name as Parameters<typeof app.getPath>[0]);
+        if (p) protectedPaths.add(path.resolve(p).toLowerCase());
+      } catch {
+        /* some names may not be available on all environments or mocks */
+      }
+    }
+
+    if (protectedPaths.has(folderToClean.toLowerCase())) {
+      return {
+        success: false,
+        freedBytes: 0,
+        error: 'Cannot clean protected system or root directory',
+      };
+    }
+
+    const IGNORABLE_FILES = new Set(['.migrating', 'desktop.ini', '.ds_store', 'thumbs.db']);
+
     try {
-      const stats = await this.calculateDirectoryStats(folderToClean);
-      await fs.rm(folderToClean, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 });
-      console.log('[MigrationManager] Cleaned old folder successfully:', folderToClean);
+      const entries = await fs.readdir(folderToClean, { withFileTypes: true });
+      const songDirectoriesToDelete: { path: string; bytes: number }[] = [];
+      const foreignEntries: string[] = [];
+
+      for (const entry of entries) {
+        if (IGNORABLE_FILES.has(entry.name.toLowerCase())) {
+          continue;
+        }
+
+        const fullPath = path.join(folderToClean, entry.name);
+        if (entry.isDirectory()) {
+          const metaPath = path.join(fullPath, 'meta.json');
+          let isSong = false;
+          try {
+            const raw = await fs.readFile(metaPath, 'utf-8');
+            const parsed = JSON.parse(raw);
+            if (typeof parsed === 'object' && parsed !== null) {
+              isSong = true;
+            }
+          } catch {
+            isSong = false;
+          }
+
+          if (isSong) {
+            let songBytes = 0;
+            try {
+              const files = await fs.readdir(fullPath, { withFileTypes: true });
+              for (const file of files) {
+                if (file.isFile()) {
+                  const stat = await fs.stat(path.join(fullPath, file.name));
+                  songBytes += stat.size;
+                }
+              }
+            } catch {
+              /* ignore file stat errors */
+            }
+            songDirectoriesToDelete.push({ path: fullPath, bytes: songBytes });
+          } else {
+            foreignEntries.push(entry.name);
+          }
+        } else {
+          foreignEntries.push(entry.name);
+        }
+      }
+
+      // If no valid songs were found, refuse deletion completely
+      if (songDirectoriesToDelete.length === 0) {
+        return {
+          success: false,
+          freedBytes: 0,
+          error: 'No valid song folders found to clean in this directory',
+        };
+      }
+
+      // Granular deletion: Delete ONLY confirmed song folders
+      let totalFreedBytes = 0;
+      for (const songDir of songDirectoriesToDelete) {
+        await fs.rm(songDir.path, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 });
+        totalFreedBytes += songDir.bytes;
+      }
+
+      // Clean marker file if present
+      try {
+        await fs.unlink(path.join(folderToClean, MIGRATING_MARKER));
+      } catch {
+        /* ignore */
+      }
+
+      // Only delete parent container if NO foreign/non-song items exist
+      if (foreignEntries.length === 0) {
+        try {
+          await fs.rm(folderToClean, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 });
+          console.log('[MigrationManager] Cleaned old folder and container successfully:', folderToClean);
+        } catch {
+          /* container removal failure is non-fatal since songs are already removed */
+        }
+      } else {
+        console.log(
+          `[MigrationManager] Cleaned ${songDirectoriesToDelete.length} song folders. Preserved ${foreignEntries.length} non-song files in: ${folderToClean}`
+        );
+      }
+
       return {
         success: true,
-        freedBytes: stats.totalBytes,
+        freedBytes: totalFreedBytes,
       };
     } catch (err: unknown) {
       console.error('[MigrationManager] Failed to clean old folder', folderToClean, err);

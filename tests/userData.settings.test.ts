@@ -212,4 +212,20 @@ describe('fail-safe settings persistence', () => {
     expect(backups.filter((file) => file.startsWith('settings-pre-save-')).length).toBeLessThanOrEqual(50);
     expect(backups.filter((file) => file.startsWith('settings-corrupt-')).length).toBeLessThanOrEqual(10);
   });
+
+  it('preserves customSongsPath when frontend saves settings without specifying it', async () => {
+    const initial = customSettings('with-path');
+    initial.customSongsPath = 'C:\\Custom\\Music\\Folder';
+    await writeJson(settingsPath(), initial);
+
+    // Frontend UserDataContext saves settings without customSongsPath
+    const frontendPayload = customSettings('frontend-update');
+    delete frontendPayload.customSongsPath;
+    await saveSettings(frontendPayload);
+
+    const saved = await readJson<UserSettings>(settingsPath());
+    expect(saved.customSongsPath).toBe('C:\\Custom\\Music\\Folder');
+    expect(saved.overlayTemplates?.activeLyricsDesignId).toBe('lyrics-frontend-update');
+  });
 });
+
