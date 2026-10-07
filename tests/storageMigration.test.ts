@@ -113,6 +113,43 @@ describe('storage migration and path self-healing', () => {
     expect(resolved.vocal).toBe(path.join(targetSongFolder, 'Vocals.mp3'));
   });
 
+  it('switches library directly, updates active songs directory, and notifies subscribers', async () => {
+    const { migrationManager } = await import('../electron/migrationManager');
+    const { setCustomSongsDir, getSongsDir } = await import('../electron/songLibrary');
+    setCustomSongsDir(null);
+
+    // Create an existing song library in customTargetDir
+    const songId = 'switch-123';
+    const targetSongFolder = path.join(customTargetDir, songId);
+    await fs.mkdir(targetSongFolder, { recursive: true });
+    await fs.writeFile(
+      path.join(targetSongFolder, 'meta.json'),
+      JSON.stringify({
+        id: songId,
+        title: 'Existing Song',
+        type: '原曲',
+        audio_status: 'original',
+        stored_filename: 'Original.mp3',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+    );
+
+    let notifiedCompleted = false;
+    const unsub = migrationManager.subscribe((p) => {
+      if (p.status === 'completed') {
+        notifiedCompleted = true;
+      }
+    });
+
+    const result = await migrationManager.startMigration(customTargetDir, 'switch');
+    unsub();
+
+    expect(result.status).toBe('completed');
+    expect(notifiedCompleted).toBe(true);
+    expect(path.resolve(getSongsDir())).toBe(path.resolve(customTargetDir));
+  });
+
   it('self-heals stem paths if meta.json has broken paths but files exist in song folder', async () => {
     const { setCustomSongsDir, getSeparatedSongPaths } = await import('../electron/songLibrary');
     setCustomSongsDir(customTargetDir);
@@ -143,5 +180,40 @@ describe('storage migration and path self-healing', () => {
     const resolved = await getSeparatedSongPaths(songId);
     expect(resolved.instrumental).toBe(path.join(songFolder, 'Instrumental.mp3'));
     expect(resolved.vocal).toBe(path.join(songFolder, 'Vocals.mp3'));
+  });
+
+  it('cleans old song folder safely with validation checks', async () => {
+    const { migrationManager } = await import('../electron/migrationManager');
+    const { setCustomSongsDir } = await import('../electron/songLibrary');
+
+    // Active directory is customTargetDir
+    setCustomSongsDir(customTargetDir);
+
+    const oldFolder = path.join(tempRoot, 'OldSongsToClean');
+    await fs.mkdir(path.join(oldFolder, 'song1'), { recursive: true });
+    await fs.writeFile(path.join(oldFolder, 'song1', 'meta.json'), '{}');
+
+    // 1. Refuses to clean active songs directory
+    const refusedActive = await migrationManager.cleanOldAppDataFolder(customTargetDir);
+    expect(refusedActive.success).toBe(false);
+    expect(refusedActive.error).toContain('currently active');
+
+    // 2. Refuses to clean system root or userData
+    const refusedUserData = await migrationManager.cleanOldAppDataFolder(tempRoot);
+    expect(refusedUserData.success).toBe(false);
+    expect(refusedUserData.error).toContain('protected system');
+
+    // 3. Successfully cleans old folder
+    const result = await migrationManager.cleanOldAppDataFolder(oldFolder);
+    expect(result.success).toBe(true);
+
+    // Directory should no longer exist
+    let exists = true;
+    try {
+      await fs.access(oldFolder);
+    } catch {
+      exists = false;
+    }
+    expect(exists).toBe(false);
   });
 });

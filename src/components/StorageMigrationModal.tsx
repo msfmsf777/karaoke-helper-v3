@@ -32,8 +32,37 @@ export const StorageMigrationModal: React.FC<StorageMigrationModalProps> = ({
   const [preflight, setPreflight] = useState<StoragePreflightResult | null>(null);
   const [switchMode, setSwitchMode] = useState<'move' | 'switch'>('move');
   const [migration, setMigration] = useState<MigrationProgress | null>(null);
-  const [cleanedResult, setCleanedResult] = useState<string | null>(null);
-  const [cleaning, setCleaning] = useState(false);
+  const [reloading, setReloading] = useState(false);
+  const [startLoading, setStartLoading] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
+
+  // Snapshot the source location before migrating so completion always references where we came from
+  const [sourceSnapshot, setSourceSnapshot] = useState<{
+    path: string;
+    isDefault: boolean;
+    totalBytes: number;
+  }>({
+    path: currentStorage.currentPath,
+    isDefault: currentStorage.isDefault,
+    totalBytes: currentStorage.totalBytes,
+  });
+
+  const isRunning = migration?.status === 'running' || migration?.status === 'verifying';
+  const isCompleted = migration?.status === 'completed';
+  const isFailed = migration?.status === 'failed';
+
+  useEffect(() => {
+    if (isOpen) {
+      setStartError(null);
+    }
+    if (isOpen && !isRunning && !isCompleted) {
+      setSourceSnapshot({
+        path: currentStorage.currentPath,
+        isDefault: currentStorage.isDefault,
+        totalBytes: currentStorage.totalBytes,
+      });
+    }
+  }, [isOpen, isRunning, isCompleted, currentStorage.currentPath, currentStorage.isDefault, currentStorage.totalBytes]);
 
   // Subscribe to progress
   useEffect(() => {
@@ -52,6 +81,7 @@ export const StorageMigrationModal: React.FC<StorageMigrationModalProps> = ({
 
   const handlePickFolder = async () => {
     try {
+      setStartError(null);
       const picked = await window.khelper?.storage.pickFolder();
       if (!picked) return;
       setSelectedPath(picked);
@@ -72,11 +102,28 @@ export const StorageMigrationModal: React.FC<StorageMigrationModalProps> = ({
   };
 
   const handleStart = async () => {
-    if (!selectedPath || !preflight) return;
+    if (!selectedPath || !preflight || startLoading) return;
+    setStartLoading(true);
+    setStartError(null);
+    setSourceSnapshot({
+      path: currentStorage.currentPath,
+      isDefault: currentStorage.isDefault,
+      totalBytes: currentStorage.totalBytes,
+    });
     try {
-      await window.khelper?.storage.startMigration(selectedPath, switchMode);
+      const prog = await window.khelper?.storage.startMigration(selectedPath, switchMode);
+      if (prog) {
+        setMigration(prog);
+        if (prog.status === 'completed') {
+          onStorageChanged();
+          void refreshSongs();
+        }
+      }
     } catch (err: unknown) {
       console.error('[StorageModal] Start migration failed', err);
+      setStartError((err as Error)?.message || 'Migration failed to start');
+    } finally {
+      setStartLoading(false);
     }
   };
 
@@ -88,26 +135,15 @@ export const StorageMigrationModal: React.FC<StorageMigrationModalProps> = ({
     }
   };
 
-  const handleCleanOld = async () => {
-    setCleaning(true);
+  const handleReload = async (cleanupOldPath?: string) => {
+    setReloading(true);
     try {
-      const res = await window.khelper?.storage.cleanOldFolder(currentStorage.currentPath);
-      if (res?.success) {
-        setCleanedResult(formatBytes(res.freedBytes));
-        onStorageChanged();
-      } else {
-        alert(res?.error || 'Failed to clean old folder');
-      }
+      await window.khelper?.storage.reload(cleanupOldPath);
     } catch (err: unknown) {
-      alert((err instanceof Error ? err.message : String(err)) || 'Failed to clean old folder');
-    } finally {
-      setCleaning(false);
+      console.error('[StorageModal] Reload failed', err);
+      setReloading(false);
     }
   };
-
-  const isRunning = migration?.status === 'running' || migration?.status === 'verifying';
-  const isCompleted = migration?.status === 'completed';
-  const isFailed = migration?.status === 'failed';
 
   return (
     <div style={{
@@ -264,6 +300,13 @@ export const StorageMigrationModal: React.FC<StorageMigrationModalProps> = ({
                 )}
               </div>
             )}
+
+            {/* Error starting migration/switch */}
+            {startError && (
+              <div style={{ background: 'rgba(255, 80, 80, 0.1)', border: '1px solid #ff5555', borderRadius: '8px', padding: '12px', color: '#ff9999', fontSize: '13px' }}>
+                ⚠️ {startError}
+              </div>
+            )}
           </div>
         )}
 
@@ -309,64 +352,36 @@ export const StorageMigrationModal: React.FC<StorageMigrationModalProps> = ({
               <div style={{ fontSize: '32px' }}>🎉</div>
               <div>
                 <div style={{ fontSize: '16px', fontWeight: 600, color: '#8be28b' }}>
-                  {t('settings.storage.completeTitle', 'Library Successfully Moved!')}
+                  {switchMode === 'switch'
+                    ? t('settings.storage.completeTitleSwitch', 'Library Switched!')
+                    : t('settings.storage.completeTitle', 'Library Successfully Moved!')}
                 </div>
                 <div style={{ fontSize: '13px', color: '#ccc', marginTop: '2px' }}>
-                  {t('settings.storage.completeSubtitle', 'Your songs are now loaded and playing from the new location.')}
+                  {switchMode === 'switch'
+                    ? t('settings.storage.completeSubtitleSwitch', 'KHelper is now configured to use the selected library.')
+                    : t('settings.storage.completeSubtitle', 'Your songs were safely copied to the new location.')}
                 </div>
               </div>
             </div>
 
-            {/* Old AppData cleanup prompt */}
-            <div style={{ background: '#252525', border: '1px solid #383838', borderRadius: '8px', padding: '16px', fontSize: '13px' }}>
-              <div style={{ fontWeight: 600, marginBottom: '6px' }}>
-                {t('settings.storage.cleanupPromptTitle', 'Free up C: drive disk space?')}
+            {switchMode === 'switch' ? (
+              <div style={{ background: '#252525', border: '1px solid #383838', borderRadius: '8px', padding: '16px', fontSize: '13px', color: '#aaa', lineHeight: 1.5 }}>
+                {t('settings.storage.reloadNoticeSwitch', 'Please reload KHelper to apply the new library path and re-index songs.')}
               </div>
-              <div style={{ color: '#aaa', lineHeight: 1.5, marginBottom: '14px' }}>
-                {t('settings.storage.cleanupPromptDesc', 'The original song files are still stored in your AppData directory (~{{size}}). You can safely delete them now to free up space, or keep them as a backup.', { size: formatBytes(currentStorage.totalBytes) })}
+            ) : (
+              <div style={{ background: '#252525', border: '1px solid #383838', borderRadius: '8px', padding: '16px', fontSize: '13px' }}>
+                <div style={{ fontWeight: 600, marginBottom: '6px' }}>
+                  {sourceSnapshot.isDefault
+                    ? t('settings.storage.cleanupTitleDefault', 'Free up AppData disk space?')
+                    : t('settings.storage.cleanupTitleCustom', 'Free up previous storage folder?')}
+                </div>
+                <div style={{ color: '#aaa', lineHeight: 1.5 }}>
+                  {sourceSnapshot.isDefault
+                    ? t('settings.storage.cleanupDescDefault', 'The original song files (~{{size}}) are still stored in your AppData directory. Reloading will safely clean them up to free disk space, or you can keep them as a backup.', { size: formatBytes(sourceSnapshot.totalBytes) })
+                    : t('settings.storage.cleanupDescCustom', 'The original song files (~{{size}}) are still stored in {{path}}. Reloading will safely clean them up to free disk space, or you can keep them as a backup.', { path: sourceSnapshot.path, size: formatBytes(sourceSnapshot.totalBytes) })}
+                </div>
               </div>
-
-              {cleanedResult ? (
-                <div style={{ color: '#8be28b', fontWeight: 600 }}>
-                  ✓ {t('settings.storage.cleanedSuccess', 'Freed {{size}} from C: drive!', { size: cleanedResult })}
-                </div>
-              ) : (
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button
-                    type="button"
-                    onClick={handleCleanOld}
-                    disabled={cleaning}
-                    style={{
-                      background: '#338833',
-                      border: 'none',
-                      borderRadius: '6px',
-                      color: '#fff',
-                      padding: '8px 14px',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      cursor: cleaning ? 'wait' : 'pointer',
-                    }}
-                  >
-                    {cleaning ? t('settings.storage.cleaning', 'Deleting...') : t('settings.storage.cleanOldButton', 'Free Up Space Now (Delete Old Files)')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    style={{
-                      background: 'none',
-                      border: '1px solid #444',
-                      borderRadius: '6px',
-                      color: '#ccc',
-                      padding: '8px 14px',
-                      fontSize: '13px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {t('settings.storage.keepBackup', 'Keep as Backup')}
-                  </button>
-                </div>
-              )}
-            </div>
+            )}
           </div>
         )}
 
@@ -392,9 +407,9 @@ export const StorageMigrationModal: React.FC<StorageMigrationModalProps> = ({
               <button
                 type="button"
                 onClick={handleStart}
-                disabled={!preflight?.valid && !(switchMode === 'switch' && preflight?.canDirectSwitch)}
+                disabled={startLoading || (!preflight?.valid && !(switchMode === 'switch' && preflight?.canDirectSwitch))}
                 style={{
-                  background: (!preflight?.valid && !(switchMode === 'switch' && preflight?.canDirectSwitch))
+                  background: (startLoading || (!preflight?.valid && !(switchMode === 'switch' && preflight?.canDirectSwitch)))
                     ? '#444'
                     : 'var(--accent-color, #ff5577)',
                   border: 'none',
@@ -403,12 +418,16 @@ export const StorageMigrationModal: React.FC<StorageMigrationModalProps> = ({
                   padding: '8px 20px',
                   fontSize: '13px',
                   fontWeight: 600,
-                  cursor: (!preflight?.valid && !(switchMode === 'switch' && preflight?.canDirectSwitch))
+                  cursor: (startLoading || (!preflight?.valid && !(switchMode === 'switch' && preflight?.canDirectSwitch)))
                     ? 'not-allowed'
                     : 'pointer',
                 }}
               >
-                {switchMode === 'switch' ? t('settings.storage.startSwitch', 'Switch Library') : t('settings.storage.startMove', 'Start Migration')}
+                {startLoading
+                  ? t('common.loading', 'Loading...')
+                  : switchMode === 'switch'
+                    ? t('settings.storage.startSwitch', 'Switch Library')
+                    : t('settings.storage.startMove', 'Start Migration')}
               </button>
             </>
           )}
@@ -449,10 +468,11 @@ export const StorageMigrationModal: React.FC<StorageMigrationModalProps> = ({
             </>
           )}
 
-          {isCompleted && (
+          {isCompleted && switchMode === 'switch' && (
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => void handleReload()}
+              disabled={reloading}
               style={{
                 background: 'var(--accent-color, #ff5577)',
                 border: 'none',
@@ -461,11 +481,49 @@ export const StorageMigrationModal: React.FC<StorageMigrationModalProps> = ({
                 padding: '8px 20px',
                 fontSize: '13px',
                 fontWeight: 600,
-                cursor: 'pointer',
+                cursor: reloading ? 'wait' : 'pointer',
               }}
             >
-              {t('settings.storage.done', 'Done')}
+              {reloading ? t('common.loading', 'Loading...') : t('settings.storage.reloadToApply', 'Reload KHelper to Apply')}
             </button>
+          )}
+
+          {isCompleted && switchMode === 'move' && (
+            <>
+              <button
+                type="button"
+                onClick={() => void handleReload()}
+                disabled={reloading}
+                style={{
+                  background: 'none',
+                  border: '1px solid #444',
+                  borderRadius: '6px',
+                  color: '#ccc',
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  cursor: reloading ? 'wait' : 'pointer',
+                }}
+              >
+                {t('settings.storage.reloadKeepBackup', 'Reload (Keep Backup)')}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleReload(sourceSnapshot.path)}
+                disabled={reloading}
+                style={{
+                  background: '#338833',
+                  border: 'none',
+                  borderRadius: '6px',
+                  color: '#fff',
+                  padding: '8px 18px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: reloading ? 'wait' : 'pointer',
+                }}
+              >
+                {reloading ? t('common.loading', 'Loading...') : t('settings.storage.reloadAndClean', 'Reload & Free Up Space')}
+              </button>
+            </>
           )}
         </div>
       </div>

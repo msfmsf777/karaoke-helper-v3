@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { app } from 'electron';
 import {
   getDefaultSongsDir,
   getSongsDir,
@@ -38,6 +39,7 @@ class MigrationManager {
   private subscribers = new Set<MigrationSubscriber>();
   private abortController: AbortController | null = null;
   private isMigrating = false;
+  private lastSourcePath: string | null = null;
 
   subscribe(callback: MigrationSubscriber): () => void {
     this.subscribers.add(callback);
@@ -257,7 +259,7 @@ class MigrationManager {
     };
   }
 
-  async startMigration(targetInputPath: string, mode: 'move' | 'switch'): Promise<void> {
+  async startMigration(targetInputPath: string, mode: 'move' | 'switch'): Promise<MigrationProgress> {
     if (this.isMigrating) {
       throw new Error('A migration is already in progress');
     }
@@ -269,18 +271,67 @@ class MigrationManager {
 
     const sourcePath = path.resolve(getSongsDir());
     const targetPath = path.resolve(targetInputPath.trim());
+    this.lastSourcePath = sourcePath;
 
     if (mode === 'switch') {
       console.log('[MigrationManager] Switching active songs directory directly to:', targetPath);
-      const settings = await loadSettings();
-      await saveSettings({
-        ...settings,
-        customSongsPath: targetPath,
-      });
-      setCustomSongsDir(targetPath);
-      invalidateCache();
-      await loadAllSongs();
-      return;
+      this.activeProgress = {
+        status: 'running',
+        sourcePath,
+        targetPath,
+        totalSongs: preflight.existingSongCountInTarget || 0,
+        copiedSongs: 0,
+        currentSongTitle: '',
+        totalBytes: 0,
+        copiedBytes: 0,
+        percent: 50,
+        startedAt: new Date().toISOString(),
+      };
+      this.notify();
+
+      try {
+        const settings = await loadSettings();
+        await saveSettings({
+          ...settings,
+          customSongsPath: targetPath,
+        });
+        setCustomSongsDir(targetPath);
+        invalidateCache();
+        await loadAllSongs();
+
+        this.activeProgress = {
+          status: 'completed',
+          sourcePath,
+          targetPath,
+          totalSongs: preflight.existingSongCountInTarget || 0,
+          copiedSongs: preflight.existingSongCountInTarget || 0,
+          currentSongTitle: '',
+          totalBytes: 0,
+          copiedBytes: 0,
+          percent: 100,
+          startedAt: this.activeProgress.startedAt,
+        };
+        this.notify();
+        return this.getProgress();
+      } catch (err: unknown) {
+        console.error('[MigrationManager] Direct switch failed', err);
+        const errMsg = err instanceof Error ? err.message : String(err);
+        this.activeProgress = {
+          status: 'failed',
+          sourcePath,
+          targetPath,
+          totalSongs: 0,
+          copiedSongs: 0,
+          currentSongTitle: '',
+          totalBytes: 0,
+          copiedBytes: 0,
+          percent: 0,
+          error: errMsg || 'Failed to switch library',
+          startedAt: this.activeProgress.startedAt,
+        };
+        this.notify();
+        throw err;
+      }
     }
 
     // Mode: 'move'
@@ -319,7 +370,8 @@ class MigrationManager {
         await saveSettings({ ...settings, customSongsPath: targetPath });
         setCustomSongsDir(targetPath);
         invalidateCache();
-        return;
+        await loadAllSongs();
+        return this.getProgress();
       }
 
       // Read all song folders from source
@@ -475,6 +527,7 @@ class MigrationManager {
       this.isMigrating = false;
       this.abortController = null;
     }
+    return this.getProgress();
   }
 
   cancelMigration() {
@@ -484,12 +537,19 @@ class MigrationManager {
     }
   }
 
+  getLastSourcePath(): string | null {
+    return this.lastSourcePath;
+  }
+
   async cleanOldAppDataFolder(customOldPath?: string): Promise<{ success: boolean; freedBytes: number; error?: string }> {
     const defaultPath = path.resolve(getDefaultSongsDir());
     const currentActivePath = path.resolve(getSongsDir());
-    const folderToClean = customOldPath ? path.resolve(customOldPath) : defaultPath;
+    const folderToClean = customOldPath
+      ? path.resolve(customOldPath)
+      : (this.lastSourcePath ? path.resolve(this.lastSourcePath) : defaultPath);
 
-    // Safety: never delete currently active path!
+    // Safety checks:
+    // 1. Never delete currently active path!
     if (folderToClean.toLowerCase() === currentActivePath.toLowerCase()) {
       return {
         success: false,
@@ -498,9 +558,19 @@ class MigrationManager {
       };
     }
 
+    // 2. Never delete userData directly or drive root!
+    const userData = path.resolve(app.getPath('userData'));
+    if (folderToClean.toLowerCase() === userData.toLowerCase() || folderToClean === path.dirname(folderToClean)) {
+      return {
+        success: false,
+        freedBytes: 0,
+        error: 'Cannot clean protected system or root directory',
+      };
+    }
+
     try {
       const stats = await this.calculateDirectoryStats(folderToClean);
-      await fs.rm(folderToClean, { recursive: true, force: true });
+      await fs.rm(folderToClean, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 });
       console.log('[MigrationManager] Cleaned old folder successfully:', folderToClean);
       return {
         success: true,

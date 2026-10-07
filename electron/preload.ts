@@ -131,11 +131,13 @@ contextBridge.exposeInMainWorld('khelper', {
     pickFolder: (): Promise<string | null> => ipcRenderer.invoke('storage:pick-folder'),
     preflight: (targetPath: string): Promise<StoragePreflightResult> =>
       ipcRenderer.invoke('storage:preflight', targetPath),
-    startMigration: (targetPath: string, mode: 'move' | 'switch'): Promise<void> =>
+    startMigration: (targetPath: string, mode: 'move' | 'switch'): Promise<MigrationProgress> =>
       ipcRenderer.invoke('storage:start-migration', { targetPath, mode }),
     cancelMigration: (): Promise<void> => ipcRenderer.invoke('storage:cancel-migration'),
     cleanOldFolder: (oldPath?: string): Promise<{ success: boolean; freedBytes: number; error?: string }> =>
       ipcRenderer.invoke('storage:clean-old-folder', oldPath),
+    reload: (cleanupOldPath?: string): Promise<void> =>
+      ipcRenderer.invoke('storage:reload', { cleanupOldPath }),
     subscribeProgress: (callback: (progress: MigrationProgress) => void) => {
       const listener = (_event: Electron.IpcRendererEvent, progress: MigrationProgress) => callback(progress)
       ipcRenderer.on('storage:migration-progress', listener)

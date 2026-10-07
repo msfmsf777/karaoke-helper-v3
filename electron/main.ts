@@ -742,6 +742,15 @@ ipcMain.handle('storage:clean-old-folder', async (_event, oldPath?: string) => {
   return migrationManager.cleanOldAppDataFolder(oldPath)
 })
 
+ipcMain.handle('storage:reload', async (_event, payload?: { cleanupOldPath?: string }) => {
+  if (payload?.cleanupOldPath) {
+    await migrationManager.cleanOldAppDataFolder(payload.cleanupOldPath)
+  }
+  if (win && !win.isDestroyed()) {
+    win.webContents.reload()
+  }
+})
+
 ipcMain.handle('storage:pick-folder', async () => {
   if (!win) return null
   const result = await dialog.showOpenDialog(win, {

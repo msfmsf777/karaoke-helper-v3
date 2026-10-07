@@ -60,9 +60,13 @@ interface Window {
       getInfo: () => Promise<import('../shared/songTypes').StorageInfo>;
       pickFolder: () => Promise<string | null>;
       preflight: (targetPath: string) => Promise<import('../shared/songTypes').StoragePreflightResult>;
-      startMigration: (targetPath: string, mode: 'move' | 'switch') => Promise<void>;
+      startMigration: (
+        targetPath: string,
+        mode: 'move' | 'switch'
+      ) => Promise<import('../shared/songTypes').MigrationProgress>;
       cancelMigration: () => Promise<void>;
       cleanOldFolder: (oldPath?: string) => Promise<{ success: boolean; freedBytes: number; error?: string }>;
+      reload: (cleanupOldPath?: string) => Promise<void>;
       subscribeProgress: (
         callback: (progress: import('../shared/songTypes').MigrationProgress) => void
       ) => () => void;
