@@ -31,8 +31,10 @@ class SoundTouchProcessor extends AudioWorkletProcessor {
         this.tempo = 1.0;
         this.pitchSemitones = 0;
 
-        this.instrVolume = 1.0;
-        this.vocalVolume = 1.0;
+        // Accurate real-time playhead tracking
+        this.playbackSampleCursor = 0;
+        this.lastReportedSec = -1;
+        this.tempBuffer = new Float32Array(256);
 
         this.port.onmessage = (e) => {
             const { type, payload } = e.data;
@@ -48,6 +50,8 @@ class SoundTouchProcessor extends AudioWorkletProcessor {
                 this.filter.clear();
                 this.soundTouch.clear();
                 this.filter.sourcePosition = 0; // Reset position
+                this.playbackSampleCursor = 0;
+                this.lastReportedSec = -1;
                 this.port.postMessage({ type: 'time', time: 0 });
             } else if (type === 'seek') {
                 this.seek(payload);
@@ -74,6 +78,8 @@ class SoundTouchProcessor extends AudioWorkletProcessor {
         this.filter.clear();
         this.soundTouch.clear();
         this.filter.sourcePosition = 0;
+        this.playbackSampleCursor = 0;
+        this.lastReportedSec = -1;
 
         this.port.postMessage({ type: 'loaded', duration: this.bufferLength / sampleRate });
     }
@@ -86,6 +92,8 @@ class SoundTouchProcessor extends AudioWorkletProcessor {
         this.filter.clear();
         this.soundTouch.clear();
         this.filter.sourcePosition = cursor;
+        this.playbackSampleCursor = cursor;
+        this.lastReportedSec = cursor / sampleRate;
         this.port.postMessage({ type: 'time', time: cursor / sampleRate });
     }
 
@@ -138,20 +146,25 @@ class SoundTouchProcessor extends AudioWorkletProcessor {
             return true;
         }
 
-        // Prepare a temp buffer for interleaved output
-        // We reuse a buffer to avoid GC if possible, but for now new Float32Array is safer
-        const tempBuffer = new Float32Array(outputLength * 2);
+        // Reuse temp buffer to eliminate GC allocations on audio thread
+        const requiredLen = outputLength * 2;
+        if (!this.tempBuffer || this.tempBuffer.length < requiredLen) {
+            this.tempBuffer = new Float32Array(requiredLen);
+        }
 
-        const framesExtracted = this.filter.extract(tempBuffer, outputLength);
+        const framesExtracted = this.filter.extract(this.tempBuffer, outputLength);
 
         if (framesExtracted > 0) {
             const leftOut = output[0];
             const rightOut = output.length > 1 ? output[1] : null;
 
             for (let i = 0; i < framesExtracted; i++) {
-                leftOut[i] = tempBuffer[i * 2];
-                if (rightOut) rightOut[i] = tempBuffer[i * 2 + 1];
+                leftOut[i] = this.tempBuffer[i * 2];
+                if (rightOut) rightOut[i] = this.tempBuffer[i * 2 + 1];
             }
+
+            // Advance actual rendered song position by source frames consumed
+            this.playbackSampleCursor += framesExtracted * this.tempo;
         }
 
         // Check for end
@@ -163,8 +176,11 @@ class SoundTouchProcessor extends AudioWorkletProcessor {
             }
         }
 
-        if (currentTime % 0.1 < 0.01) {
-            this.port.postMessage({ type: 'time', time: this.filter.sourcePosition / sampleRate });
+        // Report playback time smoothly every ~25ms (40Hz) without 341ms stair-steps
+        const currentSec = Math.min(this.playbackSampleCursor, this.bufferLength) / sampleRate;
+        if (currentSec - this.lastReportedSec >= 0.025 || this.lastReportedSec < 0) {
+            this.lastReportedSec = currentSec;
+            this.port.postMessage({ type: 'time', time: currentSec });
         }
 
         return true;

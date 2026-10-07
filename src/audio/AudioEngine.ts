@@ -72,12 +72,13 @@ class AudioPlayer {
   private _duration = 0;
   private _currentTime = 0;
   private _isPlaying = false;
+  private pendingLoadResolve: (() => void) | null = null;
 
   public onEnded?: () => void;
 
   constructor(role: OutputRole) {
     this.role = role;
-    this.audioContext = new AudioContext({ latencyHint: 'playback' }) as AudioContextWithSinkId;
+    this.audioContext = new AudioContext({ latencyHint: 'playback', sampleRate: 48000 }) as AudioContextWithSinkId;
 
     this.delayNode = this.audioContext.createDelay(1.0); // Max delay 1 second
     this.gainNode = this.audioContext.createGain();
@@ -122,6 +123,11 @@ class AudioPlayer {
           this._currentTime = time;
         } else if (type === 'loaded') {
           this._duration = duration;
+          if (this.pendingLoadResolve) {
+            const resolve = this.pendingLoadResolve;
+            this.pendingLoadResolve = null;
+            resolve();
+          }
         } else if (type === 'ended') {
           if (this.loop) {
             this.seek(0);
@@ -177,7 +183,7 @@ class AudioPlayer {
     return this.role;
   }
 
-  async loadBuffers(instrBuffer: AudioBuffer | null, vocalBuffer: AudioBuffer | null) {
+  async loadBuffers(instrBuffer: AudioBuffer | null, vocalBuffer: AudioBuffer | null): Promise<void> {
     if (!this.isReady || !this.workletNode) await this.initWorklet();
     if (this.audioContext.state === 'suspended') await this.audioContext.resume();
 
@@ -192,11 +198,12 @@ class AudioPlayer {
       payload.vocalRight = vocalBuffer.numberOfChannels > 1 ? vocalBuffer.getChannelData(1) : payload.vocalLeft;
     }
 
-    this.workletNode?.port.postMessage({ type: 'load', payload });
-
-    // Duration is set by worklet response
-    this._currentTime = 0;
-    this._isPlaying = false;
+    return new Promise<void>((resolve) => {
+      this.pendingLoadResolve = resolve;
+      this.workletNode?.port.postMessage({ type: 'load', payload });
+      this._currentTime = 0;
+      this._isPlaying = false;
+    });
   }
 
   play() {
@@ -216,6 +223,11 @@ class AudioPlayer {
   }
 
   stop() {
+    if (this.pendingLoadResolve) {
+      const resolve = this.pendingLoadResolve;
+      this.pendingLoadResolve = null;
+      resolve();
+    }
     this.workletNode?.port.postMessage({ type: 'stop' });
     this._isPlaying = false;
     this._currentTime = 0;
@@ -312,8 +324,9 @@ export class DualAudioEngine implements AudioEngine {
   private streamDeviceId: string | null = null;
   private headphoneDeviceId: string | null = null;
   private offsetMs = 0;
-  private needsInitialStartupSnap = false;
-  private startupSnapTimer: ReturnType<typeof setTimeout> | null = null;
+  private smoothedDrift = 0;
+  private driftInitialized = false;
+  private lastEmergencySeekTime = 0;
 
   private volumeCallbacks = new Set<(track: TrackType, volume: number) => void>();
 
@@ -384,23 +397,55 @@ export class DualAudioEngine implements AudioEngine {
         ) {
           const hpTime = this.headphonePlayer.currentTime;
           const streamTime = this.streamPlayer.currentTime;
-          const drift = streamTime - hpTime;
 
-          // Only perform drift adaptation after initial warmup and startup snap (> 1.0s)
-          if (hpTime > 1.0) {
-            if (Math.abs(drift) > 0.4) {
-              // Safety fallback: if drift becomes extreme (> 400ms due to system freeze), snap seek
+          // Begin drift management as soon as audio starts (> 0.05s)
+          if (hpTime > 0.05 && streamTime > 0.05) {
+            const rawDrift = streamTime - hpTime;
+            // Seed filter immediately on first reading to eliminate ramp-up latency
+            if (!this.driftInitialized) {
+              this.smoothedDrift = rawDrift;
+              this.driftInitialized = true;
+            } else {
+              this.smoothedDrift = this.smoothedDrift * 0.80 + rawDrift * 0.20;
+            }
+            const now = performance.now();
+
+            if (Math.abs(this.smoothedDrift) > 0.35 && now - this.lastEmergencySeekTime > 3000) {
+              // Catastrophic freeze fallback (> 350ms): snap seek with 3s cooldown
+              this.lastEmergencySeekTime = now;
               this.streamPlayer.seek(hpTime);
               this.streamPlayer.setSlew(1.0);
-            } else if (drift < -0.03) {
-              // Stream lags behind headphone by > 30ms: gently micro-slew (+0.5% speedup)
-              this.streamPlayer.setSlew(1.005);
-            } else if (drift > 0.03) {
-              // Stream leads headphone by > 30ms: gently micro-slew (-0.5% slowdown)
-              this.streamPlayer.setSlew(0.995);
+              this.driftInitialized = false;
+              this.smoothedDrift = 0;
             } else {
-              // In sync within +-30ms deadband: normal rate
-              this.streamPlayer.setSlew(1.0);
+              const isStartup = hpTime < 2.5;
+              if (isStartup) {
+                // Dynamic fast startup alignment (eliminates initial desync in < 1 second)
+                if (this.smoothedDrift > 0.05) {
+                  this.streamPlayer.setSlew(0.93);
+                } else if (this.smoothedDrift > 0.025) {
+                  this.streamPlayer.setSlew(0.96);
+                } else if (this.smoothedDrift < -0.05) {
+                  this.streamPlayer.setSlew(1.07);
+                } else if (this.smoothedDrift < -0.025) {
+                  this.streamPlayer.setSlew(1.04);
+                } else {
+                  this.streamPlayer.setSlew(1.0);
+                }
+              } else {
+                // Steady-state gentle slewing (inaudible continuous maintenance)
+                if (this.smoothedDrift > 0.06) {
+                  this.streamPlayer.setSlew(0.98);
+                } else if (this.smoothedDrift > 0.025) {
+                  this.streamPlayer.setSlew(0.99);
+                } else if (this.smoothedDrift < -0.06) {
+                  this.streamPlayer.setSlew(1.02);
+                } else if (this.smoothedDrift < -0.025) {
+                  this.streamPlayer.setSlew(1.01);
+                } else {
+                  this.streamPlayer.setSlew(1.0);
+                }
+              }
             }
           }
         }
@@ -487,8 +532,10 @@ export class DualAudioEngine implements AudioEngine {
     ]);
     if (generation !== this.loadGeneration) return;
 
-    // Mark for one-time startup snap to 0.0s on initial play
-    this.needsInitialStartupSnap = true;
+    // Reset drift tracker for new track
+    this.smoothedDrift = 0;
+    this.driftInitialized = false;
+    this.lastEmergencySeekTime = 0;
     this.applyTrackVolumes();
   }
 
@@ -531,38 +578,25 @@ export class DualAudioEngine implements AudioEngine {
           this.headphonePlayer.resume()
         ]);
 
-        // 2. Align start playheads and reset slew to 1.0
+        // 2. Align start playheads only when mid-track (> 0.05s) to avoid wiping startup buffer
         const position = this.headphonePlayer.currentTime;
-        this.streamPlayer.seek(position);
-        this.headphonePlayer.seek(position);
+        if (position > 0.05) {
+          this.streamPlayer.seek(position);
+          this.headphonePlayer.seek(position);
+        }
         this.streamPlayer.setSlew(1.0);
         this.headphonePlayer.setSlew(1.0);
+        this.driftInitialized = false;
+        this.smoothedDrift = 0;
 
-        // 3. Trigger playback
-        this.streamPlayer.play();
+        // 3. Trigger playback: Start physical master (headphone) first to offset DAC startup delay
         this.headphonePlayer.play();
-
-        // 4. One-time initial startup snap to 0.0s once hardware streams are actively flowing
-        if (this.needsInitialStartupSnap) {
-          if (this.startupSnapTimer) clearTimeout(this.startupSnapTimer);
-          this.startupSnapTimer = setTimeout(() => {
-            if (this.activeMode === 'soundtouch' && this.isPlaying() && this.needsInitialStartupSnap) {
-              this.streamPlayer.seek(0);
-              this.headphonePlayer.seek(0);
-              this.streamPlayer.setSlew(1.0);
-              this.needsInitialStartupSnap = false;
-            }
-          }, 80);
-        }
+        this.streamPlayer.play();
     }
     this.startTimer();
   }
 
   pause(): void {
-    if (this.startupSnapTimer) {
-      clearTimeout(this.startupSnapTimer);
-      this.startupSnapTimer = null;
-    }
     if (this.activeMode === 'native') {
         this.nativeStreamPlayer.pause();
         this.nativeHeadphonePlayer.pause();
@@ -571,16 +605,14 @@ export class DualAudioEngine implements AudioEngine {
         this.headphonePlayer.pause();
         this.streamPlayer.setSlew(1.0);
     }
+    this.driftInitialized = false;
+    this.smoothedDrift = 0;
     this.stopTimer();
     const time = this.getCurrentTime();
     this.timeUpdateSubscribers.forEach(cb => cb(time));
   }
 
   stop(): void {
-    if (this.startupSnapTimer) {
-      clearTimeout(this.startupSnapTimer);
-      this.startupSnapTimer = null;
-    }
     if (this.activeMode === 'native') {
         this.nativeStreamPlayer.stop();
         this.nativeHeadphonePlayer.stop();
@@ -589,16 +621,16 @@ export class DualAudioEngine implements AudioEngine {
         this.headphonePlayer.stop();
         this.streamPlayer.setSlew(1.0);
     }
+    this.driftInitialized = false;
+    this.smoothedDrift = 0;
     this.stopTimer();
     this.timeUpdateSubscribers.forEach(cb => cb(0));
   }
 
   seek(positionSeconds: number): void {
-    if (this.startupSnapTimer) {
-      clearTimeout(this.startupSnapTimer);
-      this.startupSnapTimer = null;
-    }
-    this.needsInitialStartupSnap = false;
+    this.driftInitialized = false;
+    this.smoothedDrift = 0;
+    this.lastEmergencySeekTime = 0;
     if (this.activeMode === 'native') {
         const shouldResume = this.isPlaying();
         this.nativeStreamPlayer.pause();
