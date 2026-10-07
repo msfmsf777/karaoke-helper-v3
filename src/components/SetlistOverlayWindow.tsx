@@ -111,16 +111,20 @@ const SetlistOverlayWindow: React.FC = () => {
                 if (res.ok) {
                     const data: (OverlaySongMetadata | null)[] = await res.json();
                     setSongs(prev => {
+                        let hasChanges = false;
                         const next = { ...prev };
                         data.forEach(s => {
-                            if (s) next[s.id] = {
-                                ...s,
-                                thumbnailUrl: s.thumbnailUrl?.startsWith('/')
-                                    ? `${baseUrl}${s.thumbnailUrl}`
-                                    : s.thumbnailUrl,
-                            };
+                            if (s && !next[s.id]) {
+                                hasChanges = true;
+                                next[s.id] = {
+                                    ...s,
+                                    thumbnailUrl: s.thumbnailUrl?.startsWith('/')
+                                        ? `${baseUrl}${s.thumbnailUrl}`
+                                        : s.thumbnailUrl,
+                                };
+                            }
                         });
-                        return next;
+                        return hasChanges ? next : prev;
                     });
                 }
             } catch (e) {
