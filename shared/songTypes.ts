@@ -80,3 +80,35 @@ export interface EnrichedLyricLine {
   romaji: string;
   ruby: RubySegment[];
 }
+
+export interface MigrationProgress {
+  status: 'idle' | 'checking' | 'running' | 'verifying' | 'completed' | 'failed' | 'cancelled';
+  sourcePath: string;
+  targetPath: string;
+  totalSongs: number;
+  copiedSongs: number;
+  currentSongTitle: string;
+  totalBytes: number;
+  copiedBytes: number;
+  percent: number;
+  error?: string;
+  startedAt?: string;
+}
+
+export interface StoragePreflightResult {
+  valid: boolean;
+  canDirectSwitch: boolean;
+  existingSongCountInTarget?: number;
+  totalSongs: number;
+  totalBytes: number;
+  targetFreeBytes: number;
+  error?: string;
+}
+
+export interface StorageInfo {
+  currentPath: string;
+  isDefault: boolean;
+  totalSongs: number;
+  totalBytes: number;
+  freeBytes: number;
+}

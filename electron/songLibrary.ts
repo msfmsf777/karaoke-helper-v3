@@ -14,13 +14,28 @@ export const RAW_LYRICS_FILENAME = 'lyrics_raw.txt';
 export const SYNCED_LYRICS_FILENAME = 'lyrics_synced.lrc';
 const YOUTUBE_THUMBNAIL_BASENAME = 'thumbnail';
 
-function getAppDataRoot() {
+let cachedCustomSongsDir: string | null = null;
+
+export function getDefaultSongsDir() {
   const userData = app.getPath('userData');
-  return path.join(userData, APP_FOLDER_NAME);
+  return path.join(userData, APP_FOLDER_NAME, SONGS_FOLDER_NAME);
 }
 
-function getSongsDir() {
-  return path.join(getAppDataRoot(), SONGS_FOLDER_NAME);
+export function setCustomSongsDir(customPath: string | null | undefined): void {
+  if (customPath && typeof customPath === 'string' && customPath.trim().length > 0) {
+    cachedCustomSongsDir = path.resolve(customPath.trim());
+  } else {
+    cachedCustomSongsDir = null;
+  }
+  invalidateCache();
+  console.log('[Library] Active songs directory set to:', getSongsDir());
+}
+
+export function getSongsDir() {
+  if (cachedCustomSongsDir) {
+    return cachedCustomSongsDir;
+  }
+  return getDefaultSongsDir();
 }
 
 export function getSongDirById(id: string) {
@@ -176,8 +191,8 @@ async function readMeta(songDir: string): Promise<SongMeta | null> {
       await writeMeta(songDir, normalized);
     }
     return normalized;
-  } catch (err: any) {
-    if (err.code !== 'ENOENT') {
+  } catch (err: unknown) {
+    if ((err as { code?: string })?.code !== 'ENOENT') {
       console.warn('[Library] Failed to read meta.json from', songDir, err);
     }
     return null;
@@ -531,19 +546,57 @@ export async function getSeparatedSongPaths(id: string): Promise<{ instrumental:
   const isSeparated = meta.audio_status === 'separated' && meta.instrumental_path && meta.vocal_path;
 
   if (!isAccompaniment && isSeparated) {
-    // Verify files exist
-    try {
-      await Promise.all([
-        fs.access(meta.instrumental_path!),
-        fs.access(meta.vocal_path!)
-      ]);
-      return {
-        instrumental: meta.instrumental_path!,
-        vocal: meta.vocal_path!
-      };
-    } catch (err) {
-      console.warn('[Library] Separated files missing, falling back to original', { id, err });
+    let resolvedInstr: string | null = null;
+    let resolvedVocal: string | null = null;
+
+    const instrCandidates = [
+      meta.instrumental_path,
+      path.join(songDir, 'Instrumental.mp3'),
+      path.join(songDir, 'Instrumental.wav')
+    ].filter(Boolean) as string[];
+
+    const vocalCandidates = [
+      meta.vocal_path,
+      path.join(songDir, 'Vocals.mp3'),
+      path.join(songDir, 'Vocals.wav')
+    ].filter(Boolean) as string[];
+
+    for (const cand of instrCandidates) {
+      try {
+        await fs.access(cand);
+        resolvedInstr = cand;
+        break;
+      } catch {
+        // candidate not found, try next
+      }
     }
+
+    for (const cand of vocalCandidates) {
+      try {
+        await fs.access(cand);
+        resolvedVocal = cand;
+        break;
+      } catch {
+        // candidate not found, try next
+      }
+    }
+
+    if (resolvedInstr && resolvedVocal) {
+      if (resolvedInstr !== meta.instrumental_path || resolvedVocal !== meta.vocal_path) {
+        console.log('[Library] Self-healing stem paths for song', { id, resolvedInstr, resolvedVocal });
+        void updateSongMeta(id, (current) => ({
+          ...current,
+          instrumental_path: resolvedInstr!,
+          vocal_path: resolvedVocal!,
+        })).catch((err) => console.warn('[Library] Failed to persist self-healed paths', err));
+      }
+      return {
+        instrumental: resolvedInstr,
+        vocal: resolvedVocal
+      };
+    }
+
+    console.warn('[Library] Separated files missing, falling back to original', { id });
   }
 
   // Fallback to Original

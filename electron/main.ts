@@ -11,8 +11,10 @@ import {
   addLocalSong, getOriginalSongFilePath,
   getSeparatedSongPaths,
   getSongFilePath, getSongsBaseDir, loadAllSongs,
-  deleteSong, updateSong, getSongDirById, addOnlineSong, ensureYoutubeThumbnail
+  deleteSong, updateSong, getSongDirById, addOnlineSong, ensureYoutubeThumbnail,
+  setCustomSongsDir
 } from './songLibrary'
+import { migrationManager } from './migrationManager'
 import { getAllJobs, queueSeparationJob, subscribeJobUpdates, cancelSeparationJob, retrySeparationJob, removeSeparationJob, killActiveSeparation } from './separationJobs'
 import { downloadManager, searchYouTube, searchYouTubeMore, getYouTubeStreamUrl, getYouTubeSuggestions } from './downloadJobs'
 import { readRawLyrics, readSyncedLyrics, writeRawLyrics, writeSyncedLyrics } from './lyrics'
@@ -720,6 +722,46 @@ ipcMain.handle('library:ensure-youtube-thumbnail', async (_event, id: string) =>
   return updated
 })
 
+ipcMain.handle('storage:get-info', async () => {
+  return migrationManager.getStorageInfo()
+})
+
+ipcMain.handle('storage:preflight', async (_event, targetPath: string) => {
+  return migrationManager.preflightCheck(targetPath)
+})
+
+ipcMain.handle('storage:start-migration', async (_event, payload: { targetPath: string; mode: 'move' | 'switch' }) => {
+  return migrationManager.startMigration(payload.targetPath, payload.mode)
+})
+
+ipcMain.handle('storage:cancel-migration', async () => {
+  migrationManager.cancelMigration()
+})
+
+ipcMain.handle('storage:clean-old-folder', async (_event, oldPath?: string) => {
+  return migrationManager.cleanOldAppDataFolder(oldPath)
+})
+
+ipcMain.handle('storage:pick-folder', async () => {
+  if (!win) return null
+  const result = await dialog.showOpenDialog(win, {
+    title: 'Select Song Library Folder',
+    properties: ['openDirectory', 'createDirectory'],
+  })
+  if (result.canceled || result.filePaths.length === 0) {
+    return null
+  }
+  return result.filePaths[0]
+})
+
+migrationManager.subscribe((progress) => {
+  BrowserWindow.getAllWindows().forEach((w) => {
+    if (!w.isDestroyed()) {
+      w.webContents.send('storage:migration-progress', progress)
+    }
+  })
+})
+
 ipcMain.handle('jobs:queue-separation', async (_event, songId: string, quality?: 'high' | 'normal' | 'fast') => {
   return queueSeparationJob(songId, quality)
 })
@@ -964,6 +1006,7 @@ if (!gotTheLock) {
     createWindow()
     const settings = await loadSettings()
     setElectronLanguage(settings.language)
+    setCustomSongsDir(settings.customSongsPath)
     updateTrayMenu()
     applyHotkeysFromSettings(settings.hotkeys)
     await initializeAnalytics()

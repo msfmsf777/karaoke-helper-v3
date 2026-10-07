@@ -1,5 +1,5 @@
 import { ipcRenderer, contextBridge, type IpcRendererEvent } from 'electron'
-import type { SongMeta, SongType, DownloadJob } from '../shared/songTypes'
+import type { SongMeta, SongType, DownloadJob, StorageInfo, StoragePreflightResult, MigrationProgress } from '../shared/songTypes'
 import type { SeparationJob } from '../shared/separationTypes'
 import type { HotkeyAction, HotkeyRegistrationStatus } from '../shared/hotkeys'
 import type {
@@ -124,6 +124,22 @@ contextBridge.exposeInMainWorld('khelper', {
       const listener = (_event: Electron.IpcRendererEvent, song: SongMeta) => callback(song)
       ipcRenderer.on('library:song-updated', listener)
       return () => ipcRenderer.off('library:song-updated', listener)
+    },
+  },
+  storage: {
+    getInfo: (): Promise<StorageInfo> => ipcRenderer.invoke('storage:get-info'),
+    pickFolder: (): Promise<string | null> => ipcRenderer.invoke('storage:pick-folder'),
+    preflight: (targetPath: string): Promise<StoragePreflightResult> =>
+      ipcRenderer.invoke('storage:preflight', targetPath),
+    startMigration: (targetPath: string, mode: 'move' | 'switch'): Promise<void> =>
+      ipcRenderer.invoke('storage:start-migration', { targetPath, mode }),
+    cancelMigration: (): Promise<void> => ipcRenderer.invoke('storage:cancel-migration'),
+    cleanOldFolder: (oldPath?: string): Promise<{ success: boolean; freedBytes: number; error?: string }> =>
+      ipcRenderer.invoke('storage:clean-old-folder', oldPath),
+    subscribeProgress: (callback: (progress: MigrationProgress) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, progress: MigrationProgress) => callback(progress)
+      ipcRenderer.on('storage:migration-progress', listener)
+      return () => ipcRenderer.off('storage:migration-progress', listener)
     },
   },
   jobs: {

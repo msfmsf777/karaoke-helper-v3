@@ -16,28 +16,36 @@ async function ensureSongFolder(songId: string): Promise<{ songDir: string; meta
 
 export async function readRawLyrics(songId: string): Promise<{ path: string; content: string } | null> {
   const { songDir, meta } = await ensureSongFolder(songId);
-  const filePath = meta.lyrics_raw_path || path.join(songDir, RAW_LYRICS_FILENAME);
-  try {
-    const content = await fs.readFile(filePath, 'utf-8');
-    console.log('[Lyrics] Loaded raw lyrics', { songId, filePath });
-    return { path: filePath, content };
-  } catch (err) {
-    console.warn('[Lyrics] No raw lyrics found', { songId, filePath, err });
-    return null;
+  const candidates = [meta.lyrics_raw_path, path.join(songDir, RAW_LYRICS_FILENAME)].filter(Boolean) as string[];
+  for (const filePath of candidates) {
+    try {
+      const content = await fs.readFile(filePath, 'utf-8');
+      if (meta.lyrics_raw_path !== filePath) {
+        void updateSongMeta(songId, (cur) => ({ ...cur, lyrics_raw_path: filePath })).catch(() => {});
+      }
+      return { path: filePath, content };
+    } catch {
+      // Ignore unreadable candidate and try next
+    }
   }
+  return null;
 }
 
 export async function readSyncedLyrics(songId: string): Promise<{ path: string; content: string } | null> {
   const { songDir, meta } = await ensureSongFolder(songId);
-  const filePath = meta.lyrics_lrc_path || path.join(songDir, SYNCED_LYRICS_FILENAME);
-  try {
-    const content = await fs.readFile(filePath, 'utf-8');
-    console.log('[Lyrics] Loaded synced lyrics', { songId, filePath });
-    return { path: filePath, content };
-  } catch (err) {
-    console.warn('[Lyrics] No synced lyrics found', { songId, filePath, err });
-    return null;
+  const candidates = [meta.lyrics_lrc_path, path.join(songDir, SYNCED_LYRICS_FILENAME)].filter(Boolean) as string[];
+  for (const filePath of candidates) {
+    try {
+      const content = await fs.readFile(filePath, 'utf-8');
+      if (meta.lyrics_lrc_path !== filePath) {
+        void updateSongMeta(songId, (cur) => ({ ...cur, lyrics_lrc_path: filePath })).catch(() => {});
+      }
+      return { path: filePath, content };
+    } catch {
+      // Ignore unreadable candidate and try next
+    }
   }
+  return null;
 }
 
 export async function writeRawLyrics(songId: string, content: string): Promise<{ path: string; meta: SongMeta }> {

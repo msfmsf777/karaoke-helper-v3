@@ -15,6 +15,7 @@ import { PRIVACY_NOTICE_URL, TELEMETRYDECK_PRIVACY_URL } from '../constants/priv
 // Lazy loading DebugUpdaterUI
 const DebugUpdaterUI = React.lazy(() => import('./DebugUpdaterUI'));
 import { useUpdater } from '../contexts/UpdaterContext';
+import { StorageSettingsSection } from './StorageSettingsSection';
 
 interface SettingsViewProps {
     onBack: () => void;
@@ -543,6 +544,9 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                             </div>
                         </div>
                     </section>
+
+                    {/* Section: Song Library Storage */}
+                    <StorageSettingsSection />
 
                     {/* Section: Privacy & Improvement */}
                     <section style={{ marginBottom: '40px' }}>

@@ -79,6 +79,9 @@ function normalizeSettings(settings: Partial<UserSettings> | null | undefined): 
         songListViews: mergeSongListViewConfigs(parsed.songListViews),
         overlayTemplates: mergeOverlayTemplatesConfig(parsed.overlayTemplates, parsed.lyricStyles),
         analytics: normalizeAnalyticsSettings(parsed.analytics),
+        customSongsPath: typeof parsed.customSongsPath === 'string' && parsed.customSongsPath.trim().length > 0
+            ? parsed.customSongsPath.trim()
+            : undefined,
     };
 }
 
@@ -307,6 +310,7 @@ export interface UserSettings {
     songListViews?: SongListViewConfigs;
     overlayTemplates?: OverlayTemplatesConfig;
     analytics?: AnalyticsSettings;
+    customSongsPath?: string;
 }
 
 export async function saveSettings(settings: UserSettings): Promise<void> {

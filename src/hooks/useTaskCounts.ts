@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { SeparationJob } from '../jobs/separationJobs';
 import { getAllJobs, subscribeJobUpdates } from '../jobs/separationJobs';
-import { DownloadJob } from '../../shared/songTypes';
+import { DownloadJob, MigrationProgress } from '../../shared/songTypes';
 
 interface TaskCounts {
   activeCount: number;
@@ -15,6 +15,7 @@ interface TaskCounts {
 export function useTaskCounts(): TaskCounts {
   const [sepJobs, setSepJobs] = useState<SeparationJob[]>([]);
   const [dlJobs, setDlJobs] = useState<DownloadJob[]>([]);
+  const [migrationProgress, setMigrationProgress] = useState<MigrationProgress | null>(null);
   const [showCompletionCheck, setShowCompletionCheck] = useState(false);
   const [badgeJustUpdated, setBadgeJustUpdated] = useState(false);
 
@@ -37,14 +38,27 @@ export function useTaskCounts(): TaskCounts {
     return () => { unsub?.(); };
   }, []);
 
+  // Migration subscription
+  useEffect(() => {
+    const unsub = window.khelper?.storage?.subscribeProgress?.((p) => {
+      setMigrationProgress(p);
+    });
+    return () => { unsub?.(); };
+  }, []);
+
   // Compute counts
+  const isMigrationActive = migrationProgress?.status === 'running' || migrationProgress?.status === 'verifying';
+  const isMigrationFailed = migrationProgress?.status === 'failed';
+
   const activeCount =
     sepJobs.filter(j => j.status === 'queued' || j.status === 'running').length +
-    dlJobs.filter(j => ['queued', 'downloading', 'processing'].includes(j.status)).length;
+    dlJobs.filter(j => ['queued', 'downloading', 'processing'].includes(j.status)).length +
+    (isMigrationActive ? 1 : 0);
 
   const failedCount =
     sepJobs.filter(j => j.status === 'failed').length +
-    dlJobs.filter(j => j.status === 'failed').length;
+    dlJobs.filter(j => j.status === 'failed').length +
+    (isMigrationFailed ? 1 : 0);
 
   const hasFailures = failedCount > 0;
 

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { SeparationJob } from '../jobs/separationJobs';
 import { getAllJobs, subscribeJobUpdates, cancelSeparationJob, retrySeparationJob, removeSeparationJob } from '../jobs/separationJobs';
 import { loadAllSongs, SongMeta } from '../library/songLibrary';
-import { DownloadJob } from '../../shared/songTypes';
+import { DownloadJob, MigrationProgress } from '../../shared/songTypes';
 
 interface TaskPaneDropdownProps {
   onClose: () => void;
@@ -179,6 +179,15 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
     return () => { unsub?.(); };
   }, []);
 
+  /* Migration state & subscription */
+  const [migration, setMigration] = useState<MigrationProgress | null>(null);
+  useEffect(() => {
+    const unsub = window.khelper?.storage?.subscribeProgress?.((updated) => {
+      setMigration(updated);
+    });
+    return () => { unsub?.(); };
+  }, []);
+
   /* Derived lists */
   const activeDownloads = useMemo(() =>
     dlJobs.filter(j => ['queued', 'downloading', 'processing'].includes(j.status)),
@@ -215,8 +224,9 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
       .slice(0, 5);
   }, [sepJobs]);
   const hasSepSection = activeSepJobs.length > 0 || failedSepJobs.length > 0 || recentlyCompletedSep.length > 0;
+  const hasMigrationSection = Boolean(migration && migration.status !== 'idle');
 
-  const isEmpty = !hasSepSection && !hasDownloadSection;
+  const isEmpty = !hasSepSection && !hasDownloadSection && !hasMigrationSection;
 
   const getSongName = (songId: string) => {
     const song = songs[songId];
@@ -291,6 +301,72 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
 
       {/* Scrollable body */}
       <div className="task-pane-scroll" style={{ flex: 1, overflowY: 'auto' }}>
+
+        {/* ── Storage Migration Section ── */}
+        {hasMigrationSection && migration && (
+          <div style={{ borderBottom: '1px solid #2a2a2a', padding: '12px 16px', background: 'rgba(255, 255, 255, 0.02)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>📦</span>
+                <span>{t('tasks.migration.title', 'Library Migration')}</span>
+              </div>
+              <div style={{ fontSize: '11px', color: migration.status === 'failed' ? '#ff8b8b' : migration.status === 'completed' ? '#8be28b' : '#e0a040' }}>
+                {migration.status === 'running' && `${migration.percent}%`}
+                {migration.status === 'verifying' && t('tasks.migration.verifying', 'Verifying...')}
+                {migration.status === 'completed' && `✓ ${t('tasks.migration.completed', 'Completed')}`}
+                {migration.status === 'failed' && `✗ ${t('tasks.migration.failed', 'Failed')}`}
+                {migration.status === 'cancelled' && t('tasks.migration.cancelled', 'Cancelled')}
+              </div>
+            </div>
+
+            {(migration.status === 'running' || migration.status === 'verifying') && (
+              <>
+                <div style={{ fontSize: '12px', color: '#ccc', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {migration.currentSongTitle ? `[${migration.copiedSongs}/${migration.totalSongs}] ${migration.currentSongTitle}` : `${migration.copiedSongs}/${migration.totalSongs}`}
+                </div>
+                <ProgressBar value={migration.percent} color="var(--accent-color)" />
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
+                  <button
+                    onClick={() => void window.khelper?.storage.cancelMigration()}
+                    style={{
+                      background: 'none',
+                      border: '1px solid #444',
+                      borderRadius: '4px',
+                      color: '#aaa',
+                      cursor: 'pointer',
+                      fontSize: '11px',
+                      padding: '2px 8px'
+                    }}
+                  >
+                    {t('common.cancel')}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {migration.status === 'failed' && migration.error && (
+              <ErrorBlock message={migration.error} defaultExpanded />
+            )}
+
+            {(migration.status === 'completed' || migration.status === 'cancelled') && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+                <button
+                  onClick={() => setMigration(null)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#888',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    padding: '2px 6px'
+                  }}
+                >
+                  {t('common.close')}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── Download Section (hidden when empty) ──────────── */}
         {hasDownloadSection && (

@@ -56,6 +56,17 @@ interface Window {
       ensureYoutubeThumbnail: (id: string) => Promise<import('../shared/songTypes').SongMeta | null>;
       subscribeSongUpdated: (callback: (song: import('../shared/songTypes').SongMeta) => void) => () => void;
     };
+    storage: {
+      getInfo: () => Promise<import('../shared/songTypes').StorageInfo>;
+      pickFolder: () => Promise<string | null>;
+      preflight: (targetPath: string) => Promise<import('../shared/songTypes').StoragePreflightResult>;
+      startMigration: (targetPath: string, mode: 'move' | 'switch') => Promise<void>;
+      cancelMigration: () => Promise<void>;
+      cleanOldFolder: (oldPath?: string) => Promise<{ success: boolean; freedBytes: number; error?: string }>;
+      subscribeProgress: (
+        callback: (progress: import('../shared/songTypes').MigrationProgress) => void
+      ) => () => void;
+    };
     youtube: {
       search: (query: string) => Promise<any[]>;
       searchMore: () => Promise<any[]>;
