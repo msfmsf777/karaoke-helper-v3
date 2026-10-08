@@ -19,6 +19,7 @@ import EditIcon from '../assets/icons/edit.svg';
 import DeleteIcon from '../assets/icons/delete.svg';
 import SeparateIcon from '../assets/icons/separate.svg';
 import FolderOpenIcon from '../assets/icons/folder_open.svg';
+import { useSeparationEnv } from '../contexts/SeparationEnvContext';
 
 interface SongContextMenuProps {
     song: SongMeta;
@@ -33,6 +34,7 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
     const playlistItemRef = useRef<HTMLDivElement>(null);
     const { playImmediate, addToQueue, queue, removeFromQueue } = useQueue();
     const { isFavorite, toggleFavorite, cleanupSong } = useUserData();
+    const { requestSeparation } = useSeparationEnv();
     const { deleteSong } = useLibrary();
 
     const [activeSubmenu, setActiveSubmenu] = useState<'playlist' | 'separation' | null>(null);
@@ -291,11 +293,10 @@ const SongContextMenu: React.FC<SongContextMenuProps> = ({ song, position, onClo
                                                         e.stopPropagation();
                                                         if (isDisabled) return;
                                                         try {
-                                                            const { queueSeparationJob } = await import('../jobs/separationJobs');
-                                                            await queueSeparationJob(song.id, option.id as 'high' | 'normal' | 'fast');
+                                                            await requestSeparation(song.id, option.id as 'high' | 'normal' | 'fast');
                                                             onClose();
                                                         } catch (err) {
-                                                            console.error('Failed to queue separation', err);
+                                                            console.error('Failed to request separation', err);
                                                         }
                                                     }}
                                                     style={{

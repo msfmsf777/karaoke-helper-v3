@@ -16,6 +16,7 @@ import { PRIVACY_NOTICE_URL, TELEMETRYDECK_PRIVACY_URL } from '../constants/priv
 const DebugUpdaterUI = React.lazy(() => import('./DebugUpdaterUI'));
 import { useUpdater } from '../contexts/UpdaterContext';
 import { StorageSettingsSection } from './StorageSettingsSection';
+import { SeparationSettingsSection } from './SeparationSettingsSection';
 
 interface SettingsViewProps {
     onBack: () => void;
@@ -487,6 +488,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                             {t('settings.separation.title')}
                         </h2>
                         <div style={{ background: '#2a2a2a', padding: '24px', borderRadius: '12px', border: '1px solid #333' }}>
+                            <SeparationSettingsSection />
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', padding: '8px', borderRadius: '8px', transition: 'background 0.2s' }}
                                     onMouseEnter={e => e.currentTarget.style.backgroundColor = '#333'}

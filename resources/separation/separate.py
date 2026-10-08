@@ -9,6 +9,22 @@ import re
 import threading
 from pathlib import Path
 
+# Support dynamically installed separation packages (e.g. in %APPDATA%/.../separation-runtime)
+import site
+packages_dir = os.environ.get('KHELPER_SEPARATION_PACKAGES')
+if packages_dir and os.path.exists(packages_dir):
+    site.addsitedir(packages_dir)
+    torch_lib = os.path.join(packages_dir, 'torch', 'lib')
+    if os.path.exists(torch_lib):
+        if hasattr(os, 'add_dll_directory'):
+            try:
+                os.add_dll_directory(torch_lib)
+            except Exception:
+                pass
+        # Prepend torch/lib to PATH so C++ DLLs (like onnxruntime_providers_cuda.dll)
+        # can dynamically resolve cublasLt64_12.dll, cudart64_12.dll, cudnn64_9.dll etc.
+        os.environ['PATH'] = torch_lib + os.pathsep + os.environ.get('PATH', '')
+
 # Configure logging
 # audio-separator uses logging.INFO for some updates, but tqdm prints to stderr.
 logging.basicConfig(level=logging.WARNING)
@@ -90,8 +106,18 @@ def main():
     parser.add_argument('--bitrate', default='320k', help='Bitrate for encoded output (e.g. 320k)')
     parser.add_argument('--model-override', help='Override model filename directly')
     parser.add_argument('--model-dir', help='Directory containing model files')
+    parser.add_argument('--device', default=None, choices=['cuda', 'cpu', 'auto'], help='Hardware acceleration device (cuda/cpu/auto)')
     
     args = parser.parse_args()
+
+    # Determine execution device mode
+    device_mode = args.device or os.environ.get('KHELPER_SEPARATION_MODE', 'auto')
+    if device_mode == 'gpu':
+        device_mode = 'cuda'
+
+    if device_mode == 'cpu':
+        # Enforce CPU mode strictly when requested
+        os.environ['CUDA_VISIBLE_DEVICES'] = ''
     
     # Model Mapping
     # Must match MODEL_PRESETS in modelManager.ts
@@ -140,6 +166,30 @@ def main():
             output_format=args.output_format,
             output_bitrate=args.bitrate
         )
+
+        # Emit device info for Electron logging & diagnostics
+        active_device = str(getattr(separator, 'torch_device', 'unknown'))
+        active_providers = getattr(separator, 'onnx_execution_provider', [])
+        active_provider = active_providers[0] if active_providers else 'unknown'
+        cuda_avail = False
+        gpu_name = None
+        try:
+            import torch
+            cuda_avail = torch.cuda.is_available()
+            if cuda_avail:
+                gpu_name = torch.cuda.get_device_name(0)
+        except Exception:
+            pass
+
+        print(json.dumps({
+            "status": "device_info",
+            "requested_device": device_mode,
+            "torch_device": active_device,
+            "onnx_provider": active_provider,
+            "cuda_available": cuda_avail,
+            "gpu_name": gpu_name
+        }))
+        sys.stdout.flush()
 
         print(json.dumps({"status": "loading_model", "model": model_filename}))
         sys.stdout.flush()

@@ -16,6 +16,8 @@ import {
 } from './songLibrary'
 import { migrationManager } from './migrationManager'
 import { getAllJobs, queueSeparationJob, subscribeJobUpdates, cancelSeparationJob, retrySeparationJob, removeSeparationJob, killActiveSeparation } from './separationJobs'
+import { separationEnvManager } from './separationEnvManager'
+import { detectGpuHardware } from './gpuDetector'
 import { downloadManager, searchYouTube, searchYouTubeMore, getYouTubeStreamUrl, getYouTubeSuggestions } from './downloadJobs'
 import { readRawLyrics, readSyncedLyrics, writeRawLyrics, writeSyncedLyrics } from './lyrics'
 import { loadQueue, saveQueue } from './queue'
@@ -789,6 +791,76 @@ ipcMain.handle('jobs:retry', async (_event, jobId: string) => {
 
 ipcMain.handle('jobs:remove', async (_event, jobId: string) => {
   return removeSeparationJob(jobId)
+})
+
+/* ── Separation Environment IPC ────────────────────────────── */
+
+ipcMain.handle('separationEnv:get-status', async () => {
+  return separationEnvManager.getStatus()
+})
+
+ipcMain.handle('separationEnv:get-gpu-info', async () => {
+  return detectGpuHardware()
+})
+
+ipcMain.handle('separationEnv:start-install', async (_event, mode: 'gpu' | 'cpu', customTargetDir?: string) => {
+  return separationEnvManager.startInstallation(mode, customTargetDir)
+})
+
+ipcMain.handle('separationEnv:cancel-install', async () => {
+  separationEnvManager.cancelInstallation()
+})
+
+ipcMain.handle('separationEnv:get-disk-usage', async () => {
+  return separationEnvManager.getDiskUsage()
+})
+
+ipcMain.handle('separationEnv:uninstall', async () => {
+  return separationEnvManager.uninstallEnvironment()
+})
+
+ipcMain.handle('separationEnv:pick-folder', async () => {
+  if (!win) return null
+  const result = await dialog.showOpenDialog(win, {
+    title: '選擇 AI 分離引擎儲存目錄',
+    properties: ['openDirectory', 'createDirectory'],
+  })
+  if (result.canceled || result.filePaths.length === 0) {
+    return null
+  }
+  return result.filePaths[0]
+})
+
+ipcMain.handle('separationEnv:get-storage-info', async () => {
+  return separationEnvManager.getStorageInfo()
+})
+
+ipcMain.handle('separationEnv:preflight-target', async (_event, targetPath: string) => {
+  return separationEnvManager.preflightTargetFolder(targetPath)
+})
+
+ipcMain.handle('separationEnv:start-migration', async (_event, targetPath: string) => {
+  return separationEnvManager.startMigration(targetPath)
+})
+
+ipcMain.handle('separationEnv:cancel-migration', async () => {
+  separationEnvManager.cancelMigration()
+})
+
+separationEnvManager.subscribeProgress((progress) => {
+  BrowserWindow.getAllWindows().forEach((w) => {
+    if (!w.isDestroyed()) {
+      w.webContents.send('separationEnv:progress', progress)
+    }
+  })
+})
+
+separationEnvManager.subscribeMigration((progress) => {
+  BrowserWindow.getAllWindows().forEach((w) => {
+    if (!w.isDestroyed()) {
+      w.webContents.send('separationEnv:migration-progress', progress)
+    }
+  })
 })
 
 ipcMain.handle('lyrics:read-raw', async (_event, songId: string) => {

@@ -47,3 +47,6 @@ scripts/generated/
 
 # Standalone landing site branch
 /site/
+
+# Memo Docs
+/docs/*.txt

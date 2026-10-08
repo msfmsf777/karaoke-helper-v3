@@ -35,4 +35,71 @@ export async function removeSeparationJob(jobId: string): Promise<void> {
   console.log('[Jobs] Removed separation job', jobId);
 }
 
+/* ── Separation Environment Helpers ────────────────────────── */
+
+const getEnvApi = () => {
+  if (window.khelper?.separationEnv) return window.khelper.separationEnv;
+  throw new Error('SeparationEnv API is not available on window.khelper.separationEnv');
+};
+
+export async function getSeparationEnvStatus() {
+  return getEnvApi().getStatus();
+}
+
+export async function getGpuInfo() {
+  return getEnvApi().getGpuInfo();
+}
+
+export async function startInstallSeparationEnv(
+  mode: import('../../shared/separationTypes').SeparationEngineMode,
+  customTargetDir?: string
+) {
+  return getEnvApi().startInstall(mode, customTargetDir);
+}
+
+export async function cancelInstallSeparationEnv() {
+  return getEnvApi().cancelInstall();
+}
+
+export async function getSeparationDiskUsage() {
+  return getEnvApi().getDiskUsage();
+}
+
+export async function uninstallSeparationEnv() {
+  return getEnvApi().uninstall();
+}
+
+export async function pickSeparationFolder(): Promise<string | null> {
+  return getEnvApi().pickFolder();
+}
+
+export async function getSeparationStorageInfo() {
+  return getEnvApi().getStorageInfo();
+}
+
+export async function preflightSeparationTarget(targetPath: string) {
+  return getEnvApi().preflightTarget(targetPath);
+}
+
+export async function startSeparationMigration(targetPath: string) {
+  return getEnvApi().startMigration(targetPath);
+}
+
+export async function cancelSeparationMigration() {
+  return getEnvApi().cancelMigration();
+}
+
+export function subscribeSeparationEnvProgress(
+  callback: (progress: import('../../shared/separationTypes').SeparationInstallProgress) => void
+) {
+  return getEnvApi().subscribeProgress(callback);
+}
+
+export function subscribeSeparationMigrationProgress(
+  callback: (progress: import('../../shared/separationTypes').SeparationMigrationProgress) => void
+) {
+  return getEnvApi().subscribeMigrationProgress(callback);
+}
+
 export type { SeparationJob };
+

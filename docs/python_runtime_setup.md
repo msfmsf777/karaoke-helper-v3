@@ -41,29 +41,33 @@ The embeddable package is minimal and doesn't include `pip` by default. It also 
     - Run: `.\python.exe get-pip.py`
     - This will install `pip`, `setuptools`, and `wheel`.
 
-## Step 4: Install Requirements
-Now install the required packages for separation.
+## Step 4: Install Base Requirements
+Now install the base required packages (Japanese lyric processing):
 
 1.  In the terminal (still in `resources/python-runtime/`), run:
     ```powershell
-    .\python.exe -m pip install -r ..\separation\requirements.txt
+    .\python.exe -m pip install -r ..\requirements.txt
     ```
-    (Adjust the path to `requirements.txt` if necessary. It is located in `resources/separation/requirements.txt`).
+
+> [!NOTE]
+> **Audio Separation Packages (`audio-separator`, `torch`, etc.)**
+> Starting in v3.4+, heavy ML packages (PyTorch, ONNXRuntime, CUDA/CPU wheels) are **no longer bundled in the installer**.
+> Instead, they are installed dynamically on first separation use directly into user data:
+> `%APPDATA%\com.khelper.v3\separation-runtime`
+> This keeps the installer download slim (~120 MB), enables hardware-detected NVIDIA CUDA acceleration, and eliminates Windows UAC administrator privilege issues.
 
 ## Step 5: Verify Setup
-1.  Run the separation script help command to verify everything is working:
+1.  Verify the base Japanese furigana script:
     ```powershell
-    .\python.exe ..\separation\separate.py --help
+    .\python.exe ..\lyrics\jp_furigana.py --help
     ```
-    You should see the help output for the separation script.
+
+2.  For separation, you can let the KHelper app install the runtime via the UI, or manually test install:
+    ```powershell
+    .\python.exe -m pip install --prefix "%APPDATA%\com.khelper.v3\separation-runtime" "audio-separator[cpu]"
+    ```
 
 ## Development Usage
 When running KHelperLive in development mode (`npm run dev`), the app will automatically look for `resources/python-runtime/python.exe`.
 
-If you want to use a different Python environment (not recommended for testing the private runtime integration), you can set the environment variable `KHELPER_PYTHON_RUNTIME_PATH` to the full path of your python executable.
-
-## Updating Packages
-To update packages, simply run the pip install command again with the updated `requirements.txt` or specific package names.
-```powershell
-.\python.exe -m pip install -U some-package
-```
+If you want to use a different Python environment, you can set the environment variable `KHELPER_PYTHON_RUNTIME_PATH` to the full path of your python executable.

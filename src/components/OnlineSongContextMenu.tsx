@@ -19,6 +19,7 @@ import DownloadIcon from '../assets/icons/download.svg';
 import SeparateIcon from '../assets/icons/separate.svg';
 import LinkIcon from '../assets/icons/link.svg';
 import OpenExternalIcon from '../assets/icons/open_external.svg';
+import { useSeparationEnv } from '../contexts/SeparationEnvContext';
 
 interface OnlineSongContextMenuProps {
     song: SongMeta;
@@ -45,6 +46,7 @@ const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
     const downloadItemRef = useRef<HTMLDivElement>(null);
     const { playImmediate, addToQueue } = useQueue();
     const { isFavorite, toggleFavorite } = useUserData();
+    const { requestSeparation } = useSeparationEnv();
     const [adjustedPosition, setAdjustedPosition] = useState(position);
     const [activeSubmenu, setActiveSubmenu] = useState<'playlist' | 'download' | 'separation' | null>(null);
     const [playlistMenuPosition, setPlaylistMenuPosition] = useState({ x: 0, y: 0 });
@@ -246,11 +248,10 @@ const OnlineSongContextMenu: React.FC<OnlineSongContextMenuProps> = ({
                                                         e.stopPropagation();
                                                         if (isDisabled) return;
                                                         try {
-                                                            const { queueSeparationJob } = await import('../jobs/separationJobs');
-                                                            await queueSeparationJob(song.id, option.id as 'high' | 'normal' | 'fast');
+                                                            await requestSeparation(song.id, option.id as 'high' | 'normal' | 'fast');
                                                             onClose();
                                                         } catch (err) {
-                                                            console.error('Failed to queue separation', err);
+                                                            console.error('Failed to request separation', err);
                                                         }
                                                     }}
                                                     style={{

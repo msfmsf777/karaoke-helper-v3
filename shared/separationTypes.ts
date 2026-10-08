@@ -1,4 +1,4 @@
-export type SeparationJobStatus = 'queued' | 'running' | 'succeeded' | 'failed';
+export type SeparationJobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'waiting_for_engine';
 
 export interface SeparationJob {
   id: string;
@@ -9,4 +9,53 @@ export interface SeparationJob {
   errorMessage?: string;
   progress?: number;
   quality?: 'high' | 'normal' | 'fast';
+}
+
+export type SeparationEngineMode = 'gpu' | 'cpu';
+
+export type SeparationEnvStatusStage = 'not_installed' | 'installing' | 'ready' | 'error';
+
+export interface SeparationEnvStatus {
+  status: SeparationEnvStatusStage;
+  mode: SeparationEngineMode | null;
+  installedAt?: string;
+  vramMb?: number;
+  gpuModel?: string;
+  errorMessage?: string;
+  diskUsageBytes?: number;
+  customRuntimePath?: string;
+}
+
+export interface SeparationInstallProgress {
+  stage: 'preparing' | 'downloading' | 'installing' | 'verifying' | 'completed' | 'error';
+  percent: number;
+  message: string;
+  detail?: string;
+  error?: string;
+}
+
+export interface GpuDeviceInfo {
+  hasCapableGpu: boolean;
+  vendor: 'nvidia' | 'amd' | 'intel' | 'other';
+  modelName: string;
+  vramMb?: number;
+  driverVersion?: string;
+  recommendation: 'gpu' | 'cpu';
+  recommendationReason: string;
+}
+
+export interface SeparationStorageInfo {
+  currentPath: string;
+  isDefault: boolean;
+  totalBytes: number;
+  freeDriveBytes: number;
+  driveLetter: string;
+}
+
+export interface SeparationMigrationProgress {
+  status: 'idle' | 'preparing' | 'copying' | 'verifying' | 'completed' | 'failed' | 'cancelled';
+  transferredBytes: number;
+  totalBytes: number;
+  currentFile?: string;
+  error?: string;
 }

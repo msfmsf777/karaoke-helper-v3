@@ -46,19 +46,33 @@ export function useTaskCounts(): TaskCounts {
     return () => { unsub?.(); };
   }, []);
 
+  // Separation environment installation subscription
+  const [envProgress, setEnvProgress] = useState<import('../../shared/separationTypes').SeparationInstallProgress | null>(null);
+  useEffect(() => {
+    const unsub = window.khelper?.separationEnv?.subscribeProgress?.((p) => {
+      setEnvProgress(p);
+    });
+    return () => { unsub?.(); };
+  }, []);
+
   // Compute counts
   const isMigrationActive = migrationProgress?.status === 'running' || migrationProgress?.status === 'verifying';
   const isMigrationFailed = migrationProgress?.status === 'failed';
 
+  const isEnvActive = envProgress?.stage === 'preparing' || envProgress?.stage === 'downloading' || envProgress?.stage === 'installing' || envProgress?.stage === 'verifying';
+  const isEnvFailed = envProgress?.stage === 'error';
+
   const activeCount =
-    sepJobs.filter(j => j.status === 'queued' || j.status === 'running').length +
+    sepJobs.filter(j => j.status === 'queued' || j.status === 'running' || j.status === 'waiting_for_engine').length +
     dlJobs.filter(j => ['queued', 'downloading', 'processing'].includes(j.status)).length +
-    (isMigrationActive ? 1 : 0);
+    (isMigrationActive ? 1 : 0) +
+    (isEnvActive ? 1 : 0);
 
   const failedCount =
     sepJobs.filter(j => j.status === 'failed').length +
     dlJobs.filter(j => j.status === 'failed').length +
-    (isMigrationFailed ? 1 : 0);
+    (isMigrationFailed ? 1 : 0) +
+    (isEnvFailed ? 1 : 0);
 
   const hasFailures = failedCount > 0;
 

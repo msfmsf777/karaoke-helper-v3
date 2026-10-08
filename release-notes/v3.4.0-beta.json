@@ -1,0 +1,89 @@
+{
+  "version": "3.4.0-beta",
+  "locales": {
+    "zh-TW": {
+      "title": "KHelper v3.4.0 Beta (測試版本)",
+      "summary": "此版本僅供內部與測試用途。",
+      "sections": [
+        {
+          "title": "測試內容",
+          "items": [
+            "AI 人聲分離輕量化安裝與 GPU 硬體加速支援 (For testing only)"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "title": "KHelper v3.4.0 Beta (Testing)",
+      "summary": "This version is for testing only.",
+      "sections": [
+        {
+          "title": "Testing Changes",
+          "items": [
+            "Lightweight AI audio separation installation and GPU acceleration support (For testing only)"
+          ]
+        }
+      ]
+    },
+    "zh-CN": {
+      "title": "KHelper v3.4.0 Beta (测试版本)",
+      "summary": "此版本仅供内部与测试用途。",
+      "sections": [
+        {
+          "title": "测试内容",
+          "items": [
+            "AI 人声分离轻量化安装与 GPU 硬件加速支持 (For testing only)"
+          ]
+        }
+      ]
+    },
+    "ja": {
+      "title": "KHelper v3.4.0 Beta (テスト版)",
+      "summary": "このバージョンはテスト専用です。",
+      "sections": [
+        {
+          "title": "テスト内容",
+          "items": [
+            "AI ボーカル分離の軽量インストールと GPU ハードウェア加速 (For testing only)"
+          ]
+        }
+      ]
+    },
+    "ko": {
+      "title": "KHelper v3.4.0 Beta (테스트)",
+      "summary": "이 버전은 테스트 전용입니다.",
+      "sections": [
+        {
+          "title": "테스트 내용",
+          "items": [
+            "AI 보컬 분리 경량화 설치 및 GPU 가속 지원 (For testing only)"
+          ]
+        }
+      ]
+    },
+    "id": {
+      "title": "KHelper v3.4.0 Beta (Pengujian)",
+      "summary": "Versi ini hanya untuk pengujian.",
+      "sections": [
+        {
+          "title": "Pengujian",
+          "items": [
+            "Instalasi pemisahan vokal AI ringan dan dukungan akselerasi GPU (For testing only)"
+          ]
+        }
+      ]
+    },
+    "th": {
+      "title": "KHelper v3.4.0 Beta (สำหรับการทดสอบ)",
+      "summary": "เวอร์ชันนี้สำหรับการทดสอบเท่านั้น",
+      "sections": [
+        {
+          "title": "การทดสอบ",
+          "items": [
+            "การติดตั้งระบบแยกเสียงร้อง AI แบบประหยัดพื้นที่และการรองรับ GPU (For testing only)"
+          ]
+        }
+      ]
+    }
+  }
+}

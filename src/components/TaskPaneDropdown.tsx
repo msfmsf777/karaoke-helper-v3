@@ -4,6 +4,7 @@ import type { SeparationJob } from '../jobs/separationJobs';
 import { getAllJobs, subscribeJobUpdates, cancelSeparationJob, retrySeparationJob, removeSeparationJob } from '../jobs/separationJobs';
 import { loadAllSongs, SongMeta } from '../library/songLibrary';
 import { DownloadJob, MigrationProgress } from '../../shared/songTypes';
+import { useSeparationEnv } from '../contexts/SeparationEnvContext';
 
 interface TaskPaneDropdownProps {
   onClose: () => void;
@@ -17,6 +18,7 @@ const sepStatusColor = (status: SeparationJob['status']) => {
     case 'succeeded': return '#8be28b';
     case 'failed': return '#ff8b8b';
     case 'running': return '#e0a040';
+    case 'waiting_for_engine': return '#a5b4fc';
     default: return '#b3b3b3';
   }
 };
@@ -139,6 +141,9 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
 
   /* Download jobs state */
   const [dlJobs, setDlJobs] = useState<DownloadJob[]>([]);
+
+  /* Separation Engine state */
+  const { installProgress, isInstalling, cancelInstall, openSetupModal } = useSeparationEnv();
 
   const refreshSongs = useCallback(async () => {
     try {
@@ -301,6 +306,69 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
 
       {/* Scrollable body */}
       <div className="task-pane-scroll" style={{ flex: 1, overflowY: 'auto' }}>
+
+        {/* ── Separation Engine Setup Section ── */}
+        {(isInstalling || (installProgress && installProgress.stage === 'error')) && (
+          <div style={{ borderBottom: '1px solid #2a2a2a', padding: '12px 16px', background: 'rgba(99, 102, 241, 0.05)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>⚡</span>
+                <span>{t('tasks.separationEnv.title', 'AI 分離引擎配置')}</span>
+              </div>
+              <div style={{ fontSize: '11px', color: installProgress?.stage === 'error' ? '#ff8b8b' : '#a5b4fc', fontWeight: 600 }}>
+                {installProgress?.stage === 'error' ? `✗ ${t('tasks.failed')}` : `${installProgress?.percent ?? 0}%`}
+              </div>
+            </div>
+
+            <div style={{ fontSize: '12px', color: '#ccc', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {installProgress?.message || t('tasks.separationEnv.inProgress', '正在安裝分離引擎...')}
+            </div>
+
+            {isInstalling && (
+              <>
+                <ProgressBar value={installProgress?.percent ?? 0} color="#6366f1" />
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
+                  <button
+                    onClick={() => void cancelInstall()}
+                    style={{
+                      background: 'none',
+                      border: '1px solid #444',
+                      borderRadius: '4px',
+                      color: '#aaa',
+                      cursor: 'pointer',
+                      fontSize: '11px',
+                      padding: '2px 8px'
+                    }}
+                  >
+                    {t('common.cancel')}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {installProgress?.stage === 'error' && installProgress.error && (
+              <>
+                <ErrorBlock message={installProgress.error} defaultExpanded />
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
+                  <button
+                    onClick={() => openSetupModal()}
+                    style={{
+                      background: '#6366f1',
+                      border: 'none',
+                      borderRadius: '4px',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      fontSize: '11px',
+                      padding: '2px 8px'
+                    }}
+                  >
+                    {t('tasks.actions.retry', '重試')}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {/* ── Storage Migration Section ── */}
         {hasMigrationSection && migration && (

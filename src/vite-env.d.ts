@@ -87,6 +87,25 @@ interface Window {
         callback: (jobs: import('../shared/separationTypes').SeparationJob[]) => void
       ) => () => void;
     };
+    separationEnv: {
+      getStatus: () => Promise<import('../shared/separationTypes').SeparationEnvStatus>;
+      getGpuInfo: () => Promise<import('../shared/separationTypes').GpuDeviceInfo>;
+      startInstall: (mode: import('../shared/separationTypes').SeparationEngineMode, customTargetDir?: string) => Promise<void>;
+      cancelInstall: () => Promise<void>;
+      getDiskUsage: () => Promise<number>;
+      uninstall: () => Promise<void>;
+      pickFolder: () => Promise<string | null>;
+      getStorageInfo: () => Promise<import('../shared/separationTypes').SeparationStorageInfo>;
+      preflightTarget: (targetPath: string) => Promise<{ valid: boolean; freeBytes: number; error?: string }>;
+      startMigration: (targetPath: string) => Promise<import('../shared/separationTypes').SeparationMigrationProgress>;
+      cancelMigration: () => Promise<void>;
+      subscribeProgress: (
+        callback: (progress: import('../shared/separationTypes').SeparationInstallProgress) => void
+      ) => () => void;
+      subscribeMigrationProgress: (
+        callback: (progress: import('../shared/separationTypes').SeparationMigrationProgress) => void
+      ) => () => void;
+    };
     ipcRenderer: {
       on: (channel: string, listener: (event: any, ...args: any[]) => void) => () => void;
       off: (channel: string, listener: (event: any, ...args: any[]) => void) => void;

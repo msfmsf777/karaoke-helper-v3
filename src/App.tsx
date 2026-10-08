@@ -12,6 +12,8 @@ import { LibraryProvider, useLibrary } from './contexts/LibraryContext';
 import { QueueProvider, useQueue } from './contexts/QueueContext';
 import { UserDataProvider, useUserData } from './contexts/UserDataContext';
 import { UpdaterProvider } from './contexts/UpdaterContext';
+import { SeparationEnvProvider } from './contexts/SeparationEnvContext';
+import { SeparationSetupModal } from './components/SeparationSetupModal';
 import SkeletonSongList from './components/skeletons/SkeletonSongList';
 import { acceleratorFromKeyboardEvent, HOTKEY_ACTIONS, HotkeyAction, normalizeAccelerator } from '../shared/hotkeys';
 
@@ -561,7 +563,10 @@ function App() {
       <QueueProvider>
         <UserDataProvider>
           <UpdaterProvider>
-            <AppContent />
+            <SeparationEnvProvider>
+              <AppContent />
+              <SeparationSetupModal />
+            </SeparationEnvProvider>
           </UpdaterProvider>
         </UserDataProvider>
       </QueueProvider>

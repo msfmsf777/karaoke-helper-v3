@@ -79,6 +79,15 @@ function normalizeSettings(settings: Partial<UserSettings> | null | undefined): 
         songListViews: mergeSongListViewConfigs(parsed.songListViews),
         overlayTemplates: mergeOverlayTemplatesConfig(parsed.overlayTemplates, parsed.lyricStyles),
         analytics: normalizeAnalyticsSettings(parsed.analytics),
+        separationEngine: parsed.separationEngine ? {
+            mode: parsed.separationEngine.mode === 'gpu' ? 'gpu' : 'cpu',
+            installedAt: parsed.separationEngine.installedAt,
+            vramMb: parsed.separationEngine.vramMb,
+            gpuModel: parsed.separationEngine.gpuModel,
+            customRuntimePath: typeof parsed.separationEngine.customRuntimePath === 'string' && parsed.separationEngine.customRuntimePath.trim().length > 0
+                ? parsed.separationEngine.customRuntimePath.trim()
+                : undefined,
+        } : undefined,
         customSongsPath: typeof parsed.customSongsPath === 'string' && parsed.customSongsPath.trim().length > 0
             ? parsed.customSongsPath.trim()
             : undefined,
@@ -320,6 +329,13 @@ export interface UserSettings {
     songListViews?: SongListViewConfigs;
     overlayTemplates?: OverlayTemplatesConfig;
     analytics?: AnalyticsSettings;
+    separationEngine?: {
+        mode: 'gpu' | 'cpu';
+        installedAt?: string;
+        vramMb?: number;
+        gpuModel?: string;
+        customRuntimePath?: string;
+    };
     customSongsPath?: string;
 }
 

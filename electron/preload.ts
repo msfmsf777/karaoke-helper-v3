@@ -1,6 +1,14 @@
 import { ipcRenderer, contextBridge, type IpcRendererEvent } from 'electron'
 import type { SongMeta, SongType, DownloadJob, StorageInfo, StoragePreflightResult, MigrationProgress } from '../shared/songTypes'
-import type { SeparationJob } from '../shared/separationTypes'
+import type {
+  SeparationJob,
+  SeparationEnvStatus,
+  SeparationInstallProgress,
+  SeparationEngineMode,
+  GpuDeviceInfo,
+  SeparationStorageInfo,
+  SeparationMigrationProgress,
+} from '../shared/separationTypes'
 import type { HotkeyAction, HotkeyRegistrationStatus } from '../shared/hotkeys'
 import type {
   LyricsOverlayDesign,
@@ -160,6 +168,32 @@ contextBridge.exposeInMainWorld('khelper', {
         ipcRenderer.send('jobs:unsubscribe', subscriptionId)
         ipcRenderer.off('jobs:updated', listener)
       }
+    },
+  },
+  separationEnv: {
+    getStatus: (): Promise<SeparationEnvStatus> => ipcRenderer.invoke('separationEnv:get-status'),
+    getGpuInfo: (): Promise<GpuDeviceInfo> => ipcRenderer.invoke('separationEnv:get-gpu-info'),
+    startInstall: (mode: SeparationEngineMode, customTargetDir?: string): Promise<void> =>
+      ipcRenderer.invoke('separationEnv:start-install', mode, customTargetDir),
+    cancelInstall: (): Promise<void> => ipcRenderer.invoke('separationEnv:cancel-install'),
+    getDiskUsage: (): Promise<number> => ipcRenderer.invoke('separationEnv:get-disk-usage'),
+    uninstall: (): Promise<void> => ipcRenderer.invoke('separationEnv:uninstall'),
+    pickFolder: (): Promise<string | null> => ipcRenderer.invoke('separationEnv:pick-folder'),
+    getStorageInfo: (): Promise<SeparationStorageInfo> => ipcRenderer.invoke('separationEnv:get-storage-info'),
+    preflightTarget: (targetPath: string): Promise<{ valid: boolean; freeBytes: number; error?: string }> =>
+      ipcRenderer.invoke('separationEnv:preflight-target', targetPath),
+    startMigration: (targetPath: string): Promise<SeparationMigrationProgress> =>
+      ipcRenderer.invoke('separationEnv:start-migration', targetPath),
+    cancelMigration: (): Promise<void> => ipcRenderer.invoke('separationEnv:cancel-migration'),
+    subscribeProgress: (callback: (progress: SeparationInstallProgress) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, progress: SeparationInstallProgress) => callback(progress)
+      ipcRenderer.on('separationEnv:progress', listener)
+      return () => ipcRenderer.off('separationEnv:progress', listener)
+    },
+    subscribeMigrationProgress: (callback: (progress: SeparationMigrationProgress) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, progress: SeparationMigrationProgress) => callback(progress)
+      ipcRenderer.on('separationEnv:migration-progress', listener)
+      return () => ipcRenderer.off('separationEnv:migration-progress', listener)
     },
   },
   downloads: {

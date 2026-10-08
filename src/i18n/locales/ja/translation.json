@@ -57,6 +57,40 @@
       "high": "高品質",
       "highDescription": "時間はかかりますが、最良の分離結果が得られます。"
     },
+    "separationEngine": {
+      "title": "AI 分離エンジンとハードウェアアクセラレーション",
+      "confirmUninstall": "分離エンジンを削除してもよろしいですか？ディスク容量が解放されますが、次回分離時に再インストールが必要になります。",
+      "modeGpuActive": "NVIDIA GPU ハードウェアアクセラレーション (CUDA)",
+      "modeCpuActive": "標準 CPU 処理モード",
+      "installing": "分離エンジンをインストール中...",
+      "notInstalled": "分離エンジン未設定",
+      "hardwareUnknown": "ハードウェア検出完了",
+      "diskUsage": "使用容量",
+      "btnReconfigure": "モード切替 / 再設定",
+      "btnUninstall": "容量を解放",
+      "btnViewProgress": "進行状況を確認",
+      "btnConfigureNow": "エンジンを設定する",
+      "upgradeAvailable": "NVIDIA GPU が検出されました！",
+      "upgradeDesc": "GPU 加速にアップグレードすると、分離時間を大幅に短縮できます（1曲あたり約 15〜30 秒）。",
+      "btnUpgradeGpu": "GPU 加速にアップグレード",
+      "storageLocationTitle": "分離エンジンの保存場所",
+      "defaultBadge": "デフォルト AppData (C ドライブ)",
+      "customBadge": "カスタムフォルダー",
+      "openInExplorer": "エクスプローラーで開く",
+      "btnChangeLocation": "保存場所を変更...",
+      "freeDriveSpace": "空き容量",
+      "migrationTitle": "AI 分離エンジンの保存先を変更",
+      "currentFolder": "現在の保存先フォルダー",
+      "selectNewFolder": "新しい保存先フォルダーを選択",
+      "pickFolderPlaceholder": "「参照」をクリックしてフォルダーを選択...",
+      "browse": "参照...",
+      "preflightPassed": "十分な空き容量があります（空き: {{space}}）",
+      "verifyingIntegrity": "ファイルの整合性を検証中...",
+      "movingFiles": "分離環境ファイルを移動中...",
+      "migrationCompleted": "分離エンジンの移行が完了しました！",
+      "migrationCompletedDesc": "新しい保存先に正常に移動されました。以後の音声分離は新しいフォルダーから実行されます。",
+      "startMigration": "移行を開始"
+    },
     "storage": {
       "title": "楽曲ライブラリの保存場所",
       "description": "楽曲、AI ボーカル分離トラック、歌詞、サムネイルの保存場所を管理します。",
@@ -245,7 +279,12 @@
       "queued": "キューに入れられました",
       "running": "処理中",
       "succeeded": "完了",
-      "failed": "失敗しました"
+      "failed": "失敗しました",
+      "waiting_for_engine": "エンジン準備待ち..."
+    },
+    "separationEnv": {
+      "title": "AI 分離エンジン設定",
+      "inProgress": "分離エンジンをインストール中..."
     },
     "quality": {
       "fast": "速い",
@@ -958,5 +997,28 @@
       "obsLinkDescription": "OBS リンクでは、選択したデザインとアプリ言語が使用されます。",
       "emptyStateDescription": "未再生またはライブモード待機中に、OBS セットリストオーバーレイで待機テキストを表示するか内容を隠すかを設定します。"
     }
+  },
+  "separationSetup": {
+    "title": "AI ボーカル分離エンジン設定",
+    "subtitle": "初回の音声分離には AI 依存パッケージが必要です。ダウンロード後はローカルに保存され、アプリ更新後も再ダウンロードは不要です。",
+    "badgeCudaReady": "CUDA 加速対応",
+    "detecting": "ハードウェア加速機能を検出中...",
+    "gpuTitle": "NVIDIA GPU ハードウェアアクセラレーション",
+    "recommended": "推奨",
+    "gpuDesc": "NVIDIA Tensor コアを活用し、わずか数十秒で超高速分離を実行します。約 1.8 GB の PyTorch CUDA 依存関係が必要です。",
+    "cpuTitle": "標準 CPU 処理モード",
+    "cpuDesc": "すべての PC と互換性があります。プロセッサで実行するためダウンロード容量は小さめ（約 600 MB）ですが、処理時間は大幅に長くなります。",
+    "installingTitle": "分離エンジンをインストール中...",
+    "errorOccurred": "インストール中にエラーが発生しました",
+    "backgroundHint": "ダウンロード容量が大きいため、下の「バックグラウンドで続行」をクリックして右上のタスク画面で進行状況を確認しながら楽曲を操作できます。",
+    "autoResumeHint": "準備が完了すると、選択した楽曲の分離が自動的に開始されます。",
+    "btnInstallGpu": "GPU 加速をインストールして有効化",
+    "btnInstallCpu": "CPU エンジンをインストール",
+    "btnCancelInstall": "インストールをキャンセル",
+    "btnBackground": "バックグラウンドで続行 ▾",
+    "storageLocation": "インストール保存先",
+    "btnChangeFolder": "フォルダーを変更...",
+    "defaultBadge": "デフォルト AppData",
+    "customBadge": "カスタムフォルダー"
   }
 }

@@ -5,6 +5,7 @@ import { useQueue } from '../contexts/QueueContext';
 import { useUserData } from '../contexts/UserDataContext';
 import { useLibrary } from '../contexts/LibraryContext';
 import { useDownloadJobs } from '../hooks/useDownloadJobs';
+import { useSeparationEnv } from '../contexts/SeparationEnvContext';
 import SongContextMenu from './SongContextMenu';
 import OnlineSongContextMenu from './OnlineSongContextMenu';
 import AddToPlaylistMenu from './AddToPlaylistMenu';
@@ -63,6 +64,7 @@ const SongRow: React.FC<SongRowProps> = ({
     const { isFavorite, toggleFavorite } = useUserData();
     const { allSongs, refreshSongs } = useLibrary();
     const downloadJobs = useDownloadJobs();
+    const { requestSeparation } = useSeparationEnv();
     const [isHovered, setIsHovered] = useState(false);
     const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
     const [showAddToPlaylistMenu, setShowAddToPlaylistMenu] = useState<{ x: number; y: number } | null>(null);
@@ -299,10 +301,9 @@ const SongRow: React.FC<SongRowProps> = ({
                                             onClick={async (e) => {
                                                 e.stopPropagation();
                                                 try {
-                                                    const { queueSeparationJob } = await import('../jobs/separationJobs');
-                                                    await queueSeparationJob(song.id);
+                                                    await requestSeparation(song.id);
                                                 } catch (err) {
-                                                    console.error('Failed to queue separation', err);
+                                                    console.error('Failed to request separation', err);
                                                 }
                                             }}
                                             style={{

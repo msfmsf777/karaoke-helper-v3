@@ -1,6 +1,9 @@
-# JPN lyrics
+# Base Python requirements bundled in the installer
+# JPN lyrics (lightweight, ~35MB, bundled directly so Japanese lyrics furigana works offline immediately)
 fugashi[unidic-lite]
 cutlet
 
-# Audio separation
-audio-separator[cpu]
+# Note: Audio separation (audio-separator, torch, onnxruntime, CUDA/CPU wheels)
+# is now installed dynamically on first use into %APPDATA%/com.khelper.v3/separation-runtime
+# via electron/separationEnvManager.ts. This keeps installer download small (~120MB vs ~1.4GB)
+# and enables full NVIDIA CUDA GPU acceleration when capable hardware is detected.

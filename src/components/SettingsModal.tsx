@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import audioEngine, { OutputRole } from '../audio/AudioEngine';
 import { useUserData } from '../contexts/UserDataContext';
+import { SeparationSettingsSection } from './SeparationSettingsSection';
 
 interface SettingsModalProps {
   open: boolean;
@@ -150,6 +151,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           <div style={{ borderTop: '1px solid #3a3a3a', paddingTop: '16px', marginTop: '8px' }}>
+            <SeparationSettingsSection />
+
             <label style={{ display: 'block', marginBottom: '12px', color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>
               {t('settings.separation.title')}
             </label>

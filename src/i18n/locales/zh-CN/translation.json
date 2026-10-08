@@ -57,6 +57,40 @@
       "high": "高品质",
       "highDescription": "需要更长的时间，但可提供最佳的分离结果。"
     },
+    "separationEngine": {
+      "title": "AI 分离引擎与硬件加速",
+      "confirmUninstall": "确定要移除分离引擎吗？此操作将释放磁盘空间，下次分离歌曲时需要重新安装。",
+      "modeGpuActive": "NVIDIA GPU 硬件加速 (CUDA)",
+      "modeCpuActive": "标准 CPU 处理模式",
+      "installing": "正在安装分离引擎...",
+      "notInstalled": "尚未配置分离引擎",
+      "hardwareUnknown": "硬件检测完成",
+      "diskUsage": "占用空间",
+      "btnReconfigure": "切换模式 / 重新配置",
+      "btnUninstall": "释放空间",
+      "btnViewProgress": "查看进度",
+      "btnConfigureNow": "立即配置引擎",
+      "upgradeAvailable": "检测到独立 NVIDIA 显卡！",
+      "upgradeDesc": "升级至 GPU 加速可大幅缩短分离耗时（每首歌约 15–30 秒）。",
+      "btnUpgradeGpu": "升级 GPU 加速",
+      "storageLocationTitle": "分离引擎存储位置",
+      "defaultBadge": "默认 AppData (C: 盘)",
+      "customBadge": "自定义目录",
+      "openInExplorer": "在文件资源管理器中打开",
+      "btnChangeLocation": "更改存储位置...",
+      "freeDriveSpace": "该磁盘剩余空间",
+      "migrationTitle": "更改 AI 分离引擎存储目录",
+      "currentFolder": "当前存储目录",
+      "selectNewFolder": "选择新存储目录",
+      "pickFolderPlaceholder": "请点击浏览选择新目录...",
+      "browse": "浏览...",
+      "preflightPassed": "磁盘空间充足，可用空间：{{space}}",
+      "verifyingIntegrity": "正在校验文件完整性...",
+      "movingFiles": "正在迁移分离环境文件...",
+      "migrationCompleted": "分离引擎目录迁移完成！",
+      "migrationCompletedDesc": "已成功将分离引擎迁移至新目录，日后分离歌曲将直接自新位置调用。",
+      "startMigration": "开始迁移"
+    },
     "storage": {
       "title": "歌曲库存储位置",
       "description": "管理您的歌曲原文件、AI 分离人声与伴奏、歌词以及缩略图在电脑上的存储目录。",
@@ -245,7 +279,12 @@
       "queued": "排队",
       "running": "处理中",
       "succeeded": "已完成",
-      "failed": "失败"
+      "failed": "失败",
+      "waiting_for_engine": "等待引擎安装..."
+    },
+    "separationEnv": {
+      "title": "AI 分离引擎配置",
+      "inProgress": "正在安装分离引擎..."
     },
     "quality": {
       "fast": "快速",
@@ -958,5 +997,28 @@
       "obsLinkDescription": "OBS 链接会使用当前选择的设计与 App 语言。",
       "emptyStateDescription": "当目前没有播放歌曲或直播模式正在等待时，控制 OBS 歌单覆盖显示等待文字或隐藏内容。"
     }
+  },
+  "separationSetup": {
+    "title": "AI 人声分离引擎配置",
+    "subtitle": "初次使用需配置 AI 分离依赖包。配置完成后将永久保存在本机，软件更新无需重新下载。",
+    "badgeCudaReady": "支持 CUDA 加速",
+    "detecting": "系统正在分析硬件加速能力...",
+    "gpuTitle": "NVIDIA GPU 硬件加速",
+    "recommended": "强烈推荐",
+    "gpuDesc": "利用 NVIDIA 显卡 Tensor Core 极速分离，处理时间缩减至几十秒。需要下载约 1.8 GB PyTorch CUDA 依赖。",
+    "cpuTitle": "标准 CPU 处理模式",
+    "cpuDesc": "兼容所有电脑。由处理器运算，下载体积较小（约 600 MB），但高品质模式耗时显著较长。",
+    "installingTitle": "正在安装分离引擎...",
+    "errorOccurred": "安装发生错误",
+    "backgroundHint": "下载文件较大，您可以点击下方“在后台继续运行”，安装过程将在右上角任务面板持续显示，您可以正常浏览歌曲。",
+    "autoResumeHint": "安装就绪后，系统将自动开始分离您所选取的歌曲。",
+    "btnInstallGpu": "安装并启用 GPU 加速",
+    "btnInstallCpu": "安装 CPU 引擎",
+    "btnCancelInstall": "取消安装",
+    "btnBackground": "在后台继续运行 ▾",
+    "storageLocation": "安装存储位置",
+    "btnChangeFolder": "更改目录...",
+    "defaultBadge": "默认 AppData",
+    "customBadge": "自定义目录"
   }
 }

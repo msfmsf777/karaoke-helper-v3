@@ -10,6 +10,8 @@ import { trackAnalytics } from './analytics';
 import { categorizeAnalyticsFailure, durationBucketFromMilliseconds } from '../shared/analytics';
 import { spawn, execSync, ChildProcess } from 'node:child_process';
 import { loadSettings } from './userData';
+import { separationEnvManager } from './separationEnvManager';
+import { existsSync } from 'node:fs';
 
 type JobSubscriber = (jobs: SeparationJob[]) => void;
 
@@ -28,7 +30,17 @@ async function runDemucsSeparation(
   onProcess?: (proc: ChildProcess) => void
 ): Promise<{ instrumentalPath: string; vocalPath: string }> {
   const pythonPath = await getPythonPath();
-  console.log('[Separation] Starting MDX separation', { originalPath, songFolder, quality, pythonPath, modelDir });
+  const settings = await loadSettings();
+  const engineMode = settings.separationEngine?.mode || 'cpu';
+
+  console.log('[Separation] Starting MDX separation', {
+    originalPath,
+    songFolder,
+    quality,
+    pythonPath,
+    modelDir,
+    engineMode,
+  });
 
   let scriptPath: string;
   if (app.isPackaged) {
@@ -45,10 +57,24 @@ async function runDemucsSeparation(
     binDir = path.join(process.cwd(), 'resources', 'bin');
   }
 
-  // Inject binDir into PATH for the child process so Demucs can find ffmpeg
+  // Inject binDir into PATH for the child process so Demucs/ffmpeg can be found
   const env = { ...process.env };
   const pathKey = process.platform === 'win32' ? 'Path' : 'PATH';
   env[pathKey] = `${binDir}${path.delimiter}${env[pathKey] || ''}`;
+
+  // Inject dynamically installed separation packages path
+  const packagesDir = separationEnvManager.getSeparationPackagesDir();
+  if (existsSync(packagesDir)) {
+    env['KHELPER_SEPARATION_PACKAGES'] = packagesDir;
+    // Prepend torch/lib to PATH so C++ DLLs (cublas, cudnn) are resolved by ONNX Runtime & PyTorch
+    const torchLib = path.join(packagesDir, 'torch', 'lib');
+    if (existsSync(torchLib)) {
+      env[pathKey] = `${torchLib}${path.delimiter}${env[pathKey] || ''}`;
+    }
+  }
+
+  // Inject engine mode into environment
+  env['KHELPER_SEPARATION_MODE'] = engineMode;
 
   return new Promise((resolve, reject) => {
     const python = spawn(pythonPath, [
@@ -58,7 +84,8 @@ async function runDemucsSeparation(
       '--quality', quality,
       '--model-dir', modelDir,
       '--output-format', 'mp3',
-      '--bitrate', '320k'
+      '--bitrate', '320k',
+      '--device', engineMode === 'gpu' ? 'cuda' : 'cpu',
     ], { env });
 
     // Notify caller of the actual process handle immediately after spawn
@@ -77,6 +104,8 @@ async function runDemucsSeparation(
             parseResult = msg;
           } else if (msg.status === 'progress' && typeof msg.progress === 'number') {
             onProgress?.(msg.progress);
+          } else if (msg.status === 'device_info') {
+            console.log('[Separation] Hardware engine status:', msg);
           } else if (msg.error) {
             reject(new Error(`${msg.error} ${msg.details || ''}`));
           }
@@ -120,6 +149,26 @@ class SeparationJobManager {
     this.initialized = true;
     await this.loadJobs();
     await this.recoverOrphanedSongs();
+
+    // Auto-resume queue when separation engine becomes ready
+    separationEnvManager.subscribeProgress((progress) => {
+      if (progress.stage === 'completed') {
+        console.log('[Separation] Separation engine ready, resuming queued jobs...');
+        let changed = false;
+        this.jobs = this.jobs.map((j) => {
+          if (j.status === 'waiting_for_engine') {
+            changed = true;
+            return { ...j, status: 'queued' as const, progress: 0 };
+          }
+          return j;
+        });
+        if (changed) {
+          this.notify();
+          void this.processQueue();
+        }
+      }
+    });
+
     // Auto-resume any queued jobs from previous session
     void this.processQueue();
   }
@@ -163,8 +212,8 @@ class SeparationJobManager {
         console.log('[Separation] Reset interrupted running jobs to queued for auto-retry');
         await this.saveJobs();
       }
-    } catch (err: any) {
-      if (err.code !== 'ENOENT') {
+    } catch (err: unknown) {
+      if ((err as { code?: string })?.code !== 'ENOENT') {
         console.error('[Separation] Failed to load jobs', err);
       }
       // No file = first run, jobs stays empty
@@ -253,6 +302,17 @@ class SeparationJobManager {
       const meta = await getSongMeta(job.songId);
       if (!meta) {
         throw new Error(`Song ${job.songId} not found for separation`);
+      }
+
+      // Check separation engine readiness
+      const envStatus = await separationEnvManager.getStatus();
+      if (envStatus.status === 'installing') {
+        console.log(`[Separation] Waiting for engine installation before running job ${job.id}`);
+        this.updateJob(job.id, { status: 'waiting_for_engine', progress: 0, errorMessage: undefined });
+        this.notify();
+        return;
+      } else if (envStatus.status !== 'ready') {
+        throw new Error(envStatus.errorMessage || '分離引擎尚未就緒，請先安裝分離套件');
       }
 
       await updateSongMeta(job.songId, (current) => ({

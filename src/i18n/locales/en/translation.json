@@ -57,6 +57,40 @@
       "high": "High Quality",
       "highDescription": "Takes longer, but provides the best separation result."
     },
+    "separationEngine": {
+      "title": "AI Vocal Separation Engine & Hardware Acceleration",
+      "confirmUninstall": "Are you sure you want to remove the separation engine? This will free disk space, but you will need to reinstall it the next time you separate a song.",
+      "modeGpuActive": "NVIDIA GPU Hardware Acceleration (CUDA)",
+      "modeCpuActive": "Standard CPU Processing Mode",
+      "installing": "Installing separation engine...",
+      "notInstalled": "Separation engine not configured",
+      "hardwareUnknown": "Hardware check complete",
+      "diskUsage": "Disk space used",
+      "btnReconfigure": "Switch Mode / Reconfigure",
+      "btnUninstall": "Reclaim Space",
+      "btnViewProgress": "View Progress",
+      "btnConfigureNow": "Configure Engine Now",
+      "upgradeAvailable": "Dedicated NVIDIA GPU detected!",
+      "upgradeDesc": "Upgrade to GPU acceleration for up to 30x faster separation (~15–30s per song).",
+      "btnUpgradeGpu": "Upgrade to GPU Acceleration",
+      "storageLocationTitle": "Separation Engine Storage Location",
+      "defaultBadge": "Default AppData (C: Drive)",
+      "customBadge": "Custom Directory",
+      "openInExplorer": "Open in File Explorer",
+      "btnChangeLocation": "Change Storage Location...",
+      "freeDriveSpace": "Free Drive Space",
+      "migrationTitle": "Change AI Separation Engine Storage",
+      "currentFolder": "Current Storage Directory",
+      "selectNewFolder": "Select New Storage Directory",
+      "pickFolderPlaceholder": "Click browse to select a new folder...",
+      "browse": "Browse...",
+      "preflightPassed": "Sufficient disk space available: {{space}}",
+      "verifyingIntegrity": "Verifying runtime integrity...",
+      "movingFiles": "Moving separation runtime files...",
+      "migrationCompleted": "Separation engine migration completed!",
+      "migrationCompletedDesc": "Successfully moved the separation engine to the new location. Future separations will run directly from here.",
+      "startMigration": "Start Migration"
+    },
     "storage": {
       "title": "Song Library Storage",
       "description": "Manage where your songs, AI vocal separation stems, and lyrics are stored on your computer.",
@@ -245,7 +279,12 @@
       "queued": "Queued",
       "running": "Processing",
       "succeeded": "Completed",
-      "failed": "Failed"
+      "failed": "Failed",
+      "waiting_for_engine": "Waiting for engine installation..."
+    },
+    "separationEnv": {
+      "title": "AI Separation Engine Setup",
+      "inProgress": "Installing separation engine..."
     },
     "quality": {
       "fast": "Fast",
@@ -958,5 +997,28 @@
       "obsLinkDescription": "OBS links use the selected design and app language.",
       "emptyStateDescription": "Choose whether OBS setlist overlays show waiting text or stay hidden when nothing is playing or Stream Mode is waiting."
     }
+  },
+  "separationSetup": {
+    "title": "AI Vocal Separation Engine Setup",
+    "subtitle": "Audio separation requires AI dependencies. Once downloaded, runtime packages are saved permanently to your device and won't need to be re-downloaded after app updates.",
+    "badgeCudaReady": "CUDA Acceleration Available",
+    "detecting": "Detecting hardware acceleration capabilities...",
+    "gpuTitle": "NVIDIA GPU Hardware Acceleration",
+    "recommended": "Recommended",
+    "gpuDesc": "Leverage NVIDIA Tensor Cores for ultra-fast separation in seconds. Requires downloading ~1.8 GB PyTorch CUDA dependencies.",
+    "cpuTitle": "Standard CPU Processing",
+    "cpuDesc": "Compatible with all PCs. Runs on your processor with smaller download size (~600 MB), but separation will take considerably longer.",
+    "installingTitle": "Installing Separation Engine...",
+    "errorOccurred": "An error occurred during installation",
+    "backgroundHint": "This is a large download. You can click 'Continue in Background' below to keep browsing songs while installation continues in the top-right task pane.",
+    "autoResumeHint": "Once ready, the system will automatically start separating your selected song.",
+    "btnInstallGpu": "Install & Enable GPU Acceleration",
+    "btnInstallCpu": "Install CPU Engine",
+    "btnCancelInstall": "Cancel Installation",
+    "btnBackground": "Continue in Background ▾",
+    "storageLocation": "Installation Storage Location",
+    "btnChangeFolder": "Change Folder...",
+    "defaultBadge": "Default AppData",
+    "customBadge": "Custom Directory"
   }
 }
