@@ -333,7 +333,32 @@ function createWindow() {
   })
 
   ipcMain.handle('shell:open-external', async (_event, url: string) => {
-    await shell.openExternal(url)
+    try {
+      if (url.startsWith('file://')) {
+        let filePath = decodeURIComponent(url.replace(/^file:\/\/\/?/, ''))
+        if (process.platform === 'win32' && !/^[a-zA-Z]:/.test(filePath) && /^\/[a-zA-Z]:/.test(filePath)) {
+          filePath = filePath.substring(1)
+        }
+        if (fs.existsSync(filePath)) {
+          await shell.openPath(filePath)
+          return
+        }
+        try {
+          await fs.promises.mkdir(filePath, { recursive: true })
+          await shell.openPath(filePath)
+          return
+        } catch {
+          const parent = path.dirname(filePath)
+          if (fs.existsSync(parent)) {
+            await shell.openPath(parent)
+            return
+          }
+        }
+      }
+      await shell.openExternal(url)
+    } catch (err) {
+      console.warn('[main] Failed to open external URL:', url, err)
+    }
   })
 
   // Save state on close
@@ -835,8 +860,8 @@ ipcMain.handle('separationEnv:get-storage-info', async () => {
   return separationEnvManager.getStorageInfo()
 })
 
-ipcMain.handle('separationEnv:preflight-target', async (_event, targetPath: string) => {
-  return separationEnvManager.preflightTargetFolder(targetPath)
+ipcMain.handle('separationEnv:preflight-target', async (_event, targetPath: string, options?: { forMigration?: boolean }) => {
+  return separationEnvManager.preflightTargetFolder(targetPath, options)
 })
 
 ipcMain.handle('separationEnv:start-migration', async (_event, targetPath: string) => {

@@ -96,7 +96,7 @@ interface Window {
       uninstall: () => Promise<void>;
       pickFolder: () => Promise<string | null>;
       getStorageInfo: () => Promise<import('../shared/separationTypes').SeparationStorageInfo>;
-      preflightTarget: (targetPath: string) => Promise<{ valid: boolean; freeBytes: number; error?: string }>;
+      preflightTarget: (targetPath: string, options?: { forMigration?: boolean }) => Promise<{ valid: boolean; freeBytes: number; error?: string }>;
       startMigration: (targetPath: string) => Promise<import('../shared/separationTypes').SeparationMigrationProgress>;
       cancelMigration: () => Promise<void>;
       switchMode: (mode: import('../shared/separationTypes').SeparationEngineMode) => Promise<{ success: boolean; mode?: import('../shared/separationTypes').SeparationEngineMode; requiresInstall?: boolean; error?: string }>;

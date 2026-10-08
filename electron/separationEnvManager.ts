@@ -36,6 +36,8 @@ class SeparationEnvManager {
   private currentMigrationProgress: SeparationMigrationProgress | null = null;
   private isMigrating = false;
   private migrationAbortController: AbortController | null = null;
+  private cachedDiskUsage: { path: string; bytes: number } | null = null;
+  private isCalculatingDiskUsage = false;
 
   getSeparationEnvDir(): string {
     if (this.cachedCustomRuntimePath) {
@@ -63,8 +65,9 @@ class SeparationEnvManager {
 
   async initFromSettings(): Promise<void> {
     const settings = await loadSettings();
-    if (settings.separationEngine?.customRuntimePath) {
-      this.setCustomRuntimePath(settings.separationEngine.customRuntimePath);
+    const customPath = settings.separationEngine?.customRuntimePath || settings.customRuntimePath;
+    if (customPath) {
+      this.setCustomRuntimePath(customPath);
     }
   }
 
@@ -182,6 +185,13 @@ class SeparationEnvManager {
       this.verifiedReady = true;
       this.lastError = null;
 
+      // Cache totalBytes in memory if present in meta, otherwise calculate lazily in background
+      if (typeof meta.totalBytes === 'number' && meta.totalBytes > 0) {
+        this.cachedDiskUsage = { path: currentEnvDir, bytes: meta.totalBytes };
+      } else if (!this.isCalculatingDiskUsage) {
+        void this.updateDiskUsageInBackground(currentEnvDir);
+      }
+
       // Auto-sync settings if missing or out-of-sync
       if (!settings.separationEngine || settings.separationEngine.mode !== activeMode || settings.separationEngine.customRuntimePath !== (this.isCustomPath() ? currentEnvDir : undefined)) {
         await saveSettings({
@@ -237,6 +247,7 @@ class SeparationEnvManager {
         torchCuda: probeMode === 'gpu',
       };
       await this.writeRuntimeMeta(newMeta, currentEnvDir);
+      void this.updateDiskUsageInBackground(currentEnvDir);
       await saveSettings({
         ...settings,
         separationEngine: {
@@ -370,10 +381,12 @@ class SeparationEnvManager {
           ...settings.separationEngine,
           customRuntimePath: this.isCustomPath() ? this.getSeparationEnvDir() : undefined,
         } : undefined,
+        customRuntimePath: this.isCustomPath() ? this.getSeparationEnvDir() : undefined,
       });
     }
     this.verifiedReady = false;
     this.lastError = null;
+    this.cachedDiskUsage = null;
     return await this.getStatus();
   }
 
@@ -432,6 +445,17 @@ sys.exit(0)
     if (process.platform !== 'win32') return 100 * 1024 * 1024 * 1024;
 
     try {
+      if (typeof fs.statfs === 'function') {
+        const stats = await fs.statfs(targetDir);
+        if (typeof stats.bavail === 'number' && typeof stats.bsize === 'number') {
+          return stats.bavail * stats.bsize;
+        }
+      }
+    } catch {
+      // Fallback to powershell below if statfs is not supported
+    }
+
+    try {
       const driveLetter = path.parse(targetDir).root.replace('\\', '');
       const { stdout } = await execAsync(
         `powershell -NoProfile -Command "(Get-PSDrive -Name '${driveLetter.replace(':', '')}').Free"`,
@@ -469,7 +493,10 @@ sys.exit(0)
   /**
    * Preflights a target folder to ensure it is valid, writable, and has sufficient disk space.
    */
-  async preflightTargetFolder(targetInputPath: string): Promise<{ valid: boolean; freeBytes: number; error?: string }> {
+  async preflightTargetFolder(
+    targetInputPath: string,
+    options?: { forMigration?: boolean }
+  ): Promise<{ valid: boolean; freeBytes: number; error?: string }> {
     if (!targetInputPath || typeof targetInputPath !== 'string' || targetInputPath.trim().length === 0) {
       return { valid: false, freeBytes: 0, error: '請選擇有效目錄' };
     }
@@ -477,18 +504,20 @@ sys.exit(0)
     const targetPath = path.resolve(targetInputPath.trim());
     const currentDir = path.resolve(this.getSeparationEnvDir());
 
-    if (targetPath.toLowerCase() === currentDir.toLowerCase()) {
-      return { valid: false, freeBytes: 0, error: '目標目錄不可與目前目錄相同' };
-    }
+    if (options?.forMigration) {
+      if (targetPath.toLowerCase() === currentDir.toLowerCase()) {
+        return { valid: false, freeBytes: 0, error: '目標目錄不可與目前目錄相同' };
+      }
 
-    // Check if target is inside current or vice versa
-    const relativeCurrentToTarget = path.relative(currentDir, targetPath);
-    if (!relativeCurrentToTarget.startsWith('..') && !path.isAbsolute(relativeCurrentToTarget)) {
-      return { valid: false, freeBytes: 0, error: '目標目錄不可位於目前環境目錄內' };
-    }
-    const relativeTargetToCurrent = path.relative(targetPath, currentDir);
-    if (!relativeTargetToCurrent.startsWith('..') && !path.isAbsolute(relativeTargetToCurrent)) {
-      return { valid: false, freeBytes: 0, error: '目標目錄不可包含目前的環境目錄' };
+      // Check if target is inside current or vice versa
+      const relativeCurrentToTarget = path.relative(currentDir, targetPath);
+      if (!relativeCurrentToTarget.startsWith('..') && !path.isAbsolute(relativeCurrentToTarget)) {
+        return { valid: false, freeBytes: 0, error: '目標目錄不可位於目前環境目錄內' };
+      }
+      const relativeTargetToCurrent = path.relative(targetPath, currentDir);
+      if (!relativeTargetToCurrent.startsWith('..') && !path.isAbsolute(relativeTargetToCurrent)) {
+        return { valid: false, freeBytes: 0, error: '目標目錄不可包含目前的環境目錄' };
+      }
     }
 
     // Test write permission
@@ -503,7 +532,9 @@ sys.exit(0)
 
     const freeBytes = await this.getFreeDiskSpace(targetPath);
     const currentDiskUsage = await this.getDiskUsage();
-    const requiredBytes = currentDiskUsage > 0 ? currentDiskUsage : 2 * 1024 * 1024 * 1024;
+    const requiredBytes = options?.forMigration && currentDiskUsage > 0
+      ? currentDiskUsage
+      : 1.5 * 1024 * 1024 * 1024;
 
     if (freeBytes > 0 && freeBytes < requiredBytes) {
       return { valid: false, freeBytes, error: '目標磁碟可用空間不足' };
@@ -614,7 +645,7 @@ sys.exit(0)
     }
 
     if (customTargetDir) {
-      const preflight = await this.preflightTargetFolder(customTargetDir);
+      const preflight = await this.preflightTargetFolder(customTargetDir, { forMigration: false });
       if (!preflight.valid) {
         throw new Error(preflight.error || '目標路徑無效');
       }
@@ -758,7 +789,8 @@ sys.exit(0)
 
       this.verifiedReady = true;
 
-      // Write runtime_meta.json
+      // Write runtime_meta.json with calculated totalBytes
+      const diskUsage = await this.getDiskUsage(true);
       const meta: SeparationRuntimeMeta = {
         version: '1.0',
         mode,
@@ -767,6 +799,7 @@ sys.exit(0)
         gpuModel: gpuInfo.modelName,
         vramMb: gpuInfo.vramMb,
         torchCuda: mode === 'gpu',
+        totalBytes: diskUsage,
       };
       await this.writeRuntimeMeta(meta, envDir);
 
@@ -781,6 +814,7 @@ sys.exit(0)
           gpuModel: gpuInfo.modelName,
           customRuntimePath: this.isCustomPath() ? this.getSeparationEnvDir() : undefined,
         },
+        customRuntimePath: this.isCustomPath() ? this.getSeparationEnvDir() : undefined,
       });
 
       this.notifyProgress({
@@ -860,7 +894,7 @@ sys.exit(0)
       throw new Error('已有安裝或搬移程序正在執行中');
     }
 
-    const preflight = await this.preflightTargetFolder(targetInputPath);
+    const preflight = await this.preflightTargetFolder(targetInputPath, { forMigration: true });
     if (!preflight.valid) {
       throw new Error(preflight.error || '目標路徑檢查未通過');
     }
@@ -937,6 +971,7 @@ sys.exit(0)
 
       // Success: update runtime metadata in target directory
       const existingMeta = await this.readRuntimeMeta(targetDir);
+      const finalBytes = transferred > 0 ? transferred : totalBytes;
       const updatedMeta: SeparationRuntimeMeta = {
         version: '1.0',
         mode: expectedMode || existingMeta?.mode || 'gpu',
@@ -945,8 +980,10 @@ sys.exit(0)
         gpuModel: existingMeta?.gpuModel || currentSettings.separationEngine?.gpuModel,
         vramMb: existingMeta?.vramMb || currentSettings.separationEngine?.vramMb,
         torchCuda: (expectedMode || existingMeta?.mode) === 'gpu',
+        totalBytes: finalBytes,
       };
       await this.writeRuntimeMeta(updatedMeta, targetDir);
+      this.cachedDiskUsage = { path: targetDir, bytes: finalBytes };
 
       // Success: update settings
       const isDefault = targetDir.toLowerCase() === path.resolve(this.getDefaultSeparationEnvDir()).toLowerCase();
@@ -956,6 +993,7 @@ sys.exit(0)
           ...currentSettings.separationEngine,
           customRuntimePath: isDefault ? undefined : targetDir,
         } : undefined,
+        customRuntimePath: isDefault ? undefined : targetDir,
       });
 
       this.setCustomRuntimePath(isDefault ? null : targetDir);
@@ -1015,10 +1053,9 @@ sys.exit(0)
   }
 
   /**
-   * Calculates total disk usage of the separation environment.
+   * Calculates total directory size.
    */
-  async getDiskUsage(): Promise<number> {
-    const envDir = this.getSeparationEnvDir();
+  async calculateDirectorySize(dirPath: string): Promise<number> {
     try {
       let total = 0;
       const walk = async (dir: string) => {
@@ -1033,10 +1070,74 @@ sys.exit(0)
           }
         }
       };
-      await walk(envDir);
+      await walk(dirPath);
       return total;
     } catch {
       return 0;
+    }
+  }
+
+  /**
+   * Calculates total disk usage of the separation environment.
+   * Leverages cached totalBytes from runtime_meta.json or in-memory cache for instant returns (<1ms).
+   */
+  async getDiskUsage(forceRecalculate = false): Promise<number> {
+    const envDir = this.getSeparationEnvDir();
+
+    if (!forceRecalculate) {
+      if (this.cachedDiskUsage && this.cachedDiskUsage.path.toLowerCase() === envDir.toLowerCase() && this.cachedDiskUsage.bytes > 0) {
+        return this.cachedDiskUsage.bytes;
+      }
+      const meta = await this.readRuntimeMeta(envDir);
+      if (meta && typeof meta.totalBytes === 'number' && meta.totalBytes > 0) {
+        this.cachedDiskUsage = { path: envDir, bytes: meta.totalBytes };
+        return meta.totalBytes;
+      }
+    }
+
+    if (this.isCalculatingDiskUsage) {
+      return this.cachedDiskUsage?.bytes || 0;
+    }
+
+    try {
+      this.isCalculatingDiskUsage = true;
+      const total = await this.calculateDirectorySize(envDir);
+      this.cachedDiskUsage = { path: envDir, bytes: total };
+      if (total > 0) {
+        const meta = await this.readRuntimeMeta(envDir);
+        if (meta) {
+          meta.totalBytes = total;
+          await this.writeRuntimeMeta(meta, envDir);
+        }
+      }
+      return total;
+    } catch {
+      return 0;
+    } finally {
+      this.isCalculatingDiskUsage = false;
+    }
+  }
+
+  /**
+   * Asynchronously updates cached totalBytes in background if missing from runtime_meta.json.
+   */
+  async updateDiskUsageInBackground(envDir: string): Promise<void> {
+    if (this.isCalculatingDiskUsage) return;
+    try {
+      this.isCalculatingDiskUsage = true;
+      const total = await this.calculateDirectorySize(envDir);
+      if (total > 0) {
+        this.cachedDiskUsage = { path: envDir, bytes: total };
+        const meta = await this.readRuntimeMeta(envDir);
+        if (meta && (!meta.totalBytes || meta.totalBytes !== total)) {
+          meta.totalBytes = total;
+          await this.writeRuntimeMeta(meta, envDir);
+        }
+      }
+    } catch (err) {
+      console.warn('[SeparationEnv] Background disk usage calculation failed', err);
+    } finally {
+      this.isCalculatingDiskUsage = false;
     }
   }
 
@@ -1062,11 +1163,13 @@ sys.exit(0)
     this.lastError = null;
     this.currentProgress = null;
     this.cachedCustomRuntimePath = null;
+    this.cachedDiskUsage = null;
 
     const currentSettings = await loadSettings();
     await saveSettings({
       ...currentSettings,
       separationEngine: undefined,
+      customRuntimePath: undefined,
     });
   }
 }

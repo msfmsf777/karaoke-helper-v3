@@ -86,8 +86,16 @@ function normalizeSettings(settings: Partial<UserSettings> | null | undefined): 
             gpuModel: parsed.separationEngine.gpuModel,
             customRuntimePath: typeof parsed.separationEngine.customRuntimePath === 'string' && parsed.separationEngine.customRuntimePath.trim().length > 0
                 ? parsed.separationEngine.customRuntimePath.trim()
-                : undefined,
-        } : undefined,
+                : (typeof parsed.customRuntimePath === 'string' && parsed.customRuntimePath.trim().length > 0 ? parsed.customRuntimePath.trim() : undefined),
+        } : (typeof parsed.customRuntimePath === 'string' && parsed.customRuntimePath.trim().length > 0 ? {
+            mode: 'gpu',
+            customRuntimePath: parsed.customRuntimePath.trim(),
+        } : undefined),
+        customRuntimePath: typeof parsed.customRuntimePath === 'string' && parsed.customRuntimePath.trim().length > 0
+            ? parsed.customRuntimePath.trim()
+            : (typeof parsed.separationEngine?.customRuntimePath === 'string' && parsed.separationEngine.customRuntimePath.trim().length > 0
+                ? parsed.separationEngine.customRuntimePath.trim()
+                : undefined),
         customSongsPath: typeof parsed.customSongsPath === 'string' && parsed.customSongsPath.trim().length > 0
             ? parsed.customSongsPath.trim()
             : undefined,
@@ -245,15 +253,24 @@ async function findNewestValidSettingsBackup(): Promise<{ filePath: string; sett
 
 async function saveSettingsNow(settings: UserSettings): Promise<void> {
     const normalized = normalizeSettings(settings);
-    if (!('customSongsPath' in settings)) {
-        try {
-            const current = await readSettingsFile(getUserDataPath(SETTINGS_FILE));
-            if (current.customSongsPath) {
-                normalized.customSongsPath = current.customSongsPath;
-            }
-        } catch {
-            // Ignore if settings file does not exist or cannot be read
+    try {
+        const current = await readSettingsFile(getUserDataPath(SETTINGS_FILE));
+        if (!('customSongsPath' in settings) && current.customSongsPath) {
+            normalized.customSongsPath = current.customSongsPath;
         }
+        if (!('customRuntimePath' in settings) && current.customRuntimePath) {
+            normalized.customRuntimePath = current.customRuntimePath;
+        }
+        if (!('separationEngine' in settings) && current.separationEngine) {
+            normalized.separationEngine = current.separationEngine;
+            if (!normalized.customRuntimePath && current.separationEngine.customRuntimePath) {
+                normalized.customRuntimePath = current.separationEngine.customRuntimePath;
+            }
+        } else if (normalized.separationEngine && !normalized.separationEngine.customRuntimePath && (current.separationEngine?.customRuntimePath || current.customRuntimePath)) {
+            normalized.separationEngine.customRuntimePath = current.separationEngine?.customRuntimePath || current.customRuntimePath;
+        }
+    } catch {
+        // Ignore if settings file does not exist or cannot be read
     }
     await createPreSaveBackupIfNeeded();
     await writeSettingsAtomic(normalized);
@@ -337,6 +354,7 @@ export interface UserSettings {
         customRuntimePath?: string;
     };
     customSongsPath?: string;
+    customRuntimePath?: string;
 }
 
 export async function saveSettings(settings: UserSettings): Promise<void> {

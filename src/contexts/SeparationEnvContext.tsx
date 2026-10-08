@@ -35,7 +35,7 @@ interface SeparationEnvContextType {
   startInstall: (mode: SeparationEngineMode, customTargetDir?: string) => Promise<void>;
   cancelInstall: () => Promise<void>;
   switchMode: (mode: SeparationEngineMode) => Promise<{ success: boolean; mode?: SeparationEngineMode; requiresInstall?: boolean; error?: string }>;
-  rescanFolder: (targetPath?: string) => Promise<void>;
+  rescanFolder: (targetPath?: string) => Promise<SeparationEnvStatus | null>;
   refreshStatus: () => Promise<void>;
 }
 
@@ -154,13 +154,15 @@ export const SeparationEnvProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [refreshStatus]);
 
-  const rescanFolder = useCallback(async (targetPath?: string) => {
+  const rescanFolder = useCallback(async (targetPath?: string): Promise<SeparationEnvStatus | null> => {
     try {
       const status = await rescanSeparationFolder(targetPath);
       setEnvStatus(status);
+      return status;
     } catch (err) {
       console.error('[SeparationEnvContext] Rescan folder failed', err);
       await refreshStatus();
+      return null;
     }
   }, [refreshStatus]);
 

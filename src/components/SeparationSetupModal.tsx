@@ -20,6 +20,7 @@ export const SeparationSetupModal: React.FC = () => {
     startInstall,
     cancelInstall,
     switchMode,
+    rescanFolder,
     pendingJob,
   } = useSeparationEnv();
 
@@ -56,7 +57,7 @@ export const SeparationSetupModal: React.FC = () => {
       setPickingFolder(true);
       const picked = await pickSeparationFolder();
       if (!picked) return;
-      const preflight = await preflightSeparationTarget(picked);
+      const preflight = await preflightSeparationTarget(picked, { forMigration: false });
       if (!preflight.valid) {
         setFolderError(preflight.error || '目標路徑無效');
         return;
@@ -86,6 +87,13 @@ export const SeparationSetupModal: React.FC = () => {
   const isAlreadyActiveMode = isEnvReady && envStatus?.mode === selectedMode;
 
   const handleAction = async () => {
+    if (customPath) {
+      const status = await rescanFolder(customPath);
+      if (status?.status === 'ready') {
+        closeSetupModal();
+        return;
+      }
+    }
     if (isAlreadyActiveMode) {
       closeSetupModal();
       return;

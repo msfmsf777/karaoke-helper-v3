@@ -77,8 +77,8 @@ export async function getSeparationStorageInfo() {
   return getEnvApi().getStorageInfo();
 }
 
-export async function preflightSeparationTarget(targetPath: string) {
-  return getEnvApi().preflightTarget(targetPath);
+export async function preflightSeparationTarget(targetPath: string, options?: { forMigration?: boolean }) {
+  return getEnvApi().preflightTarget(targetPath, options);
 }
 
 export async function startSeparationMigration(targetPath: string) {

@@ -180,8 +180,8 @@ contextBridge.exposeInMainWorld('khelper', {
     uninstall: (): Promise<void> => ipcRenderer.invoke('separationEnv:uninstall'),
     pickFolder: (): Promise<string | null> => ipcRenderer.invoke('separationEnv:pick-folder'),
     getStorageInfo: (): Promise<SeparationStorageInfo> => ipcRenderer.invoke('separationEnv:get-storage-info'),
-    preflightTarget: (targetPath: string): Promise<{ valid: boolean; freeBytes: number; error?: string }> =>
-      ipcRenderer.invoke('separationEnv:preflight-target', targetPath),
+    preflightTarget: (targetPath: string, options?: { forMigration?: boolean }): Promise<{ valid: boolean; freeBytes: number; error?: string }> =>
+      ipcRenderer.invoke('separationEnv:preflight-target', targetPath, options),
     startMigration: (targetPath: string): Promise<SeparationMigrationProgress> =>
       ipcRenderer.invoke('separationEnv:start-migration', targetPath),
     cancelMigration: (): Promise<void> => ipcRenderer.invoke('separationEnv:cancel-migration'),

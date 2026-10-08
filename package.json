@@ -24,7 +24,7 @@
     "release:github": "node scripts/publish-github-release.mjs",
     "release:github:dry-run": "node scripts/publish-github-release.mjs --dry-run",
     "release": "node scripts/release.mjs",
-    "test:persistence": "vitest run tests/userData.settings.test.ts"
+    "test:persistence": "vitest run tests/userData.settings.test.ts tests/separationEnv.test.ts"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",

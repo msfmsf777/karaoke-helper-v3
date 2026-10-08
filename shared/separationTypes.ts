@@ -23,6 +23,7 @@ export interface SeparationRuntimeMeta {
   gpuModel?: string;
   vramMb?: number;
   torchCuda?: boolean;
+  totalBytes?: number;
 }
 
 export interface SeparationEnvStatus {

@@ -72,7 +72,7 @@ export const SeparationMigrationModal: React.FC<SeparationMigrationModalProps> =
       setSelectedPath(picked);
       setChecking(true);
       setPreflight(null);
-      const res = await preflightSeparationTarget(picked);
+      const res = await preflightSeparationTarget(picked, { forMigration: true });
       setPreflight(res);
     } catch (err: unknown) {
       console.error('[SeparationMigration] Pick folder failed', err);

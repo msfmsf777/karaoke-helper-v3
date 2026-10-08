@@ -227,5 +227,25 @@ describe('fail-safe settings persistence', () => {
     expect(saved.customSongsPath).toBe('C:\\Custom\\Music\\Folder');
     expect(saved.overlayTemplates?.activeLyricsDesignId).toBe('lyrics-frontend-update');
   });
+
+  it('preserves separationEngine and customRuntimePath when frontend saves settings without specifying them', async () => {
+    const initial = customSettings('with-runtime');
+    initial.separationEngine = {
+      mode: 'gpu',
+      customRuntimePath: 'C:\\Custom\\AI-Runtime',
+    };
+    await writeJson(settingsPath(), initial);
+
+    // Frontend UserDataContext saves settings without separationEngine
+    const frontendPayload = customSettings('frontend-update');
+    delete (frontendPayload as Record<string, unknown>).separationEngine;
+    delete (frontendPayload as Record<string, unknown>).customRuntimePath;
+    await saveSettings(frontendPayload);
+
+    const saved = await readJson<UserSettings>(settingsPath());
+    expect(saved.separationEngine?.customRuntimePath).toBe('C:\\Custom\\AI-Runtime');
+    expect(saved.customRuntimePath).toBe('C:\\Custom\\AI-Runtime');
+    expect(saved.separationEngine?.mode).toBe('gpu');
+  });
 });
 

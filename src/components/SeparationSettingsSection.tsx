@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { useSeparationEnv } from '../contexts/SeparationEnvContext';
 import type { SeparationStorageInfo } from '../../shared/separationTypes';
 import {
-  getSeparationDiskUsage,
   uninstallSeparationEnv,
   getSeparationStorageInfo,
 } from '../jobs/separationJobs';
@@ -41,12 +40,9 @@ export const SeparationSettingsSection: React.FC = () => {
 
   const fetchDetails = useCallback(async () => {
     try {
-      const [bytes, storage] = await Promise.all([
-        getSeparationDiskUsage(),
-        getSeparationStorageInfo(),
-      ]);
-      setDiskUsage(bytes);
+      const storage = await getSeparationStorageInfo();
       setStorageInfo(storage);
+      setDiskUsage(storage.totalBytes);
     } catch {
       setDiskUsage(null);
     }
