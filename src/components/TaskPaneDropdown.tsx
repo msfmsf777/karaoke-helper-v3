@@ -24,6 +24,14 @@ const sepStatusColor = (status: SeparationJob['status']) => {
 };
 
 
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+}
+
 /* ── Copy-to-clipboard button ──────────────────────────────── */
 
 const CopyErrorButton: React.FC<{ text: string }> = ({ text }) => {
@@ -193,6 +201,15 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
     return () => { unsub?.(); };
   }, []);
 
+  /* Separation Runtime Migration state & subscription */
+  const [sepMigration, setSepMigration] = useState<import('../../shared/separationTypes').SeparationMigrationProgress | null>(null);
+  useEffect(() => {
+    const unsub = window.khelper?.separationEnv?.subscribeMigrationProgress?.((updated) => {
+      setSepMigration(updated);
+    });
+    return () => { unsub?.(); };
+  }, []);
+
   /* Derived lists */
   const activeDownloads = useMemo(() =>
     dlJobs.filter(j => ['queued', 'downloading', 'processing'].includes(j.status)),
@@ -230,8 +247,9 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
   }, [sepJobs]);
   const hasSepSection = activeSepJobs.length > 0 || failedSepJobs.length > 0 || recentlyCompletedSep.length > 0;
   const hasMigrationSection = Boolean(migration && migration.status !== 'idle');
+  const hasSepMigrationSection = Boolean(sepMigration && sepMigration.status !== 'idle');
 
-  const isEmpty = !hasSepSection && !hasDownloadSection && !hasMigrationSection;
+  const isEmpty = !hasSepSection && !hasDownloadSection && !hasMigrationSection && !hasSepMigrationSection && !isInstalling && (!installProgress || installProgress.stage !== 'error');
 
   const getSongName = (songId: string) => {
     const song = songs[songId];
@@ -420,6 +438,76 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
                 <button
                   onClick={() => setMigration(null)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#888',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    padding: '2px 6px'
+                  }}
+                >
+                  {t('common.close')}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Separation Runtime Migration Section ── */}
+        {hasSepMigrationSection && sepMigration && (
+          <div style={{ borderBottom: '1px solid #2a2a2a', padding: '12px 16px', background: 'rgba(99, 102, 241, 0.04)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>🚚</span>
+                <span>{t('tasks.sepMigration.title', 'AI 分離引擎搬移')}</span>
+              </div>
+              <div style={{ fontSize: '11px', color: sepMigration.status === 'failed' ? '#ff8b8b' : sepMigration.status === 'completed' ? '#8be28b' : '#a5b4fc', fontWeight: 600 }}>
+                {sepMigration.status === 'copying' && `${sepMigration.totalBytes > 0 ? Math.round((sepMigration.transferredBytes / sepMigration.totalBytes) * 100) : 0}%`}
+                {sepMigration.status === 'preparing' && t('common.loading', '準備中...')}
+                {sepMigration.status === 'verifying' && t('tasks.migration.verifying', '校驗中...')}
+                {sepMigration.status === 'completed' && `✓ ${t('tasks.migration.completed', 'Completed')}`}
+                {sepMigration.status === 'failed' && `✗ ${t('tasks.migration.failed', 'Failed')}`}
+                {sepMigration.status === 'cancelled' && t('tasks.migration.cancelled', 'Cancelled')}
+              </div>
+            </div>
+
+            {(sepMigration.status === 'preparing' || sepMigration.status === 'copying' || sepMigration.status === 'verifying') && (
+              <>
+                <div style={{ fontSize: '12px', color: '#ccc', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {sepMigration.currentFile ? `[${formatBytes(sepMigration.transferredBytes)} / ${formatBytes(sepMigration.totalBytes)}] ${sepMigration.currentFile}` : `${formatBytes(sepMigration.transferredBytes)} / ${formatBytes(sepMigration.totalBytes)}`}
+                </div>
+                <ProgressBar
+                  value={sepMigration.totalBytes > 0 ? Math.round((sepMigration.transferredBytes / sepMigration.totalBytes) * 100) : 0}
+                  color="#6366f1"
+                />
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
+                  <button
+                    onClick={() => void window.khelper?.separationEnv.cancelMigration()}
+                    style={{
+                      background: 'none',
+                      border: '1px solid #444',
+                      borderRadius: '4px',
+                      color: '#aaa',
+                      cursor: 'pointer',
+                      fontSize: '11px',
+                      padding: '2px 8px'
+                    }}
+                  >
+                    {t('common.cancel')}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {sepMigration.status === 'failed' && sepMigration.error && (
+              <ErrorBlock message={sepMigration.error} defaultExpanded />
+            )}
+
+            {(sepMigration.status === 'completed' || sepMigration.status === 'cancelled') && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+                <button
+                  onClick={() => setSepMigration(null)}
                   style={{
                     background: 'none',
                     border: 'none',

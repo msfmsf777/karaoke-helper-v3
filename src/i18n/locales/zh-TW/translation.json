@@ -62,6 +62,11 @@
       "confirmUninstall": "確定要移除分離引擎嗎？此操作將釋放磁碟空間，下次分離歌曲時需要重新安裝。",
       "modeGpuActive": "NVIDIA GPU 硬體加速 (CUDA)",
       "modeCpuActive": "標準 CPU 處理模式",
+      "activeMode": "當前運算模式",
+      "gpu": "GPU 加速",
+      "cpu": "CPU 模式",
+      "errorTitle": "分離引擎狀態異常",
+      "btnRescan": "重新掃描",
       "installing": "正在安裝分離引擎...",
       "notInstalled": "尚未配置分離引擎",
       "hardwareUnknown": "硬體檢測完成",
@@ -297,6 +302,9 @@
       "completed": "歌曲庫搬移已完成",
       "failed": "歌曲庫搬移失敗",
       "cancelled": "歌曲庫搬移已取消"
+    },
+    "sepMigration": {
+      "title": "AI 分離引擎搬移"
     }
   },
   "playbackControl": {
@@ -1016,6 +1024,10 @@
     "btnInstallCpu": "安裝 CPU 引擎",
     "btnCancelInstall": "取消安裝",
     "btnBackground": "在背景繼續執行 ▾",
+    "btnReinstall": "重新下載",
+    "btnAlreadyInstalled": "目前已為此模式 (完成)",
+    "btnSwitchToCpu": "切換至 CPU 模式",
+    "btnSwitchToGpu": "切換至 GPU 加速",
     "storageLocation": "安裝儲存位置",
     "btnChangeFolder": "變更目錄...",
     "defaultBadge": "預設 AppData",

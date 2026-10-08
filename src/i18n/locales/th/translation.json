@@ -62,6 +62,11 @@
       "confirmUninstall": "คุณแน่ใจหรือไม่ว่าต้องการถอนการติดตั้งระบบแยกเสียง? การดำเนินการนี้จะคืนพื้นที่ดิสก์ แต่จะต้องดาวน์โหลดใหม่ในการแยกเสียงครั้งต่อไป",
       "modeGpuActive": "การเร่งความเร็วฮาร์ดแวร์ NVIDIA GPU (CUDA)",
       "modeCpuActive": "โหมดประมวลผล CPU มาตรฐาน",
+      "activeMode": "โหมดการประมวลผลปัจจุบัน",
+      "gpu": "การเร่งความเร็ว GPU",
+      "cpu": "โหมด CPU",
+      "errorTitle": "สถานะเอ็นจินการแยกเสียงผิดปกติ",
+      "btnRescan": "สแกนอีกครั้ง",
       "installing": "กำลังติดตั้งระบบแยกเสียง...",
       "notInstalled": "ยังไม่ได้ติดตั้งระบบแยกเสียง",
       "hardwareUnknown": "การตรวจจับฮาร์ดแวร์เสร็จสมบูรณ์",
@@ -231,6 +236,9 @@
     "quality": {
       "fast": "รวดเร็ว",
       "normal": "ปกติ"
+    },
+    "sepMigration": {
+      "title": "การย้ายรันไทม์การแยกเสียง AI"
     }
   },
   "playbackControl": {
@@ -950,6 +958,10 @@
     "btnInstallCpu": "ติดตั้งระบบ CPU",
     "btnCancelInstall": "ยกเลิกการติดตั้ง",
     "btnBackground": "ดำเนินการต่อในเบื้องหลัง ▾",
+    "btnReinstall": "ดาวน์โหลดใหม่",
+    "btnAlreadyInstalled": "อยู่ในโหมดนี้อยู่แล้ว (เสร็จสิ้น)",
+    "btnSwitchToCpu": "สลับเป็นโหมด CPU",
+    "btnSwitchToGpu": "สลับเป็นการเร่งความเร็ว GPU",
     "storageLocation": "ตำแหน่งจัดเก็บการติดตั้ง",
     "btnChangeFolder": "เปลี่ยนโฟลเดอร์...",
     "defaultBadge": "ค่าเริ่มต้น AppData",

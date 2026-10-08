@@ -28,12 +28,16 @@ export const SeparationSettingsSection: React.FC = () => {
     openSetupModal,
     cancelInstall,
     refreshStatus,
+    switchMode,
+    rescanFolder,
   } = useSeparationEnv();
 
   const [diskUsage, setDiskUsage] = useState<number | null>(null);
   const [storageInfo, setStorageInfo] = useState<SeparationStorageInfo | null>(null);
   const [showMigrationModal, setShowMigrationModal] = useState(false);
   const [isUninstalling, setIsUninstalling] = useState(false);
+  const [isRescanning, setIsRescanning] = useState(false);
+  const [isSwitchingMode, setIsSwitchingMode] = useState(false);
 
   const fetchDetails = useCallback(async () => {
     try {
@@ -47,6 +51,29 @@ export const SeparationSettingsSection: React.FC = () => {
       setDiskUsage(null);
     }
   }, []);
+
+  const handleModeSelect = async (mode: 'gpu' | 'cpu') => {
+    if (envStatus?.mode === mode || isSwitchingMode) return;
+    setIsSwitchingMode(true);
+    try {
+      const res = await switchMode(mode);
+      if (res.requiresInstall) {
+        openSetupModal();
+      }
+    } finally {
+      setIsSwitchingMode(false);
+    }
+  };
+
+  const handleRescan = async () => {
+    setIsRescanning(true);
+    try {
+      await rescanFolder();
+      await fetchDetails();
+    } finally {
+      setIsRescanning(false);
+    }
+  };
 
   useEffect(() => {
     void fetchDetails();
@@ -210,6 +237,120 @@ export const SeparationSettingsSection: React.FC = () => {
           </div>
         </div>
 
+        {/* Mode Selector Row (instant toggle without re-downloading) */}
+        {isReady && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '10px 14px',
+              backgroundColor: '#1f1f23',
+              borderRadius: '8px',
+              border: '1px solid rgba(255, 255, 255, 0.05)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '12px', color: '#a1a1aa' }}>
+                {t('settings.separationEngine.activeMode', '當前運算模式')}:
+              </span>
+              <span style={{ fontSize: '12px', color: '#f4f4f5', fontWeight: 600 }}>
+                {envStatus?.mode === 'gpu' ? '⚡ NVIDIA GPU (CUDA)' : '💻 CPU'}
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button
+                onClick={() => void handleModeSelect('gpu')}
+                disabled={isSwitchingMode}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  backgroundColor: envStatus?.mode === 'gpu' ? '#6366f1' : '#2c2c34',
+                  border: envStatus?.mode === 'gpu' ? '1px solid #818cf8' : '1px solid #444',
+                  color: envStatus?.mode === 'gpu' ? '#fff' : '#a1a1aa',
+                  fontSize: '12px',
+                  fontWeight: envStatus?.mode === 'gpu' ? 600 : 400,
+                  cursor: isSwitchingMode ? 'wait' : 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                ⚡ {t('settings.separationEngine.gpu', 'GPU 加速')}
+              </button>
+              <button
+                onClick={() => void handleModeSelect('cpu')}
+                disabled={isSwitchingMode}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  backgroundColor: envStatus?.mode === 'cpu' ? '#6366f1' : '#2c2c34',
+                  border: envStatus?.mode === 'cpu' ? '1px solid #818cf8' : '1px solid #444',
+                  color: envStatus?.mode === 'cpu' ? '#fff' : '#a1a1aa',
+                  fontSize: '12px',
+                  fontWeight: envStatus?.mode === 'cpu' ? 600 : 400,
+                  cursor: isSwitchingMode ? 'wait' : 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                💻 {t('settings.separationEngine.cpu', 'CPU 模式')}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Error Alert Card if status is error */}
+        {envStatus?.status === 'error' && (
+          <div
+            style={{
+              padding: '12px 16px',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+            }}
+          >
+            <div style={{ fontSize: '12px', color: '#fca5a5', lineHeight: 1.4 }}>
+              ⚠️ <strong>{t('settings.separationEngine.errorTitle', '分離引擎狀態異常')}</strong>
+              {envStatus.errorMessage && <div style={{ marginTop: '2px', color: '#f87171' }}>{envStatus.errorMessage}</div>}
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={handleRescan}
+                disabled={isRescanning}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  backgroundColor: '#27272a',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  color: '#f4f4f5',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                }}
+              >
+                {isRescanning ? t('common.loading', '掃描中...') : t('settings.separationEngine.btnRescan', '重新掃描')}
+              </button>
+              <button
+                onClick={openSetupModal}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  backgroundColor: '#ef4444',
+                  border: 'none',
+                  color: '#fff',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                {t('settings.separationEngine.btnReconfigure', '重新配置')}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Upgrade Banner if running CPU on capable GPU */}
         {hasGpuUpgradeOpportunity && (
           <div
@@ -315,6 +456,24 @@ export const SeparationSettingsSection: React.FC = () => {
                   }}
                 >
                   <img src={FolderOpenIcon} alt="open" style={{ width: '14px', height: '14px', opacity: 0.8 }} />
+                </button>
+
+                <button
+                  onClick={handleRescan}
+                  disabled={isRescanning}
+                  title={t('settings.separationEngine.btnRescan', '重新掃描目錄')}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    backgroundColor: '#2c2c34',
+                    border: '1px solid #444',
+                    color: '#d4d4d8',
+                    fontSize: '12px',
+                    cursor: isRescanning ? 'wait' : 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {isRescanning ? t('common.loading', '掃描中...') : t('settings.separationEngine.btnRescan', '重新掃描')}
                 </button>
 
                 <button

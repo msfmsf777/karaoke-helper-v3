@@ -62,6 +62,11 @@
       "confirmUninstall": "Yakin ingin menghapus mesin pemisahan? Tindakan ini akan mengosongkan ruang disk, tetapi perlu diunduh ulang saat pemisahan berikutnya.",
       "modeGpuActive": "Akselerasi Perangkat Keras NVIDIA GPU (CUDA)",
       "modeCpuActive": "Mode Pemrosesan CPU Standar",
+      "activeMode": "Mode Komputasi Aktif",
+      "gpu": "Akselerasi GPU",
+      "cpu": "Mode CPU",
+      "errorTitle": "Status Mesin Pemisahan Tidak Normal",
+      "btnRescan": "Pindai Ulang",
       "installing": "Memasang mesin pemisahan...",
       "notInstalled": "Mesin pemisahan belum dikonfigurasi",
       "hardwareUnknown": "Deteksi perangkat keras selesai",
@@ -231,6 +236,9 @@
     "quality": {
       "fast": "Cepat",
       "normal": "Standar"
+    },
+    "sepMigration": {
+      "title": "Migrasi Runtime Pemisahan AI"
     }
   },
   "playbackControl": {
@@ -950,6 +958,10 @@
     "btnInstallCpu": "Pasang Mesin CPU",
     "btnCancelInstall": "Batalkan Instalasi",
     "btnBackground": "Lanjutkan di Latar Belakang ▾",
+    "btnReinstall": "Unduh Ulang",
+    "btnAlreadyInstalled": "Sudah Menggunakan Mode Ini (Selesai)",
+    "btnSwitchToCpu": "Beralih ke Mode CPU",
+    "btnSwitchToGpu": "Beralih ke Akselerasi GPU",
     "storageLocation": "Lokasi Penyimpanan Instalasi",
     "btnChangeFolder": "Ubah Folder...",
     "defaultBadge": "AppData Default",

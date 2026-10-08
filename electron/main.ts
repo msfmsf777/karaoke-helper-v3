@@ -847,6 +847,14 @@ ipcMain.handle('separationEnv:cancel-migration', async () => {
   separationEnvManager.cancelMigration()
 })
 
+ipcMain.handle('separationEnv:switch-mode', async (_event, mode: 'gpu' | 'cpu') => {
+  return separationEnvManager.switchEngineMode(mode)
+})
+
+ipcMain.handle('separationEnv:rescan-folder', async (_event, targetPath?: string) => {
+  return separationEnvManager.rescanFolder(targetPath)
+})
+
 separationEnvManager.subscribeProgress((progress) => {
   BrowserWindow.getAllWindows().forEach((w) => {
     if (!w.isDestroyed()) {

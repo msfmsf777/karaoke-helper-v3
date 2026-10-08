@@ -62,6 +62,11 @@
       "confirmUninstall": "Are you sure you want to remove the separation engine? This will free disk space, but you will need to reinstall it the next time you separate a song.",
       "modeGpuActive": "NVIDIA GPU Hardware Acceleration (CUDA)",
       "modeCpuActive": "Standard CPU Processing Mode",
+      "activeMode": "Active Compute Mode",
+      "gpu": "GPU Acceleration",
+      "cpu": "CPU Mode",
+      "errorTitle": "Separation Engine Error",
+      "btnRescan": "Rescan",
       "installing": "Installing separation engine...",
       "notInstalled": "Separation engine not configured",
       "hardwareUnknown": "Hardware check complete",
@@ -297,6 +302,9 @@
       "completed": "Migration completed",
       "failed": "Migration failed",
       "cancelled": "Migration cancelled"
+    },
+    "sepMigration": {
+      "title": "Separation Runtime Migration"
     }
   },
   "playbackControl": {
@@ -1016,6 +1024,10 @@
     "btnInstallCpu": "Install CPU Engine",
     "btnCancelInstall": "Cancel Installation",
     "btnBackground": "Continue in Background ▾",
+    "btnReinstall": "Reinstall",
+    "btnAlreadyInstalled": "Already Active (Done)",
+    "btnSwitchToCpu": "Switch to CPU Mode",
+    "btnSwitchToGpu": "Switch to GPU Acceleration",
     "storageLocation": "Installation Storage Location",
     "btnChangeFolder": "Change Folder...",
     "defaultBadge": "Default AppData",

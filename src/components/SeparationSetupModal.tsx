@@ -13,11 +13,13 @@ export const SeparationSetupModal: React.FC = () => {
   const {
     isSetupModalOpen,
     closeSetupModal,
+    envStatus,
     gpuInfo,
     installProgress,
     isInstalling,
     startInstall,
     cancelInstall,
+    switchMode,
     pendingJob,
   } = useSeparationEnv();
 
@@ -27,14 +29,16 @@ export const SeparationSetupModal: React.FC = () => {
   const [pickingFolder, setPickingFolder] = useState(false);
   const [folderError, setFolderError] = useState<string | null>(null);
 
-  // Pre-select mode based on hardware detection
+  // Pre-select mode based on existing setting or hardware detection
   useEffect(() => {
-    if (gpuInfo?.hasCapableGpu) {
+    if (envStatus?.mode) {
+      setSelectedMode(envStatus.mode);
+    } else if (gpuInfo?.hasCapableGpu) {
       setSelectedMode('gpu');
     } else {
       setSelectedMode('cpu');
     }
-  }, [gpuInfo]);
+  }, [envStatus?.mode, gpuInfo]);
 
   useEffect(() => {
     if (isSetupModalOpen) {
@@ -73,7 +77,26 @@ export const SeparationSetupModal: React.FC = () => {
     }
   };
 
-  const handleStart = () => {
+  const isEnvReady = envStatus?.status === 'ready';
+  const isSelectedModeSupported = isEnvReady && (
+    envStatus?.supportedModes?.includes(selectedMode) ||
+    envStatus?.mode === selectedMode ||
+    (envStatus?.mode === 'gpu' && selectedMode === 'cpu')
+  );
+  const isAlreadyActiveMode = isEnvReady && envStatus?.mode === selectedMode;
+
+  const handleAction = async () => {
+    if (isAlreadyActiveMode) {
+      closeSetupModal();
+      return;
+    }
+    if (isSelectedModeSupported) {
+      const res = await switchMode(selectedMode);
+      if (res.success) {
+        closeSetupModal();
+        return;
+      }
+    }
     void startInstall(selectedMode, customPath || undefined);
   };
 
@@ -489,8 +512,25 @@ export const SeparationSetupModal: React.FC = () => {
               >
                 {t('common.cancel', '取消')}
               </button>
+              {isAlreadyActiveMode && (
+                <button
+                  onClick={() => void startInstall(selectedMode, customPath || undefined)}
+                  title={t('separationSetup.btnReinstall', '重新下載並安裝依賴')}
+                  style={{
+                    padding: '9px 16px',
+                    borderRadius: '8px',
+                    backgroundColor: 'transparent',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    color: '#a1a1aa',
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {t('separationSetup.btnReinstall', '重新下載')}
+                </button>
+              )}
               <button
-                onClick={handleStart}
+                onClick={handleAction}
                 style={{
                   padding: '9px 24px',
                   borderRadius: '8px',
@@ -504,9 +544,15 @@ export const SeparationSetupModal: React.FC = () => {
                   transition: 'all 0.15s ease',
                 }}
               >
-                {selectedMode === 'gpu'
-                  ? t('separationSetup.btnInstallGpu', '安裝並啟用 GPU 加速')
-                  : t('separationSetup.btnInstallCpu', '安裝 CPU 引擎')}
+                {isAlreadyActiveMode
+                  ? t('separationSetup.btnAlreadyInstalled', '目前已為此模式 (完成)')
+                  : isSelectedModeSupported
+                  ? (selectedMode === 'cpu'
+                      ? t('separationSetup.btnSwitchToCpu', '切換至 CPU 模式')
+                      : t('separationSetup.btnSwitchToGpu', '切換至 GPU 加速'))
+                  : (selectedMode === 'gpu'
+                      ? t('separationSetup.btnInstallGpu', '安裝並啟用 GPU 加速')
+                      : t('separationSetup.btnInstallCpu', '安裝 CPU 引擎'))}
               </button>
             </>
           ) : (

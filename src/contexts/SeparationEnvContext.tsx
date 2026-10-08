@@ -12,6 +12,8 @@ import {
   cancelInstallSeparationEnv,
   subscribeSeparationEnvProgress,
   queueSeparationJob,
+  switchSeparationEngineMode,
+  rescanSeparationFolder,
 } from '../jobs/separationJobs';
 
 interface PendingSeparation {
@@ -32,6 +34,8 @@ interface SeparationEnvContextType {
   requestSeparation: (songId: string, quality?: 'high' | 'normal' | 'fast') => Promise<void>;
   startInstall: (mode: SeparationEngineMode, customTargetDir?: string) => Promise<void>;
   cancelInstall: () => Promise<void>;
+  switchMode: (mode: SeparationEngineMode) => Promise<{ success: boolean; mode?: SeparationEngineMode; requiresInstall?: boolean; error?: string }>;
+  rescanFolder: (targetPath?: string) => Promise<void>;
   refreshStatus: () => Promise<void>;
 }
 
@@ -139,6 +143,27 @@ export const SeparationEnvProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
+  const switchMode = useCallback(async (mode: SeparationEngineMode) => {
+    try {
+      const res = await switchSeparationEngineMode(mode);
+      await refreshStatus();
+      return res;
+    } catch (err: unknown) {
+      console.error('[SeparationEnvContext] Switch mode failed', err);
+      return { success: false, error: (err as Error).message || '切換模式失敗' };
+    }
+  }, [refreshStatus]);
+
+  const rescanFolder = useCallback(async (targetPath?: string) => {
+    try {
+      const status = await rescanSeparationFolder(targetPath);
+      setEnvStatus(status);
+    } catch (err) {
+      console.error('[SeparationEnvContext] Rescan folder failed', err);
+      await refreshStatus();
+    }
+  }, [refreshStatus]);
+
   const isReady = envStatus?.status === 'ready';
   const isInstalling = installProgress?.stage === 'downloading' || installProgress?.stage === 'installing' || installProgress?.stage === 'verifying' || envStatus?.status === 'installing';
 
@@ -157,6 +182,8 @@ export const SeparationEnvProvider: React.FC<{ children: React.ReactNode }> = ({
         requestSeparation,
         startInstall,
         cancelInstall,
+        switchMode,
+        rescanFolder,
         refreshStatus,
       }}
     >

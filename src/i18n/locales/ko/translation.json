@@ -62,6 +62,11 @@
       "confirmUninstall": "분리 엔진을 제거하시겠습니까? 디스크 공간이 확보되지만 다음 분리 시 다시 다운로드해야 합니다.",
       "modeGpuActive": "NVIDIA GPU 하드웨어 가속 (CUDA)",
       "modeCpuActive": "표준 CPU 처리 모드",
+      "activeMode": "현재 연산 모드",
+      "gpu": "GPU 가속",
+      "cpu": "CPU 모드",
+      "errorTitle": "분리 엔진 상태 이상",
+      "btnRescan": "다시 검사",
       "installing": "분리 엔진 설치 중...",
       "notInstalled": "분리 엔진 미설정",
       "hardwareUnknown": "하드웨어 감지 완료",
@@ -231,6 +236,9 @@
     "quality": {
       "fast": "빠름",
       "normal": "표준"
+    },
+    "sepMigration": {
+      "title": "AI 분리 엔진 이동"
     }
   },
   "playbackControl": {
@@ -950,6 +958,10 @@
     "btnInstallCpu": "CPU 엔진 설치",
     "btnCancelInstall": "설치 취소",
     "btnBackground": "백그라운드에서 계속 ▾",
+    "btnReinstall": "다시 다운로드",
+    "btnAlreadyInstalled": "이미 이 모드로 설정됨 (완료)",
+    "btnSwitchToCpu": "CPU 모드로 전환",
+    "btnSwitchToGpu": "GPU 가속으로 전환",
     "storageLocation": "설치 저장 위치",
     "btnChangeFolder": "폴더 변경...",
     "defaultBadge": "기본 AppData",

@@ -125,7 +125,7 @@ export const SeparationMigrationModal: React.FC<SeparationMigrationModalProps> =
         backdropFilter: 'blur(6px)',
       }}
       onClick={(e) => {
-        if (e.target === e.currentTarget && !isRunning) {
+        if (e.target === e.currentTarget) {
           onClose();
         }
       }}
@@ -339,20 +339,38 @@ export const SeparationMigrationModal: React.FC<SeparationMigrationModalProps> =
           )}
 
           {isRunning && (
-            <button
-              onClick={handleCancel}
-              style={{
-                padding: '8px 18px',
-                background: 'transparent',
-                border: '1px solid rgba(239, 68, 68, 0.4)',
-                borderRadius: '8px',
-                color: '#f87171',
-                fontSize: '13px',
-                cursor: 'pointer',
-              }}
-            >
-              {t('common.cancel', '取消搬移')}
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button
+                onClick={handleCancel}
+                style={{
+                  padding: '8px 18px',
+                  background: 'transparent',
+                  border: '1px solid rgba(239, 68, 68, 0.4)',
+                  borderRadius: '8px',
+                  color: '#f87171',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                }}
+              >
+                {t('common.cancel', '取消搬移')}
+              </button>
+              <button
+                onClick={onClose}
+                style={{
+                  padding: '8px 20px',
+                  backgroundColor: '#27272a',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  borderRadius: '8px',
+                  color: '#f4f4f5',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {t('separationSetup.btnBackground', '在背景繼續執行 ▾')}
+              </button>
+            </div>
           )}
 
           {isCompleted && (

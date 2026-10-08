@@ -89,6 +89,14 @@ export async function cancelSeparationMigration() {
   return getEnvApi().cancelMigration();
 }
 
+export async function switchSeparationEngineMode(mode: import('../../shared/separationTypes').SeparationEngineMode) {
+  return getEnvApi().switchMode(mode);
+}
+
+export async function rescanSeparationFolder(targetPath?: string) {
+  return getEnvApi().rescanFolder(targetPath);
+}
+
 export function subscribeSeparationEnvProgress(
   callback: (progress: import('../../shared/separationTypes').SeparationInstallProgress) => void
 ) {

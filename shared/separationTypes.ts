@@ -15,9 +15,20 @@ export type SeparationEngineMode = 'gpu' | 'cpu';
 
 export type SeparationEnvStatusStage = 'not_installed' | 'installing' | 'ready' | 'error';
 
+export interface SeparationRuntimeMeta {
+  version: string;
+  mode: SeparationEngineMode;
+  verified: boolean;
+  installedAt: string;
+  gpuModel?: string;
+  vramMb?: number;
+  torchCuda?: boolean;
+}
+
 export interface SeparationEnvStatus {
   status: SeparationEnvStatusStage;
   mode: SeparationEngineMode | null;
+  supportedModes?: SeparationEngineMode[];
   installedAt?: string;
   vramMb?: number;
   gpuModel?: string;

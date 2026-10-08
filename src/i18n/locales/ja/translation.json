@@ -62,6 +62,11 @@
       "confirmUninstall": "分離エンジンを削除してもよろしいですか？ディスク容量が解放されますが、次回分離時に再インストールが必要になります。",
       "modeGpuActive": "NVIDIA GPU ハードウェアアクセラレーション (CUDA)",
       "modeCpuActive": "標準 CPU 処理モード",
+      "activeMode": "現在の動作モード",
+      "gpu": "GPU 加速",
+      "cpu": "CPU モード",
+      "errorTitle": "分離エンジンの状態が異常です",
+      "btnRescan": "再スキャン",
       "installing": "分離エンジンをインストール中...",
       "notInstalled": "分離エンジン未設定",
       "hardwareUnknown": "ハードウェア検出完了",
@@ -297,6 +302,9 @@
       "completed": "ライブラリ移動完了",
       "failed": "ライブラリ移動失敗",
       "cancelled": "ライブラリ移動キャンセル"
+    },
+    "sepMigration": {
+      "title": "AI 分離エンジンの移行"
     }
   },
   "playbackControl": {
@@ -1016,6 +1024,10 @@
     "btnInstallCpu": "CPU エンジンをインストール",
     "btnCancelInstall": "インストールをキャンセル",
     "btnBackground": "バックグラウンドで続行 ▾",
+    "btnReinstall": "再ダウンロード",
+    "btnAlreadyInstalled": "すでにこのモードです (完了)",
+    "btnSwitchToCpu": "CPU モードに切り替え",
+    "btnSwitchToGpu": "GPU 加速に切り替え",
     "storageLocation": "インストール保存先",
     "btnChangeFolder": "フォルダーを変更...",
     "defaultBadge": "デフォルト AppData",

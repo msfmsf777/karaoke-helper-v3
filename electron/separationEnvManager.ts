@@ -13,10 +13,12 @@ import type {
   SeparationInstallProgress,
   SeparationStorageInfo,
   SeparationMigrationProgress,
+  SeparationRuntimeMeta,
 } from '../shared/separationTypes';
 
 const execAsync = promisify(exec);
 const execFileAsync = promisify(execFile);
+const RUNTIME_META_FILE = 'runtime_meta.json';
 
 type ProgressSubscriber = (progress: SeparationInstallProgress) => void;
 type MigrationSubscriber = (progress: SeparationMigrationProgress) => void;
@@ -112,6 +114,33 @@ class SeparationEnvManager {
     }
   }
 
+  getRuntimeMetaPath(envDir?: string): string {
+    return path.join(envDir || this.getSeparationEnvDir(), RUNTIME_META_FILE);
+  }
+
+  async readRuntimeMeta(envDir?: string): Promise<SeparationRuntimeMeta | null> {
+    const metaPath = this.getRuntimeMetaPath(envDir);
+    try {
+      if (!existsSync(metaPath)) return null;
+      const raw = await fs.readFile(metaPath, 'utf-8');
+      return JSON.parse(raw) as SeparationRuntimeMeta;
+    } catch (err) {
+      console.warn('[SeparationEnv] Failed to read runtime_meta.json', err);
+      return null;
+    }
+  }
+
+  async writeRuntimeMeta(meta: SeparationRuntimeMeta, envDir?: string): Promise<void> {
+    const targetDir = envDir || this.getSeparationEnvDir();
+    const metaPath = path.join(targetDir, RUNTIME_META_FILE);
+    try {
+      await fs.mkdir(targetDir, { recursive: true });
+      await fs.writeFile(metaPath, JSON.stringify(meta, null, 2), 'utf-8');
+    } catch (err) {
+      console.error('[SeparationEnv] Failed to write runtime_meta.json', err);
+    }
+  }
+
   /**
    * Returns current status of separation environment.
    */
@@ -128,54 +157,224 @@ class SeparationEnvManager {
       };
     }
 
-    const settings = await loadSettings();
+    const currentEnvDir = this.getSeparationEnvDir();
     const packagesDir = this.getSeparationPackagesDir();
     const hasAudioSeparator = existsSync(path.join(packagesDir, 'audio_separator'));
 
-    if (!hasAudioSeparator || !settings.separationEngine) {
+    if (!hasAudioSeparator) {
       this.verifiedReady = false;
+      this.lastError = null;
       return {
-        status: this.lastError ? 'error' : 'not_installed',
+        status: 'not_installed',
         mode: null,
-        errorMessage: this.lastError || undefined,
-        customRuntimePath: this.isCustomPath() ? this.getSeparationEnvDir() : undefined,
+        errorMessage: undefined,
+        customRuntimePath: this.isCustomPath() ? currentEnvDir : undefined,
       };
     }
 
-    // If already verified this session, return ready immediately
-    if (this.verifiedReady) {
+    // Check runtime_meta.json in runtime directory
+    const meta = await this.readRuntimeMeta(currentEnvDir);
+    const settings = await loadSettings();
+    const activeMode: SeparationEngineMode = settings.separationEngine?.mode || meta?.mode || 'gpu';
+    const supportedModes: SeparationEngineMode[] = meta?.mode === 'gpu' ? ['gpu', 'cpu'] : (meta?.mode ? ['cpu'] : ['gpu', 'cpu']);
+
+    if (meta && meta.verified) {
+      this.verifiedReady = true;
+      this.lastError = null;
+
+      // Auto-sync settings if missing or out-of-sync
+      if (!settings.separationEngine || settings.separationEngine.mode !== activeMode || settings.separationEngine.customRuntimePath !== (this.isCustomPath() ? currentEnvDir : undefined)) {
+        await saveSettings({
+          ...settings,
+          separationEngine: {
+            mode: activeMode,
+            installedAt: meta.installedAt,
+            gpuModel: meta.gpuModel,
+            vramMb: meta.vramMb,
+            customRuntimePath: this.isCustomPath() ? currentEnvDir : undefined,
+          },
+        });
+      }
+
+      return {
+        status: 'ready',
+        mode: activeMode,
+        supportedModes,
+        installedAt: meta.installedAt,
+        vramMb: meta.vramMb,
+        gpuModel: meta.gpuModel,
+        customRuntimePath: this.isCustomPath() ? currentEnvDir : undefined,
+      };
+    }
+
+    // If verifiedReady this session, return ready
+    if (this.verifiedReady && settings.separationEngine) {
       return {
         status: 'ready',
         mode: settings.separationEngine.mode,
+        supportedModes: settings.separationEngine.mode === 'gpu' ? ['gpu', 'cpu'] : ['cpu'],
         installedAt: settings.separationEngine.installedAt ? new Date(settings.separationEngine.installedAt).toISOString() : undefined,
         vramMb: settings.separationEngine.vramMb,
         gpuModel: settings.separationEngine.gpuModel,
-        customRuntimePath: this.isCustomPath() ? this.getSeparationEnvDir() : undefined,
+        customRuntimePath: this.isCustomPath() ? currentEnvDir : undefined,
       };
     }
 
-    // Quick verification probe
-    const isProbeValid = await this.verifyEnvironmentFast(settings.separationEngine.mode);
+    // Fallback: run verification probe and generate runtime_meta.json upon success
+    const probeMode = settings.separationEngine?.mode || 'gpu';
+    const isProbeValid = await this.verifyEnvironmentFast(probeMode);
     if (isProbeValid) {
       this.verifiedReady = true;
+      this.lastError = null;
+      const gpuInfo = await detectGpuHardware();
+      const newMeta: SeparationRuntimeMeta = {
+        version: '1.0',
+        mode: probeMode,
+        verified: true,
+        installedAt: new Date().toISOString(),
+        gpuModel: gpuInfo.modelName,
+        vramMb: gpuInfo.vramMb,
+        torchCuda: probeMode === 'gpu',
+      };
+      await this.writeRuntimeMeta(newMeta, currentEnvDir);
+      await saveSettings({
+        ...settings,
+        separationEngine: {
+          mode: probeMode,
+          installedAt: newMeta.installedAt,
+          vramMb: newMeta.vramMb,
+          gpuModel: newMeta.gpuModel,
+          customRuntimePath: this.isCustomPath() ? currentEnvDir : undefined,
+        },
+      });
+
       return {
         status: 'ready',
-        mode: settings.separationEngine.mode,
-        installedAt: settings.separationEngine.installedAt ? new Date(settings.separationEngine.installedAt).toISOString() : undefined,
-        vramMb: settings.separationEngine.vramMb,
-        gpuModel: settings.separationEngine.gpuModel,
-        customRuntimePath: this.isCustomPath() ? this.getSeparationEnvDir() : undefined,
+        mode: probeMode,
+        supportedModes: probeMode === 'gpu' ? ['gpu', 'cpu'] : ['cpu'],
+        installedAt: newMeta.installedAt,
+        vramMb: newMeta.vramMb,
+        gpuModel: newMeta.gpuModel,
+        customRuntimePath: this.isCustomPath() ? currentEnvDir : undefined,
       };
     }
 
     return {
       status: 'error',
-      mode: settings.separationEngine.mode,
-      errorMessage: settings.separationEngine.mode === 'gpu'
+      mode: settings.separationEngine?.mode || null,
+      errorMessage: settings.separationEngine?.mode === 'gpu'
         ? 'GPU 加速環境校驗失敗（未偵測到 CUDA 裝置），請嘗試重新安裝。'
         : '分離環境檔案可能已損毀，請嘗試重新安裝。',
-      customRuntimePath: this.isCustomPath() ? this.getSeparationEnvDir() : undefined,
+      customRuntimePath: this.isCustomPath() ? currentEnvDir : undefined,
     };
+  }
+
+  /**
+   * Switches engine mode between GPU and CPU without re-downloading when runtime supports it.
+   */
+  async switchEngineMode(targetMode: SeparationEngineMode): Promise<{ success: boolean; mode?: SeparationEngineMode; requiresInstall?: boolean; error?: string }> {
+    const envDir = this.getSeparationEnvDir();
+    const meta = await this.readRuntimeMeta(envDir);
+    const packagesDir = this.getSeparationPackagesDir();
+    const hasAudioSeparator = existsSync(path.join(packagesDir, 'audio_separator'));
+
+    if (!hasAudioSeparator) {
+      return { success: false, requiresInstall: true, error: '尚未安裝分離環境' };
+    }
+
+    if (targetMode === 'cpu') {
+      const settings = await loadSettings();
+      await saveSettings({
+        ...settings,
+        separationEngine: settings.separationEngine ? {
+          ...settings.separationEngine,
+          mode: 'cpu',
+        } : {
+          mode: 'cpu',
+          installedAt: meta?.installedAt || new Date().toISOString(),
+          gpuModel: meta?.gpuModel,
+          vramMb: meta?.vramMb,
+          customRuntimePath: this.isCustomPath() ? envDir : undefined,
+        },
+      });
+      return { success: true, mode: 'cpu' };
+    }
+
+    if (targetMode === 'gpu') {
+      if (meta && meta.mode === 'gpu' && meta.verified) {
+        const settings = await loadSettings();
+        await saveSettings({
+          ...settings,
+          separationEngine: settings.separationEngine ? {
+            ...settings.separationEngine,
+            mode: 'gpu',
+          } : {
+            mode: 'gpu',
+            installedAt: meta.installedAt,
+            gpuModel: meta.gpuModel,
+            vramMb: meta.vramMb,
+            customRuntimePath: this.isCustomPath() ? envDir : undefined,
+          },
+        });
+        return { success: true, mode: 'gpu' };
+      }
+
+      // Check if installed environment actually supports CUDA
+      const isCudaReady = await this.verifyEnvironmentFast('gpu');
+      if (isCudaReady) {
+        const gpuInfo = await detectGpuHardware();
+        const updatedMeta: SeparationRuntimeMeta = {
+          version: '1.0',
+          mode: 'gpu',
+          verified: true,
+          installedAt: meta?.installedAt || new Date().toISOString(),
+          gpuModel: gpuInfo.modelName,
+          vramMb: gpuInfo.vramMb,
+          torchCuda: true,
+        };
+        await this.writeRuntimeMeta(updatedMeta, envDir);
+        const settings = await loadSettings();
+        await saveSettings({
+          ...settings,
+          separationEngine: {
+            mode: 'gpu',
+            installedAt: updatedMeta.installedAt,
+            gpuModel: updatedMeta.gpuModel,
+            vramMb: updatedMeta.vramMb,
+            customRuntimePath: this.isCustomPath() ? envDir : undefined,
+          },
+        });
+        return { success: true, mode: 'gpu' };
+      }
+
+      return {
+        success: false,
+        requiresInstall: true,
+        error: '目前環境為 CPU 版本，若要啟用 GPU 加速需要下載 CUDA 核心套件。',
+      };
+    }
+
+    return { success: false, error: '不支援的模式' };
+  }
+
+  /**
+   * Rescans the separation runtime folder and refreshes detection status.
+   */
+  async rescanFolder(targetPath?: string): Promise<SeparationEnvStatus> {
+    if (targetPath && typeof targetPath === 'string' && targetPath.trim().length > 0) {
+      this.setCustomRuntimePath(targetPath);
+      const settings = await loadSettings();
+      await saveSettings({
+        ...settings,
+        separationEngine: settings.separationEngine ? {
+          ...settings.separationEngine,
+          customRuntimePath: this.isCustomPath() ? this.getSeparationEnvDir() : undefined,
+        } : undefined,
+      });
+    }
+    this.verifiedReady = false;
+    this.lastError = null;
+    return await this.getStatus();
   }
 
   isReady(): boolean {
@@ -192,7 +391,7 @@ class SeparationEnvManager {
         ? path.join(targetDir, 'Lib', 'site-packages')
         : this.getSeparationPackagesDir();
 
-      if (!existsSync(packagesDir)) {
+      if (!existsSync(packagesDir) || !existsSync(path.join(packagesDir, 'audio_separator'))) {
         return false;
       }
 
@@ -216,7 +415,7 @@ sys.exit(0)
 `.trim();
 
       await execFileAsync(pythonPath, ['-c', script, packagesDir, expectedMode || ''], {
-        timeout: 15000,
+        timeout: 60000,
         windowsHide: true,
       });
       return true;
@@ -559,13 +758,25 @@ sys.exit(0)
 
       this.verifiedReady = true;
 
+      // Write runtime_meta.json
+      const meta: SeparationRuntimeMeta = {
+        version: '1.0',
+        mode,
+        verified: true,
+        installedAt: new Date().toISOString(),
+        gpuModel: gpuInfo.modelName,
+        vramMb: gpuInfo.vramMb,
+        torchCuda: mode === 'gpu',
+      };
+      await this.writeRuntimeMeta(meta, envDir);
+
       // Save to User Settings
       const currentSettings = await loadSettings();
       await saveSettings({
         ...currentSettings,
         separationEngine: {
           mode,
-          installedAt: new Date().toISOString(),
+          installedAt: meta.installedAt,
           vramMb: gpuInfo.vramMb,
           gpuModel: gpuInfo.modelName,
           customRuntimePath: this.isCustomPath() ? this.getSeparationEnvDir() : undefined,
@@ -723,6 +934,19 @@ sys.exit(0)
       if (!isTargetValid) {
         throw new Error('目標目錄環境校驗未通過');
       }
+
+      // Success: update runtime metadata in target directory
+      const existingMeta = await this.readRuntimeMeta(targetDir);
+      const updatedMeta: SeparationRuntimeMeta = {
+        version: '1.0',
+        mode: expectedMode || existingMeta?.mode || 'gpu',
+        verified: true,
+        installedAt: existingMeta?.installedAt || new Date().toISOString(),
+        gpuModel: existingMeta?.gpuModel || currentSettings.separationEngine?.gpuModel,
+        vramMb: existingMeta?.vramMb || currentSettings.separationEngine?.vramMb,
+        torchCuda: (expectedMode || existingMeta?.mode) === 'gpu',
+      };
+      await this.writeRuntimeMeta(updatedMeta, targetDir);
 
       // Success: update settings
       const isDefault = targetDir.toLowerCase() === path.resolve(this.getDefaultSeparationEnvDir()).toLowerCase();

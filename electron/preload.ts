@@ -185,6 +185,10 @@ contextBridge.exposeInMainWorld('khelper', {
     startMigration: (targetPath: string): Promise<SeparationMigrationProgress> =>
       ipcRenderer.invoke('separationEnv:start-migration', targetPath),
     cancelMigration: (): Promise<void> => ipcRenderer.invoke('separationEnv:cancel-migration'),
+    switchMode: (mode: SeparationEngineMode): Promise<{ success: boolean; mode?: SeparationEngineMode; requiresInstall?: boolean; error?: string }> =>
+      ipcRenderer.invoke('separationEnv:switch-mode', mode),
+    rescanFolder: (targetPath?: string): Promise<SeparationEnvStatus> =>
+      ipcRenderer.invoke('separationEnv:rescan-folder', targetPath),
     subscribeProgress: (callback: (progress: SeparationInstallProgress) => void) => {
       const listener = (_event: Electron.IpcRendererEvent, progress: SeparationInstallProgress) => callback(progress)
       ipcRenderer.on('separationEnv:progress', listener)
