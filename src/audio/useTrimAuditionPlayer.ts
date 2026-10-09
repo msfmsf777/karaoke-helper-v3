@@ -11,15 +11,36 @@ function toFileUrl(filePath: string): string {
 
 export type AuditionSnippetType = 'in' | 'out' | 'manual' | null;
 
-export function useTrimAuditionPlayer(songId: string | null) {
+export interface UseTrimAuditionPlayerOptions {
+  trimEnd?: number;
+  initialVolume?: number;
+}
+
+export function useTrimAuditionPlayer(songId: string | null, options?: UseTrimAuditionPlayerOptions) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [activeSnippet, setActiveSnippet] = useState<AuditionSnippetType>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [volume, setVolumeState] = useState<number>(() => {
+    if (typeof options?.initialVolume === 'number' && Number.isFinite(options.initialVolume)) {
+      return Math.max(0, Math.min(1, options.initialVolume));
+    }
+    return 1.0;
+  });
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const stopTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const trimEndRef = useRef<number | undefined>(options?.trimEnd);
+  const volumeRef = useRef<number>(volume);
+
+  useEffect(() => {
+    trimEndRef.current = options?.trimEnd;
+  }, [options?.trimEnd]);
+
+  useEffect(() => {
+    volumeRef.current = volume;
+  }, [volume]);
 
   // Fetch song file path and resolve URL
   useEffect(() => {
@@ -52,6 +73,7 @@ export function useTrimAuditionPlayer(songId: string | null) {
     if (!audioUrl) return;
 
     const audio = new Audio(audioUrl);
+    audio.volume = Math.max(0, Math.min(1, volumeRef.current));
     audioRef.current = audio;
 
     // Apply configured headphone sink id to avoid stream bleed
@@ -70,6 +92,15 @@ export function useTrimAuditionPlayer(songId: string | null) {
 
     const onTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
+      if (
+        trimEndRef.current !== undefined &&
+        trimEndRef.current > 0 &&
+        audio.currentTime >= trimEndRef.current
+      ) {
+        audio.pause();
+        setIsPlaying(false);
+        setActiveSnippet(null);
+      }
     };
 
     const onEnded = () => {
@@ -94,7 +125,16 @@ export function useTrimAuditionPlayer(songId: string | null) {
     };
   }, [audioUrl]);
 
-  const stop = useCallback(() => {
+  const setVolume = useCallback((newVol: number) => {
+    const clamped = Math.max(0, Math.min(1, newVol));
+    setVolumeState(clamped);
+    volumeRef.current = clamped;
+    if (audioRef.current) {
+      audioRef.current.volume = clamped;
+    }
+  }, []);
+
+  const pause = useCallback(() => {
     if (stopTimeoutRef.current) {
       clearTimeout(stopTimeoutRef.current);
       stopTimeoutRef.current = null;
@@ -106,8 +146,41 @@ export function useTrimAuditionPlayer(songId: string | null) {
     setActiveSnippet(null);
   }, []);
 
+  const play = useCallback((startSeconds?: number, type: AuditionSnippetType = 'manual') => {
+    if (stopTimeoutRef.current) {
+      clearTimeout(stopTimeoutRef.current);
+      stopTimeoutRef.current = null;
+    }
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (typeof startSeconds === 'number' && Number.isFinite(startSeconds)) {
+      audio.currentTime = Math.max(0, startSeconds);
+      setCurrentTime(audio.currentTime);
+    }
+
+    audio.play()
+      .then(() => {
+        setIsPlaying(true);
+        setActiveSnippet(type);
+      })
+      .catch((err) => {
+        console.warn('[useTrimAuditionPlayer] Playback failed', err);
+        setIsPlaying(false);
+        setActiveSnippet(null);
+      });
+  }, []);
+
+  const togglePlayPause = useCallback((fallbackStartSeconds?: number) => {
+    if (isPlaying) {
+      pause();
+    } else {
+      play(fallbackStartSeconds);
+    }
+  }, [isPlaying, pause, play]);
+
   const playSnippet = useCallback((startSeconds: number, durationSeconds: number, type: AuditionSnippetType = 'manual') => {
-    stop();
+    pause();
     const audio = audioRef.current;
     if (!audio) return;
 
@@ -117,14 +190,14 @@ export function useTrimAuditionPlayer(songId: string | null) {
         setIsPlaying(true);
         setActiveSnippet(type);
         stopTimeoutRef.current = setTimeout(() => {
-          stop();
+          pause();
         }, durationSeconds * 1000);
       })
       .catch((err) => {
         console.warn('[useTrimAuditionPlayer] Playback failed', err);
-        stop();
+        pause();
       });
-  }, [stop]);
+  }, [pause]);
 
   const seek = useCallback((positionSeconds: number) => {
     if (audioRef.current) {
@@ -137,10 +210,15 @@ export function useTrimAuditionPlayer(songId: string | null) {
     isPlaying,
     currentTime,
     duration,
+    volume,
+    setVolume,
     activeSnippet,
+    play,
+    pause,
+    togglePlayPause,
     playSnippet,
     seek,
-    stop,
+    stop: pause,
     audioUrl,
   };
 }

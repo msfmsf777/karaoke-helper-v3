@@ -1,10 +1,16 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { SongMeta } from '../../shared/songTypes';
 import { useLibrary } from '../contexts/LibraryContext';
 import audioEngine from '../audio/AudioEngine';
 import { useTrimAuditionPlayer } from '../audio/useTrimAuditionPlayer';
 import { WaveformTrimTrack } from './WaveformTrimTrack';
+import PlayIcon from '../assets/icons/play.svg';
+import PauseIcon from '../assets/icons/pause.svg';
+import VolumeHighIcon from '../assets/icons/volume_high.svg';
+import VolumeLowIcon from '../assets/icons/volume_low.svg';
+import VolumeMuteIcon from '../assets/icons/volume_mute.svg';
 import {
     parseLrc,
     formatLrc,
@@ -47,17 +53,83 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
     const [error, setError] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
 
+    // Trim markers
+    const [trimStart, setTrimStart] = useState<number>(song.trimStart ?? 0);
+    const [trimEnd, setTrimEnd] = useState<number>(song.trimEnd ?? (song.duration || 0));
+
+    // Initial instrumental volume from audio engine
+    const initialInstrumentalVol = useMemo(() => {
+        return audioEngine.getTrackVolume('instrumental');
+    }, []);
+
     // Audio audition player
-    const auditionPlayer = useTrimAuditionPlayer(song.id);
+    const auditionPlayer = useTrimAuditionPlayer(song.id, {
+        trimEnd,
+        initialVolume: initialInstrumentalVol,
+    });
+
+    // Volume state and YouTube-style hover controls
+    const [isVolumeHovered, setIsVolumeHovered] = useState(false);
+    const [lastNonZeroVolume, setLastNonZeroVolume] = useState(() => (initialInstrumentalVol > 0 ? initialInstrumentalVol : 0.8));
+
+    const handleVolumeChange = useCallback((newVol: number) => {
+        auditionPlayer.setVolume(newVol);
+        audioEngine.setTrackVolume('instrumental', newVol);
+        if (newVol > 0) {
+            setLastNonZeroVolume(newVol);
+        }
+    }, [auditionPlayer]);
+
+    const handleToggleMute = useCallback(() => {
+        if (auditionPlayer.volume > 0) {
+            setLastNonZeroVolume(auditionPlayer.volume);
+            handleVolumeChange(0);
+        } else {
+            handleVolumeChange(lastNonZeroVolume > 0 ? lastNonZeroVolume : 0.8);
+        }
+    }, [auditionPlayer.volume, handleVolumeChange, lastNonZeroVolume]);
+
+    const getVolumeIcon = () => {
+        if (auditionPlayer.volume === 0) return VolumeMuteIcon;
+        if (auditionPlayer.volume < 0.5) return VolumeLowIcon;
+        return VolumeHighIcon;
+    };
+
+    // Play button handlers
+    const isPlayingIntro = auditionPlayer.isPlaying && auditionPlayer.activeSnippet === 'in';
+    const handlePlayIntroStart = useCallback(() => {
+        if (isPlayingIntro) {
+            auditionPlayer.pause();
+        } else {
+            auditionPlayer.play(trimStart, 'in');
+        }
+    }, [auditionPlayer, isPlayingIntro, trimStart]);
+
+    const isPlayingOutro = auditionPlayer.isPlaying && auditionPlayer.activeSnippet === 'out';
+    const handlePlayOutroEnd = useCallback(() => {
+        if (isPlayingOutro) {
+            auditionPlayer.pause();
+        } else {
+            const leadIn = Math.max(trimStart, trimEnd - 3.5);
+            auditionPlayer.play(leadIn, 'out');
+        }
+    }, [auditionPlayer, isPlayingOutro, trimEnd, trimStart]);
+
+    const handleMainPlayToggle = useCallback(() => {
+        if (auditionPlayer.isPlaying) {
+            auditionPlayer.pause();
+        } else {
+            const startPos = (auditionPlayer.currentTime < trimStart || auditionPlayer.currentTime >= trimEnd)
+                ? trimStart
+                : auditionPlayer.currentTime;
+            auditionPlayer.play(startPos, 'manual');
+        }
+    }, [auditionPlayer, trimEnd, trimStart]);
 
     // Total raw audio duration
     const totalDuration = useMemo(() => {
         return auditionPlayer.duration > 0 ? auditionPlayer.duration : (song.duration || 0);
     }, [auditionPlayer.duration, song.duration]);
-
-    // Trim markers
-    const [trimStart, setTrimStart] = useState<number>(song.trimStart ?? 0);
-    const [trimEnd, setTrimEnd] = useState<number>(song.trimEnd ?? (song.duration || 0));
 
     // Timecode string inputs
     const [startInputText, setStartInputText] = useState(formatTimecode(song.trimStart ?? 0));
@@ -242,18 +314,15 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
         await performSave('drop');
     };
 
-    return (
+    return createPortal(
         <div style={{
             position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
+            inset: 0,
             backgroundColor: 'rgba(0, 0, 0, 0.75)',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            zIndex: 2000,
+            zIndex: 10000,
             backdropFilter: 'blur(3px)',
         }}>
             <div style={{
@@ -397,8 +466,24 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '14px' }}>
                         {/* Trim Start Box */}
                         <div style={{ background: '#222', padding: '10px', borderRadius: '6px', border: '1px solid #333' }}>
-                            <div style={{ fontSize: '12px', color: '#aaa', marginBottom: '6px', display: 'flex', justifyContent: 'space-between' }}>
-                                <span>Intro Start (In-point)</span>
+                            <div style={{ fontSize: '12px', color: '#aaa', marginBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <button
+                                        onClick={handlePlayIntroStart}
+                                        title={isPlayingIntro ? 'Pause' : 'Play from Intro Start'}
+                                        style={miniPlayBtnStyle}
+                                        onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.92)'; }}
+                                        onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                                    >
+                                        <img
+                                            src={isPlayingIntro ? PauseIcon : PlayIcon}
+                                            alt="Play Intro"
+                                            style={{ width: '9px', height: '9px', display: 'block', marginLeft: isPlayingIntro ? '0' : '1px' }}
+                                        />
+                                    </button>
+                                    <span>Intro Start (In-point)</span>
+                                </div>
                                 <button
                                     onClick={grabStartFromPlayhead}
                                     style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '11px', cursor: 'pointer', padding: 0 }}
@@ -435,8 +520,24 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
 
                         {/* Trim End Box */}
                         <div style={{ background: '#222', padding: '10px', borderRadius: '6px', border: '1px solid #333' }}>
-                            <div style={{ fontSize: '12px', color: '#aaa', marginBottom: '6px', display: 'flex', justifyContent: 'space-between' }}>
-                                <span>Outro End (Out-point)</span>
+                            <div style={{ fontSize: '12px', color: '#aaa', marginBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <button
+                                        onClick={handlePlayOutroEnd}
+                                        title={isPlayingOutro ? 'Pause' : 'Play 3.5s before Outro End'}
+                                        style={miniPlayBtnStyle}
+                                        onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.92)'; }}
+                                        onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                                    >
+                                        <img
+                                            src={isPlayingOutro ? PauseIcon : PlayIcon}
+                                            alt="Play Outro"
+                                            style={{ width: '9px', height: '9px', display: 'block', marginLeft: isPlayingOutro ? '0' : '1px' }}
+                                        />
+                                    </button>
+                                    <span>Outro End (Out-point)</span>
+                                </div>
                                 <button
                                     onClick={grabEndFromPlayhead}
                                     style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '11px', cursor: 'pointer', padding: 0 }}
@@ -474,38 +575,89 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
 
                     {/* Audition Controls */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px' }}>
-                        <div style={{ display: 'flex', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <button
-                                onClick={() => auditionPlayer.playSnippet(trimStart, 3, 'in')}
-                                disabled={auditionPlayer.isPlaying && auditionPlayer.activeSnippet === 'in'}
-                                style={auditionBtnStyle(auditionPlayer.isPlaying && auditionPlayer.activeSnippet === 'in')}
+                                onClick={handleMainPlayToggle}
+                                title={auditionPlayer.isPlaying ? 'Pause' : 'Play'}
+                                style={mainPlayBtnStyle}
+                                onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.95)'; }}
+                                onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
                             >
-                                ▶ Audition Start 3s
+                                {auditionPlayer.isPlaying ? (
+                                    <img src={PauseIcon} alt="Pause" style={{ width: '13px', height: '13px', display: 'block' }} />
+                                ) : (
+                                    <img src={PlayIcon} alt="Play" style={{ width: '13px', height: '13px', display: 'block', marginLeft: '1px' }} />
+                                )}
                             </button>
-                            <button
-                                onClick={() => auditionPlayer.playSnippet(Math.max(0, trimEnd - 3), 3, 'out')}
-                                disabled={auditionPlayer.isPlaying && auditionPlayer.activeSnippet === 'out'}
-                                style={auditionBtnStyle(auditionPlayer.isPlaying && auditionPlayer.activeSnippet === 'out')}
+
+                            {/* YouTube-style Hover Volume Slider */}
+                            <div
+                                onMouseEnter={() => setIsVolumeHovered(true)}
+                                onMouseLeave={() => setIsVolumeHovered(false)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    height: '32px',
+                                    position: 'relative',
+                                }}
                             >
-                                ▶ Audition End 3s
-                            </button>
-                            {auditionPlayer.isPlaying && (
                                 <button
-                                    onClick={auditionPlayer.stop}
+                                    onClick={handleToggleMute}
+                                    title={auditionPlayer.volume === 0 ? 'Unmute' : `Volume: ${Math.round(auditionPlayer.volume * 100)}%`}
                                     style={{
-                                        padding: '5px 12px',
-                                        background: '#3a2222',
-                                        border: '1px solid #5a3333',
-                                        color: '#ff8b8b',
-                                        borderRadius: '6px',
-                                        fontSize: '12px',
+                                        background: 'none',
+                                        border: 'none',
+                                        color: '#ccc',
                                         cursor: 'pointer',
+                                        padding: '4px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        opacity: 0.85,
+                                        transition: 'opacity 0.15s',
                                     }}
                                 >
-                                    ⏹ Stop
+                                    <img
+                                        src={getVolumeIcon()}
+                                        alt="Volume"
+                                        style={{ width: '20px', height: '20px', display: 'block' }}
+                                    />
                                 </button>
-                            )}
+                                <div
+                                    style={{
+                                        width: isVolumeHovered ? '70px' : '0px',
+                                        opacity: isVolumeHovered ? 1 : 0,
+                                        overflow: 'hidden',
+                                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        pointerEvents: isVolumeHovered ? 'auto' : 'none',
+                                    }}
+                                >
+                                    <input
+                                        type="range"
+                                        min={0}
+                                        max={1}
+                                        step={0.01}
+                                        value={auditionPlayer.volume}
+                                        onChange={(e) => handleVolumeChange(Number(e.target.value))}
+                                        style={{
+                                            width: '64px',
+                                            height: '4px',
+                                            accentColor: 'var(--accent-color, #1db954)',
+                                            cursor: 'pointer',
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Current Audition Timecode / Total */}
+                            <span style={{ fontSize: '11px', color: '#888', fontFamily: 'monospace' }}>
+                                {formatTimecode(auditionPlayer.currentTime)} / {formatTimecode(totalDuration)}
+                            </span>
                         </div>
+
                         <div style={{ fontSize: '11px', color: '#777' }}>
                             Effective duration: <span style={{ color: '#fff', fontFamily: 'monospace' }}>{formatTimecode(Math.max(0, trimEnd - trimStart))}</span>
                         </div>
@@ -632,7 +784,8 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
                     </div>
                 )}
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 
@@ -646,15 +799,37 @@ const nudgeBtnStyle: React.CSSProperties = {
     cursor: 'pointer',
 };
 
-const auditionBtnStyle = (active: boolean): React.CSSProperties => ({
-    padding: '5px 12px',
-    background: active ? 'var(--primary-color)' : '#282828',
-    border: '1px solid #3d3d3d',
-    borderRadius: '6px',
-    color: '#fff',
-    fontSize: '12px',
+const miniPlayBtnStyle: React.CSSProperties = {
+    width: '18px',
+    height: '18px',
+    borderRadius: '50%',
+    backgroundColor: '#fff',
+    border: 'none',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     cursor: 'pointer',
-    transition: 'all 0.15s',
-});
+    color: '#1e1e1e',
+    padding: 0,
+    flexShrink: 0,
+    transition: 'transform 0.1s',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
+};
+
+const mainPlayBtnStyle: React.CSSProperties = {
+    width: '32px',
+    height: '32px',
+    borderRadius: '16px',
+    backgroundColor: '#fff',
+    border: 'none',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    color: '#1e1e1e',
+    transition: 'transform 0.1s, box-shadow 0.1s',
+    boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+    flexShrink: 0,
+};
 
 export default EditSongDialog;
