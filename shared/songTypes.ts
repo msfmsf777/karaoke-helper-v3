@@ -25,12 +25,23 @@ export interface SongSourceYouTube {
   originalPath: string;
 }
 
+export interface NoteEvidence {
+  note: string;
+  midi: number;
+  timestamp: number;
+  duration: number;
+  confidence: number;
+}
+
 export interface SongVocalRange {
   lowestMidi: number;
   highestMidi: number;
   lowestNote: string;
   highestNote: string;
   analyzedAt: string;
+  analysisVersion?: number;
+  lowestNoteEvidence?: NoteEvidence;
+  highestNoteEvidence?: NoteEvidence;
 }
 
 export interface SongMeta {

@@ -20,6 +20,13 @@ const IS_BLACK_KEY = [
   false, true, false, true, false, false, true, false, true, false, true, false
 ];
 
+const formatEvidenceTime = (sec?: number) => {
+  if (typeof sec !== 'number') return '';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+};
+
 export const VocalRangePill: React.FC<VocalRangePillProps> = ({ song, onOpenSetupModal }) => {
   const { t } = useTranslation();
   const { vocalRange } = useUserData();
@@ -243,6 +250,26 @@ export const VocalRangePill: React.FC<VocalRangePillProps> = ({ song, onOpenSetu
               {currentTranspose > 0 ? `+${currentTranspose}` : currentTranspose}
             </span>
           )}
+
+          {/* Subtle auto-detection reference badge */}
+          <span
+            style={{
+              fontSize: '9px',
+              padding: '1px 5px',
+              borderRadius: '4px',
+              backgroundColor: 'rgba(255, 255, 255, 0.08)',
+              color: '#9ca3af',
+              fontWeight: 500,
+              cursor: 'help',
+              letterSpacing: '0.02em',
+            }}
+            title={t(
+              'vocalRange.pill.autoBadgeTooltip',
+              '音域根據分離後的人聲音訊自動估算，可能受到和聲、混響及分離品質影響。可點擊最高音或最低音，跳轉至對應片段確認。'
+            )}
+          >
+            {t('vocalRange.pill.autoBadge', '自動偵測 · 僅供參考')}
+          </span>
         </span>
 
         <button
@@ -273,6 +300,11 @@ export const VocalRangePill: React.FC<VocalRangePillProps> = ({ song, onOpenSetu
       >
         {/* Lowest Note Badge */}
         <div
+          onClick={() => {
+            if (songRange?.lowestNoteEvidence?.timestamp !== undefined) {
+              audioEngine.seek(Math.max(0, songRange.lowestNoteEvidence.timestamp - 1.5));
+            }
+          }}
           style={{
             display: 'flex',
             flexDirection: 'column',
@@ -282,8 +314,17 @@ export const VocalRangePill: React.FC<VocalRangePillProps> = ({ song, onOpenSetu
             backgroundColor: 'rgba(59, 130, 246, 0.15)',
             border: '1px solid rgba(59, 130, 246, 0.3)',
             minWidth: '38px',
+            cursor: songRange?.lowestNoteEvidence ? 'pointer' : 'default',
+            transition: 'transform 0.15s, background-color 0.15s',
           }}
-          title={t('vocalRange.pill.lowestNote', '最低音')}
+          title={
+            songRange?.lowestNoteEvidence
+              ? t(
+                  'vocalRange.pill.lowestNoteSeek',
+                  `最低音 ${songLowNote} 出現於 ${formatEvidenceTime(songRange.lowestNoteEvidence.timestamp)} (長度 ${songRange.lowestNoteEvidence.duration.toFixed(1)}s) - 點擊跳轉試聽`
+                )
+              : t('vocalRange.pill.lowestNote', '最低音')
+          }
         >
           <span style={{ fontSize: '9px', color: '#93c5fd', textTransform: 'uppercase' }}>LOW</span>
           <span style={{ fontSize: '13px', fontWeight: 700, color: '#60a5fa' }}>{songLowNote}</span>
@@ -431,6 +472,11 @@ export const VocalRangePill: React.FC<VocalRangePillProps> = ({ song, onOpenSetu
 
         {/* Highest Note Badge */}
         <div
+          onClick={() => {
+            if (songRange?.highestNoteEvidence?.timestamp !== undefined) {
+              audioEngine.seek(Math.max(0, songRange.highestNoteEvidence.timestamp - 1.5));
+            }
+          }}
           style={{
             display: 'flex',
             flexDirection: 'column',
@@ -440,8 +486,17 @@ export const VocalRangePill: React.FC<VocalRangePillProps> = ({ song, onOpenSetu
             backgroundColor: 'rgba(249, 115, 22, 0.15)',
             border: '1px solid rgba(249, 115, 22, 0.3)',
             minWidth: '38px',
+            cursor: songRange?.highestNoteEvidence ? 'pointer' : 'default',
+            transition: 'transform 0.15s, background-color 0.15s',
           }}
-          title={t('vocalRange.pill.highestNote', '最高音')}
+          title={
+            songRange?.highestNoteEvidence
+              ? t(
+                  'vocalRange.pill.highestNoteSeek',
+                  `最高音 ${songHighNote} 出現於 ${formatEvidenceTime(songRange.highestNoteEvidence.timestamp)} (長度 ${songRange.highestNoteEvidence.duration.toFixed(1)}s) - 點擊跳轉試聽`
+                )
+              : t('vocalRange.pill.highestNote', '最高音')
+          }
         >
           <span style={{ fontSize: '9px', color: '#fed7aa', textTransform: 'uppercase' }}>HIGH</span>
           <span style={{ fontSize: '13px', fontWeight: 700, color: '#fb923c' }}>{songHighNote}</span>

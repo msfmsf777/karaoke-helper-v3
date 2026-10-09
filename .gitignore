@@ -50,3 +50,7 @@ scripts/generated/
 
 # Memo Docs
 /docs/*.txt
+
+# Python cache
+__pycache__/
+*.py[cod]

@@ -753,11 +753,15 @@ export async function analyzeSongVocalRange(songId: string): Promise<SongMeta | 
                 lowestNote: parsed.lowestNote,
                 highestNote: parsed.highestNote,
                 analyzedAt: new Date().toISOString(),
+                analysisVersion: parsed.analysisVersion ?? 2,
+                lowestNoteEvidence: parsed.lowestNoteEvidence ?? undefined,
+                highestNoteEvidence: parsed.highestNoteEvidence ?? undefined,
               },
             }));
-            console.log('[VocalRange] Successfully analyzed range for song', {
+            console.log('[VocalRange] Successfully analyzed V2 range for song', {
               songId,
               range: `${parsed.lowestNote} ~ ${parsed.highestNote}`,
+              version: parsed.analysisVersion ?? 2,
             });
             resolve(updated);
             return;
