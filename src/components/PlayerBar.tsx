@@ -148,6 +148,13 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
     pitchRef.current = pitch;
   }, [speed, pitch]);
 
+  // Broadcast pitch popup open/close state for stream HUD
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('khelper:pitch-popup-change', {
+      detail: { open: showPitchPopup }
+    }));
+  }, [showPitchPopup]);
+
   // Sync with current song
   useEffect(() => {
     if (currentSongId) {

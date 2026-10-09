@@ -159,6 +159,17 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
             if (!isCurrentLoad()) return;
 
+            // Apply non-destructive trim bounds if configured
+            if (song.trimStart !== undefined || song.trimEnd !== undefined) {
+                const rawDuration = song.duration ?? audioEngine.getDuration();
+                audioEngine.setTrimBounds({
+                    start: song.trimStart ?? 0,
+                    end: song.trimEnd ?? rawDuration,
+                });
+            } else {
+                audioEngine.setTrimBounds(null);
+            }
+
             if (autoPlay) {
                 await audioEngine.play();
                 if (song.audio_status === 'streaming') {

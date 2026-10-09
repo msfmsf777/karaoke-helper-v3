@@ -124,3 +124,47 @@ export function getLyricsStatusFromLines(lines: EditableLyricLine[], preferred: 
   if (lines.length === 0) return 'none';
   return preferred;
 }
+
+export interface ShiftLyricsResult {
+  lines: EditableLyricLine[];
+  droppedCount: number;
+  clampedCount: number;
+}
+
+export function detectLyricsCutConflict(
+  lines: EditableLyricLine[],
+  trimDelta: number
+): { conflictCount: number; affectedLines: EditableLyricLine[] } {
+  const affected = lines.filter((l) => l.timeSeconds !== null && (l.timeSeconds - trimDelta) < -0.001);
+  return { conflictCount: affected.length, affectedLines: affected };
+}
+
+export function shiftLyricLines(
+  lines: EditableLyricLine[],
+  trimDelta: number,
+  resolution: 'drop' | 'clamp' = 'drop'
+): ShiftLyricsResult {
+  let droppedCount = 0;
+  let clampedCount = 0;
+  const result: EditableLyricLine[] = [];
+
+  for (const line of lines) {
+    if (line.timeSeconds === null || Number.isNaN(line.timeSeconds)) {
+      result.push(line);
+      continue;
+    }
+    const shifted = Math.round((line.timeSeconds - trimDelta) * 100) / 100;
+    if (shifted < 0) {
+      if (resolution === 'drop') {
+        droppedCount++;
+      } else {
+        clampedCount++;
+        result.push({ ...line, timeSeconds: 0 });
+      }
+    } else {
+      result.push({ ...line, timeSeconds: shifted });
+    }
+  }
+
+  return { lines: result, droppedCount, clampedCount };
+}

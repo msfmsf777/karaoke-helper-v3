@@ -69,6 +69,8 @@ export interface SongMeta {
   thumbnailUrl?: string;
   thumbnail_path?: string;
   vocal_range?: SongVocalRange;
+  trimStart?: number;
+  trimEnd?: number;
 }
 
 export interface DownloadJob {

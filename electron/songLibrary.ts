@@ -117,6 +117,8 @@ function normalizeMeta(meta: SongMeta): SongMeta {
     duration: normalizeDuration((meta as { duration?: unknown }).duration),
     thumbnailUrl: meta.thumbnailUrl ?? undefined,
     thumbnail_path: meta.thumbnail_path ?? undefined,
+    trimStart: typeof meta.trimStart === 'number' && Number.isFinite(meta.trimStart) ? Math.max(0, meta.trimStart) : undefined,
+    trimEnd: typeof meta.trimEnd === 'number' && Number.isFinite(meta.trimEnd) ? Math.max(0, meta.trimEnd) : undefined,
   };
   return normalized;
 }

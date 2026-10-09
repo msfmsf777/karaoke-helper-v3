@@ -1032,5 +1032,45 @@
     "btnChangeFolder": "Change Folder...",
     "defaultBadge": "Default AppData",
     "customBadge": "Custom Directory"
+  },
+  "vocalRange": {
+    "settings": {
+      "title": "Vocal Range Profile",
+      "configured": "Current comfortable range: {{range}}",
+      "unconfigured": "No vocal range configured. Set up your range to get personalized smart key recommendations.",
+      "modify": "Modify Range",
+      "setup": "Set Up Range",
+      "autoShowTitle": "Auto-popout Vocal Range",
+      "autoShowDesc": "When enabled, automatically displays the vocal range pill on song change or when opening the pitch popup. When disabled, only the top button opens it."
+    },
+    "pill": {
+      "noSeparatedTrack": "This song has not been separated yet",
+      "analyzing": "Analyzing vocal range...",
+      "reopen": "Show vocal range & recommended key",
+      "title": "Song Vocal Range",
+      "autoBadge": "For reference only",
+      "autoBadgeTooltip": "Range is estimated automatically from separated vocal audio and may be affected by harmonies, reverb, or separation artifacts. Click high/low notes to seek and verify.",
+      "lowestNote": "Lowest note",
+      "highestNote": "Highest note",
+      "lowestNoteSeek": "Lowest note {{note}} at {{time}} (duration {{duration}}s) - Click to seek",
+      "highestNoteSeek": "Highest note {{note}} at {{time}} (duration {{duration}}s) - Click to seek",
+      "warnHigh": "Highest note too high (+{{count}} st)",
+      "warnLow": "Lowest note too low (-{{count}} st)",
+      "setupPrompt": "Set up your vocal range for key recommendations ➔"
+    },
+    "modal": {
+      "title": "Vocal Range Profile Setup",
+      "subtitle": "Click piano keys or select a preset to configure your comfortable vocal range (audio plays in headphones only).",
+      "lowestNote": "Lowest Note",
+      "selecting": "Selecting",
+      "highestNote": "Highest Note",
+      "clear": "Clear"
+    },
+    "presets": {
+      "soprano": "Soprano (C4~A5)",
+      "mezzo": "Mezzo-Soprano (A3~F5)",
+      "tenor": "Tenor (C3~A4)",
+      "baritone": "Baritone (G2~E4)"
+    }
   }
 }

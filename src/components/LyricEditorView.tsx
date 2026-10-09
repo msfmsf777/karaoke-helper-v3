@@ -24,6 +24,8 @@ import SmartAlignIcon from '../assets/icons/SmartAlign.svg';
 import PlayIcon from '../assets/icons/play.svg';
 import AddIcon from '../assets/icons/add.svg';
 import DeleteIcon from '../assets/icons/delete.svg';
+import EditIcon from '../assets/icons/edit.svg';
+import EditSongDialog from './EditSongDialog';
 
 const SearchIcon = (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -120,6 +122,7 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
     const [pendingSongId, setPendingSongId] = useState<string | null>(null);
     const [deleteConfirmLineId, setDeleteConfirmLineId] = useState<string | null>(null);
     const deleteConfirmTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const [showEditSongDialog, setShowEditSongDialog] = useState(false);
 
     // Dirty Check State - Exposed for internal logic
     const [isDirtyInternal, setIsDirtyInternal] = useState(false);
@@ -1362,9 +1365,42 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                             position: 'relative' // For absolute centering
                         }}
                     >
-                        {/* Time Display (Current Only) */}
-                        <div style={{ color: '#fff', fontSize: '16px', fontFamily: 'monospace', fontWeight: 700, minWidth: '80px' }}>
-                            {formatDisplayTime(currentTime)}
+                        {/* Time Display & Quick Edit Song Button */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{ color: '#fff', fontSize: '16px', fontFamily: 'monospace', fontWeight: 700, minWidth: '80px' }}>
+                                {formatDisplayTime(currentTime)}
+                            </div>
+                            {selectedSong && (
+                                <button
+                                    onClick={() => setShowEditSongDialog(true)}
+                                    title={t('songManagement.editDetails', { defaultValue: 'Edit Song & Trim' })}
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        padding: '4px 10px',
+                                        backgroundColor: '#202020',
+                                        border: '1px solid #383838',
+                                        borderRadius: '6px',
+                                        color: '#ddd',
+                                        fontSize: '12px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s',
+                                        whiteSpace: 'nowrap',
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.backgroundColor = '#2c2c2c';
+                                        e.currentTarget.style.borderColor = '#555';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor = '#202020';
+                                        e.currentTarget.style.borderColor = '#383838';
+                                    }}
+                                >
+                                    <img src={EditIcon} alt="" style={{ width: '13px', height: '13px', opacity: 0.8 }} />
+                                    <span>{t('songManagement.editDetails', { defaultValue: 'Edit Song' })}</span>
+                                </button>
+                            )}
                         </div>
 
                         {/* Center: Tap Button / Smart Align Action */}
@@ -1683,6 +1719,21 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                     initialQuery={`${selectedSong.title} ${selectedSong.artist || ''}`.trim()}
                     onSelect={handleLyricsImport}
                     mode="overlay"
+                />
+            )}
+
+            {showEditSongDialog && selectedSong && (
+                <EditSongDialog
+                    song={selectedSong}
+                    onClose={async () => {
+                        setShowEditSongDialog(false);
+                        const list = await loadAllSongs();
+                        setSongs(list);
+                        const updated = list.find((s) => s.id === selectedSong.id);
+                        if (updated) {
+                            await loadLyricsForSong(updated);
+                        }
+                    }}
                 />
             )}
         </div>

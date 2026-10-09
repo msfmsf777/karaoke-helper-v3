@@ -39,7 +39,7 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
   const { t } = useTranslation();
   const { currentSongId, resetStream } = useQueue();
   const { getSongById } = useLibrary();
-  const { lyricStyles, setLyricStyles, songPreferences, setSongPreference } = useUserData();
+  const { lyricStyles, setLyricStyles, songPreferences, setSongPreference, vocalRangeAutoShow } = useUserData();
 
   const [lines, setLines] = useState<EditableLyricLine[]>([]);
   const [lyricsStatus, setLyricsStatus] = useState<SongMeta['lyrics_status']>('none');
@@ -64,7 +64,18 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
   };
 
   const [vocalRangeTrigger, setVocalRangeTrigger] = useState(0);
+  const [isPitchPopupOpen, setIsPitchPopupOpen] = useState(false);
   const isSeparated = currentSong?.audio_status === 'separated' || Boolean(currentSong?.vocal_path);
+
+  // Listen for pitch popup open/close in PlayerBar
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ open: boolean }>).detail;
+      setIsPitchPopupOpen(Boolean(detail?.open));
+    };
+    window.addEventListener('khelper:pitch-popup-change', handler);
+    return () => window.removeEventListener('khelper:pitch-popup-change', handler);
+  }, []);
 
   const handleToggleVocalRange = () => {
     if (!currentSong || !isSeparated) {
@@ -421,6 +432,8 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
             song={currentSong ?? null}
             onOpenSetupModal={() => setShowVocalRangeSetupModal(true)}
             forceShowTrigger={vocalRangeTrigger}
+            isPitchPopupOpen={isPitchPopupOpen}
+            autoShow={vocalRangeAutoShow}
           />
 
           {showStylePopup && (

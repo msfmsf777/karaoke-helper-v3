@@ -1032,5 +1032,45 @@
     "btnChangeFolder": "變更目錄...",
     "defaultBadge": "預設 AppData",
     "customBadge": "自訂目錄"
+  },
+  "vocalRange": {
+    "settings": {
+      "title": "個人音域",
+      "configured": "目前舒適音域：{{range}}",
+      "unconfigured": "尚未設定音域，設定後可為歌曲提供專屬智慧轉調建議",
+      "modify": "修改音域",
+      "setup": "設定音域",
+      "autoShowTitle": "自動彈出歌曲音域",
+      "autoShowDesc": "開啟時，於切歌或打開調性調整選單時自動顯示音域膠囊；關閉後僅能透過歌詞框頂部按鈕手動打開"
+    },
+    "pill": {
+      "noSeparatedTrack": "此歌曲尚未分離人聲",
+      "analyzing": "正在分析人聲音域...",
+      "reopen": "顯示歌曲音域與推薦調性",
+      "title": "歌曲音域",
+      "autoBadge": "僅供參考",
+      "autoBadgeTooltip": "音域根據分離後的人聲音訊自動估算，可能受到和聲、混響及分離品質影響。可點擊最高音或最低音，跳轉至對應片段確認。",
+      "lowestNote": "最低音",
+      "highestNote": "最高音",
+      "lowestNoteSeek": "最低音 {{note}} 出現於 {{time}} (長度 {{duration}}s) - 點擊跳轉試聽",
+      "highestNoteSeek": "最高音 {{note}} 出現於 {{time}} (長度 {{duration}}s) - 點擊跳轉試聽",
+      "warnHigh": "最高音偏高 ({{count}} 個半音)",
+      "warnLow": "最低音偏低 ({{count}} 個半音)",
+      "setupPrompt": "設定個人音域以取得推薦調性 ➔"
+    },
+    "modal": {
+      "title": "個人音域設定",
+      "subtitle": "點擊琴鍵或選擇範本以設定您的安全演唱音域，點擊時僅耳機發聲。",
+      "lowestNote": "最低音",
+      "selecting": "選取中",
+      "highestNote": "最高音",
+      "clear": "清除設定"
+    },
+    "presets": {
+      "soprano": "女高音 (C4~A5)",
+      "mezzo": "女中音 (A3~F5)",
+      "tenor": "男高音 (C3~A4)",
+      "baritone": "男中音 (G2~E4)"
+    }
   }
 }

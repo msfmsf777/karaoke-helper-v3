@@ -6,10 +6,12 @@ export type {
 export {
   alignEnrichedLyricLines,
   compactLyricLinesForEnrichment,
+  detectLyricsCutConflict,
   formatLrc,
   formatTimeTag,
   linesFromRawText,
   parseLrc,
+  shiftLyricLines,
 } from '../../shared/lyrics';
 
 const getApi = () => {

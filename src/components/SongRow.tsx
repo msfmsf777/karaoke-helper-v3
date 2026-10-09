@@ -22,6 +22,7 @@ import PlayIcon from '../assets/icons/play.svg';
 import { coerceDurationSeconds, getDownloadState, getSongYoutubeId, getStreamingSongThumbnailUrl } from '../utils/onlineSongs';
 import { SONG_TABLE_GRID, SONG_TABLE_ROW_PADDING } from './songTableLayout';
 import { getAudioStatusLabel, getLyricsStatusLabel, getSongTypeLabel } from '../i18n/domainLabels';
+import { getEffectiveSongDuration } from '../utils/songDuration';
 
 interface SongRowProps {
     song: SongMeta;
@@ -360,7 +361,7 @@ const SongRow: React.FC<SongRowProps> = ({
 
                 {/* Duration */}
                 <div style={{ color: '#b3b3b3', fontSize: '13px', textAlign: 'center' }}>
-                    {showDuration && formatDuration(song.duration)}
+                    {showDuration && formatDuration(getEffectiveSongDuration(song))}
                 </div>
             </div>
 

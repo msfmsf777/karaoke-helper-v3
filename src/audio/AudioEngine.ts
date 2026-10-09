@@ -18,6 +18,11 @@ export interface PlaybackTransform {
   transpose: number;   // -12–+12 semitones
 }
 
+export interface PlaybackBounds {
+  start: number;
+  end: number;
+}
+
 export interface AudioEngine {
   loadFile(paths: string | { instrumental: string; vocal: string | null }): Promise<void>;
   loadStream(url: string): Promise<void>;
@@ -40,13 +45,16 @@ export interface AudioEngine {
   getPlaybackTransform(): PlaybackTransform;
 
   // Calibration
-  // Calibration
   setOffset(offsetMs: number): void;
   setLoop(loop: boolean): void;
   getSampleRate(role: OutputRole): number;
   getVolume(role: OutputRole): number;
   getTrackVolume(track: TrackType): number;
   onVolumeChange(callback: (track: TrackType, volume: number) => void): () => void;
+
+  // Playback Bounds (Non-destructive Trim)
+  setTrimBounds(bounds: PlaybackBounds | null): void;
+  getTrimBounds(): PlaybackBounds | null;
 }
 
 type SinkableAudioElement = HTMLAudioElement & { setSinkId?: (sinkId: string) => Promise<void> };
@@ -329,6 +337,21 @@ export class DualAudioEngine implements AudioEngine {
   private lastEmergencySeekTime = 0;
 
   private volumeCallbacks = new Set<(track: TrackType, volume: number) => void>();
+  private trimBounds: PlaybackBounds | null = null;
+
+  setTrimBounds(bounds: PlaybackBounds | null): void {
+    if (bounds) {
+      const start = Math.max(0, bounds.start);
+      const end = Math.max(start, bounds.end);
+      this.trimBounds = { start, end };
+    } else {
+      this.trimBounds = null;
+    }
+  }
+
+  getTrimBounds(): PlaybackBounds | null {
+    return this.trimBounds;
+  }
 
   constructor() {
     console.log('[AudioEngine] Initializing SoundTouch-based Dual Engine...');
@@ -451,6 +474,12 @@ export class DualAudioEngine implements AudioEngine {
         }
 
         this.timeUpdateSubscribers.forEach((cb) => cb(time));
+
+        if (this.trimBounds && this.getRawCurrentTime() >= this.trimBounds.end) {
+          this.handleEnded();
+          return;
+        }
+
         this.animationFrameId = requestAnimationFrame(loop);
       }
     };
@@ -557,6 +586,12 @@ export class DualAudioEngine implements AudioEngine {
   }
 
   async play(): Promise<void> {
+    if (this.trimBounds) {
+      const raw = this.getRawCurrentTime();
+      if (raw < this.trimBounds.start - 0.05 || raw >= this.trimBounds.end - 0.05) {
+        this.seekRaw(this.trimBounds.start);
+      }
+    }
     if (this.activeMode === 'native') {
         const outputGains = this.getResolvedOutputGains();
         const dualOutputAudible = outputGains.stream > 0 && outputGains.headphone > 0;
@@ -628,6 +663,19 @@ export class DualAudioEngine implements AudioEngine {
   }
 
   seek(positionSeconds: number): void {
+    if (this.trimBounds) {
+      const maxVirtual = Math.max(0, this.trimBounds.end - this.trimBounds.start);
+      const clampedVirtual = Math.max(0, Math.min(positionSeconds, maxVirtual));
+      const rawTarget = this.trimBounds.start + clampedVirtual;
+      this.seekRaw(rawTarget);
+      this.timeUpdateSubscribers.forEach(cb => cb(clampedVirtual));
+    } else {
+      this.seekRaw(positionSeconds);
+      this.timeUpdateSubscribers.forEach(cb => cb(positionSeconds));
+    }
+  }
+
+  private seekRaw(positionSeconds: number): void {
     this.driftInitialized = false;
     this.smoothedDrift = 0;
     this.lastEmergencySeekTime = 0;
@@ -643,15 +691,26 @@ export class DualAudioEngine implements AudioEngine {
         this.headphonePlayer.seek(positionSeconds);
         this.streamPlayer.setSlew(1.0);
     }
-    this.timeUpdateSubscribers.forEach(cb => cb(positionSeconds));
   }
 
-  getCurrentTime(): number {
+  private getRawCurrentTime(): number {
     return this.activeMode === 'native' ? this.nativeHeadphonePlayer.currentTime : this.headphonePlayer.currentTime;
   }
 
-  getDuration(): number {
+  private getRawDuration(): number {
     return this.activeMode === 'native' ? this.nativeHeadphonePlayer.duration : this.headphonePlayer.duration;
+  }
+
+  getCurrentTime(): number {
+    const raw = this.getRawCurrentTime();
+    if (!this.trimBounds) return raw;
+    return Math.max(0, Math.min(raw - this.trimBounds.start, this.trimBounds.end - this.trimBounds.start));
+  }
+
+  getDuration(): number {
+    const raw = this.getRawDuration();
+    if (!this.trimBounds) return raw;
+    return Math.max(0, this.trimBounds.end - this.trimBounds.start);
   }
 
   isPlaying(): boolean {

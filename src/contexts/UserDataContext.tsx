@@ -69,6 +69,8 @@ interface UserDataContextType {
     setAnalytics: (settings: AnalyticsSettings) => void;
     vocalRange: UserVocalRange | null;
     setVocalRange: (range: UserVocalRange | null) => void;
+    vocalRangeAutoShow: boolean;
+    setVocalRangeAutoShow: (autoShow: boolean) => void;
     settingsLoaded: boolean;
 }
 
@@ -82,6 +84,7 @@ type LoadedSettings = {
     overlayTemplates?: OverlayTemplatesConfig;
     analytics?: AnalyticsSettings;
     vocalRange?: UserVocalRange | null;
+    vocalRangeAutoShow?: boolean;
 };
 
 type SettingsLoadResult = {
@@ -114,6 +117,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [overlayTemplates, setOverlayTemplates] = useState<OverlayTemplatesConfig>(() => mergeOverlayTemplatesConfig());
     const [analytics, setAnalytics] = useState<AnalyticsSettings>(() => createDefaultAnalyticsSettings());
     const [vocalRange, setVocalRange] = useState<UserVocalRange | null>(null);
+    const [vocalRangeAutoShow, setVocalRangeAutoShow] = useState<boolean>(true);
     const [settingsLoaded, setSettingsLoaded] = useState(false);
 
     const createSettingsPayload = useCallback(() => ({
@@ -126,7 +130,8 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         overlayTemplates,
         analytics,
         vocalRange,
-    }), [separationQuality, language, lyricStyles, songPreferences, hotkeys, songListViews, overlayTemplates, analytics, vocalRange]);
+        vocalRangeAutoShow,
+    }), [separationQuality, language, lyricStyles, songPreferences, hotkeys, songListViews, overlayTemplates, analytics, vocalRange, vocalRangeAutoShow]);
 
     // Load data on startup
     useEffect(() => {
@@ -161,6 +166,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 const nextOverlayTemplates = mergeOverlayTemplatesConfig(settings.overlayTemplates, settings.lyricStyles);
                 const nextAnalytics = settings.analytics ?? createDefaultAnalyticsSettings();
                 const nextVocalRange = settings.vocalRange ?? null;
+                const nextVocalRangeAutoShow = settings.vocalRangeAutoShow ?? true;
                 loadedSettingsSnapshot.current = JSON.stringify({
                     separationQuality: nextSeparationQuality,
                     language: nextLanguage,
@@ -171,6 +177,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                     overlayTemplates: nextOverlayTemplates,
                     analytics: nextAnalytics,
                     vocalRange: nextVocalRange,
+                    vocalRangeAutoShow: nextVocalRangeAutoShow,
                 });
                 unsafeSettingsLoad.current = settingsResult.unsafeToAutoPersist;
                 if (settingsResult.status === 'restored-from-backup') {
@@ -208,6 +215,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 setOverlayTemplates(nextOverlayTemplates);
                 setAnalytics(nextAnalytics);
                 setVocalRange(nextVocalRange);
+                setVocalRangeAutoShow(nextVocalRangeAutoShow);
 
                 // Load recent searches from localStorage
                 const savedRecent = localStorage.getItem('khelper_recent_searches');
@@ -435,6 +443,8 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             setAnalytics,
             vocalRange,
             setVocalRange,
+            vocalRangeAutoShow,
+            setVocalRangeAutoShow,
             settingsLoaded
         }}>
             {children}

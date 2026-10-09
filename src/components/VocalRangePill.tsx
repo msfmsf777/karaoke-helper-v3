@@ -15,6 +15,8 @@ interface VocalRangePillProps {
   song: SongMeta | null;
   onOpenSetupModal: () => void;
   forceShowTrigger?: number;
+  isPitchPopupOpen?: boolean;
+  autoShow?: boolean;
 }
 
 const IS_BLACK_KEY = [
@@ -28,7 +30,13 @@ const formatEvidenceTime = (sec?: number) => {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 };
 
-export const VocalRangePill: React.FC<VocalRangePillProps> = ({ song, onOpenSetupModal, forceShowTrigger }) => {
+export const VocalRangePill: React.FC<VocalRangePillProps> = ({
+  song,
+  onOpenSetupModal,
+  forceShowTrigger,
+  isPitchPopupOpen = false,
+  autoShow = true,
+}) => {
   const { t } = useTranslation();
   const { vocalRange } = useUserData();
   const { updateSong } = useLibrary();
@@ -37,6 +45,7 @@ export const VocalRangePill: React.FC<VocalRangePillProps> = ({ song, onOpenSetu
   const [isHovered, setIsHovered] = useState(false);
   const dismissTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastAnalyzedSongIdRef = useRef<string | null>(null);
+  const lastPitchPopupOpenRef = useRef(isPitchPopupOpen);
 
   // Active transpose: read from song playback or audioEngine
   const currentTranspose = song?.playback?.transpose ?? audioEngine.getPlaybackTransform().transpose ?? 0;
@@ -59,37 +68,57 @@ export const VocalRangePill: React.FC<VocalRangePillProps> = ({ song, onOpenSetu
   const scheduleDismiss = (delayMs: number = 5000) => {
     if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
     dismissTimerRef.current = setTimeout(() => {
-      if (!isHovered) {
+      if (!isHovered && !isPitchPopupOpen) {
         setIsVisible(false);
       }
     }, delayMs);
   };
 
-  // Trigger 1: Show on song load/change
+  // Trigger 1: Show on song load/change (only when autoShow is enabled)
   useEffect(() => {
-    if (isSeparated && songRange) {
+    if (autoShow && isSeparated && songRange) {
       setIsVisible(true);
       scheduleDismiss(5000);
-    } else {
+    } else if (!autoShow) {
       setIsVisible(false);
     }
     return () => {
       if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
     };
-  }, [song?.id, isSeparated, Boolean(songRange)]);
+  }, [song?.id, isSeparated, Boolean(songRange), autoShow]);
 
-  // Trigger 2: Show on pitch change
+  // Trigger 2: Pitch popup open / close pinning lifecycle
   useEffect(() => {
-    if (currentTranspose !== lastTransposeRef.current) {
-      lastTransposeRef.current = currentTranspose;
-      if (isSeparated && songRange) {
+    if (!autoShow) return;
+    if (isPitchPopupOpen) {
+      if (isSeparated) {
         setIsVisible(true);
+        if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+      }
+    } else if (lastPitchPopupOpenRef.current && !isPitchPopupOpen) {
+      // Transition from open -> closed: schedule 4s delay dismiss
+      if (isSeparated && isVisible) {
         scheduleDismiss(4000);
       }
     }
-  }, [currentTranspose, isSeparated, songRange]);
+    lastPitchPopupOpenRef.current = isPitchPopupOpen;
+  }, [isPitchPopupOpen, autoShow, isSeparated, isVisible]);
 
-  // Trigger 3: Manual trigger from button
+  // Trigger 3: Pitch change (e.g. hotkeys or slider while open)
+  useEffect(() => {
+    if (currentTranspose !== lastTransposeRef.current) {
+      lastTransposeRef.current = currentTranspose;
+      if (autoShow && isSeparated && (songRange || isVisible)) {
+        setIsVisible(true);
+        // If pitch popup is currently open, it is pinned so do not schedule dismiss yet
+        if (!isPitchPopupOpen) {
+          scheduleDismiss(4000);
+        }
+      }
+    }
+  }, [currentTranspose, autoShow, isSeparated, Boolean(songRange), isVisible, isPitchPopupOpen]);
+
+  // Trigger 4: Manual trigger from button (always works regardless of autoShow setting)
   useEffect(() => {
     if (forceShowTrigger && forceShowTrigger > 0) {
       if (isSeparated) {
@@ -103,10 +132,10 @@ export const VocalRangePill: React.FC<VocalRangePillProps> = ({ song, onOpenSetu
   useEffect(() => {
     if (isHovered) {
       if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
-    } else if (isVisible) {
+    } else if (isVisible && !isPitchPopupOpen) {
       scheduleDismiss(3000);
     }
-  }, [isHovered]);
+  }, [isHovered, isVisible, isPitchPopupOpen]);
 
   // Shifted song range according to playback transpose
   const shiftedLow = (songRange?.lowestMidi ?? 60) + currentTranspose;
@@ -119,6 +148,25 @@ export const VocalRangePill: React.FC<VocalRangePillProps> = ({ song, onOpenSetu
     if (!songRange) return null;
     return calculateKeyRecommendation(songRange, vocalRange, currentTranspose);
   }, [songRange, vocalRange, currentTranspose]);
+
+  // Real-time dynamic warning based on currentTranspose vs user's vocal range
+  const activeWarning = useMemo(() => {
+    if (!vocalRange || !songRange) return undefined;
+    if (shiftedHigh > vocalRange.highestMidi) {
+      const diff = shiftedHigh - vocalRange.highestMidi;
+      return t('vocalRange.pill.warnHigh', { count: diff });
+    }
+    if (shiftedLow < vocalRange.lowestMidi) {
+      const diff = vocalRange.lowestMidi - shiftedLow;
+      return t('vocalRange.pill.warnLow', { count: diff });
+    }
+    const songSpan = songRange.highestMidi - songRange.lowestMidi;
+    const userSpan = vocalRange.highestMidi - vocalRange.lowestMidi;
+    if (songSpan > userSpan && recommendation?.warning) {
+      return recommendation.warning;
+    }
+    return undefined;
+  }, [vocalRange, songRange, shiftedHigh, shiftedLow, recommendation?.warning, t]);
 
   const handleApplyRecommendation = () => {
     if (!song || !recommendation) return;
@@ -333,7 +381,7 @@ export const VocalRangePill: React.FC<VocalRangePillProps> = ({ song, onOpenSetu
               '音域根據分離後的人聲音訊自動估算，可能受到和聲、混響及分離品質影響。可點擊最高音或最低音，跳轉至對應片段確認。'
             )}
           >
-            {t('vocalRange.pill.autoBadge', '自動偵測 · 僅供參考')}
+            {t('vocalRange.pill.autoBadge', '僅供參考')}
           </span>
         </span>
 
@@ -384,11 +432,12 @@ export const VocalRangePill: React.FC<VocalRangePillProps> = ({ song, onOpenSetu
           }}
           title={
             songRange?.lowestNoteEvidence
-              ? t(
-                  'vocalRange.pill.lowestNoteSeek',
-                  `最低音 ${songLowNote} 出現於 ${formatEvidenceTime(songRange.lowestNoteEvidence.timestamp)} (長度 ${songRange.lowestNoteEvidence.duration.toFixed(1)}s) - 點擊跳轉試聽`
-                )
-              : t('vocalRange.pill.lowestNote', '最低音')
+              ? t('vocalRange.pill.lowestNoteSeek', {
+                  note: songLowNote,
+                  time: formatEvidenceTime(songRange.lowestNoteEvidence.timestamp),
+                  duration: songRange.lowestNoteEvidence.duration.toFixed(1),
+                })
+              : t('vocalRange.pill.lowestNote')
           }
         >
           <span style={{ fontSize: '9px', color: '#93c5fd', textTransform: 'uppercase' }}>LOW</span>
@@ -556,11 +605,12 @@ export const VocalRangePill: React.FC<VocalRangePillProps> = ({ song, onOpenSetu
           }}
           title={
             songRange?.highestNoteEvidence
-              ? t(
-                  'vocalRange.pill.highestNoteSeek',
-                  `最高音 ${songHighNote} 出現於 ${formatEvidenceTime(songRange.highestNoteEvidence.timestamp)} (長度 ${songRange.highestNoteEvidence.duration.toFixed(1)}s) - 點擊跳轉試聽`
-                )
-              : t('vocalRange.pill.highestNote', '最高音')
+              ? t('vocalRange.pill.highestNoteSeek', {
+                  note: songHighNote,
+                  time: formatEvidenceTime(songRange.highestNoteEvidence.timestamp),
+                  duration: songRange.highestNoteEvidence.duration.toFixed(1),
+                })
+              : t('vocalRange.pill.highestNote')
           }
         >
           <span style={{ fontSize: '9px', color: '#fed7aa', textTransform: 'uppercase' }}>HIGH</span>
@@ -597,13 +647,10 @@ export const VocalRangePill: React.FC<VocalRangePillProps> = ({ song, onOpenSetu
               }}
             >
               <span>{recommendation.label}</span>
-              {recommendation.mode !== 'current_ok' && (
-                <span style={{ fontSize: '10px', opacity: 0.85 }}>• 點擊套用</span>
-              )}
             </button>
-            {recommendation.warning && (
+            {activeWarning && (
               <span style={{ fontSize: '10px', color: '#f59e0b', fontWeight: 500 }}>
-                ⚠️ {recommendation.warning}
+                ⚠️ {activeWarning}
               </span>
             )}
           </div>
