@@ -14,6 +14,7 @@ import {
 interface VocalRangePillProps {
   song: SongMeta | null;
   onOpenSetupModal: () => void;
+  forceShowTrigger?: number;
 }
 
 const IS_BLACK_KEY = [
@@ -27,7 +28,7 @@ const formatEvidenceTime = (sec?: number) => {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 };
 
-export const VocalRangePill: React.FC<VocalRangePillProps> = ({ song, onOpenSetupModal }) => {
+export const VocalRangePill: React.FC<VocalRangePillProps> = ({ song, onOpenSetupModal, forceShowTrigger }) => {
   const { t } = useTranslation();
   const { vocalRange } = useUserData();
   const { updateSong } = useLibrary();
@@ -41,7 +42,7 @@ export const VocalRangePill: React.FC<VocalRangePillProps> = ({ song, onOpenSetu
   const currentTranspose = song?.playback?.transpose ?? audioEngine.getPlaybackTransform().transpose ?? 0;
   const lastTransposeRef = useRef(currentTranspose);
 
-  const isSeparated = song?.audio_status === 'separated';
+  const isSeparated = song?.audio_status === 'separated' || Boolean(song?.vocal_path);
   const songRange = song?.vocal_range;
 
   // Background analysis trigger for separated songs lacking vocal_range
@@ -87,6 +88,16 @@ export const VocalRangePill: React.FC<VocalRangePillProps> = ({ song, onOpenSetu
       }
     }
   }, [currentTranspose, isSeparated, songRange]);
+
+  // Trigger 3: Manual trigger from button
+  useEffect(() => {
+    if (forceShowTrigger && forceShowTrigger > 0) {
+      if (isSeparated) {
+        setIsVisible(true);
+        scheduleDismiss(5000);
+      }
+    }
+  }, [forceShowTrigger, isSeparated]);
 
   // Handle hover freeze
   useEffect(() => {
@@ -179,8 +190,62 @@ export const VocalRangePill: React.FC<VocalRangePillProps> = ({ song, onOpenSetu
 
   const pianoWidth = whiteCount * whiteKeyWidth;
 
-  if (!isSeparated || !songRange) {
+  if (!isSeparated) {
     return null;
+  }
+
+  if (!songRange) {
+    if (!isVisible) return null;
+    return (
+      <div
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        style={{
+          position: 'absolute',
+          top: '16px',
+          left: '50%',
+          transform: isVisible
+            ? 'translateX(-50%) translateY(0)'
+            : 'translateX(-50%) translateY(-120%)',
+          opacity: isVisible ? 1 : 0,
+          pointerEvents: isVisible ? 'auto' : 'none',
+          transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease',
+          zIndex: 1100,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          background: 'rgba(24, 24, 27, 0.85)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
+          borderRadius: '20px',
+          boxShadow: '0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.05)',
+          padding: '8px 16px',
+          userSelect: 'none',
+          color: '#9ca3af',
+          fontSize: '12px',
+        }}
+      >
+        <span style={{ fontSize: '13px' }}>🎧</span>
+        <span>{t('vocalRange.pill.analyzing', '正在分析人聲音域...')}</span>
+        <button
+          onClick={() => setIsVisible(false)}
+          title={t('common.close', '關閉')}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#6b7280',
+            cursor: 'pointer',
+            fontSize: '12px',
+            padding: '2px 4px',
+            borderRadius: '4px',
+            marginLeft: '6px',
+          }}
+        >
+          ✕
+        </button>
+      </div>
+    );
   }
 
   return (

@@ -1,7 +1,8 @@
 import fs from 'node:fs/promises';
 import { app } from 'electron';
 import path from 'node:path';
-import { getSongMeta, getSongsBaseDir, updateSongMeta, loadAllSongs, analyzeSongVocalRange } from './songLibrary';
+import { getSongMeta, getSongsBaseDir, updateSongMeta, loadAllSongs } from './songLibrary';
+import { queueVocalRangeAnalysis } from './vocalRangeQueue';
 import type { SongMeta } from '../shared/songTypes';
 import type { SeparationJob } from '../shared/separationTypes';
 import { getPythonPath } from './pythonRuntime';
@@ -366,10 +367,8 @@ class SeparationJobManager {
         separation_quality: quality,
       }));
 
-      // Non-blocking background vocal range analysis
-      void analyzeSongVocalRange(job.songId).catch((err) => {
-        console.warn('[Separation] Background vocal range analysis failed:', err);
-      });
+      // Queue non-blocking background vocal range analysis
+      queueVocalRangeAnalysis(job.songId);
 
       this.updateJob(job.id, { status: 'succeeded', errorMessage: undefined });
       void trackAnalytics({
@@ -631,6 +630,11 @@ class SeparationJobManager {
       this.killProcessTree();
     }
   }
+
+  /** Check if any separation job is actively running */
+  isRunning(): boolean {
+    return this.runningJobId !== null;
+  }
 }
 
 /* ── Singleton + exports ───────────────────────────────────── */
@@ -663,4 +667,8 @@ export function removeSeparationJob(jobId: string): Promise<void> {
 
 export function killActiveSeparation() {
   jobManager.killActiveProcess();
+}
+
+export function isSeparationRunning(): boolean {
+  return jobManager.isRunning();
 }

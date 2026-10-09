@@ -25,6 +25,7 @@ import audioEngine from '../audio/AudioEngine';
 import type { TextOnlyLyricScrollPayload } from '../../shared/lyricsScrollSync';
 import { VocalRangePill } from './VocalRangePill';
 import { VocalRangeSetupModal } from './VocalRangeSetupModal';
+import { analyzeSongVocalRange } from '../library/songLibrary';
 
 interface StreamModeViewProps {
   currentTime: number;
@@ -60,6 +61,21 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
   const showToast = (message: string) => {
     setToastMessage(message);
     setTimeout(() => setToastMessage(null), 2000);
+  };
+
+  const [vocalRangeTrigger, setVocalRangeTrigger] = useState(0);
+  const isSeparated = currentSong?.audio_status === 'separated' || Boolean(currentSong?.vocal_path);
+
+  const handleToggleVocalRange = () => {
+    if (!currentSong || !isSeparated) {
+      showToast(t('vocalRange.pill.noSeparatedTrack', '此歌曲尚未分離人聲'));
+      return;
+    }
+    if (!currentSong.vocal_range) {
+      showToast(t('vocalRange.pill.analyzing', '正在分析人聲音域...'));
+      void analyzeSongVocalRange(currentSong.id);
+    }
+    setVocalRangeTrigger((prev) => prev + 1);
   };
 
   const toggleFurigana = useCallback(() => {
@@ -219,12 +235,6 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
         </div>
       )}
 
-      {/* Dynamic Island: Vocal Range Pill HUD */}
-      <VocalRangePill
-        song={currentSong ?? null}
-        onOpenSetupModal={() => setShowVocalRangeSetupModal(true)}
-      />
-
       {/* Window Controls (Fade in on hover) */}
       <div
         style={{
@@ -333,6 +343,39 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
               WebkitAppRegion: 'no-drag',
             } as React.CSSProperties}
           >
+            {/* Quick button to display vocal range pill */}
+            <button
+              onClick={handleToggleVocalRange}
+              title={t('vocalRange.pill.reopen', '顯示歌曲音域與推薦調性')}
+              className="stream-control-btn"
+              style={{
+                width: '32px',
+                height: '32px',
+                backgroundColor: 'rgba(0,0,0,0.5)',
+                color: isSeparated ? '#fff' : '#666',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '6px',
+                cursor: isSeparated ? 'pointer' : 'default',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backdropFilter: 'blur(4px)',
+                transition: 'background-color 0.2s, color 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                if (isSeparated) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.5)';
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="22" />
+              </svg>
+            </button>
+
             {/* New Dropdown */}
             <StreamControlDropdown
               onCopy={(message) => showToast(message || t('common.copied'))}
@@ -372,6 +415,13 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
               </svg>
             </button>
           </div>
+
+          {/* Dynamic Island: Vocal Range Pill HUD (Centered in inner lyrics box) */}
+          <VocalRangePill
+            song={currentSong ?? null}
+            onOpenSetupModal={() => setShowVocalRangeSetupModal(true)}
+            forceShowTrigger={vocalRangeTrigger}
+          />
 
           {showStylePopup && (
             <LyricStylePopup

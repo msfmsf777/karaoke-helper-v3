@@ -1,6 +1,7 @@
 import { app } from 'electron';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import os from 'node:os';
 import { spawn } from 'node:child_process';
 import { parseFile } from 'music-metadata';
 import type { AudioStatus, LyricsStatus, SongMeta, SongType } from '../shared/songTypes';
@@ -677,104 +678,129 @@ export function getSongsBaseDir() {
   return getSongsDir();
 }
 
+const inFlightAnalyses = new Map<string, Promise<SongMeta | null>>();
+
 export async function analyzeSongVocalRange(songId: string): Promise<SongMeta | null> {
   if (!songId) return null;
-  const songsDir = await ensureSongsDir();
-  const songDir = path.join(songsDir, songId);
-  const current = await readMeta(songDir);
-  if (!current) return null;
+  const existing = inFlightAnalyses.get(songId);
+  if (existing) return existing;
 
-  // Resolve vocal path (support Vocals.mp3 and Vocals.wav)
-  let vocalPath = current.vocal_path;
-  const candidates = [
-    vocalPath,
-    path.join(songDir, 'Vocals.mp3'),
-    path.join(songDir, 'Vocals.wav'),
-  ].filter(Boolean) as string[];
+  const analysisPromise = (async (): Promise<SongMeta | null> => {
+    const songsDir = await ensureSongsDir();
+    const songDir = path.join(songsDir, songId);
+    const current = await readMeta(songDir);
+    if (!current) return null;
 
-  let resolvedVocal: string | null = null;
-  for (const cand of candidates) {
-    try {
-      await fs.access(cand);
-      resolvedVocal = cand;
-      break;
-    } catch {
-      // Continue searching
+    // Resolve vocal path (support Vocals.mp3 and Vocals.wav)
+    let vocalPath = current.vocal_path;
+    const candidates = [
+      vocalPath,
+      path.join(songDir, 'Vocals.mp3'),
+      path.join(songDir, 'Vocals.wav'),
+    ].filter(Boolean) as string[];
+
+    let resolvedVocal: string | null = null;
+    for (const cand of candidates) {
+      try {
+        await fs.access(cand);
+        resolvedVocal = cand;
+        break;
+      } catch {
+        // Continue searching
+      }
     }
-  }
 
-  if (!resolvedVocal) {
-    console.warn('[Library] No vocal stem found to analyze range for song', songId);
-    return null;
-  }
+    if (!resolvedVocal) {
+      console.warn('[Library] No vocal stem found to analyze range for song', songId);
+      return null;
+    }
 
-  try {
-    const pythonPath = await getPythonPath();
-    const binDir = app.isPackaged
-      ? path.join(process.resourcesPath, 'bin')
-      : path.join(process.cwd(), 'resources', 'bin');
-    const ffmpegPath = path.join(binDir, 'ffmpeg.exe');
+    try {
+      const pythonPath = await getPythonPath();
+      const binDir = app.isPackaged
+        ? path.join(process.resourcesPath, 'bin')
+        : path.join(process.cwd(), 'resources', 'bin');
+      const ffmpegPath = path.join(binDir, 'ffmpeg.exe');
 
-    const scriptPath = app.isPackaged
-      ? path.join(process.resourcesPath, 'separation', 'analyze_vocal_range.py')
-      : path.join(process.cwd(), 'resources', 'separation', 'analyze_vocal_range.py');
+      const scriptPath = app.isPackaged
+        ? path.join(process.resourcesPath, 'separation', 'analyze_vocal_range.py')
+        : path.join(process.cwd(), 'resources', 'separation', 'analyze_vocal_range.py');
 
-    return await new Promise<SongMeta | null>((resolve) => {
-      const python = spawn(pythonPath, [
-        scriptPath,
-        '--input', resolvedVocal!,
-        '--ffmpeg', ffmpegPath,
-      ]);
+      return await new Promise<SongMeta | null>((resolve) => {
+        const python = spawn(pythonPath, [
+          scriptPath,
+          '--input', resolvedVocal!,
+          '--ffmpeg', ffmpegPath,
+        ], {
+          windowsHide: true,
+        });
 
-      let output = '';
-      python.stdout.on('data', (data) => {
-        output += data.toString();
-      });
-
-      python.stderr.on('data', (data) => {
-        console.warn('[VocalRange] stderr:', data.toString());
-      });
-
-      python.on('close', async (code) => {
-        if (code !== 0) {
-          console.warn('[VocalRange] Script exited with code', code, output);
-          resolve(null);
-          return;
+        // Lower process priority to ensure foreground UI and audio never lag
+        try {
+          if (python.pid) {
+            os.setPriority(python.pid, os.constants.priority.PRIORITY_BELOW_NORMAL);
+          }
+        } catch {
+          // Ignore priority errors if unsupported
         }
 
-        try {
-          const parsed = JSON.parse(output.trim());
-          if (parsed.status === 'success' && typeof parsed.lowestMidi === 'number' && typeof parsed.highestMidi === 'number') {
-            const updated = await updateSongMeta(songId, (curr) => ({
-              ...curr,
-              vocal_range: {
-                lowestMidi: parsed.lowestMidi,
-                highestMidi: parsed.highestMidi,
-                lowestNote: parsed.lowestNote,
-                highestNote: parsed.highestNote,
-                analyzedAt: new Date().toISOString(),
-                analysisVersion: parsed.analysisVersion ?? 2,
-                lowestNoteEvidence: parsed.lowestNoteEvidence ?? undefined,
-                highestNoteEvidence: parsed.highestNoteEvidence ?? undefined,
-              },
-            }));
-            console.log('[VocalRange] Successfully analyzed V2 range for song', {
-              songId,
-              range: `${parsed.lowestNote} ~ ${parsed.highestNote}`,
-              version: parsed.analysisVersion ?? 2,
-            });
-            resolve(updated);
+        let output = '';
+        python.stdout.on('data', (data) => {
+          output += data.toString();
+        });
+
+        python.stderr.on('data', (data) => {
+          console.warn('[VocalRange] stderr:', data.toString());
+        });
+
+        python.on('close', async (code) => {
+          if (code !== 0) {
+            console.warn('[VocalRange] Script exited with code', code, output);
+            resolve(null);
             return;
           }
-        } catch (e) {
-          console.warn('[VocalRange] Failed to parse analysis output:', e);
-        }
-        resolve(null);
+
+          try {
+            const parsed = JSON.parse(output.trim());
+            if (parsed.status === 'success' && typeof parsed.lowestMidi === 'number' && typeof parsed.highestMidi === 'number') {
+              const updated = await updateSongMeta(songId, (curr) => ({
+                ...curr,
+                vocal_range: {
+                  lowestMidi: parsed.lowestMidi,
+                  highestMidi: parsed.highestMidi,
+                  lowestNote: parsed.lowestNote,
+                  highestNote: parsed.highestNote,
+                  analyzedAt: new Date().toISOString(),
+                  analysisVersion: parsed.analysisVersion ?? 2,
+                  lowestNoteEvidence: parsed.lowestNoteEvidence ?? undefined,
+                  highestNoteEvidence: parsed.highestNoteEvidence ?? undefined,
+                },
+              }));
+              console.log('[VocalRange] Successfully analyzed V2 range for song', {
+                songId,
+                range: `${parsed.lowestNote} ~ ${parsed.highestNote}`,
+                version: parsed.analysisVersion ?? 2,
+              });
+              resolve(updated);
+              return;
+            }
+          } catch (e) {
+            console.warn('[VocalRange] Failed to parse analysis output:', e);
+          }
+          resolve(null);
+        });
       });
-    });
-  } catch (err) {
-    console.error('[VocalRange] Exception during range analysis:', err);
-    return null;
+    } catch (err) {
+      console.error('[VocalRange] Exception during range analysis:', err);
+      return null;
+    }
+  })();
+
+  inFlightAnalyses.set(songId, analysisPromise);
+  try {
+    return await analysisPromise;
+  } finally {
+    inFlightAnalyses.delete(songId);
   }
 }
 

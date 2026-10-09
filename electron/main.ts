@@ -23,6 +23,7 @@ import { downloadManager, searchYouTube, searchYouTubeMore, getYouTubeStreamUrl,
 import { readRawLyrics, readSyncedLyrics, writeRawLyrics, writeSyncedLyrics } from './lyrics'
 import { loadQueue, saveQueue } from './queue'
 import { enrichLyrics } from './lyricEnrichment'
+import { startVocalRangeAutoQueue, vocalRangeAutoQueue } from './vocalRangeQueue'
 import {
   loadFavorites, loadHistory, loadPlaylists, loadSettings, loadSettingsWithMeta,
   saveFavorites, saveHistory, savePlaylists, saveSettings
@@ -651,6 +652,7 @@ app.on('window-all-closed', () => {
 })
 
 app.on('before-quit', () => {
+  vocalRangeAutoQueue.destroy()
   killActiveSeparation()
   unregisterGlobalHotkeys()
   void shutdownAnalytics()
@@ -1137,6 +1139,7 @@ if (!gotTheLock) {
 
     startOverlayServer()
     createWindow()
+    startVocalRangeAutoQueue()
   })
 }
 
