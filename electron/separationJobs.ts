@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import { app } from 'electron';
 import path from 'node:path';
-import { getSongMeta, getSongsBaseDir, updateSongMeta, loadAllSongs } from './songLibrary';
+import { getSongMeta, getSongsBaseDir, updateSongMeta, loadAllSongs, analyzeSongVocalRange } from './songLibrary';
 import type { SongMeta } from '../shared/songTypes';
 import type { SeparationJob } from '../shared/separationTypes';
 import { getPythonPath } from './pythonRuntime';
@@ -365,6 +365,12 @@ class SeparationJobManager {
         last_separation_error: null,
         separation_quality: quality,
       }));
+
+      // Non-blocking background vocal range analysis
+      void analyzeSongVocalRange(job.songId).catch((err) => {
+        console.warn('[Separation] Background vocal range analysis failed:', err);
+      });
+
       this.updateJob(job.id, { status: 'succeeded', errorMessage: undefined });
       void trackAnalytics({
         type: 'Feature.SeparationFinished',

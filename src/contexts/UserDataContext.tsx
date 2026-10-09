@@ -5,6 +5,7 @@ import { SongListViewConfig, SongListViewConfigs, mergeSongListViewConfig, merge
 import { OverlayTemplatesConfig, mergeOverlayTemplatesConfig } from '../../shared/overlayTemplates';
 import { SupportedLanguage, normalizeLanguage } from '../../shared/i18n';
 import { AnalyticsSettings, createDefaultAnalyticsSettings } from '../../shared/analytics';
+import type { UserVocalRange } from '../../shared/vocalRange';
 import i18n from '../i18n';
 // import { useLibrary } from './LibraryContext';
 
@@ -66,6 +67,8 @@ interface UserDataContextType {
     setOverlayTemplates: (config: OverlayTemplatesConfig) => void;
     analytics: AnalyticsSettings;
     setAnalytics: (settings: AnalyticsSettings) => void;
+    vocalRange: UserVocalRange | null;
+    setVocalRange: (range: UserVocalRange | null) => void;
     settingsLoaded: boolean;
 }
 
@@ -78,6 +81,7 @@ type LoadedSettings = {
     songListViews?: SongListViewConfigs;
     overlayTemplates?: OverlayTemplatesConfig;
     analytics?: AnalyticsSettings;
+    vocalRange?: UserVocalRange | null;
 };
 
 type SettingsLoadResult = {
@@ -109,6 +113,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [songListViews, setSongListViews] = useState<SongListViewConfigs>({});
     const [overlayTemplates, setOverlayTemplates] = useState<OverlayTemplatesConfig>(() => mergeOverlayTemplatesConfig());
     const [analytics, setAnalytics] = useState<AnalyticsSettings>(() => createDefaultAnalyticsSettings());
+    const [vocalRange, setVocalRange] = useState<UserVocalRange | null>(null);
     const [settingsLoaded, setSettingsLoaded] = useState(false);
 
     const createSettingsPayload = useCallback(() => ({
@@ -120,7 +125,8 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         songListViews,
         overlayTemplates,
         analytics,
-    }), [separationQuality, language, lyricStyles, songPreferences, hotkeys, songListViews, overlayTemplates, analytics]);
+        vocalRange,
+    }), [separationQuality, language, lyricStyles, songPreferences, hotkeys, songListViews, overlayTemplates, analytics, vocalRange]);
 
     // Load data on startup
     useEffect(() => {
@@ -154,6 +160,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 const nextSongListViews = mergeSongListViewConfigs(settings.songListViews);
                 const nextOverlayTemplates = mergeOverlayTemplatesConfig(settings.overlayTemplates, settings.lyricStyles);
                 const nextAnalytics = settings.analytics ?? createDefaultAnalyticsSettings();
+                const nextVocalRange = settings.vocalRange ?? null;
                 loadedSettingsSnapshot.current = JSON.stringify({
                     separationQuality: nextSeparationQuality,
                     language: nextLanguage,
@@ -163,6 +170,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                     songListViews: nextSongListViews,
                     overlayTemplates: nextOverlayTemplates,
                     analytics: nextAnalytics,
+                    vocalRange: nextVocalRange,
                 });
                 unsafeSettingsLoad.current = settingsResult.unsafeToAutoPersist;
                 if (settingsResult.status === 'restored-from-backup') {
@@ -199,6 +207,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 setSongListViews(nextSongListViews);
                 setOverlayTemplates(nextOverlayTemplates);
                 setAnalytics(nextAnalytics);
+                setVocalRange(nextVocalRange);
 
                 // Load recent searches from localStorage
                 const savedRecent = localStorage.getItem('khelper_recent_searches');
@@ -424,6 +433,8 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             setOverlayTemplates,
             analytics,
             setAnalytics,
+            vocalRange,
+            setVocalRange,
             settingsLoaded
         }}>
             {children}

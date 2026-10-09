@@ -23,6 +23,8 @@ import WindowControls from './WindowControls';
 import StreamControlDropdown from './StreamControlDropdown';
 import audioEngine from '../audio/AudioEngine';
 import type { TextOnlyLyricScrollPayload } from '../../shared/lyricsScrollSync';
+import { VocalRangePill } from './VocalRangePill';
+import { VocalRangeSetupModal } from './VocalRangeSetupModal';
 
 interface StreamModeViewProps {
   currentTime: number;
@@ -43,6 +45,7 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
   const [showStylePopup, setShowStylePopup] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showVocalRangeSetupModal, setShowVocalRangeSetupModal] = useState(false);
 
   // Japanese Enrichment State
 
@@ -215,6 +218,12 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
           {toastMessage}
         </div>
       )}
+
+      {/* Dynamic Island: Vocal Range Pill HUD */}
+      <VocalRangePill
+        song={currentSong ?? null}
+        onOpenSetupModal={() => setShowVocalRangeSetupModal(true)}
+      />
 
       {/* Window Controls (Fade in on hover) */}
       <div
@@ -408,6 +417,10 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
           )}
         </div>
       </div>
+
+      {showVocalRangeSetupModal && (
+        <VocalRangeSetupModal onClose={() => setShowVocalRangeSetupModal(false)} />
+      )}
     </div>
   );
 };

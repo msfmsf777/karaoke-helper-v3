@@ -12,6 +12,7 @@ import {
   getSeparatedSongPaths,
   getSongFilePath, getSongsBaseDir, loadAllSongs,
   deleteSong, updateSong, getSongDirById, addOnlineSong, ensureYoutubeThumbnail,
+  analyzeSongVocalRange,
   setCustomSongsDir
 } from './songLibrary'
 import { migrationManager } from './migrationManager'
@@ -742,6 +743,16 @@ ipcMain.handle('library:update-song', async (_event, payload: { id: string; upda
 ipcMain.handle('library:ensure-youtube-thumbnail', async (_event, id: string) => {
   const updated = await ensureYoutubeThumbnail(id)
   if (updated?.thumbnail_path) {
+    BrowserWindow.getAllWindows().forEach(w => {
+      w.webContents.send('library:song-updated', updated)
+    })
+  }
+  return updated
+})
+
+ipcMain.handle('library:analyze-vocal-range', async (_event, id: string) => {
+  const updated = await analyzeSongVocalRange(id)
+  if (updated?.vocal_range) {
     BrowserWindow.getAllWindows().forEach(w => {
       w.webContents.send('library:song-updated', updated)
     })

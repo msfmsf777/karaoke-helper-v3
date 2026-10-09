@@ -128,6 +128,8 @@ contextBridge.exposeInMainWorld('khelper', {
       ipcRenderer.invoke('library:update-song', { id, updates }),
     ensureYoutubeThumbnail: (id: string): Promise<SongMeta | null> =>
       ipcRenderer.invoke('library:ensure-youtube-thumbnail', id),
+    analyzeVocalRange: (id: string): Promise<SongMeta | null> =>
+      ipcRenderer.invoke('library:analyze-vocal-range', id),
     subscribeSongUpdated: (callback: (song: SongMeta) => void) => {
       const listener = (_event: Electron.IpcRendererEvent, song: SongMeta) => callback(song)
       ipcRenderer.on('library:song-updated', listener)

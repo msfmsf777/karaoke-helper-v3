@@ -62,4 +62,12 @@ export async function getSeparatedSongPaths(id: string): Promise<{ instrumental:
   return { instrumental: original || '', vocal: null };
 }
 
+export async function analyzeSongVocalRange(id: string): Promise<SongMeta | null> {
+  const api = getApi();
+  if (api.analyzeVocalRange) {
+    return api.analyzeVocalRange(id);
+  }
+  return null;
+}
+
 export type { SongMeta, SongType };

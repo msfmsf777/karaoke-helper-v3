@@ -25,6 +25,14 @@ export interface SongSourceYouTube {
   originalPath: string;
 }
 
+export interface SongVocalRange {
+  lowestMidi: number;
+  highestMidi: number;
+  lowestNote: string;
+  highestNote: string;
+  analyzedAt: string;
+}
+
 export interface SongMeta {
   id: string;
   title: string;
@@ -49,6 +57,7 @@ export interface SongMeta {
   duration?: number;
   thumbnailUrl?: string;
   thumbnail_path?: string;
+  vocal_range?: SongVocalRange;
 }
 
 export interface DownloadJob {

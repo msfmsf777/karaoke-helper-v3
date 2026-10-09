@@ -51,6 +51,7 @@ interface Window {
       getOriginalSongFilePath: (id: string) => Promise<string | null>
       getBasePath: () => Promise<string>
       ensureYoutubeThumbnail: (id: string) => Promise<import('../shared/songTypes').SongMeta | null>
+      analyzeVocalRange: (id: string) => Promise<import('../shared/songTypes').SongMeta | null>
       subscribeSongUpdated: (callback: (song: import('../shared/songTypes').SongMeta) => void) => () => void
     }
     jobs: {

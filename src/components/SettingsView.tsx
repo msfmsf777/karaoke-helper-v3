@@ -17,6 +17,7 @@ const DebugUpdaterUI = React.lazy(() => import('./DebugUpdaterUI'));
 import { useUpdater } from '../contexts/UpdaterContext';
 import { StorageSettingsSection } from './StorageSettingsSection';
 import { SeparationSettingsSection } from './SeparationSettingsSection';
+import { VocalRangeSetupModal } from './VocalRangeSetupModal';
 
 interface SettingsViewProps {
     onBack: () => void;
@@ -47,12 +48,15 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const { separationQuality, setSeparationQuality, overlayTemplates, language, setLanguage, analytics, setAnalytics } = useUserData();
+    const { separationQuality, setSeparationQuality, overlayTemplates, language, setLanguage, analytics, setAnalytics, vocalRange } = useUserData();
     const [overlayEditor, setOverlayEditor] = useState<{ kind: OverlayKind; designId: string } | null>(null);
     const [overlayEditorDirty, setOverlayEditorDirty] = useState(false);
     const [analyticsSaving, setAnalyticsSaving] = useState(false);
     const [analyticsError, setAnalyticsError] = useState(false);
     const overlapReportedRef = useRef(false);
+
+    // Vocal Range Modal State
+    const [showVocalRangeModal, setShowVocalRangeModal] = useState(false);
 
     // Calibration State
     const [showCalibration, setShowCalibration] = useState(false);
@@ -470,6 +474,43 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                             </button>
                         </div>
 
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '16px 20px',
+                            backgroundColor: '#222',
+                            borderRadius: '8px',
+                            marginTop: '16px',
+                            border: '1px solid #333',
+                        }}>
+                            <div>
+                                <div style={{ fontSize: '14px', color: '#ddd', fontWeight: 'bold' }}>
+                                    🎤 {t('vocalRange.settings.title', '個人音域 (Vocal Range Profile)')}
+                                </div>
+                                <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+                                    {vocalRange
+                                        ? t('vocalRange.settings.configured', `目前舒適音域：${vocalRange.lowestNote} ~ ${vocalRange.highestNote}`)
+                                        : t('vocalRange.settings.unconfigured', '尚未設定音域，設定後可為歌曲提供專屬智慧轉調建議')}
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowVocalRangeModal(true)}
+                                style={{
+                                    padding: '8px 16px',
+                                    backgroundColor: '#22c55e',
+                                    color: '#fff',
+                                    borderRadius: '6px',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    fontSize: '13px',
+                                    fontWeight: 600,
+                                }}
+                            >
+                                {vocalRange ? t('vocalRange.settings.modify', '修改音域') : t('vocalRange.settings.setup', '設定音域')}
+                            </button>
+                        </div>
+
                         {error && <div style={{ color: '#ff6666', marginTop: '12px', fontSize: '14px' }}>{error}</div>}
                     </section>
 
@@ -632,6 +673,12 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     headphoneDeviceId={headphoneDeviceId}
                     initialOffset={currentOffset}
                     onOffsetChange={setCurrentOffset}
+                />
+            )}
+
+            {showVocalRangeModal && (
+                <VocalRangeSetupModal
+                    onClose={() => setShowVocalRangeModal(false)}
                 />
             )}
         </div>

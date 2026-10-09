@@ -6,6 +6,7 @@ import { SongListViewConfigs, mergeSongListViewConfigs } from '../shared/songLis
 import { OverlayTemplatesConfig, mergeOverlayTemplatesConfig } from '../shared/overlayTemplates';
 import { SupportedLanguage, normalizeLanguage } from '../shared/i18n';
 import { AnalyticsSettings, createDefaultAnalyticsSettings, normalizeAnalyticsSettings } from '../shared/analytics';
+import type { UserVocalRange } from '../shared/vocalRange';
 
 export interface UserData {
     favorites: string[];
@@ -99,6 +100,7 @@ function normalizeSettings(settings: Partial<UserSettings> | null | undefined): 
         customSongsPath: typeof parsed.customSongsPath === 'string' && parsed.customSongsPath.trim().length > 0
             ? parsed.customSongsPath.trim()
             : undefined,
+        vocalRange: parsed.vocalRange,
     };
 }
 
@@ -355,6 +357,7 @@ export interface UserSettings {
     };
     customSongsPath?: string;
     customRuntimePath?: string;
+    vocalRange?: UserVocalRange;
 }
 
 export async function saveSettings(settings: UserSettings): Promise<void> {

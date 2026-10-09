@@ -54,6 +54,7 @@ interface Window {
       deleteSong: (id: string) => Promise<boolean>;
       updateSong: (id: string, updates: Partial<import('../shared/songTypes').SongMeta>) => Promise<import('../shared/songTypes').SongMeta | null>;
       ensureYoutubeThumbnail: (id: string) => Promise<import('../shared/songTypes').SongMeta | null>;
+      analyzeVocalRange: (id: string) => Promise<import('../shared/songTypes').SongMeta | null>;
       subscribeSongUpdated: (callback: (song: import('../shared/songTypes').SongMeta) => void) => () => void;
     };
     storage: {
