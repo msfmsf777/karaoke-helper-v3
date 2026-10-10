@@ -18,6 +18,7 @@ import { useUpdater } from '../contexts/UpdaterContext';
 import { StorageSettingsSection } from './StorageSettingsSection';
 import { SeparationSettingsSection } from './SeparationSettingsSection';
 import { VocalRangeSetupModal } from './VocalRangeSetupModal';
+import type { LoudnessPreset } from '../audio/loudness';
 
 interface SettingsViewProps {
     onBack: () => void;
@@ -48,7 +49,24 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const { separationQuality, setSeparationQuality, overlayTemplates, language, setLanguage, analytics, setAnalytics, vocalRange, vocalRangeAutoShow, setVocalRangeAutoShow } = useUserData();
+    const {
+        separationQuality,
+        setSeparationQuality,
+        overlayTemplates,
+        language,
+        setLanguage,
+        analytics,
+        setAnalytics,
+        vocalRange,
+        vocalRangeAutoShow,
+        setVocalRangeAutoShow,
+        volumeNormalization,
+        setVolumeNormalization,
+        targetLoudnessPreset,
+        setTargetLoudnessPreset,
+        targetLoudnessCustom,
+        setTargetLoudnessCustom,
+    } = useUserData();
     const [overlayEditor, setOverlayEditor] = useState<{ kind: OverlayKind; designId: string } | null>(null);
     const [overlayEditorDirty, setOverlayEditorDirty] = useState(false);
     const [analyticsSaving, setAnalyticsSaving] = useState(false);
@@ -472,6 +490,129 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                             >
                                 {t('settings.audio.calibrate')}
                             </button>
+                        </div>
+
+                        {/* Volume Normalization Card */}
+                        <div style={{
+                            background: '#2a2a2a',
+                            padding: '20px',
+                            borderRadius: '12px',
+                            border: '1px solid #333',
+                            marginTop: '16px',
+                        }}>
+                            {/* Header Row: Title, Description, and Toggle */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontSize: '15px', color: '#fff', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span>🔊</span>
+                                        <span>{t('settings.audio.normalization.title', '音量正規化 (Volume Normalization)')}</span>
+                                    </div>
+                                    <div style={{ fontSize: '13px', color: '#aaa', marginTop: '4px', lineHeight: '1.5' }}>
+                                        {t('settings.audio.normalization.description', '自動校準所有歌曲至一致的感知響度 (LUFS)，確保直播與監聽音量平衡，並附帶透明安全防爆音限制器。')}
+                                    </div>
+                                </div>
+                                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', flexShrink: 0, marginTop: '2px' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={volumeNormalization}
+                                        onChange={(e) => setVolumeNormalization(e.target.checked)}
+                                        style={{ accentColor: 'var(--accent-color)', width: '18px', height: '18px', cursor: 'pointer' }}
+                                    />
+                                </label>
+                            </div>
+
+                            {/* Preset Selection & Slider (Shown when Normalization is ON) */}
+                            {volumeNormalization && (
+                                <div style={{
+                                    marginTop: '16px',
+                                    paddingTop: '16px',
+                                    borderTop: '1px solid #383838',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '14px',
+                                }}>
+                                    <div>
+                                        <label style={{ display: 'block', color: '#ddd', fontSize: '13px', fontWeight: 'bold', marginBottom: '8px' }}>
+                                            {t('settings.audio.normalization.presetLabel', '目標響度預設 (Target Loudness)')}
+                                        </label>
+                                        <select
+                                            value={targetLoudnessPreset}
+                                            onChange={(e) => setTargetLoudnessPreset(e.target.value as LoudnessPreset)}
+                                            style={{
+                                                width: '100%',
+                                                padding: '10px 12px',
+                                                background: '#1f1f1f',
+                                                color: '#fff',
+                                                border: '1px solid #444',
+                                                borderRadius: '8px',
+                                                fontSize: '14px',
+                                                outline: 'none',
+                                                cursor: 'pointer',
+                                            }}
+                                        >
+                                            <option value="standard">
+                                                {t('settings.audio.normalization.presetStandard', '標準平衡 (-14 LUFS · YouTube / Spotify 推薦)')}
+                                            </option>
+                                            <option value="voice_priority">
+                                                {t('settings.audio.normalization.presetVoice', '人聲優先 (-16 LUFS · Twitch 直播凸顯麥克風)')}
+                                            </option>
+                                            <option value="gentle">
+                                                {t('settings.audio.normalization.presetGentle', '輕柔保護 (-18 LUFS · 長時間歌回防疲勞)')}
+                                            </option>
+                                            <option value="custom">
+                                                {t('settings.audio.normalization.presetCustom', '自訂響度 (Other / Custom)')}
+                                            </option>
+                                        </select>
+                                    </div>
+
+                                    {/* Custom Slider (Visible when preset is 'custom') */}
+                                    {targetLoudnessPreset === 'custom' && (
+                                        <div style={{
+                                            background: '#222',
+                                            padding: '14px 16px',
+                                            borderRadius: '8px',
+                                            border: '1px solid #333',
+                                        }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                <span style={{ fontSize: '13px', color: '#ddd', fontWeight: 'bold' }}>
+                                                    {t('settings.audio.normalization.customValue', '自訂目標響度')}
+                                                </span>
+                                                <span style={{
+                                                    fontSize: '13px',
+                                                    color: 'var(--accent-color)',
+                                                    fontFamily: 'monospace',
+                                                    fontWeight: 'bold',
+                                                    backgroundColor: 'rgba(255,255,255,0.06)',
+                                                    padding: '2px 8px',
+                                                    borderRadius: '6px',
+                                                }}>
+                                                    {targetLoudnessCustom > 0 ? `+${targetLoudnessCustom.toFixed(1)}` : targetLoudnessCustom.toFixed(1)} LUFS
+                                                </span>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <span style={{ fontSize: '12px', color: '#777', width: '60px' }}>-20.0 LUFS</span>
+                                                <input
+                                                    type="range"
+                                                    min="-20"
+                                                    max="-10"
+                                                    step="0.5"
+                                                    value={targetLoudnessCustom}
+                                                    onChange={(e) => setTargetLoudnessCustom(parseFloat(e.target.value))}
+                                                    style={{
+                                                        flex: 1,
+                                                        accentColor: 'var(--accent-color)',
+                                                        cursor: 'pointer',
+                                                    }}
+                                                />
+                                                <span style={{ fontSize: '12px', color: '#777', width: '60px', textAlign: 'right' }}>-10.0 LUFS</span>
+                                            </div>
+                                            <div style={{ fontSize: '11px', color: '#888', marginTop: '6px' }}>
+                                                {t('settings.audio.normalization.customHint', '數值愈大音量愈響（上限 -10 LUFS 保護動態）；數值愈小音量愈輕柔。')}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         {error && <div style={{ color: '#ff6666', marginTop: '12px', fontSize: '14px' }}>{error}</div>}

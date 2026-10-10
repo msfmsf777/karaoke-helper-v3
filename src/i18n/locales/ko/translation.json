@@ -46,7 +46,18 @@
       "headphoneOutput": "헤드폰 출력",
       "syncOffset": "이중 출력 동기화 오프셋:",
       "calibrate": "교정",
-      "overlappingOutputWarning": "시청자 출력과 헤드폰 출력이 같은 장치를 사용하고 있습니다. 중복 재생을 방지하기 위해 시청자 출력을 음소거합니다. 이중 출력을 사용하려면 서로 다른 장치를 선택하세요."
+      "overlappingOutputWarning": "시청자 출력과 헤드폰 출력이 같은 장치를 사용하고 있습니다. 중복 재생을 방지하기 위해 시청자 출력을 음소거합니다. 이중 출력을 사용하려면 서로 다른 장치를 선택하세요.",
+      "normalization": {
+        "title": "볼륨 노멀라이제이션",
+        "description": "모든 곡의 인지 음량(LUFS)을 균일하게 자동 조절하여 방송 및 모니터 볼륨 균형을 유지합니다. 클리핑 방지 리미터 포함.",
+        "presetLabel": "목표 음량 프리셋",
+        "presetStandard": "표준 균형 (-14 LUFS · YouTube / Spotify 권장)",
+        "presetVoice": "목소리 우선 (-16 LUFS · Twitch 방송 추천)",
+        "presetGentle": "부드럽게 (-18 LUFS · 장시간 노래방송 피로 방지)",
+        "presetCustom": "사용자 지정",
+        "customValue": "사용자 지정 목표 음량",
+        "customHint": "값이 클수록 소리가 커지며(최대 -10 LUFS), 작을수록 부드러워집니다."
+      }
     },
     "separation": {
       "title": "보컬 분리 품질",

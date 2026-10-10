@@ -9,6 +9,13 @@ import soundtouchLib from 'soundtouchjs/dist/soundtouch.js?raw';
 import processorCode from './SoundTouchProcessor.js?raw';
 import { NativeAudioPlayer } from './NativeAudioPlayer';
 import { resolveNativeCompletionRole, resolveNativeStartDelays, resolveOutputGains } from './outputRouting';
+import {
+  calculateAudioBufferLufs,
+  calculateNormGain,
+  getTargetLufs,
+  LoudnessPreset,
+  DEFAULT_CUSTOM_LUFS,
+} from './loudness';
 
 export type OutputRole = 'stream' | 'headphone';
 export type TrackType = 'instrumental' | 'vocal';
@@ -23,8 +30,17 @@ export interface PlaybackBounds {
   end: number;
 }
 
+export interface NormalizationConfig {
+  enabled: boolean;
+  preset: LoudnessPreset;
+  customLufs: number;
+}
+
 export interface AudioEngine {
-  loadFile(paths: string | { instrumental: string; vocal: string | null }): Promise<void>;
+  loadFile(
+    paths: string | { instrumental: string; vocal: string | null },
+    options?: { loudnessLufs?: number; onLoudnessCalculated?: (lufs: number) => void }
+  ): Promise<void>;
   loadStream(url: string): Promise<void>;
   play(): Promise<void> | void;
   pause(): void;
@@ -43,6 +59,11 @@ export interface AudioEngine {
   // New API
   setPlaybackTransform(transform: PlaybackTransform): void;
   getPlaybackTransform(): PlaybackTransform;
+
+  // Normalization
+  setNormalizationConfig(config: Partial<NormalizationConfig>): void;
+  getNormalizationConfig(): NormalizationConfig;
+  getNormalizationGain(): number;
 
   // Calibration
   setOffset(offsetMs: number): void;
@@ -65,8 +86,10 @@ type SinkableAudioElement = HTMLAudioElement & { setSinkId?: (sinkId: string) =>
 class AudioPlayer {
   public audioContext: AudioContextWithSinkId;
   private workletNode: AudioWorkletNode | null = null;
+  private normGainNode: GainNode;
   private delayNode: DelayNode;
   private gainNode: GainNode;
+  private safetyLimiterNode: DynamicsCompressorNode;
 
   // Fallback
   private destinationNode: MediaStreamAudioDestinationNode | null = null;
@@ -88,12 +111,24 @@ class AudioPlayer {
     this.role = role;
     this.audioContext = new AudioContext({ latencyHint: 'playback', sampleRate: 48000 }) as AudioContextWithSinkId;
 
+    this.normGainNode = this.audioContext.createGain();
+    this.normGainNode.gain.value = 1.0;
+
     this.delayNode = this.audioContext.createDelay(1.0); // Max delay 1 second
     this.gainNode = this.audioContext.createGain();
 
-    // Chain: Worklet -> Delay -> Gain -> Destination
+    this.safetyLimiterNode = this.audioContext.createDynamicsCompressor();
+    this.safetyLimiterNode.threshold.value = -1.0; // -1 dBFS
+    this.safetyLimiterNode.knee.value = 0;         // hard knee
+    this.safetyLimiterNode.ratio.value = 20;       // 20:1 brickwall limiter
+    this.safetyLimiterNode.attack.value = 0.002;    // 2ms fast attack
+    this.safetyLimiterNode.release.value = 0.050;   // 50ms fast recovery
+
+    // Chain: Worklet -> NormGain -> Delay -> Gain -> Limiter -> Destination
+    this.normGainNode.connect(this.delayNode);
     this.delayNode.connect(this.gainNode);
-    this.gainNode.connect(this.audioContext.destination);
+    this.gainNode.connect(this.safetyLimiterNode);
+    this.safetyLimiterNode.connect(this.audioContext.destination);
 
     console.log(`[${role}Player] Created. SampleRate: ${this.audioContext.sampleRate}`);
     this.initWorklet();
@@ -147,7 +182,7 @@ class AudioPlayer {
         }
       };
 
-      this.workletNode.connect(this.delayNode);
+      this.workletNode.connect(this.normGainNode);
       this.isReady = true;
       console.log(`[${this.role}Player] Worklet initialized.`);
     } catch (err) {
@@ -171,8 +206,8 @@ class AudioPlayer {
     // Fallback
     if (!this.destinationNode) {
       this.destinationNode = this.audioContext.createMediaStreamDestination();
-      this.gainNode.disconnect();
-      this.gainNode.connect(this.destinationNode);
+      this.safetyLimiterNode.disconnect();
+      this.safetyLimiterNode.connect(this.destinationNode);
 
       this.audioElement = new Audio();
       this.audioElement.srcObject = this.destinationNode.stream;
@@ -248,6 +283,14 @@ class AudioPlayer {
 
   setVolume(vol: number) {
     this.gainNode.gain.value = vol;
+  }
+
+  setNormalizationGain(gain: number) {
+    this.normGainNode.gain.setTargetAtTime(gain, this.audioContext.currentTime, 0.05);
+  }
+
+  get normalizationGain() {
+    return this.normGainNode.gain.value;
   }
 
   setTrackVolumes(instr: number, vocal: number) {
@@ -339,6 +382,15 @@ export class DualAudioEngine implements AudioEngine {
   private volumeCallbacks = new Set<(track: TrackType, volume: number) => void>();
   private trimBounds: PlaybackBounds | null = null;
 
+  // Normalization
+  private normalizationConfig: NormalizationConfig = {
+    enabled: true,
+    preset: 'standard',
+    customLufs: DEFAULT_CUSTOM_LUFS,
+  };
+  private currentTrackLufs: number | null = null;
+  private currentNormGain = 1.0;
+
   setTrimBounds(bounds: PlaybackBounds | null): void {
     if (bounds) {
       const start = Math.max(0, bounds.start);
@@ -351,6 +403,30 @@ export class DualAudioEngine implements AudioEngine {
 
   getTrimBounds(): PlaybackBounds | null {
     return this.trimBounds;
+  }
+
+  private applyNormalizationGain() {
+    const targetLufs = getTargetLufs(this.normalizationConfig.preset, this.normalizationConfig.customLufs);
+    const gain = calculateNormGain(this.currentTrackLufs, targetLufs, this.normalizationConfig.enabled);
+    this.currentNormGain = gain;
+    this.streamPlayer.setNormalizationGain(gain);
+    this.headphonePlayer.setNormalizationGain(gain);
+  }
+
+  setNormalizationConfig(config: Partial<NormalizationConfig>): void {
+    this.normalizationConfig = {
+      ...this.normalizationConfig,
+      ...config,
+    };
+    this.applyNormalizationGain();
+  }
+
+  getNormalizationConfig(): NormalizationConfig {
+    return { ...this.normalizationConfig };
+  }
+
+  getNormalizationGain(): number {
+    return this.currentNormGain;
   }
 
   constructor() {
@@ -504,6 +580,8 @@ export class DualAudioEngine implements AudioEngine {
     this.stop();
     const generation = ++this.loadGeneration;
     this.activeMode = 'native';
+    this.currentTrackLufs = null;
+    this.applyNormalizationGain();
     console.log('[AudioEngine] Loading Native Stream:', url);
     const outputGains = this.getResolvedOutputGains();
     await Promise.all([
@@ -514,7 +592,10 @@ export class DualAudioEngine implements AudioEngine {
     this.applyTrackVolumes();
   }
 
-  async loadFile(paths: string | { instrumental: string; vocal: string | null }): Promise<void> {
+  async loadFile(
+    paths: string | { instrumental: string; vocal: string | null },
+    options?: { loudnessLufs?: number; onLoudnessCalculated?: (lufs: number) => void }
+  ): Promise<void> {
     this.stop();
     const generation = ++this.loadGeneration;
     this.activeMode = 'soundtouch';
@@ -553,6 +634,24 @@ export class DualAudioEngine implements AudioEngine {
       decode(this.headphonePlayer.audioContext, vocalBuf)
     ]);
     if (generation !== this.loadGeneration) return;
+
+    // Loudness calculation & caching
+    if (options?.loudnessLufs !== undefined && options.loudnessLufs !== null && Number.isFinite(options.loudnessLufs)) {
+      this.currentTrackLufs = options.loudnessLufs;
+    } else if (instrumentalBuffer) {
+      const calculated = calculateAudioBufferLufs(instrumentalBuffer);
+      this.currentTrackLufs = calculated;
+      if (options?.onLoudnessCalculated) {
+        try {
+          options.onLoudnessCalculated(calculated);
+        } catch (e) {
+          console.warn('[AudioEngine] onLoudnessCalculated callback error', e);
+        }
+      }
+    } else {
+      this.currentTrackLufs = null;
+    }
+    this.applyNormalizationGain();
 
     // Load into players: streamPlayer only needs instrumental (vocals are permanently muted)
     await Promise.all([

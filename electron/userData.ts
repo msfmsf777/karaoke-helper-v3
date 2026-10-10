@@ -67,6 +67,9 @@ function createDefaultSettings(): UserSettings {
         songListViews: {},
         overlayTemplates: mergeOverlayTemplatesConfig(),
         analytics: createDefaultAnalyticsSettings(),
+        volumeNormalization: true,
+        targetLoudnessPreset: 'standard',
+        targetLoudnessCustom: -14,
     };
 }
 
@@ -101,6 +104,10 @@ function normalizeSettings(settings: Partial<UserSettings> | null | undefined): 
             ? parsed.customSongsPath.trim()
             : undefined,
         vocalRange: parsed.vocalRange,
+        vocalRangeAutoShow: parsed.vocalRangeAutoShow ?? true,
+        volumeNormalization: parsed.volumeNormalization ?? true,
+        targetLoudnessPreset: parsed.targetLoudnessPreset || 'standard',
+        targetLoudnessCustom: typeof parsed.targetLoudnessCustom === 'number' ? parsed.targetLoudnessCustom : -14,
     };
 }
 
@@ -358,6 +365,10 @@ export interface UserSettings {
     customSongsPath?: string;
     customRuntimePath?: string;
     vocalRange?: UserVocalRange;
+    vocalRangeAutoShow?: boolean;
+    volumeNormalization?: boolean;
+    targetLoudnessPreset?: 'standard' | 'voice_priority' | 'gentle' | 'custom';
+    targetLoudnessCustom?: number;
 }
 
 export async function saveSettings(settings: UserSettings): Promise<void> {

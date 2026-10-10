@@ -6,6 +6,8 @@ import { OverlayTemplatesConfig, mergeOverlayTemplatesConfig } from '../../share
 import { SupportedLanguage, normalizeLanguage } from '../../shared/i18n';
 import { AnalyticsSettings, createDefaultAnalyticsSettings } from '../../shared/analytics';
 import type { UserVocalRange } from '../../shared/vocalRange';
+import type { LoudnessPreset } from '../audio/loudness';
+import audioEngine from '../audio/AudioEngine';
 import i18n from '../i18n';
 // import { useLibrary } from './LibraryContext';
 
@@ -71,6 +73,12 @@ interface UserDataContextType {
     setVocalRange: (range: UserVocalRange | null) => void;
     vocalRangeAutoShow: boolean;
     setVocalRangeAutoShow: (autoShow: boolean) => void;
+    volumeNormalization: boolean;
+    setVolumeNormalization: (enabled: boolean) => void;
+    targetLoudnessPreset: LoudnessPreset;
+    setTargetLoudnessPreset: (preset: LoudnessPreset) => void;
+    targetLoudnessCustom: number;
+    setTargetLoudnessCustom: (value: number) => void;
     settingsLoaded: boolean;
 }
 
@@ -85,6 +93,9 @@ type LoadedSettings = {
     analytics?: AnalyticsSettings;
     vocalRange?: UserVocalRange | null;
     vocalRangeAutoShow?: boolean;
+    volumeNormalization?: boolean;
+    targetLoudnessPreset?: LoudnessPreset;
+    targetLoudnessCustom?: number;
 };
 
 type SettingsLoadResult = {
@@ -118,6 +129,9 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [analytics, setAnalytics] = useState<AnalyticsSettings>(() => createDefaultAnalyticsSettings());
     const [vocalRange, setVocalRange] = useState<UserVocalRange | null>(null);
     const [vocalRangeAutoShow, setVocalRangeAutoShow] = useState<boolean>(true);
+    const [volumeNormalization, setVolumeNormalization] = useState<boolean>(true);
+    const [targetLoudnessPreset, setTargetLoudnessPreset] = useState<LoudnessPreset>('standard');
+    const [targetLoudnessCustom, setTargetLoudnessCustom] = useState<number>(-14);
     const [settingsLoaded, setSettingsLoaded] = useState(false);
 
     const createSettingsPayload = useCallback(() => ({
@@ -131,7 +145,10 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         analytics,
         vocalRange,
         vocalRangeAutoShow,
-    }), [separationQuality, language, lyricStyles, songPreferences, hotkeys, songListViews, overlayTemplates, analytics, vocalRange, vocalRangeAutoShow]);
+        volumeNormalization,
+        targetLoudnessPreset,
+        targetLoudnessCustom,
+    }), [separationQuality, language, lyricStyles, songPreferences, hotkeys, songListViews, overlayTemplates, analytics, vocalRange, vocalRangeAutoShow, volumeNormalization, targetLoudnessPreset, targetLoudnessCustom]);
 
     // Load data on startup
     useEffect(() => {
@@ -167,6 +184,9 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 const nextAnalytics = settings.analytics ?? createDefaultAnalyticsSettings();
                 const nextVocalRange = settings.vocalRange ?? null;
                 const nextVocalRangeAutoShow = settings.vocalRangeAutoShow ?? true;
+                const nextVolumeNormalization = settings.volumeNormalization ?? true;
+                const nextTargetLoudnessPreset = settings.targetLoudnessPreset ?? 'standard';
+                const nextTargetLoudnessCustom = typeof settings.targetLoudnessCustom === 'number' ? settings.targetLoudnessCustom : -14;
                 loadedSettingsSnapshot.current = JSON.stringify({
                     separationQuality: nextSeparationQuality,
                     language: nextLanguage,
@@ -178,6 +198,9 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                     analytics: nextAnalytics,
                     vocalRange: nextVocalRange,
                     vocalRangeAutoShow: nextVocalRangeAutoShow,
+                    volumeNormalization: nextVolumeNormalization,
+                    targetLoudnessPreset: nextTargetLoudnessPreset,
+                    targetLoudnessCustom: nextTargetLoudnessCustom,
                 });
                 unsafeSettingsLoad.current = settingsResult.unsafeToAutoPersist;
                 if (settingsResult.status === 'restored-from-backup') {
@@ -216,6 +239,15 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 setAnalytics(nextAnalytics);
                 setVocalRange(nextVocalRange);
                 setVocalRangeAutoShow(nextVocalRangeAutoShow);
+                setVolumeNormalization(nextVolumeNormalization);
+                setTargetLoudnessPreset(nextTargetLoudnessPreset);
+                setTargetLoudnessCustom(nextTargetLoudnessCustom);
+
+                audioEngine.setNormalizationConfig({
+                    enabled: nextVolumeNormalization,
+                    preset: nextTargetLoudnessPreset,
+                    customLufs: nextTargetLoudnessCustom,
+                });
 
                 // Load recent searches from localStorage
                 const savedRecent = localStorage.getItem('khelper_recent_searches');
@@ -282,6 +314,16 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             console.error('[UserData] Failed to save settings', err)
         );
     }, [createSettingsPayload]);
+
+    // Sync volume normalization settings with AudioEngine on change
+    useEffect(() => {
+        if (!isInitialized.current) return;
+        audioEngine.setNormalizationConfig({
+            enabled: volumeNormalization,
+            preset: targetLoudnessPreset,
+            customLufs: targetLoudnessCustom,
+        });
+    }, [volumeNormalization, targetLoudnessPreset, targetLoudnessCustom]);
 
     // Save recent searches on change
     useEffect(() => {
@@ -445,6 +487,12 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             setVocalRange,
             vocalRangeAutoShow,
             setVocalRangeAutoShow,
+            volumeNormalization,
+            setVolumeNormalization,
+            targetLoudnessPreset,
+            setTargetLoudnessPreset,
+            targetLoudnessCustom,
+            setTargetLoudnessCustom,
             settingsLoaded
         }}>
             {children}

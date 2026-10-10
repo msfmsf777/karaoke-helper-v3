@@ -46,7 +46,18 @@
       "headphoneOutput": "耳机输出",
       "syncOffset": "双输出同步偏移：",
       "calibrate": "校准",
-      "overlappingOutputWarning": "观众输出与耳机输出当前使用相同设备。为避免声音重叠，观众输出将保持静音；请选择不同设备以启用双输出。"
+      "overlappingOutputWarning": "观众输出与耳机输出当前使用相同设备。为避免声音重叠，观众输出将保持静音；请选择不同设备以启用双输出。",
+      "normalization": {
+        "title": "音量标准化 (Volume Normalization)",
+        "description": "自动校准所有歌曲至一致的感知响度 (LUFS)，确保直播与监听音量平衡，并附带透明安全防爆音限制器。",
+        "presetLabel": "目标响度预设 (Target Loudness)",
+        "presetStandard": "标准平衡 (-14 LUFS · YouTube / Spotify 推荐)",
+        "presetVoice": "人声优先 (-16 LUFS · Twitch 直播凸显麦克风)",
+        "presetGentle": "轻柔保护 (-18 LUFS · 长时间歌回防疲劳)",
+        "presetCustom": "自定义响度 (Other / Custom)",
+        "customValue": "自定义目标响度",
+        "customHint": "数值越大音量越响（上限 -10 LUFS 保护动态）；数值越小音量越轻柔。"
+      }
     },
     "separation": {
       "title": "人声分离质量",

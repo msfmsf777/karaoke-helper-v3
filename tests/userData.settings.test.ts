@@ -247,5 +247,19 @@ describe('fail-safe settings persistence', () => {
     expect(saved.customRuntimePath).toBe('C:\\Custom\\AI-Runtime');
     expect(saved.separationEngine?.mode).toBe('gpu');
   });
+
+  it('persists volumeNormalization, targetLoudnessPreset, and targetLoudnessCustom', async () => {
+    const initial = customSettings('norm-test');
+    initial.volumeNormalization = true;
+    initial.targetLoudnessPreset = 'voice_priority';
+    initial.targetLoudnessCustom = -16.5;
+    await saveSettings(initial);
+
+    const result = await loadSettingsWithMeta();
+    expect(result.status).toBe('ok');
+    expect(result.settings.volumeNormalization).toBe(true);
+    expect(result.settings.targetLoudnessPreset).toBe('voice_priority');
+    expect(result.settings.targetLoudnessCustom).toBe(-16.5);
+  });
 });
 

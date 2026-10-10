@@ -46,7 +46,18 @@
       "headphoneOutput": "Headphone Output",
       "syncOffset": "Dual-output sync offset:",
       "calibrate": "Calibrate",
-      "overlappingOutputWarning": "Audience Output and Headphone Output are using the same device. Audience Output is muted to prevent doubled audio. Select different devices to enable dual output."
+      "overlappingOutputWarning": "Audience Output and Headphone Output are using the same device. Audience Output is muted to prevent doubled audio. Select different devices to enable dual output.",
+      "normalization": {
+        "title": "Volume Normalization",
+        "description": "Automatically standardizes perceived loudness (LUFS) across all songs for consistent stream and monitor volume, backed by a transparent safety limiter.",
+        "presetLabel": "Target Loudness Preset",
+        "presetStandard": "Standard (-14 LUFS · YouTube / Spotify Recommended)",
+        "presetVoice": "Voice Priority (-16 LUFS · Twitch Mic Focus)",
+        "presetGentle": "Gentle (-18 LUFS · Long Sessions / Fatigue Protection)",
+        "presetCustom": "Custom (Other / Custom)",
+        "customValue": "Custom Target Loudness",
+        "customHint": "Higher values are louder (capped at -10 LUFS to preserve dynamics); lower values are gentler."
+      }
     },
     "vocalRange": {
       "sectionTitle": "Singing & Vocal Range",

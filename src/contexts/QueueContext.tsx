@@ -40,7 +40,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [, setHistoryStack] = useState<number[]>([]);
     const [isStreamWaiting, setIsStreamWaiting] = useState(false);
     const [loadingSongId, setLoadingSongId] = useState<string | null>(null);
-    const { getSongById, loading: libraryLoading } = useLibrary();
+    const { getSongById, loading: libraryLoading, updateSong } = useLibrary();
     const isInitialized = useRef(false);
     const shouldAutoPlay = useRef(true);
     const shouldEnterStreamWait = useRef(false);
@@ -146,7 +146,12 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     throw new Error('File path not found');
                 }
 
-                await audioEngine.loadFile(paths);
+                await audioEngine.loadFile(paths, {
+                    loudnessLufs: song.loudness_lufs,
+                    onLoudnessCalculated: (calculatedLufs) => {
+                        void updateSong(songId, { loudness_lufs: calculatedLufs });
+                    }
+                });
                 if (!isCurrentLoad()) return;
 
                 // Apply saved playback transform or defaults

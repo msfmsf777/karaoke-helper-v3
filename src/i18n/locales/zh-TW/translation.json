@@ -46,7 +46,18 @@
       "headphoneOutput": "耳機輸出 (Headphone)",
       "syncOffset": "雙輸出同步偏移：",
       "calibrate": "校準",
-      "overlappingOutputWarning": "觀眾輸出與耳機輸出目前使用相同裝置。為避免聲音重疊，觀眾輸出將保持靜音；請選擇不同裝置以啟用雙輸出。"
+      "overlappingOutputWarning": "觀眾輸出與耳機輸出目前使用相同裝置。為避免聲音重疊，觀眾輸出將保持靜音；請選擇不同裝置以啟用雙輸出。",
+      "normalization": {
+        "title": "音量正規化 (Volume Normalization)",
+        "description": "自動校準所有歌曲至一致的感知響度 (LUFS)，確保直播與監聽音量平衡，並附帶透明安全防爆音限制器。",
+        "presetLabel": "目標響度預設 (Target Loudness)",
+        "presetStandard": "標準平衡 (-14 LUFS · YouTube / Spotify 推薦)",
+        "presetVoice": "人聲優先 (-16 LUFS · Twitch 直播凸顯麥克風)",
+        "presetGentle": "輕柔保護 (-18 LUFS · 長時間歌回防疲勞)",
+        "presetCustom": "自訂響度 (Other / Custom)",
+        "customValue": "自訂目標響度",
+        "customHint": "數值愈大音量愈響（上限 -10 LUFS 保護動態）；數值愈小音量愈輕柔。"
+      }
     },
     "vocalRange": {
       "sectionTitle": "演唱與音域",

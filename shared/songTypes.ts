@@ -69,6 +69,7 @@ export interface SongMeta {
   thumbnailUrl?: string;
   thumbnail_path?: string;
   vocal_range?: SongVocalRange;
+  loudness_lufs?: number;
   trimStart?: number;
   trimEnd?: number;
 }

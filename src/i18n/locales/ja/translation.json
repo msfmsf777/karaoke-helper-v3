@@ -46,7 +46,18 @@
       "headphoneOutput": "ヘッドフォン出力",
       "syncOffset": "デュアル出力同期オフセット:",
       "calibrate": "校正する",
-      "overlappingOutputWarning": "視聴者出力とヘッドフォン出力が同じデバイスに設定されています。音声の重複を防ぐため、視聴者出力はミュートされます。デュアル出力を使用するには別のデバイスを選択してください。"
+      "overlappingOutputWarning": "視聴者出力とヘッドフォン出力が同じデバイスに設定されています。音声の重複を防ぐため、視聴者出力はミュートされます。デュアル出力を使用するには別のデバイスを選択してください。",
+      "normalization": {
+        "title": "音量ノーマライゼーション",
+        "description": "すべての曲の知覚ラウドネス（LUFS）を自動で均一化し、配信とモニターの音量バランスを保ちます。安全なリミッターを内蔵。",
+        "presetLabel": "目標ラウドネスプリセット",
+        "presetStandard": "標準バランス（-14 LUFS · YouTube / Spotify 推奨）",
+        "presetVoice": "声優先（-16 LUFS · Twitch 配信向け）",
+        "presetGentle": "マイルド（-18 LUFS · 長時間歌枠向け）",
+        "presetCustom": "カスタム",
+        "customValue": "カスタム目標ラウドネス",
+        "customHint": "値が大きいほど音量が大きく（上限 -10 LUFS）、小さいほど穏やかになります。"
+      }
     },
     "separation": {
       "title": "ボーカル分離品質",
