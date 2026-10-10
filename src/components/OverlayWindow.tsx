@@ -16,6 +16,7 @@ import { TemplatedLyricsOverlay } from './overlayTemplates/OverlayTemplateRender
 import MissingOverlayTemplateNotice from './MissingOverlayTemplateNotice';
 import i18n from '../i18n';
 import { subscribeOverlayServerUpdates } from '../utils/overlayUpdateTransport';
+import { detectLyricLanguage } from '../../shared/lyricsLanguage';
 
 interface LyricsOverlayUpdatePayload {
     type?: string;
@@ -237,16 +238,11 @@ const OverlayWindow: React.FC = () => {
                     setLines(parsedLines);
                     setLyricsStatus(status);
 
-                    // Enrich if Japanese (Electron Mode)
-                    // We import isJapanese dynamically or use a simple check?
-                    // Since we are in renderer, we can use the util if imported.
-                    // But OverlayWindow imports might be limited.
-                    // Let's use a simple regex check here to avoid dependencies if possible,
-                    // OR rely on the fact that StreamModeView likely cached it.
-                    const hasJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(rawText);
+                    // Enrich if CJK (Electron Mode)
+                    const detectedLang = detectLyricLanguage(rawText);
                     const compactLines = compactLyricLinesForEnrichment(parsedLines);
-                    if (hasJapanese && compactLines.texts.length > 0 && window.khelper.lyrics.enrichLyrics) {
-                        window.khelper.lyrics.enrichLyrics(compactLines.texts)
+                    if (detectedLang !== 'none' && compactLines.texts.length > 0 && window.khelper.lyrics.enrichLyrics) {
+                        window.khelper.lyrics.enrichLyrics(compactLines.texts, detectedLang)
                             .then(enriched => {
                                 if (active) setEnrichedLines(alignEnrichedLyricLines(parsedLines, enriched));
                             })

@@ -18,7 +18,7 @@ import {
 import { useQueue } from '../contexts/QueueContext';
 import { useLibrary } from '../contexts/LibraryContext';
 import { useUserData } from '../contexts/UserDataContext';
-import { isJapanese } from '../utils/japaneseDetection';
+import { detectLyricLanguage } from '../../shared/lyricsLanguage';
 import WindowControls from './WindowControls';
 import StreamControlDropdown from './StreamControlDropdown';
 import audioEngine from '../audio/AudioEngine';
@@ -162,13 +162,11 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
         setLyricsStatus(status);
 
         if (status !== 'none') {
-          const detectedJp = isJapanese(rawText);
-
-
+          const detectedLang = detectLyricLanguage(rawText);
           const compactLines = compactLyricLinesForEnrichment(parsedLines);
 
-          if (detectedJp && compactLines.texts.length > 0 && window.khelper?.lyrics?.enrichLyrics) {
-            window.khelper.lyrics.enrichLyrics(compactLines.texts)
+          if (detectedLang !== 'none' && compactLines.texts.length > 0 && window.khelper?.lyrics?.enrichLyrics) {
+            window.khelper.lyrics.enrichLyrics(compactLines.texts, detectedLang)
               .then(enriched => {
                 if (active) setEnrichedLines(alignEnrichedLyricLines(parsedLines, enriched));
               })

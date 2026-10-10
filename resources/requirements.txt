@@ -1,7 +1,8 @@
-# Base Python requirements bundled in the installer
-# JPN lyrics (lightweight, ~35MB, bundled directly so Japanese lyrics furigana works offline immediately)
+# CJK lyrics (lightweight, bundled directly so CJK lyrics enrichment works offline immediately)
 fugashi[unidic-lite]
 cutlet
+pypinyin
+korean-romanizer
 
 # Note: Audio separation (audio-separator, torch, onnxruntime, CUDA/CPU wheels)
 # is now installed dynamically on first use into %APPDATA%/com.khelper.v3/separation-runtime

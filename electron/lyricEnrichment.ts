@@ -5,6 +5,7 @@ import { app } from 'electron';
 import { getPythonPath } from './pythonRuntime';
 import crypto from 'node:crypto';
 import type { EnrichedLyricLine } from '../shared/songTypes';
+import { detectLyricLanguage, type LyricLanguage } from '../shared/lyricsLanguage';
 
 const CACHE_DIR_NAME = 'lyrics_enrichment_cache';
 
@@ -20,35 +21,60 @@ function hashLyrics(lines: string[]): string {
     return crypto.createHash('md5').update(content).digest('hex');
 }
 
-export async function enrichLyrics(lines: string[]): Promise<EnrichedLyricLine[]> {
+export async function enrichLyrics(lines: string[], lang?: LyricLanguage): Promise<EnrichedLyricLine[]> {
     if (!lines || lines.length === 0) return [];
+
+    const resolvedLang: LyricLanguage = (lang && lang !== 'none')
+        ? lang
+        : detectLyricLanguage(lines.join('\n'));
+
+    if (resolvedLang === 'none') {
+        return lines.map(text => ({
+            original: text,
+            romaji: '',
+            ruby: [{ surface: text, furigana: null }]
+        }));
+    }
 
     const cacheDir = await getCacheDir();
     const hash = hashLyrics(lines);
-    const cacheFile = path.join(cacheDir, `${hash}.json`);
+    const cacheFile = path.join(cacheDir, `${hash}_${resolvedLang}.json`);
 
     // Check cache
     try {
         const cached = await fs.readFile(cacheFile, 'utf-8');
-        console.log('[LyricEnrichment] Cache hit for', hash);
+        console.log('[LyricEnrichment] Cache hit for', hash, resolvedLang);
         return JSON.parse(cached);
     } catch {
-        // Cache miss, proceed
+        // Fallback for legacy ja cache format
+        if (resolvedLang === 'ja') {
+            try {
+                const legacyCacheFile = path.join(cacheDir, `${hash}.json`);
+                const cached = await fs.readFile(legacyCacheFile, 'utf-8');
+                console.log('[LyricEnrichment] Legacy cache hit for', hash);
+                return JSON.parse(cached);
+            } catch {
+                // Cache miss, proceed
+            }
+        }
     }
 
-    console.log('[LyricEnrichment] Cache miss, running Python analysis...');
+    console.log(`[LyricEnrichment] Cache miss, running Python analysis for ${resolvedLang}...`);
     const pythonPath = await getPythonPath();
 
-    // Determine script path (similar to separationJobs.ts)
+    // Determine script path
     let scriptPath: string;
     if (app.isPackaged) {
-        scriptPath = path.join(process.resourcesPath, 'lyrics', 'jp_furigana.py');
+        scriptPath = path.join(process.resourcesPath, 'lyrics', 'cjk_enrichment.py');
     } else {
-        scriptPath = path.join(process.cwd(), 'resources', 'lyrics', 'jp_furigana.py');
+        scriptPath = path.join(process.cwd(), 'resources', 'lyrics', 'cjk_enrichment.py');
     }
 
     // Prepare input
-    const inputData = lines.map(text => ({ text }));
+    const inputData = {
+        lang: resolvedLang,
+        lines: lines.map(text => ({ text }))
+    };
     const inputJson = JSON.stringify(inputData);
 
     return new Promise((resolve, reject) => {

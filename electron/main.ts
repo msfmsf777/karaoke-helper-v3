@@ -38,6 +38,7 @@ import {
   linesFromRawText,
   parseLrc,
 } from '../shared/lyrics'
+import { detectLyricLanguage, type LyricLanguage } from '../shared/lyricsLanguage'
 import type { TextOnlyLyricScrollPayload } from '../shared/lyricsScrollSync'
 import { getElectronLanguage, setElectronLanguage, tElectron } from './i18n'
 import { OverlayTransport, OverlayTransportPayload } from './overlayTransport'
@@ -925,8 +926,8 @@ ipcMain.handle('lyrics:write-synced', async (_event, payload: { songId: string; 
   return writeSyncedLyrics(payload.songId, payload.content)
 })
 
-ipcMain.handle('lyrics:enrich', async (_event, lines: string[]) => {
-  return enrichLyrics(lines)
+ipcMain.handle('lyrics:enrich', async (_event, lines: string[], lang?: LyricLanguage) => {
+  return enrichLyrics(lines, lang)
 })
 
 ipcMain.handle('queue:save', async (_event, payload: { songIds: string[]; currentIndex: number }) => {
@@ -1228,15 +1229,15 @@ const server = http.createServer((req, res) => {
           : [];
       const content = parsedLines.map((line) => line.text).join('\n');
 
-      // Simple Japanese detection (Hiragana, Katakana, Kanji)
-      const hasJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(content);
+      // CJK detection (Japanese, Korean, Chinese)
+      const detectedLang = detectLyricLanguage(content);
 
-      if (hasJapanese) {
+      if (detectedLang !== 'none') {
         try {
           const compactLines = compactLyricLinesForEnrichment(parsedLines);
 
           if (compactLines.texts.length > 0) {
-            enriched = alignEnrichedLyricLines(parsedLines, await enrichLyrics(compactLines.texts));
+            enriched = alignEnrichedLyricLines(parsedLines, await enrichLyrics(compactLines.texts, detectedLang));
           }
         } catch (e) {
           console.error('[OverlayServer] Enrichment failed', e);

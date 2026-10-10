@@ -235,8 +235,8 @@ contextBridge.exposeInMainWorld('khelper', {
       ipcRenderer.invoke('lyrics:write-raw', payload),
     writeSyncedLyrics: (payload: { songId: string; content: string }): Promise<{ path: string; meta: SongMeta }> =>
       ipcRenderer.invoke('lyrics:write-synced', payload),
-    enrichLyrics: (lines: string[]): Promise<import('../shared/songTypes').EnrichedLyricLine[]> =>
-      ipcRenderer.invoke('lyrics:enrich', lines),
+    enrichLyrics: (lines: string[], lang?: import('../shared/lyricsLanguage').LyricLanguage): Promise<import('../shared/songTypes').EnrichedLyricLine[]> =>
+      ipcRenderer.invoke('lyrics:enrich', lines, lang),
   },
   queue: {
     save: (payload: { songIds: string[]; currentIndex: number }): Promise<void> =>

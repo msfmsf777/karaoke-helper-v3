@@ -129,7 +129,7 @@ interface Window {
       readSyncedLyrics: (songId: string) => Promise<{ path: string; content: string } | null>;
       writeRawLyrics: (payload: { songId: string; content: string }) => Promise<{ path: string; meta: import('../shared/songTypes').SongMeta }>;
       writeSyncedLyrics: (payload: { songId: string; content: string }) => Promise<{ path: string; meta: import('../shared/songTypes').SongMeta }>;
-      enrichLyrics: (lines: string[]) => Promise<import('../shared/songTypes').EnrichedLyricLine[]>;
+      enrichLyrics: (lines: string[], lang?: import('../shared/lyricsLanguage').LyricLanguage) => Promise<import('../shared/songTypes').EnrichedLyricLine[]>;
     };
     queue: {
       save: (payload: { songIds: string[]; currentIndex: number }) => Promise<void>;

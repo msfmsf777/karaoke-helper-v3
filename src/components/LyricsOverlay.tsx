@@ -1,8 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EditableLyricLine } from '../library/lyrics';
 import { SongMeta, EnrichedLyricLine } from '../../shared/songTypes';
 import type { AlignedEnrichedLyricLine } from '../../shared/lyrics';
+import { detectLyricLanguage } from '../../shared/lyricsLanguage';
 import {
     createTextOnlyLyricScrollAnchor,
     type LyricLineLayout,
@@ -130,15 +131,19 @@ const LyricLine = React.memo(({
 
 const JapaneseToggleButton = React.memo(({
     label,
+    title,
     active,
     onToggle
 }: {
     label: string;
+    title?: string;
     active?: boolean;
     onToggle?: () => void;
 }) => (
     <button
         type="button"
+        title={title}
+        aria-label={title || label}
         onPointerDown={(event) => {
             event.stopPropagation();
         }}
@@ -192,6 +197,11 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({
     const containerRef = useRef<HTMLDivElement>(null);
     const isUserScrolling = useRef(false);
     const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
+
+    const detectedLang = useMemo(() => {
+        const fullText = lines.map(l => l.text).join('\n');
+        return detectLyricLanguage(fullText);
+    }, [lines]);
 
     // Find current line index
     let currentIdx = -1;
@@ -306,8 +316,8 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({
                 </div>
             )}
 
-            {/* Furigana/Romaji Switches (Bottom Right) */}
-            {showControls && enrichedLines && (
+            {/* Furigana/Romaji/Pinyin Switches (Bottom Right) */}
+            {showControls && enrichedLines && detectedLang !== 'none' && (
                 <div style={{
                     position: 'absolute',
                     bottom: '16px',
@@ -318,16 +328,38 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({
                     pointerEvents: 'auto',
                     WebkitAppRegion: 'no-drag',
                 } as React.CSSProperties}>
-                    <JapaneseToggleButton
-                        label="あ"
-                        active={furiganaEnabled}
-                        onToggle={onToggleFurigana}
-                    />
-                    <JapaneseToggleButton
-                        label="a"
-                        active={romajiEnabled}
-                        onToggle={onToggleRomaji}
-                    />
+                    {detectedLang === 'ja' && (
+                        <>
+                            <JapaneseToggleButton
+                                label="あ"
+                                title="振假名 (Furigana)"
+                                active={furiganaEnabled}
+                                onToggle={onToggleFurigana}
+                            />
+                            <JapaneseToggleButton
+                                label="a"
+                                title="羅馬字 (Romaji)"
+                                active={romajiEnabled}
+                                onToggle={onToggleRomaji}
+                            />
+                        </>
+                    )}
+                    {detectedLang === 'zh' && (
+                        <JapaneseToggleButton
+                            label="拼"
+                            title="拼音 (Pinyin)"
+                            active={furiganaEnabled}
+                            onToggle={onToggleFurigana}
+                        />
+                    )}
+                    {detectedLang === 'ko' && (
+                        <JapaneseToggleButton
+                            label="a"
+                            title="羅馬拼音 (Romanization)"
+                            active={romajiEnabled}
+                            onToggle={onToggleRomaji}
+                        />
+                    )}
                 </div>
             )}
 
