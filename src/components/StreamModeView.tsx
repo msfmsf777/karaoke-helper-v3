@@ -353,37 +353,39 @@ const StreamModeView: React.FC<StreamModeViewProps> = ({
             } as React.CSSProperties}
           >
             {/* Quick button to display vocal range pill */}
-            <button
-              onClick={handleToggleVocalRange}
-              title={t('vocalRange.pill.reopen', '顯示歌曲音域與推薦調性')}
-              className="stream-control-btn"
-              style={{
-                width: '32px',
-                height: '32px',
-                backgroundColor: 'rgba(0,0,0,0.5)',
-                color: isSeparated ? '#fff' : '#666',
-                border: '1px solid rgba(255,255,255,0.2)',
-                borderRadius: '6px',
-                cursor: isSeparated ? 'pointer' : 'default',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backdropFilter: 'blur(4px)',
-                transition: 'background-color 0.2s, color 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                if (isSeparated) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.5)';
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                <line x1="12" y1="19" x2="12" y2="22" />
-              </svg>
-            </button>
+            {isSeparated && (
+              <button
+                onClick={handleToggleVocalRange}
+                title={t('vocalRange.pill.reopen', '顯示歌曲音域與推薦調性')}
+                className="stream-control-btn"
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  backgroundColor: 'rgba(0,0,0,0.5)',
+                  color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backdropFilter: 'blur(4px)',
+                  transition: 'background-color 0.2s, color 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                  <line x1="12" y1="19" x2="12" y2="22" />
+                </svg>
+              </button>
+            )}
 
             {/* New Dropdown */}
             <StreamControlDropdown
