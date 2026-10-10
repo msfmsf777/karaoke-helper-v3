@@ -34,6 +34,7 @@ import { localPathToFileUrl } from '../utils/localFileUrl';
 import PrevIcon from '../assets/icons/prev.svg';
 import NextIcon from '../assets/icons/next.svg';
 import ReplayIcon from '../assets/icons/replay.svg';
+import ObsLinkIcon from '../assets/icons/obs_link.svg';
 
 const CONTROL_BG = '#2a2a2a';
 const PANEL_BG = '#252525';
@@ -1571,8 +1572,14 @@ const editorPanelStyle: React.CSSProperties = {
 const SectionTitle: React.FC<{ title: string }> = ({ title }) => {
   const { t } = useTranslation();
   return (
-    <h2 style={{ margin: '0 0 12px 0', fontSize: 18, color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: 12 }}>
-      {overlayUiText(t, title)}
+    <h2 style={{ margin: '0 0 12px 0', fontSize: 18, color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+      <img
+        src={ObsLinkIcon}
+        alt=""
+        aria-hidden="true"
+        style={{ width: 18, height: 18, filter: 'brightness(0) invert(1)', opacity: 0.9, flexShrink: 0 }}
+      />
+      <span>{overlayUiText(t, title)}</span>
     </h2>
   );
 };

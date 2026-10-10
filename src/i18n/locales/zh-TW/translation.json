@@ -25,6 +25,17 @@
     "close": "關閉"
   },
   "settings": {
+    "nav": {
+      "language": "介面語言",
+      "audio": "音訊輸出",
+      "vocalRange": "演唱音域",
+      "overlays": "直播模板",
+      "hotkeys": "快捷鍵",
+      "separation": "人聲分離",
+      "storage": "儲存路徑",
+      "privacy": "隱私改善",
+      "updates": "軟體更新"
+    },
     "language": {
       "title": "介面語言",
       "description": "選擇 KHelper 的顯示語言。若尚未選擇，會先依照系統語言自動判斷。",
@@ -64,7 +75,8 @@
       "sectionDesc": "設定您的個人演唱音域，系統將為伴奏音訊提供專屬智慧轉調建議。"
     },
     "separation": {
-      "title": "人聲分離品質",
+      "title": "人聲分離",
+      "qualitySubtitle": "預設分離品質",
       "fast": "快速 (Fast)",
       "fastDescription": "較省資源，處理速度最快，但音質略低。",
       "normal": "標準 (Normal)",

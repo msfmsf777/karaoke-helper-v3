@@ -25,6 +25,17 @@
     "close": "Tutup"
   },
   "settings": {
+    "nav": {
+      "language": "Bahasa",
+      "audio": "Output Audio",
+      "vocalRange": "Rentang Vokal",
+      "overlays": "Overlay",
+      "hotkeys": "Tombol Pintas",
+      "separation": "Pemisahan Vokal",
+      "storage": "Penyimpanan",
+      "privacy": "Privasi",
+      "updates": "Pembaruan"
+    },
     "language": {
       "title": "Bahasa Antarmuka",
       "description": "Pilih bahasa tampilan untuk KHelper. Jika tidak ada bahasa yang dipilih, KHelper akan mendeteksinya secara otomatis dari bahasa sistem Anda.",
@@ -48,8 +59,13 @@
       "calibrate": "Kalibrasi",
       "overlappingOutputWarning": "Output Penonton dan Output Headphone menggunakan perangkat yang sama. Output Penonton dibisukan untuk mencegah audio ganda. Pilih perangkat yang berbeda untuk mengaktifkan output ganda."
     },
+    "vocalRange": {
+      "sectionTitle": "Rentang Vokal",
+      "sectionDesc": "Atur rentang vokal Anda untuk mendapatkan rekomendasi penyesuaian nada cerdas yang dipersonalisasi."
+    },
     "separation": {
-      "title": "Kualitas Pemisahan Vokal",
+      "title": "Pemisahan Vokal",
+      "qualitySubtitle": "Kualitas Pemisahan Default",
       "fast": "Cepat",
       "fastDescription": "Lebih ringan dan paling cepat, dengan kualitas sedikit lebih rendah.",
       "normal": "Normal",

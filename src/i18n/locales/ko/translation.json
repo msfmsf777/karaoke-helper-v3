@@ -25,6 +25,17 @@
     "close": "닫기"
   },
   "settings": {
+    "nav": {
+      "language": "인터페이스 언어",
+      "audio": "오디오 출력",
+      "vocalRange": "음역대 설정",
+      "overlays": "오버레이 템플릿",
+      "hotkeys": "단축키",
+      "separation": "보컬 분리",
+      "storage": "저장 경로",
+      "privacy": "개인정보 보호",
+      "updates": "소프트웨어 업데이트"
+    },
     "language": {
       "title": "인터페이스 언어",
       "description": "KHelper의 표시 언어를 선택하세요. 언어를 선택하지 않은 경우 KHelper는 시스템 언어에서 자동으로 감지합니다.",
@@ -59,8 +70,13 @@
         "customHint": "값이 클수록 소리가 커지며(최대 -10 LUFS), 작을수록 부드러워집니다."
       }
     },
+    "vocalRange": {
+      "sectionTitle": "음역대 설정",
+      "sectionDesc": "개인 음역대를 설정하면 반주 음원에 맞춘 맞춤형 스마트 조변경을 추천합니다."
+    },
     "separation": {
-      "title": "보컬 분리 품질",
+      "title": "보컬 분리",
+      "qualitySubtitle": "기본 분리 품질",
       "fast": "빠르게",
       "fastDescription": "약간 낮은 품질로 더 적은 리소스를 사용하고 가장 빠르게 완료됩니다.",
       "normal": "보통",

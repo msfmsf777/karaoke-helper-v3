@@ -25,6 +25,17 @@
     "close": "Close"
   },
   "settings": {
+    "nav": {
+      "language": "Language",
+      "audio": "Audio Output",
+      "vocalRange": "Vocal Range",
+      "overlays": "Overlays",
+      "hotkeys": "Hotkeys",
+      "separation": "Vocal Separation",
+      "storage": "Storage",
+      "privacy": "Privacy",
+      "updates": "Updates"
+    },
     "language": {
       "title": "Interface Language",
       "description": "Choose the display language for KHelper. If no language has been selected, KHelper auto-detects it from your system language.",
@@ -64,7 +75,8 @@
       "sectionDesc": "Configure your comfortable vocal range to receive personalized smart key recommendations for backing tracks."
     },
     "separation": {
-      "title": "Vocal Separation Quality",
+      "title": "Vocal Separation",
+      "qualitySubtitle": "Default Separation Quality",
       "fast": "Fast",
       "fastDescription": "Uses fewer resources and finishes fastest, with slightly lower quality.",
       "normal": "Normal",

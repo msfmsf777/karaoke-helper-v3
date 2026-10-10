@@ -53,15 +53,24 @@ export const StorageSettingsSection: React.FC = () => {
   const isRunning = migration?.status === 'running' || migration?.status === 'verifying';
 
   return (
-    <section style={{ marginBottom: '40px' }}>
+    <section id="settings-storage" style={{ marginBottom: '40px', scrollMarginTop: 24 }}>
       <h2 style={{
         margin: '0 0 16px 0',
         fontSize: '18px',
         color: '#fff',
         borderLeft: '4px solid var(--accent-color)',
         paddingLeft: '12px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
       }}>
-        {t('settings.storage.title', 'Song Library Storage')}
+        <img
+          src={FolderOpenIcon}
+          alt=""
+          aria-hidden="true"
+          style={{ width: '18px', height: '18px', filter: 'brightness(0) invert(1)', opacity: 0.9, flexShrink: 0 }}
+        />
+        <span>{t('settings.storage.title', 'Song Library Storage')}</span>
       </h2>
 
       <div style={{ background: '#2a2a2a', padding: '24px', borderRadius: '12px', border: '1px solid #333' }}>

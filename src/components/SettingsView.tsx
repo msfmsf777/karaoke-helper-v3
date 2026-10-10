@@ -9,6 +9,13 @@ import HotkeysSettingsSection from './HotkeysSettingsSection';
 import OverlayTemplateSettingsSection, { OverlayTemplateEditor } from './OverlayTemplateSettingsSection';
 import { OverlayKind } from '../../shared/overlayTemplates';
 import WebIcon from '../assets/icons/web.svg';
+import VolumeHighIcon from '../assets/icons/volume_high.svg';
+import HeadphoneIcon from '../assets/icons/headphone.svg';
+import PitchIcon from '../assets/icons/pitch.svg';
+import SeparateIcon from '../assets/icons/separate.svg';
+import ShieldIcon from '../assets/icons/shield.svg';
+import UpdateBaseIcon from '../assets/icons/update_base.svg';
+import MicIcon from '../assets/icons/mic.svg';
 import LanguageSelector from './LanguageSelector';
 import { PRIVACY_NOTICE_URL, TELEMETRYDECK_PRIVACY_URL } from '../constants/privacy';
 
@@ -37,6 +44,37 @@ const privacyLinkStyle: React.CSSProperties = {
     cursor: 'pointer',
     textDecoration: 'underline',
 };
+
+const sectionHeadingStyle: React.CSSProperties = {
+    margin: '0 0 16px',
+    fontSize: '18px',
+    color: '#fff',
+    borderLeft: '4px solid var(--accent-color)',
+    paddingLeft: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+};
+
+const headingIconStyle: React.CSSProperties = {
+    width: '18px',
+    height: '18px',
+    filter: 'brightness(0) invert(1)',
+    opacity: 0.9,
+    flexShrink: 0,
+};
+
+const NAV_ITEMS = [
+    { id: 'settings-language', labelKey: 'settings.nav.language' },
+    { id: 'settings-audio', labelKey: 'settings.nav.audio' },
+    { id: 'settings-vocal-range', labelKey: 'settings.nav.vocalRange' },
+    { id: 'overlay-template-settings-section', labelKey: 'settings.nav.overlays' },
+    { id: 'settings-hotkeys', labelKey: 'settings.nav.hotkeys' },
+    { id: 'settings-separation', labelKey: 'settings.nav.separation' },
+    { id: 'settings-storage', labelKey: 'settings.nav.storage' },
+    { id: 'settings-privacy', labelKey: 'settings.nav.privacy' },
+    { id: 'settings-updates', labelKey: 'settings.nav.updates' },
+];
 
 const SettingsView: React.FC<SettingsViewProps> = ({
     onBack,
@@ -86,6 +124,69 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     // Sample Rates
     const [streamSampleRate, setStreamSampleRate] = useState(0);
     const [headphoneSampleRate, setHeadphoneSampleRate] = useState(0);
+
+    // Navigation State
+    const [activeSection, setActiveSection] = useState<string>('settings-language');
+    const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+    const isClickScrollingRef = useRef(false);
+    const scrollTimeoutRef = useRef<number | null>(null);
+
+    const scrollToSection = (id: string) => {
+        const container = scrollContainerRef.current;
+        const el = document.getElementById(id);
+        if (!container || !el) return;
+
+        setActiveSection(id);
+        isClickScrollingRef.current = true;
+        if (scrollTimeoutRef.current) {
+            window.clearTimeout(scrollTimeoutRef.current);
+        }
+        scrollTimeoutRef.current = window.setTimeout(() => {
+            isClickScrollingRef.current = false;
+        }, 850);
+
+        const containerRect = container.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        const targetTop = container.scrollTop + (elRect.top - containerRect.top) - 20;
+
+        container.scrollTo({
+            top: Math.max(0, targetTop),
+            behavior: 'smooth',
+        });
+    };
+
+    useEffect(() => {
+        if (overlayEditor) return;
+        const container = scrollContainerRef.current;
+        if (!container) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (isClickScrollingRef.current) return;
+                const visible = entries.find((e) => e.isIntersecting);
+                if (visible?.target?.id) {
+                    setActiveSection(visible.target.id);
+                }
+            },
+            {
+                root: container,
+                rootMargin: '-10% 0px -70% 0px',
+                threshold: 0,
+            }
+        );
+
+        NAV_ITEMS.forEach((item) => {
+            const el = document.getElementById(item.id);
+            if (el) observer.observe(el);
+        });
+
+        return () => {
+            observer.disconnect();
+            if (scrollTimeoutRef.current) {
+                window.clearTimeout(scrollTimeoutRef.current);
+            }
+        };
+    }, [overlayEditor]);
 
     const refreshDevices = async () => {
         setLoading(true);
@@ -251,6 +352,69 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                 <h1 style={{ margin: 0, fontSize: '22px', lineHeight: 1.15, fontWeight: 'bold' }}>{t('common.settings')}</h1>
             </div>
 
+            {/* Category Navigation Bar */}
+            {!overlayEditor && (
+                <nav
+                    aria-label={t('common.settings')}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '10px 24px',
+                        backgroundColor: '#232323',
+                        borderBottom: '1px solid #333',
+                        overflowX: 'auto',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                        scrollbarWidth: 'none',
+                    }}
+                >
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        margin: '0 auto',
+                    }}>
+                        {NAV_ITEMS.map((item) => {
+                            const isActive = activeSection === item.id;
+                            return (
+                                <button
+                                    key={item.id}
+                                    type="button"
+                                    onClick={() => scrollToSection(item.id)}
+                                    style={{
+                                        padding: '5px 14px',
+                                        borderRadius: '16px',
+                                        border: '1px solid ' + (isActive ? 'var(--accent-color)' : 'transparent'),
+                                        backgroundColor: isActive ? 'rgba(var(--accent-color-rgb), 0.16)' : '#2c2c2c',
+                                        color: isActive ? '#fff' : '#aaa',
+                                        fontSize: '12px',
+                                        fontWeight: isActive ? 600 : 500,
+                                        cursor: 'pointer',
+                                        transition: 'background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease',
+                                        flexShrink: 0,
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!isActive) {
+                                            e.currentTarget.style.backgroundColor = '#383838';
+                                            e.currentTarget.style.color = '#fff';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!isActive) {
+                                            e.currentTarget.style.backgroundColor = '#2c2c2c';
+                                            e.currentTarget.style.color = '#aaa';
+                                        }
+                                    }}
+                                >
+                                    {t(item.labelKey)}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </nav>
+            )}
+
             {/* Content Container - Scrollbar lives here */}
             {overlayEditor ? (
                 <div style={{
@@ -266,11 +430,14 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     />
                 </div>
             ) : (
-                <div style={{
-                    flex: 1,
-                    overflowY: 'auto',
-                    width: '100%',
-                }}>
+                <div
+                    ref={scrollContainerRef}
+                    style={{
+                        flex: 1,
+                        overflowY: 'auto',
+                        width: '100%',
+                    }}
+                >
                 {/* Centered Content Wrapper */}
                 <div style={{
                     padding: '32px',
@@ -280,44 +447,55 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                 }}>
 
                     {/* Section: Language */}
-                    <section style={{ marginBottom: '40px' }}>
-                        <h2 style={{ margin: '0 0 16px', fontSize: '18px', color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <section id="settings-language" style={{ marginBottom: '40px', scrollMarginTop: 24 }}>
+                        <h2 style={sectionHeadingStyle}>
                             <img
                                 src={WebIcon}
                                 alt=""
                                 aria-hidden="true"
-                                style={{ width: '18px', height: '18px', filter: 'brightness(0) invert(1)', opacity: 0.9, flexShrink: 0 }}
+                                style={headingIconStyle}
                             />
-                            {t('settings.language.title')}
+                            <span>{t('settings.language.title')}</span>
                         </h2>
-                        <p style={{ margin: '0 0 16px', color: '#aaa', fontSize: '14px', lineHeight: '1.6' }}>
-                            {t('settings.language.description')}
-                        </p>
-                        <label style={{ display: 'block', color: '#ddd', fontSize: '14px', fontWeight: 'bold', marginBottom: '8px' }}>
-                            {t('settings.language.label')}
-                        </label>
-                        <LanguageSelector value={language} onChange={setLanguage} />
+                        <div style={{ background: '#2a2a2a', padding: '24px', borderRadius: '12px', border: '1px solid #333' }}>
+                            <p style={{ margin: '0 0 16px', color: '#aaa', fontSize: '14px', lineHeight: '1.6' }}>
+                                {t('settings.language.description')}
+                            </p>
+                            <label style={{ display: 'block', color: '#ddd', fontSize: '14px', fontWeight: 'bold', marginBottom: '8px' }}>
+                                {t('settings.language.label')}
+                            </label>
+                            <LanguageSelector value={language} onChange={setLanguage} />
+                        </div>
                     </section>
 
                     {/* Section: Audio Devices */}
-                    <section style={{ marginBottom: '40px' }}>
+                    <section id="settings-audio" style={{ marginBottom: '40px', scrollMarginTop: 24 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                            <h2 style={{ margin: 0, fontSize: '18px', color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: '12px' }}>
-                                {t('settings.audio.title')}
+                            <h2 style={sectionHeadingStyle}>
+                                <img
+                                    src={HeadphoneIcon}
+                                    alt=""
+                                    aria-hidden="true"
+                                    style={headingIconStyle}
+                                />
+                                <span>{t('settings.audio.title')}</span>
                             </h2>
                             <button
                                 onClick={refreshDevices}
                                 disabled={loading}
                                 style={{
-                                    padding: '6px 12px',
+                                    padding: '6px 14px',
                                     backgroundColor: '#333',
                                     color: '#fff',
                                     border: '1px solid #444',
                                     borderRadius: '6px',
                                     cursor: loading ? 'not-allowed' : 'pointer',
                                     fontSize: '13px',
-                                    opacity: loading ? 0.7 : 1
+                                    opacity: loading ? 0.7 : 1,
+                                    transition: 'background-color 0.15s ease',
                                 }}
+                                onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#3f3f3f'; }}
+                                onMouseLeave={e => { if (!loading) e.currentTarget.style.backgroundColor = '#333'; }}
                             >
                                 {loading ? t('settings.audio.scanning') : t('settings.audio.scan')}
                             </button>
@@ -334,19 +512,17 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                             <div style={{ background: '#2a2a2a', padding: '20px', borderRadius: '12px', border: '1px solid #333' }}>
                                 {/* Header with Toggle */}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        <label style={{ display: 'block', color: '#ddd', fontSize: '14px', fontWeight: 'bold' }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={streamEnabled}
+                                            onChange={(e) => handleToggleStream(e.target.checked)}
+                                            style={{ accentColor: 'var(--accent-color)', width: '16px', height: '16px', cursor: 'pointer' }}
+                                        />
+                                        <span style={{ color: '#ddd', fontSize: '14px', fontWeight: 'bold' }}>
                                             {t('settings.audio.streamOutput')}
-                                        </label>
-                                        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                                            <input
-                                                type="checkbox"
-                                                checked={streamEnabled}
-                                                onChange={(e) => handleToggleStream(e.target.checked)}
-                                                style={{ accentColor: 'var(--accent-color)', width: '16px', height: '16px', cursor: 'pointer' }}
-                                            />
-                                        </label>
-                                    </div>
+                                        </span>
+                                    </label>
                                     {streamSampleRate > 0 && (
                                         <div style={{
                                             fontSize: '11px',
@@ -479,14 +655,18 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                                 onClick={() => setShowCalibration(true)}
                                 disabled={!calibrationEnabled}
                                 style={{
-                                    padding: '8px 16px',
-                                    backgroundColor: '#444',
+                                    padding: '7px 16px',
+                                    backgroundColor: '#333',
                                     color: '#fff',
                                     borderRadius: '6px',
-                                    border: 'none',
+                                    border: '1px solid #444',
                                     cursor: !calibrationEnabled ? 'not-allowed' : 'pointer',
-                                    fontSize: '13px'
+                                    fontSize: '13px',
+                                    fontWeight: 500,
+                                    transition: 'background-color 0.15s ease',
                                 }}
+                                onMouseEnter={e => { if (calibrationEnabled) e.currentTarget.style.backgroundColor = '#3f3f3f'; }}
+                                onMouseLeave={e => { if (calibrationEnabled) e.currentTarget.style.backgroundColor = '#333'; }}
                             >
                                 {t('settings.audio.calibrate')}
                             </button>
@@ -500,25 +680,28 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                             border: '1px solid #333',
                             marginTop: '16px',
                         }}>
-                            {/* Header Row: Title, Description, and Toggle */}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ fontSize: '15px', color: '#fff', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span>🔊</span>
-                                        <span>{t('settings.audio.normalization.title', '音量正規化 (Volume Normalization)')}</span>
-                                    </div>
-                                    <div style={{ fontSize: '13px', color: '#aaa', marginTop: '4px', lineHeight: '1.5' }}>
-                                        {t('settings.audio.normalization.description', '自動校準所有歌曲至一致的感知響度 (LUFS)，確保直播與監聽音量平衡，並附帶透明安全防爆音限制器。')}
-                                    </div>
-                                </div>
-                                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', flexShrink: 0, marginTop: '2px' }}>
+                            {/* Header Row: Toggle in front of Title & Description */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', cursor: 'pointer', margin: 0 }}>
                                     <input
                                         type="checkbox"
                                         checked={volumeNormalization}
                                         onChange={(e) => setVolumeNormalization(e.target.checked)}
                                         style={{ accentColor: 'var(--accent-color)', width: '18px', height: '18px', cursor: 'pointer' }}
                                     />
+                                    <span style={{ fontSize: '15px', color: '#fff', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <img
+                                            src={VolumeHighIcon}
+                                            alt=""
+                                            aria-hidden="true"
+                                            style={{ width: '16px', height: '16px', filter: 'brightness(0) invert(1)', opacity: 0.9 }}
+                                        />
+                                        <span>{t('settings.audio.normalization.title', '音量正規化 (Volume Normalization)')}</span>
+                                    </span>
                                 </label>
+                                <div style={{ fontSize: '13px', color: '#aaa', marginLeft: '28px', lineHeight: '1.5' }}>
+                                    {t('settings.audio.normalization.description', '自動校準所有歌曲至一致的感知響度 (LUFS)，確保直播與監聽音量平衡，並附帶透明安全防爆音限制器。')}
+                                </div>
                             </div>
 
                             {/* Preset Selection & Slider (Shown when Normalization is ON) */}
@@ -619,9 +802,15 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     </section>
 
                     {/* Section: Singing & Vocal Range */}
-                    <section style={{ marginBottom: '40px' }}>
-                        <h2 style={{ margin: '0 0 16px 0', fontSize: '18px', color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: '12px' }}>
-                            {t('settings.vocalRange.sectionTitle', '演唱與音域')}
+                    <section id="settings-vocal-range" style={{ marginBottom: '40px', scrollMarginTop: 24 }}>
+                        <h2 style={sectionHeadingStyle}>
+                            <img
+                                src={PitchIcon}
+                                alt=""
+                                aria-hidden="true"
+                                style={headingIconStyle}
+                            />
+                            <span>{t('settings.vocalRange.sectionTitle', '演唱與音域')}</span>
                         </h2>
                         <div style={{ background: '#2a2a2a', padding: '24px', borderRadius: '12px', border: '1px solid #333' }}>
                             <p style={{ margin: '0 0 18px', color: '#aaa', fontSize: '14px', lineHeight: '1.6' }}>
@@ -638,10 +827,16 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                                 border: '1px solid #333',
                             }}>
                                 <div>
-                                    <div style={{ fontSize: '14px', color: '#ddd', fontWeight: 'bold' }}>
-                                        🎤 {t('vocalRange.settings.title', '個人音域 (Vocal Range Profile)')}
+                                    <div style={{ fontSize: '14px', color: '#ddd', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <img
+                                            src={MicIcon}
+                                            alt=""
+                                            aria-hidden="true"
+                                            style={{ width: '16px', height: '16px', filter: 'brightness(0) invert(1)', opacity: 0.9 }}
+                                        />
+                                        <span>{t('vocalRange.settings.title', '個人音域 (Vocal Range Profile)')}</span>
                                     </div>
-                                    <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+                                    <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px', marginLeft: '24px' }}>
                                         {vocalRange
                                             ? t('vocalRange.settings.configured', { range: `${vocalRange.lowestNote} ~ ${vocalRange.highestNote}` })
                                             : t('vocalRange.settings.unconfigured')}
@@ -658,13 +853,16 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                                         cursor: 'pointer',
                                         fontSize: '13px',
                                         fontWeight: 600,
+                                        transition: 'filter 0.15s ease',
                                     }}
+                                    onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.1)'}
+                                    onMouseLeave={e => e.currentTarget.style.filter = 'brightness(1.0)'}
                                 >
                                     {vocalRange ? t('vocalRange.settings.modify', '修改音域') : t('vocalRange.settings.setup', '設定音域')}
                                 </button>
                             </div>
 
-                            {/* Minimal selector to disable/enable auto popout */}
+                            {/* Minimal selector to disable/enable auto popout - Checkbox in front of text */}
                             <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -675,15 +873,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                                 marginTop: '10px',
                                 border: '1px solid #333',
                             }}>
-                                <div>
-                                    <div style={{ fontSize: '13px', color: '#eee', fontWeight: 600 }}>
-                                        {t('vocalRange.settings.autoShowTitle', '自動彈出歌曲音域 (Auto-popout Vocal Range)')}
-                                    </div>
-                                    <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>
-                                        {t('vocalRange.settings.autoShowDesc', '開啟時，於切歌或打開調性調整選單時自動顯示音域膠囊；關閉後僅能透過歌詞框頂部按鈕手動打開')}
-                                    </div>
-                                </div>
-                                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', margin: 0 }}>
+                                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer', margin: 0, flex: 1 }}>
                                     <input
                                         type="checkbox"
                                         checked={vocalRangeAutoShow}
@@ -693,8 +883,18 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                                             width: '18px',
                                             height: '18px',
                                             cursor: 'pointer',
+                                            marginTop: '2px',
+                                            flexShrink: 0,
                                         }}
                                     />
+                                    <div>
+                                        <div style={{ fontSize: '13px', color: '#eee', fontWeight: 600 }}>
+                                            {t('vocalRange.settings.autoShowTitle', '自動彈出歌曲音域 (Auto-popout Vocal Range)')}
+                                        </div>
+                                        <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>
+                                            {t('vocalRange.settings.autoShowDesc', '開啟時，於切歌或打開調性調整選單時自動顯示音域膠囊；關閉後僅能透過歌詞框頂部按鈕手動打開')}
+                                        </div>
+                                    </div>
                                 </label>
                             </div>
                         </div>
@@ -709,67 +909,78 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 
                     <HotkeysSettingsSection />
 
-                    {/* Section: Processing */}
-                    <section style={{ marginBottom: '40px' }}>
-                        <h2 style={{ margin: '0 0 16px 0', fontSize: '18px', color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: '12px' }}>
-                            {t('settings.separation.title')}
+                    {/* Section: Vocal Separation */}
+                    <section id="settings-separation" style={{ marginBottom: '40px', scrollMarginTop: 24 }}>
+                        <h2 style={sectionHeadingStyle}>
+                            <img
+                                src={SeparateIcon}
+                                alt=""
+                                aria-hidden="true"
+                                style={headingIconStyle}
+                            />
+                            <span>{t('settings.separation.title')}</span>
                         </h2>
                         <div style={{ background: '#2a2a2a', padding: '24px', borderRadius: '12px', border: '1px solid #333' }}>
                             <SeparationSettingsSection />
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', padding: '8px', borderRadius: '8px', transition: 'background 0.2s' }}
-                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#333'}
-                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                                >
-                                    <input
-                                        type="radio"
-                                        name="separationQuality"
-                                        value="fast"
-                                        checked={separationQuality === 'fast'}
-                                        onChange={() => setSeparationQuality('fast')}
-                                        style={{ accentColor: 'var(--accent-color)', width: '18px', height: '18px' }}
-                                    />
-                                    <div>
-                                        <div style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold' }}>{t('settings.separation.fast')}</div>
-                                        <div style={{ color: '#aaa', fontSize: '13px' }}>{t('settings.separation.fastDescription')}</div>
-                                    </div>
-                                </label>
+                            <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #383838' }}>
+                                <div style={{ fontSize: '14px', color: '#ddd', fontWeight: 600, marginBottom: '12px' }}>
+                                    {t('settings.separation.qualitySubtitle', '預設分離品質')}
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', padding: '8px 12px', borderRadius: '8px', transition: 'background 0.15s ease' }}
+                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#333'}
+                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="separationQuality"
+                                            value="fast"
+                                            checked={separationQuality === 'fast'}
+                                            onChange={() => setSeparationQuality('fast')}
+                                            style={{ accentColor: 'var(--accent-color)', width: '18px', height: '18px', cursor: 'pointer' }}
+                                        />
+                                        <div>
+                                            <div style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>{t('settings.separation.fast')}</div>
+                                            <div style={{ color: '#aaa', fontSize: '12px', marginTop: '2px' }}>{t('settings.separation.fastDescription')}</div>
+                                        </div>
+                                    </label>
 
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', padding: '8px', borderRadius: '8px', transition: 'background 0.2s' }}
-                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#333'}
-                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                                >
-                                    <input
-                                        type="radio"
-                                        name="separationQuality"
-                                        value="normal"
-                                        checked={separationQuality === 'normal'}
-                                        onChange={() => setSeparationQuality('normal')}
-                                        style={{ accentColor: 'var(--accent-color)', width: '18px', height: '18px' }}
-                                    />
-                                    <div>
-                                        <div style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold' }}>{t('settings.separation.normal')}</div>
-                                        <div style={{ color: '#aaa', fontSize: '13px' }}>{t('settings.separation.normalDescription')}</div>
-                                    </div>
-                                </label>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', padding: '8px 12px', borderRadius: '8px', transition: 'background 0.15s ease' }}
+                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#333'}
+                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="separationQuality"
+                                            value="normal"
+                                            checked={separationQuality === 'normal'}
+                                            onChange={() => setSeparationQuality('normal')}
+                                            style={{ accentColor: 'var(--accent-color)', width: '18px', height: '18px', cursor: 'pointer' }}
+                                        />
+                                        <div>
+                                            <div style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>{t('settings.separation.normal')}</div>
+                                            <div style={{ color: '#aaa', fontSize: '12px', marginTop: '2px' }}>{t('settings.separation.normalDescription')}</div>
+                                        </div>
+                                    </label>
 
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', padding: '8px', borderRadius: '8px', transition: 'background 0.2s' }}
-                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#333'}
-                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                                >
-                                    <input
-                                        type="radio"
-                                        name="separationQuality"
-                                        value="high"
-                                        checked={separationQuality === 'high'}
-                                        onChange={() => setSeparationQuality('high')}
-                                        style={{ accentColor: 'var(--accent-color)', width: '18px', height: '18px' }}
-                                    />
-                                    <div>
-                                        <div style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold' }}>{t('settings.separation.high')}</div>
-                                        <div style={{ color: '#aaa', fontSize: '13px' }}>{t('settings.separation.highDescription')}</div>
-                                    </div>
-                                </label>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', padding: '8px 12px', borderRadius: '8px', transition: 'background 0.15s ease' }}
+                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#333'}
+                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="separationQuality"
+                                            value="high"
+                                            checked={separationQuality === 'high'}
+                                            onChange={() => setSeparationQuality('high')}
+                                            style={{ accentColor: 'var(--accent-color)', width: '18px', height: '18px', cursor: 'pointer' }}
+                                        />
+                                        <div>
+                                            <div style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>{t('settings.separation.high')}</div>
+                                            <div style={{ color: '#aaa', fontSize: '12px', marginTop: '2px' }}>{t('settings.separation.highDescription')}</div>
+                                        </div>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -778,9 +989,15 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     <StorageSettingsSection />
 
                     {/* Section: Privacy & Improvement */}
-                    <section style={{ marginBottom: '40px' }}>
-                        <h2 style={{ margin: '0 0 16px 0', fontSize: '18px', color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: '12px' }}>
-                            {t('settings.privacy.title')}
+                    <section id="settings-privacy" style={{ marginBottom: '40px', scrollMarginTop: 24 }}>
+                        <h2 style={sectionHeadingStyle}>
+                            <img
+                                src={ShieldIcon}
+                                alt=""
+                                aria-hidden="true"
+                                style={headingIconStyle}
+                            />
+                            <span>{t('settings.privacy.title')}</span>
                         </h2>
                         <div style={{ background: '#2a2a2a', padding: '24px', borderRadius: '12px', border: '1px solid #333' }}>
                             <p style={{ margin: '0 0 18px', color: '#aaa', fontSize: '14px', lineHeight: 1.6 }}>
@@ -824,9 +1041,15 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     </section>
 
                     {/* Section: Software Update */}
-                    <section>
-                        <h2 style={{ margin: '0 0 16px 0', fontSize: '18px', color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: '12px' }}>
-                            {t('settings.updates.title')}
+                    <section id="settings-updates" style={{ scrollMarginTop: 24 }}>
+                        <h2 style={sectionHeadingStyle}>
+                            <img
+                                src={UpdateBaseIcon}
+                                alt=""
+                                aria-hidden="true"
+                                style={headingIconStyle}
+                            />
+                            <span>{t('settings.updates.title')}</span>
                         </h2>
                         <div style={{ background: '#2a2a2a', padding: '24px', borderRadius: '12px', border: '1px solid #333' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -911,18 +1134,28 @@ const CheckForUpdatesButton: React.FC = () => {
         checkForUpdates(true);
     };
 
+    const isPrimary = status === 'available' || status === 'downloaded';
+
     return (
         <button
             onClick={handleClick}
             disabled={isBusy}
             style={{
-                background: 'transparent',
-                border: '1px solid #555',
-                color: '#aaa',
-                borderRadius: '8px',
+                background: isPrimary ? 'var(--accent-color)' : '#333',
+                border: '1px solid ' + (isPrimary ? 'var(--accent-color)' : '#444'),
+                color: '#fff',
+                borderRadius: '6px',
                 cursor: isBusy ? 'wait' : 'pointer',
-                fontSize: '14px',
-                padding: '8px 20px',
+                fontSize: '13px',
+                fontWeight: isPrimary ? 600 : 500,
+                padding: '7px 18px',
+                transition: 'background-color 0.15s ease, border-color 0.15s ease',
+            }}
+            onMouseEnter={e => {
+                if (!isBusy && !isPrimary) e.currentTarget.style.backgroundColor = '#3f3f3f';
+            }}
+            onMouseLeave={e => {
+                if (!isBusy && !isPrimary) e.currentTarget.style.backgroundColor = '#333';
             }}
         >
             {label}

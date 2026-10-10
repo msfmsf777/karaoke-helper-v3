@@ -25,6 +25,17 @@
     "close": "关闭"
   },
   "settings": {
+    "nav": {
+      "language": "界面语言",
+      "audio": "音频输出",
+      "vocalRange": "演唱音域",
+      "overlays": "直播模板",
+      "hotkeys": "快捷键",
+      "separation": "人声分离",
+      "storage": "存储路径",
+      "privacy": "隐私改善",
+      "updates": "软件更新"
+    },
     "language": {
       "title": "界面语言",
       "description": "选择 KHelper 的显示语言。如果未选择语言，KHelper 会自动根据系统语言检测。",
@@ -59,8 +70,13 @@
         "customHint": "数值越大音量越响（上限 -10 LUFS 保护动态）；数值越小音量越轻柔。"
       }
     },
+    "vocalRange": {
+      "sectionTitle": "演唱音域",
+      "sectionDesc": "设置您的个人演唱音域，系统将为伴奏音频提供专属智能转调建议。"
+    },
     "separation": {
-      "title": "人声分离质量",
+      "title": "人声分离",
+      "qualitySubtitle": "默认分离品质",
       "fast": "快速",
       "fastDescription": "使用更少的资源，完成速度最快，但质量稍差。",
       "normal": "标准",

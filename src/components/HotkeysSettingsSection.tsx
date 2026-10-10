@@ -13,6 +13,7 @@ import {
     normalizeAccelerator,
 } from '../../shared/hotkeys';
 import RemoveIcon from '../assets/icons/remove.svg';
+import KeyboardIcon from '../assets/icons/keyboard.svg';
 import {
     getHotkeyActionDescription,
     getHotkeyActionLabel,
@@ -248,10 +249,16 @@ const HotkeysSettingsSection: React.FC = () => {
     );
 
     return (
-        <section style={{ marginBottom: '40px' }}>
+        <section id="settings-hotkeys" style={{ marginBottom: '40px', scrollMarginTop: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h2 style={{ margin: 0, fontSize: '18px', color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: '12px' }}>
-                    {t('settings.hotkeys.title')}
+                <h2 style={{ margin: 0, fontSize: '18px', color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <img
+                        src={KeyboardIcon}
+                        alt=""
+                        aria-hidden="true"
+                        style={{ width: '18px', height: '18px', filter: 'brightness(0) invert(1)', opacity: 0.9, flexShrink: 0 }}
+                    />
+                    <span>{t('settings.hotkeys.title')}</span>
                 </h2>
                 <button
                     type="button"

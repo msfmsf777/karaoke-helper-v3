@@ -25,6 +25,17 @@
     "close": "閉じる"
   },
   "settings": {
+    "nav": {
+      "language": "表示言語",
+      "audio": "音声出力",
+      "vocalRange": "声域設定",
+      "overlays": "配信オーバーレイ",
+      "hotkeys": "ショートカット",
+      "separation": "ボーカル分離",
+      "storage": "保存先",
+      "privacy": "プライバシー",
+      "updates": "アップデート"
+    },
     "language": {
       "title": "インターフェース言語",
       "description": "KHelper の表示言語を選択します。言語が選択されていない場合、KHelper はシステム言語から言語を自動検出します。",
@@ -59,8 +70,13 @@
         "customHint": "値が大きいほど音量が大きく（上限 -10 LUFS）、小さいほど穏やかになります。"
       }
     },
+    "vocalRange": {
+      "sectionTitle": "声域設定",
+      "sectionDesc": "自分の歌唱音域を設定すると、伴奏音源に最適なキー変更を自動提案します。"
+    },
     "separation": {
-      "title": "ボーカル分離品質",
+      "title": "ボーカル分離",
+      "qualitySubtitle": "デフォルトの分離品質",
       "fast": "速い",
       "fastDescription": "使用するリソースが少なく、最速で終了しますが、品質は若干低くなります。",
       "normal": "ノーマル",
