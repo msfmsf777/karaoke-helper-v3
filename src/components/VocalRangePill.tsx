@@ -252,12 +252,19 @@ export const VocalRangePill: React.FC<VocalRangePillProps> = ({
           position: 'absolute',
           top: '16px',
           left: '50%',
+          transformOrigin: 'top center',
           transform: isVisible
-            ? 'translateX(-50%) translateY(0)'
-            : 'translateX(-50%) translateY(-120%)',
+            ? 'translateX(-50%) translateY(0) scale(1)'
+            : 'translateX(-50%) translateY(-10px) scale(0.92)',
           opacity: isVisible ? 1 : 0,
           pointerEvents: isVisible ? 'auto' : 'none',
-          transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease',
+          transition: isVisible
+            ? 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease-out'
+            : 'transform 0.25s cubic-bezier(0.4, 0, 1, 1), opacity 0.2s ease-in',
+          willChange: 'transform, opacity',
+          WebkitBackfaceVisibility: 'hidden',
+          backfaceVisibility: 'hidden',
+          transformStyle: 'preserve-3d',
           zIndex: 1100,
           display: 'flex',
           alignItems: 'center',
@@ -304,12 +311,19 @@ export const VocalRangePill: React.FC<VocalRangePillProps> = ({
         position: 'absolute',
         top: '16px',
         left: '50%',
+        transformOrigin: 'top center',
         transform: isVisible
-          ? 'translateX(-50%) translateY(0)'
-          : 'translateX(-50%) translateY(-120%)',
+          ? 'translateX(-50%) translateY(0) scale(1)'
+          : 'translateX(-50%) translateY(-10px) scale(0.92)',
         opacity: isVisible ? 1 : 0,
         pointerEvents: isVisible ? 'auto' : 'none',
-        transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease',
+        transition: isVisible
+          ? 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease-out'
+          : 'transform 0.25s cubic-bezier(0.4, 0, 1, 1), opacity 0.2s ease-in',
+        willChange: 'transform, opacity',
+        WebkitBackfaceVisibility: 'hidden',
+        backfaceVisibility: 'hidden',
+        transformStyle: 'preserve-3d',
         zIndex: 1100,
         display: 'flex',
         flexDirection: 'column',
@@ -325,6 +339,21 @@ export const VocalRangePill: React.FC<VocalRangePillProps> = ({
         minWidth: '320px',
       }}
     >
+      {/* Inner Content with staggered bloom transition */}
+      <div
+        style={{
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          opacity: isVisible ? 1 : 0,
+          transform: isVisible ? 'scale(1)' : 'scale(0.96)',
+          transformOrigin: 'top center',
+          transition: isVisible
+            ? 'opacity 0.28s ease-out 0.06s, transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) 0.06s'
+            : 'opacity 0.15s ease-in, transform 0.15s ease-in',
+        }}
+      >
       {/* Top Header: Title + Dismiss */}
       <div
         style={{
@@ -683,6 +712,7 @@ export const VocalRangePill: React.FC<VocalRangePillProps> = ({
             <span>⚡ {t('vocalRange.pill.setupPrompt', '設定個人音域以取得推薦調性 ➔')}</span>
           </button>
         )}
+      </div>
       </div>
     </div>
   );
