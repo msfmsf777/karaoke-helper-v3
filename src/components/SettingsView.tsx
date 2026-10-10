@@ -474,78 +474,89 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                             </button>
                         </div>
 
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '16px 20px',
-                            backgroundColor: '#222',
-                            borderRadius: '8px',
-                            marginTop: '16px',
-                            border: '1px solid #333',
-                        }}>
-                            <div>
-                                <div style={{ fontSize: '14px', color: '#ddd', fontWeight: 'bold' }}>
-                                    🎤 {t('vocalRange.settings.title', '個人音域 (Vocal Range Profile)')}
-                                </div>
-                                <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
-                                    {vocalRange
-                                        ? t('vocalRange.settings.configured', { range: `${vocalRange.lowestNote} ~ ${vocalRange.highestNote}` })
-                                        : t('vocalRange.settings.unconfigured')}
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setShowVocalRangeModal(true)}
-                                style={{
-                                    padding: '8px 16px',
-                                    backgroundColor: '#22c55e',
-                                    color: '#fff',
-                                    borderRadius: '6px',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    fontSize: '13px',
-                                    fontWeight: 600,
-                                }}
-                            >
-                                {vocalRange ? t('vocalRange.settings.modify', '修改音域') : t('vocalRange.settings.setup', '設定音域')}
-                            </button>
-                        </div>
-
-                        {/* Minimal selector to disable/enable auto popout */}
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '14px 20px',
-                            backgroundColor: '#222',
-                            borderRadius: '8px',
-                            marginTop: '10px',
-                            border: '1px solid #333',
-                        }}>
-                            <div>
-                                <div style={{ fontSize: '13px', color: '#eee', fontWeight: 600 }}>
-                                    {t('vocalRange.settings.autoShowTitle', '自動彈出歌曲音域 (Auto-popout Vocal Range)')}
-                                </div>
-                                <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>
-                                    {t('vocalRange.settings.autoShowDesc', '開啟時，於切歌或打開調性調整選單時自動顯示音域膠囊；關閉後僅能透過歌詞框頂部按鈕手動打開')}
-                                </div>
-                            </div>
-                            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', margin: 0 }}>
-                                <input
-                                    type="checkbox"
-                                    checked={vocalRangeAutoShow}
-                                    onChange={(e) => setVocalRangeAutoShow(e.target.checked)}
-                                    style={{
-                                        accentColor: '#22c55e',
-                                        width: '18px',
-                                        height: '18px',
-                                        cursor: 'pointer',
-                                    }}
-                                />
-                            </label>
-                        </div>
-
                         {error && <div style={{ color: '#ff6666', marginTop: '12px', fontSize: '14px' }}>{error}</div>}
+                    </section>
+
+                    {/* Section: Singing & Vocal Range */}
+                    <section style={{ marginBottom: '40px' }}>
+                        <h2 style={{ margin: '0 0 16px 0', fontSize: '18px', color: '#fff', borderLeft: '4px solid var(--accent-color)', paddingLeft: '12px' }}>
+                            {t('settings.vocalRange.sectionTitle', '演唱與音域')}
+                        </h2>
+                        <div style={{ background: '#2a2a2a', padding: '24px', borderRadius: '12px', border: '1px solid #333' }}>
+                            <p style={{ margin: '0 0 18px', color: '#aaa', fontSize: '14px', lineHeight: '1.6' }}>
+                                {t('settings.vocalRange.sectionDesc', '設定您的個人演唱音域，系統將為伴奏音訊提供專屬智慧轉調建議。')}
+                            </p>
+
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '16px 20px',
+                                backgroundColor: '#222',
+                                borderRadius: '8px',
+                                border: '1px solid #333',
+                            }}>
+                                <div>
+                                    <div style={{ fontSize: '14px', color: '#ddd', fontWeight: 'bold' }}>
+                                        🎤 {t('vocalRange.settings.title', '個人音域 (Vocal Range Profile)')}
+                                    </div>
+                                    <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+                                        {vocalRange
+                                            ? t('vocalRange.settings.configured', { range: `${vocalRange.lowestNote} ~ ${vocalRange.highestNote}` })
+                                            : t('vocalRange.settings.unconfigured')}
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setShowVocalRangeModal(true)}
+                                    style={{
+                                        padding: '8px 16px',
+                                        backgroundColor: '#22c55e',
+                                        color: '#fff',
+                                        borderRadius: '6px',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        fontSize: '13px',
+                                        fontWeight: 600,
+                                    }}
+                                >
+                                    {vocalRange ? t('vocalRange.settings.modify', '修改音域') : t('vocalRange.settings.setup', '設定音域')}
+                                </button>
+                            </div>
+
+                            {/* Minimal selector to disable/enable auto popout */}
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '14px 20px',
+                                backgroundColor: '#222',
+                                borderRadius: '8px',
+                                marginTop: '10px',
+                                border: '1px solid #333',
+                            }}>
+                                <div>
+                                    <div style={{ fontSize: '13px', color: '#eee', fontWeight: 600 }}>
+                                        {t('vocalRange.settings.autoShowTitle', '自動彈出歌曲音域 (Auto-popout Vocal Range)')}
+                                    </div>
+                                    <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>
+                                        {t('vocalRange.settings.autoShowDesc', '開啟時，於切歌或打開調性調整選單時自動顯示音域膠囊；關閉後僅能透過歌詞框頂部按鈕手動打開')}
+                                    </div>
+                                </div>
+                                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', margin: 0 }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={vocalRangeAutoShow}
+                                        onChange={(e) => setVocalRangeAutoShow(e.target.checked)}
+                                        style={{
+                                            accentColor: '#22c55e',
+                                            width: '18px',
+                                            height: '18px',
+                                            cursor: 'pointer',
+                                        }}
+                                    />
+                                </label>
+                            </div>
+                        </div>
                     </section>
 
                     <OverlayTemplateSettingsSection

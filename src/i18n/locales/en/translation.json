@@ -48,6 +48,10 @@
       "calibrate": "Calibrate",
       "overlappingOutputWarning": "Audience Output and Headphone Output are using the same device. Audience Output is muted to prevent doubled audio. Select different devices to enable dual output."
     },
+    "vocalRange": {
+      "sectionTitle": "Singing & Vocal Range",
+      "sectionDesc": "Configure your comfortable vocal range to receive personalized smart key recommendations for backing tracks."
+    },
     "separation": {
       "title": "Vocal Separation Quality",
       "fast": "Fast",

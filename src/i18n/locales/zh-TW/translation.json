@@ -48,6 +48,10 @@
       "calibrate": "校準",
       "overlappingOutputWarning": "觀眾輸出與耳機輸出目前使用相同裝置。為避免聲音重疊，觀眾輸出將保持靜音；請選擇不同裝置以啟用雙輸出。"
     },
+    "vocalRange": {
+      "sectionTitle": "演唱與音域",
+      "sectionDesc": "設定您的個人演唱音域，系統將為伴奏音訊提供專屬智慧轉調建議。"
+    },
     "separation": {
       "title": "人聲分離品質",
       "fast": "快速 (Fast)",
