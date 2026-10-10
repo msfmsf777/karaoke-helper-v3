@@ -585,7 +585,7 @@
       "high": "高品質 (High)"
     },
     "editLyrics": "編輯歌詞",
-    "editDetails": "編輯詳情",
+    "editDetails": "編輯歌曲資訊",
     "openFolder": "開啟資料夾",
     "deleteSong": "刪除歌曲",
     "copyVideoLink": "複製影片連結",
@@ -775,6 +775,7 @@
       "tapModeTitle": "敲擊模式 (J)",
       "tapMode": "敲擊模式",
       "tap": "敲擊",
+      "editSong": "編輯歌曲",
       "saveLrc": "儲存 LRC",
       "messages": {
         "loadedLrc": "已載入 LRC",

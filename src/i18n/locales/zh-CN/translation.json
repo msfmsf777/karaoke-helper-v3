@@ -585,13 +585,13 @@
       "high": "高品质"
     },
     "editLyrics": "编辑歌词",
-    "editDetails": "编辑详细信息",
+    "editDetails": "编辑歌曲信息",
     "openFolder": "打开文件夹",
     "deleteSong": "删除歌曲",
     "copyVideoLink": "复制视频链接",
     "openInBrowser": "在默认浏览器中打开",
     "editDialog": {
-      "title": "编辑歌曲详细信息",
+      "title": "编辑歌曲信息",
       "titleLabel": "歌曲名称",
       "artistLabel": "艺术家",
       "titleRequired": "歌名不能为空",
@@ -775,6 +775,7 @@
       "tapModeTitle": "敲击模式 (J)",
       "tapMode": "敲击模式",
       "tap": "敲击",
+      "editSong": "编辑歌曲",
       "saveLrc": "保存 LRC",
       "messages": {
         "loadedLrc": "已加载 LRC",

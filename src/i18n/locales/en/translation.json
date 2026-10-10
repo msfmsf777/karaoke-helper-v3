@@ -585,7 +585,7 @@
       "high": "High Quality"
     },
     "editLyrics": "Edit Lyrics",
-    "editDetails": "Edit Details",
+    "editDetails": "Edit Song Details",
     "openFolder": "Open Folder",
     "deleteSong": "Delete Song",
     "copyVideoLink": "Copy Video Link",
@@ -775,6 +775,7 @@
       "tapModeTitle": "Tap Mode (J)",
       "tapMode": "Tap Mode",
       "tap": "Tap",
+      "editSong": "Edit Song",
       "saveLrc": "Save LRC",
       "messages": {
         "loadedLrc": "Loaded LRC",

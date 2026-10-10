@@ -1373,32 +1373,43 @@ const LyricEditorView: React.FC<LyricEditorViewProps> = ({
                             {selectedSong && (
                                 <button
                                     onClick={() => setShowEditSongDialog(true)}
-                                    title={t('songManagement.editDetails', { defaultValue: 'Edit Song & Trim' })}
+                                    title={t('songManagement.editDetails', { defaultValue: 'Edit Song Details' })}
                                     style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        padding: '4px 10px',
-                                        backgroundColor: '#202020',
-                                        border: '1px solid #383838',
-                                        borderRadius: '6px',
-                                        color: '#ddd',
-                                        fontSize: '12px',
+                                        background: 'transparent',
+                                        border: '1px solid #333',
+                                        borderRadius: '8px',
+                                        padding: '2px 10px',
+                                        minWidth: '56px',
+                                        color: '#aaa',
                                         cursor: 'pointer',
-                                        transition: 'all 0.15s',
-                                        whiteSpace: 'nowrap',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        transition: 'all 0.2s',
                                     }}
                                     onMouseEnter={(e) => {
-                                        e.currentTarget.style.backgroundColor = '#2c2c2c';
-                                        e.currentTarget.style.borderColor = '#555';
+                                        e.currentTarget.style.color = '#fff';
+                                        e.currentTarget.style.borderColor = '#666';
                                     }}
                                     onMouseLeave={(e) => {
-                                        e.currentTarget.style.backgroundColor = '#202020';
-                                        e.currentTarget.style.borderColor = '#383838';
+                                        e.currentTarget.style.color = '#aaa';
+                                        e.currentTarget.style.borderColor = '#333';
                                     }}
                                 >
-                                    <img src={EditIcon} alt="" style={{ width: '13px', height: '13px', opacity: 0.8 }} />
-                                    <span>{t('songManagement.editDetails', { defaultValue: 'Edit Song' })}</span>
+                                    <img src={EditIcon} alt="" style={{ width: '20px', height: '20px' }} />
+                                    <FitText
+                                        text={t('lyrics.editor.editSong', { defaultValue: '編輯歌曲' })}
+                                        baseFontSize={9}
+                                        minFontSize={7}
+                                        style={{
+                                            fontWeight: 600,
+                                            marginTop: '2px',
+                                            lineHeight: 1,
+                                            textAlign: 'center',
+                                            width: '44px',
+                                        }}
+                                    />
                                 </button>
                             )}
                         </div>
