@@ -275,6 +275,8 @@
   },
   "updatesPopup": {
     "title": "New version available",
+    "justUpdated": "KHelper has been updated to v{{version}}!",
+    "viewChanges": "What's New",
     "noReleaseNotes": "No release notes were provided for this version.",
     "error": "Update failed. Check your network connection or try again later.",
     "ignore": "Ignore this version",

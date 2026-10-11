@@ -275,6 +275,8 @@
   },
   "updatesPopup": {
     "title": "새 버전 사용 가능",
+    "justUpdated": "KHelper가 v{{version}} 버전으로 업데이트되었습니다!",
+    "viewChanges": "업데이트 내용 보기",
     "noReleaseNotes": "이 버전에는 릴리스 노트가 제공되지 않았습니다.",
     "error": "업데이트에 실패했습니다. 네트워크 연결을 확인하거나 나중에 다시 시도하세요.",
     "ignore": "이 버전 무시",

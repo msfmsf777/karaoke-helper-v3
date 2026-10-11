@@ -272,6 +272,11 @@ contextBridge.exposeInMainWorld('khelper', {
       ipcRenderer.on('updater:status', listener)
       return () => ipcRenderer.off('updater:status', listener)
     },
+    onUpdatedNotice: (callback: (data: { version: string }) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, payload: { version: string }) => callback(payload)
+      ipcRenderer.on('updater:just-updated', listener)
+      return () => ipcRenderer.off('updater:just-updated', listener)
+    },
   },
   hotkeys: {
     getStatus: (): Promise<HotkeyRegistrationStatus> => ipcRenderer.invoke('hotkeys:get-status'),

@@ -275,6 +275,8 @@
   },
   "updatesPopup": {
     "title": "新しいバージョンが利用可能になりました",
+    "justUpdated": "KHelper は v{{version}} に更新されました！",
+    "viewChanges": "更新内容を確認",
     "noReleaseNotes": "このバージョンの更新内容はありません。",
     "error": "アップデートに失敗しました。ネットワーク接続を確認するか、後でもう一度試してください。",
     "ignore": "このバージョンを無視する",

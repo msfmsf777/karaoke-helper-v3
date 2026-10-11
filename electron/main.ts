@@ -421,6 +421,9 @@ function createWindow() {
 
   win.webContents.on('did-finish-load', () => {
     win?.webContents.send('main-process-message', (new Date).toLocaleString())
+    if (process.argv.includes('--updated')) {
+      win?.webContents.send('updater:just-updated', { version: app.getVersion() })
+    }
   })
 
   if (VITE_DEV_SERVER_URL) {

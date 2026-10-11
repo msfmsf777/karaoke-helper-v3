@@ -167,6 +167,7 @@ interface Window {
       ignore: (version: string) => Promise<void>;
       getStatus: () => Promise<any>;
       onStatus: (callback: (status: any) => void) => () => void;
+      onUpdatedNotice?: (callback: (data: { version: string }) => void) => () => void;
     };
     hotkeys: {
       getStatus: () => Promise<import('../shared/hotkeys').HotkeyRegistrationStatus>;

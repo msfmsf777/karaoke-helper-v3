@@ -275,6 +275,8 @@
   },
   "updatesPopup": {
     "title": "Versi Baru Tersedia",
+    "justUpdated": "KHelper telah diperbarui ke v{{version}}!",
+    "viewChanges": "Lihat Pembaruan",
     "noReleaseNotes": "Tidak ada catatan untuk versi ini.",
     "error": "Pembaruan gagal. Periksa koneksi jaringan Anda atau coba lagi nanti.",
     "ignore": "Abaikan Versi Ini",

@@ -30,3 +30,47 @@ describe('Windows in-app update installer handoff', () => {
     );
   });
 });
+
+describe('Windows installer prerequisite robustness', () => {
+  it('checks VC redistributable build version and accepts non-error exit codes', () => {
+    assert.match(installerInclude, /ReadRegDWORD \$1 HKLM "SOFTWARE\\Microsoft\\VisualStudio\\14\.0\\VC\\Runtimes\\x64" "Bld"/);
+    assert.match(installerInclude, /\$1 < 35211/);
+    assert.match(installerInclude, /\$0 != 3010/);
+    assert.match(installerInclude, /\$0 != 1638/);
+  });
+
+  it('cleans up temporary VC_redist payload after installation to save disk space', () => {
+    assert.match(installerInclude, /Delete "\$INSTDIR\\resources\\bin\\VC_redist\.x64\.exe"/);
+  });
+});
+
+describe('Windows uninstaller lifecycle and selective data cleanup', () => {
+  it('checks if KHelper is running before starting uninstall and prompts for clean exit', () => {
+    assert.match(installerInclude, /!macro customUnInit[\s\S]*\$\{nsProcess::FindProcess\} "KHelperV3\.exe"/);
+    assert.match(installerInclude, /\$\{nsProcess::CloseProcess\} "KHelperV3\.exe"/);
+    assert.match(installerInclude, /\$\{nsProcess::KillProcess\} "KHelperV3\.exe"/);
+  });
+
+  it('reads user language and custom paths from settings.json', () => {
+    assert.match(installerInclude, /settings\.json/);
+    assert.match(installerInclude, /"language"/);
+    assert.match(installerInclude, /"customSongsPath"/);
+    assert.match(installerInclude, /"customRuntimePath"/);
+    assert.match(installerInclude, /StrCpy \$LANGUAGE 1028/); // zh-TW
+    assert.match(installerInclude, /StrCpy \$LANGUAGE 1033/); // en
+  });
+
+  it('registers data selection and review confirmation pages before file removal', () => {
+    assert.match(
+      installerInclude,
+      /!macro customUnWelcomePage[\s\S]*!insertmacro MUI_UNPAGE_WELCOME[\s\S]*UninstPage custom un\.PageDataSelection un\.PageDataSelectionLeave[\s\S]*UninstPage custom un\.PageConfirmReview un\.PageConfirmReviewLeave[\s\S]*!macroend/,
+    );
+  });
+
+  it('deletes only user-selected directories during uninstallation', () => {
+    assert.match(
+      installerInclude,
+      /!macro customUnInstall[\s\S]*\$\{If\} \$unDeleteSongs == "1"[\s\S]*RMDir \/r "\$unSongsDir"[\s\S]*\$\{If\} \$unDeleteModels == "1"[\s\S]*RMDir \/r "\$unModelsDir"[\s\S]*\$\{If\} \$unDeleteRuntime == "1"[\s\S]*RMDir \/r "\$unRuntimeDir"[\s\S]*\$\{If\} \$unDeleteSettings == "1"[\s\S]*RMDir \/r "\$unSettingsDir"/,
+    );
+  });
+});

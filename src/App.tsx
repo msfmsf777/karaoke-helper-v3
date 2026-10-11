@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useMemo, lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import Sidebar from './components/Sidebar';
 import PlayerBar from './components/PlayerBar';
 import LibraryView from './components/LibraryView';
@@ -35,6 +36,7 @@ import AnalyticsConsentModal from './components/AnalyticsConsentModal';
 type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history' | 'download-manager' | 'settings' | string;
 
 function AppContent() {
+  const { t } = useTranslation();
   const [currentView, setCurrentView] = useState<View>('library');
   const [previousView, setPreviousView] = useState<View>('library');
   const [isPlaying, setIsPlaying] = useState(false);
@@ -60,6 +62,16 @@ function AppContent() {
   const { getSongById } = useLibrary();
   const { hotkeys } = useUserData();
   const [focusSearchRequest, setFocusSearchRequest] = useState(0);
+  const [updatedNoticeVersion, setUpdatedNoticeVersion] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = window.khelper?.updater?.onUpdatedNotice?.((data) => {
+      setUpdatedNoticeVersion(data.version);
+    });
+    return () => {
+      unsubscribe?.();
+    };
+  }, []);
 
   const currentTrack = useMemo(() => {
     if (!currentSongId) return null;
@@ -552,6 +564,28 @@ function AppContent() {
         )}
       </Suspense>
       <AnalyticsConsentModal />
+
+      {updatedNoticeVersion && (
+        <div className="fixed bottom-24 right-6 z-50 flex items-center gap-3 bg-emerald-700/95 text-white px-4 py-3 rounded-xl shadow-2xl border border-emerald-400/40 backdrop-blur-md text-sm font-medium">
+          <span>{t('updatesPopup.justUpdated', { version: updatedNoticeVersion })}</span>
+          <button
+            onClick={() => {
+              setUpdatedNoticeVersion(null);
+              setShowAboutPopup(true);
+            }}
+            className="px-2.5 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-semibold transition-colors"
+          >
+            {t('updatesPopup.viewChanges')}
+          </button>
+          <button
+            onClick={() => setUpdatedNoticeVersion(null)}
+            className="p-1 text-white/70 hover:text-white transition-colors"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
     </div>
   );

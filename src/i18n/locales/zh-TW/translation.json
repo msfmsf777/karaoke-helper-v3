@@ -275,6 +275,8 @@
   },
   "updatesPopup": {
     "title": "有新版本可用",
+    "justUpdated": "KHelper 已成功更新至 v{{version}}！",
+    "viewChanges": "查看更新內容",
     "noReleaseNotes": "此版本沒有提供更新說明。",
     "error": "更新失敗。請檢查網路連線或稍後再試。",
     "ignore": "忽略此版本",
