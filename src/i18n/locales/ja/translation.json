@@ -22,7 +22,8 @@
     "none": "なし",
     "default": "デフォルト",
     "copied": "コピーされました",
-    "close": "閉じる"
+    "close": "閉じる",
+    "pause": "一時停止"
   },
   "settings": {
     "nav": {
@@ -335,7 +336,9 @@
     }
   },
   "playbackControl": {
-    "clickToEdit": "クリックして編集"
+    "clickToEdit": "クリックして編集",
+    "play": "再生",
+    "pause": "一時停止"
   },
   "domain": {
     "songType": {
@@ -623,7 +626,27 @@
       "artistLabel": "アーティスト",
       "titleRequired": "曲のタイトルを空にすることはできません",
       "saveFailed": "保存に失敗しました。後でもう一度試してください。",
-      "saving": "保存中..."
+      "saving": "保存中...",
+      "trimTitle": "オーディオトリム",
+      "trimSubtitle": "非破壊編集・ヘッドホン試聴のみ",
+      "resetTrim": "全体の長さにリセット",
+      "introStart": "イントロ開始 (イン点)",
+      "outroEnd": "アウトロ終了 (アウト点)",
+      "playIntroTooltip": "イントロ開始から試聴",
+      "playOutroTooltip": "アウトロ終了3.5秒前から試聴",
+      "grabCurrent": "再生位置を適用",
+      "grabStartTooltip": "現在の再生位置を開始点に設定",
+      "grabEndTooltip": "現在の再生位置を終了点に設定",
+      "effectiveDuration": "再生時間：",
+      "unmute": "ミュート解除",
+      "volumeTooltip": "試聴音量：{{percent}}%",
+      "waveformTrimCutWarning": "トリムされた区間に {{count}} 行の同期歌詞が含まれています",
+      "conflictTitle": "歌詞タイムスタンプの競合を検出",
+      "conflictMessage": "トリムされたイントロ区間に {{count}} 行の同期歌詞が含まれています。タイムスタンプをどのように処理しますか？",
+      "conflictRawPreserved": "(元の歌詞テキストはいかなる場合も完全に保持されます)",
+      "conflictDrop": "タイムラインから除外 (推奨)",
+      "conflictClamp": "00:00.00 に揃える",
+      "conflictCancel": "エディタに戻る"
     },
     "download": {
       "title": "ダウンロードマネージャー",
@@ -841,7 +864,14 @@
         "leavePageMessage": "このページを離れると、保存されていない変更が破棄されます。",
         "discard": "保存しないでください",
         "saveAndContinue": "保存して続行"
-      }
+      },
+      "editSong": "曲情報の編集"
+    },
+    "ruby": {
+      "furigana": "振仮名 (Furigana)",
+      "romaji": "ローマ字 (Romaji)",
+      "pinyin": "ピンイン (Pinyin)",
+      "koreanRomanization": "韓国語ローマ字 (Korean Romanization)"
     }
   },
   "overlays": {
@@ -1059,5 +1089,51 @@
     "btnChangeFolder": "フォルダーを変更...",
     "defaultBadge": "デフォルト AppData",
     "customBadge": "カスタムフォルダー"
+  },
+  "vocalRange": {
+    "settings": {
+      "title": "声域プロファイル",
+      "configured": "快適な声域：{{range}}",
+      "unconfigured": "声域が未設定です。設定すると楽曲に合わせた最適なキーおすすめ機能が利用できます",
+      "modify": "声域を変更",
+      "setup": "声域を設定",
+      "autoShowTitle": "声域ピルの自動表示",
+      "autoShowDesc": "有効にすると、曲の切り替え時やキー変更メニューを開いた際に自動で声域ピルを表示します。無効時は上部ボタンからのみ手動で開けます"
+    },
+    "pill": {
+      "noSeparatedTrack": "この楽曲はボーカル分離されていません",
+      "analyzing": "声域を解析中...",
+      "reopen": "声域とおすすめキーを表示",
+      "title": "楽曲の声域",
+      "autoBadge": "参考情報",
+      "autoBadgeTooltip": "分離後のボーカル音源から自動推定された音域です。コーラスやリバーブ、分離精度により影響を受ける場合があります。最高音/最低音をクリックして該当箇所を試聴できます。",
+      "lowestNote": "最低音",
+      "highestNote": "最高音",
+      "lowestNoteSeek": "最低音 {{note}}（{{time}}、長さ {{duration}}秒）- クリックして試聴",
+      "highestNoteSeek": "最高音 {{note}}（{{time}}、長さ {{duration}}秒）- クリックして試聴",
+      "warnHigh": "最高音が高め (+{{count}} 半音)",
+      "warnLow": "最低音が低め (-{{count}} 半音)",
+      "setupPrompt": "声域を設定しておすすめキーを取得 ➔",
+      "recommendOriginal": "✨ 原曲キー推奨 (±0)",
+      "recommendCurrent": "✨ 現在のキーが適切 ({{offset}})",
+      "recommendShift": "⚡ 推奨キー {{offset}}",
+      "recommendOctaveLower": "⚡ 推奨キー {{offset}} (1オクターブ下)",
+      "recommendOctaveHigher": "⚡ 推奨キー {{offset}} (1オクターブ上)",
+      "warnLowEvidence": "低音が低め (最低音 {{note}})"
+    },
+    "modal": {
+      "title": "声域プロファイル設定",
+      "subtitle": "鍵盤をクリックまたはプリセットを選択して、歌いやすい声域を設定してください（クリック音はヘッドホンのみで再生されます）。",
+      "lowestNote": "最低音",
+      "selecting": "選択中",
+      "highestNote": "最高音",
+      "clear": "設定をクリア"
+    },
+    "presets": {
+      "soprano": "ソプラノ (C4~A5)",
+      "mezzo": "メゾソプラノ (A3~F5)",
+      "tenor": "テノール (C3~A4)",
+      "baritone": "バリトン (G2~E4)"
+    }
   }
 }

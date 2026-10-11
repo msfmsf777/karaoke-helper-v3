@@ -22,7 +22,8 @@
     "none": "無",
     "default": "預設",
     "copied": "已複製",
-    "close": "關閉"
+    "close": "關閉",
+    "pause": "暫停"
   },
   "settings": {
     "nav": {
@@ -335,7 +336,9 @@
     }
   },
   "playbackControl": {
-    "clickToEdit": "點擊編輯"
+    "clickToEdit": "點擊編輯",
+    "play": "播放",
+    "pause": "暫停"
   },
   "domain": {
     "songType": {
@@ -623,7 +626,27 @@
       "artistLabel": "歌手",
       "titleRequired": "歌曲標題不能為空",
       "saveFailed": "儲存失敗，請稍後再試",
-      "saving": "儲存中..."
+      "saving": "儲存中...",
+      "trimTitle": "音訊裁切",
+      "trimSubtitle": "非破壞性，僅耳機試聽",
+      "resetTrim": "重設為完整長度",
+      "introStart": "片頭起點 (入點)",
+      "outroEnd": "片尾終點 (出點)",
+      "playIntroTooltip": "從片頭起點試聽",
+      "playOutroTooltip": "從片尾前 3.5 秒試聽",
+      "grabCurrent": "套用目前時間",
+      "grabStartTooltip": "將起點設為目前播放位置",
+      "grabEndTooltip": "將終點設為目前播放位置",
+      "effectiveDuration": "有效時長：",
+      "unmute": "取消靜音",
+      "volumeTooltip": "試聽音量：{{percent}}%",
+      "waveformTrimCutWarning": "有 {{count}} 行已同步歌詞落在裁切掉的片頭區間",
+      "conflictTitle": "偵測到歌詞時間衝突",
+      "conflictMessage": "有 {{count}} 行已同步歌詞落在裁切掉的片頭區間。您希望如何處理這些歌詞的時間標記？",
+      "conflictRawPreserved": "(任何情況下均會完整保留原始歌詞文字)",
+      "conflictDrop": "自同步時間軸移除 (推薦)",
+      "conflictClamp": "對齊至 00:00.00",
+      "conflictCancel": "返回編輯器"
     },
     "download": {
       "title": "下載管理",
@@ -843,6 +866,12 @@
         "discard": "不儲存",
         "saveAndContinue": "儲存並繼續"
       }
+    },
+    "ruby": {
+      "furigana": "振假名 (Furigana)",
+      "romaji": "羅馬字 (Romaji)",
+      "pinyin": "拼音 (Pinyin)",
+      "koreanRomanization": "韓語羅馬拼音 (Korean Romanization)"
     }
   },
   "overlays": {
@@ -1084,7 +1113,13 @@
       "highestNoteSeek": "最高音 {{note}} 出現於 {{time}} (長度 {{duration}}s) - 點擊跳轉試聽",
       "warnHigh": "最高音偏高 ({{count}} 個半音)",
       "warnLow": "最低音偏低 ({{count}} 個半音)",
-      "setupPrompt": "設定個人音域以取得推薦調性 ➔"
+      "setupPrompt": "設定個人音域以取得推薦調性 ➔",
+      "recommendOriginal": "✨ 適合原調 (±0)",
+      "recommendCurrent": "✨ 目前調性合適 ({{offset}})",
+      "recommendShift": "⚡ 建議 {{offset}}",
+      "recommendOctaveLower": "⚡ 建議 {{offset}} (低八度唱)",
+      "recommendOctaveHigher": "⚡ 建議 {{offset}} (高八度唱)",
+      "warnLowEvidence": "低音偏低 (最低 {{note}})"
     },
     "modal": {
       "title": "個人音域設定",

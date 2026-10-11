@@ -22,7 +22,8 @@
     "none": "Tidak ada",
     "default": "Bawaan",
     "copied": "Disalin",
-    "close": "Tutup"
+    "close": "Tutup",
+    "pause": "Jeda"
   },
   "settings": {
     "nav": {
@@ -57,7 +58,18 @@
       "headphoneOutput": "Output Headphone",
       "syncOffset": "Offset sinkron dua output:",
       "calibrate": "Kalibrasi",
-      "overlappingOutputWarning": "Output Penonton dan Output Headphone menggunakan perangkat yang sama. Output Penonton dibisukan untuk mencegah audio ganda. Pilih perangkat yang berbeda untuk mengaktifkan output ganda."
+      "overlappingOutputWarning": "Output Penonton dan Output Headphone menggunakan perangkat yang sama. Output Penonton dibisukan untuk mencegah audio ganda. Pilih perangkat yang berbeda untuk mengaktifkan output ganda.",
+      "normalization": {
+        "title": "Normalisasi Volume (LUFS)",
+        "description": "Mengkalibrasi semua lagu secara otomatis ke kenyaringan yang konsisten (LUFS), menjaga keseimbangan antara siaran dan headphone dengan pembatas anti-clipping transparan.",
+        "presetLabel": "Preset Target Kenyaringan",
+        "presetStandard": "Standar Seimbang (-14 LUFS · Rekomendasi YouTube / Spotify)",
+        "presetVoice": "Fokus Vokal (-16 LUFS · Menonjolkan mikrofon siaran Twitch)",
+        "presetGentle": "Perlindungan Lembut (-18 LUFS · Mencegah kelelahan sesi lama)",
+        "presetCustom": "Kustom (Nilai Lain)",
+        "customValue": "Target Kenyaringan Kustom",
+        "customHint": "Nilai lebih tinggi menghasilkan suara lebih keras (maksimum -10 LUFS); nilai lebih rendah menghasilkan suara lebih lembut."
+      }
     },
     "vocalRange": {
       "sectionTitle": "Rentang Vokal",
@@ -172,6 +184,59 @@
       "stopTest": "Hentikan Tes",
       "startTest": "Mulai Tes",
       "saveApply": "Simpan dan Terapkan"
+    },
+    "storage": {
+      "title": "Penyimpanan Perpustakaan Lagu",
+      "description": "Kelola lokasi penyimpanan lagu, pemisahan vokal AI, dan lirik di komputer Anda.",
+      "loading": "Memuat informasi penyimpanan...",
+      "currentFolder": "Jalur Penyimpanan Saat Ini",
+      "defaultBadge": "Default AppData (Drive C:)",
+      "customBadge": "Direktori Kustom",
+      "openFolder": "Buka Folder di File Explorer",
+      "openInExplorer": "Buka di Explorer",
+      "totalSongs": "Total Lagu",
+      "usedSpace": "Ruang Terpakai",
+      "freeDriveSpace": "Ruang Kosong Drive",
+      "migrationActive": "Migrasi Sedang Berlangsung",
+      "viewDetails": "Lihat Detail / Batal",
+      "changeLocationButton": "Ubah Lokasi Penyimpanan / Pindahkan...",
+      "modalTitle": "Ubah Lokasi Penyimpanan Lagu",
+      "currentLocation": "Lokasi Saat Ini",
+      "songsCount": "lagu",
+      "selectNewLocation": "Pilih Folder Tujuan Baru",
+      "placeholder": "Klik telusuri untuk memilih folder...",
+      "browse": "Telusuri...",
+      "checking": "Memeriksa...",
+      "driveFree": "Ruang Kosong Drive Tujuan",
+      "spaceRequired": "Ruang yang Dibutuhkan",
+      "existingSongsDetected": "Perpustakaan KHelper terdeteksi di folder ini ({{count}} lagu)",
+      "directSwitchOption": "Alihkan Langsung (Gunakan lagu yang ada tanpa memindahkan file)",
+      "mergeOption": "Salin & Gabungkan perpustakaan saat ini ke folder tujuan",
+      "backgroundNote": "Anda dapat menutup jendela ini dengan aman. Migrasi akan tetap berjalan di latar belakang.",
+      "completeTitle": "Perpustakaan Berhasil Dipindahkan!",
+      "completeSubtitle": "Lagu Anda telah disalin dengan aman ke lokasi baru.",
+      "completeTitleSwitch": "Perpustakaan Berhasil Dialihkan!",
+      "completeSubtitleSwitch": "KHelper sekarang menggunakan perpustakaan yang dipilih.",
+      "reloadNoticeSwitch": "Silakan muat ulang KHelper untuk menerapkan lokasi baru dan mengindeks ulang lagu.",
+      "cleanupTitleDefault": "Bebaskan ruang disk AppData?",
+      "cleanupTitleCustom": "Bebaskan folder penyimpanan lama?",
+      "cleanupDescDefault": "File lagu asli (~{{size}}) masih tersimpan di direktori AppData. Memuat ulang akan membersihkannya dengan aman untuk membebaskan ruang, atau Anda dapat menyimpannya sebagai cadangan.",
+      "cleanupDescCustom": "File lagu asli (~{{size}}) masih tersimpan di {{path}}. Memuat ulang akan membersihkannya dengan aman untuk membebaskan ruang, atau Anda dapat menyimpannya sebagai cadangan.",
+      "reloadAndClean": "Muat Ulang & Bebaskan Ruang",
+      "reloadKeepBackup": "Muat Ulang (Simpan Cadangan)",
+      "reloadToApply": "Muat Ulang KHelper untuk Menerapkan",
+      "cleanupPromptTitle": "Bersihkan File Lama",
+      "cleanupPromptDesc": "File lagu asli masih tersimpan di direktori AppData (~{{size}}). Anda dapat menghapusnya sekarang untuk membebaskan ruang disk, atau menyimpannya sebagai cadangan.",
+      "cleaning": "Membersihkan...",
+      "cleanOldButton": "Bersihkan File Lama",
+      "keepBackup": "Simpan Cadangan",
+      "cleanedSuccess": "Berhasil membebaskan ruang {{size}} dari drive C:!",
+      "cancel": "Batal",
+      "startSwitch": "Alihkan Perpustakaan",
+      "startMove": "Mulai Migrasi",
+      "runInBackground": "Jalankan di Latar Belakang",
+      "cancelMigration": "Batalkan Migrasi",
+      "done": "Selesai"
     }
   },
   "analyticsConsent": {
@@ -247,7 +312,8 @@
       "queued": "Mengantri",
       "running": "Pemrosesan",
       "succeeded": "Selesai",
-      "failed": "Gagal"
+      "failed": "Gagal",
+      "waiting_for_engine": "Menunggu mesin pemisah siap..."
     },
     "quality": {
       "fast": "Cepat",
@@ -255,10 +321,24 @@
     },
     "sepMigration": {
       "title": "Migrasi Runtime Pemisahan AI"
+    },
+    "separationEnv": {
+      "title": "Mesin Pemisahan Vokal AI",
+      "inProgress": "Mengonfigurasi mesin pemisahan vokal..."
+    },
+    "migration": {
+      "title": "Migrasi Penyimpanan",
+      "moving": "Memindahkan Lagu...",
+      "verifying": "Memverifikasi file...",
+      "completed": "Migrasi Selesai",
+      "failed": "Migrasi Gagal",
+      "cancelled": "Migrasi Dibatalkan"
     }
   },
   "playbackControl": {
-    "clickToEdit": "Klik untuk mengedit"
+    "clickToEdit": "Klik untuk mengedit",
+    "play": "Putar",
+    "pause": "Jeda"
   },
   "domain": {
     "songType": {
@@ -546,7 +626,27 @@
       "artistLabel": "Artis",
       "titleRequired": "Judul lagu wajib diisi",
       "saveFailed": "Gagal menyimpan. Silakan coba lagi nanti.",
-      "saving": "Menyimpan..."
+      "saving": "Menyimpan...",
+      "trimTitle": "Pangkas Audio",
+      "trimSubtitle": "Non-destruktif, Pratinjau headphone saja",
+      "resetTrim": "Reset ke Penuh",
+      "introStart": "Awal Intro (Titik Masuk)",
+      "outroEnd": "Akhir Outro (Titik Keluar)",
+      "playIntroTooltip": "Putar dari Awal Intro",
+      "playOutroTooltip": "Putar 3.5dtk sebelum Akhir Outro",
+      "grabCurrent": "Gunakan Waktu Saat Ini",
+      "grabStartTooltip": "Atur Awal ke posisi putar saat ini",
+      "grabEndTooltip": "Atur Akhir ke posisi putar saat ini",
+      "effectiveDuration": "Durasi efektif:",
+      "unmute": "Bunyikan",
+      "volumeTooltip": "Volume Pratinjau: {{percent}}%",
+      "waveformTrimCutWarning": "{{count}} baris lirik tersinkronisasi berada di bagian intro yang dipangkas",
+      "conflictTitle": "Konflik Lirik Terdeteksi",
+      "conflictMessage": "{{count}} baris lirik tersinkronisasi berada di bagian intro yang dipangkas. Bagaimana Anda ingin menangani penanda waktunya?",
+      "conflictRawPreserved": "(Teks lirik mentah selalu dipertahankan)",
+      "conflictDrop": "Hapus dari Garis Waktu Sinkron (Disarankan)",
+      "conflictClamp": "Kumpulkan di 00:00.00",
+      "conflictCancel": "Kembali ke Editor"
     },
     "download": {
       "title": "Pengelola Unduhan",
@@ -764,7 +864,14 @@
         "leavePageMessage": "Meninggalkan halaman ini akan membuang perubahan yang belum disimpan.",
         "discard": "Jangan Simpan",
         "saveAndContinue": "Simpan dan Lanjutkan"
-      }
+      },
+      "editSong": "Edit Lagu"
+    },
+    "ruby": {
+      "furigana": "Furigana",
+      "romaji": "Romaji",
+      "pinyin": "Pinyin",
+      "koreanRomanization": "Romanisasi Bahasa Korea"
     }
   },
   "overlays": {
@@ -982,5 +1089,51 @@
     "btnChangeFolder": "Ubah Folder...",
     "defaultBadge": "AppData Default",
     "customBadge": "Direktori Kustom"
+  },
+  "vocalRange": {
+    "settings": {
+      "title": "Profil Rentang Nada Vokal",
+      "configured": "Rentang nyaman saat ini: {{range}}",
+      "unconfigured": "Belum ada rentang vokal yang diatur. Atur rentang untuk mendapatkan rekomendasi nada kunci cerdas.",
+      "modify": "Ubah Rentang",
+      "setup": "Atur Rentang",
+      "autoShowTitle": "Tampilkan Otomatis Pil Rentang Vokal",
+      "autoShowDesc": "Bila diaktifkan, otomatis menampilkan pil rentang vokal saat berganti lagu atau membuka menu nada. Bila dimatikan, hanya tombol atas yang membukanya"
+    },
+    "pill": {
+      "noSeparatedTrack": "Lagu ini belum memiliki vokal terpisah",
+      "analyzing": "Menganalisis rentang vokal...",
+      "reopen": "Tampilkan rentang vokal & rekomendasi nada",
+      "title": "Rentang Nada Lagu",
+      "autoBadge": "Hanya Referensi",
+      "autoBadgeTooltip": "Rentang diperkirakan otomatis dari audio vokal terpisah dan dapat dipengaruhi oleh harmoni, reverb, atau kualitas pemisahan. Klik nada tertinggi/terendah untuk memutar dan memverifikasi.",
+      "lowestNote": "Nada terendah",
+      "highestNote": "Nada tertinggi",
+      "lowestNoteSeek": "Nada terendah {{note}} pada {{time}} (durasi {{duration}}dtk) - Klik untuk dengar",
+      "highestNoteSeek": "Nada tertinggi {{note}} pada {{time}} (durasi {{duration}}dtk) - Klik untuk dengar",
+      "warnHigh": "Nada tertinggi terlalu tinggi (+{{count}} semitone)",
+      "warnLow": "Nada terendah terlalu rendah (-{{count}} semitone)",
+      "setupPrompt": "Atur rentang vokal untuk rekomendasi nada ➔",
+      "recommendOriginal": "✨ Cocok Nada Asli (±0)",
+      "recommendCurrent": "✨ Nada Saat Ini Cocok ({{offset}})",
+      "recommendShift": "⚡ Saran Nada {{offset}}",
+      "recommendOctaveLower": "⚡ Saran Nada {{offset}} (Nyanyi 1 oktaf lebih rendah)",
+      "recommendOctaveHigher": "⚡ Saran Nada {{offset}} (Nyanyi 1 oktaf lebih tinggi)",
+      "warnLowEvidence": "Nada rendah terlalu rendah (terendah {{note}})"
+    },
+    "modal": {
+      "title": "Pengaturan Rentang Nada Vokal",
+      "subtitle": "Klik tuts piano atau pilih preset untuk mengatur rentang menyanyi yang nyaman (suara hanya keluar di headphone).",
+      "lowestNote": "Nada Terendah",
+      "selecting": "Memilih",
+      "highestNote": "Nada Tertinggi",
+      "clear": "Hapus Pengaturan"
+    },
+    "presets": {
+      "soprano": "Sopran (C4~A5)",
+      "mezzo": "Mezzo-Sopran (A3~F5)",
+      "tenor": "Tenor (C3~A4)",
+      "baritone": "Bariton (G2~E4)"
+    }
   }
 }

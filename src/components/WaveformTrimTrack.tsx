@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface WaveformTrimTrackProps {
   audioUrl: string | null;
@@ -25,6 +26,7 @@ export const WaveformTrimTrack: React.FC<WaveformTrimTrackProps> = ({
   lyricTimestamps = [],
   height = 80,
 }) => {
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [peaks, setPeaks] = useState<number[]>([]);
@@ -325,7 +327,7 @@ export const WaveformTrimTrack: React.FC<WaveformTrimTrackProps> = ({
           gap: '6px',
         }}>
           <span>⚠️</span>
-          <span>{cutLyricsCount} synced lyric line(s) fall inside the trimmed intro section</span>
+          <span>{t('songManagement.editDialog.waveformTrimCutWarning', { count: cutLyricsCount, defaultValue: `${cutLyricsCount} synced lyric line(s) fall inside the trimmed intro section` })}</span>
         </div>
       )}
     </div>

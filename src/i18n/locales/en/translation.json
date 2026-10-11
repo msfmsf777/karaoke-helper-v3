@@ -22,7 +22,8 @@
     "none": "None",
     "default": "Default",
     "copied": "Copied",
-    "close": "Close"
+    "close": "Close",
+    "pause": "Pause"
   },
   "settings": {
     "nav": {
@@ -335,7 +336,9 @@
     }
   },
   "playbackControl": {
-    "clickToEdit": "Click to edit"
+    "clickToEdit": "Click to edit",
+    "play": "Play",
+    "pause": "Pause"
   },
   "domain": {
     "songType": {
@@ -623,7 +626,27 @@
       "artistLabel": "Artist",
       "titleRequired": "Song title cannot be empty",
       "saveFailed": "Failed to save. Please try again later.",
-      "saving": "Saving..."
+      "saving": "Saving...",
+      "trimTitle": "Audio Trim",
+      "trimSubtitle": "Non-destructive, Headphone preview",
+      "resetTrim": "Reset to Full",
+      "introStart": "Intro Start (In-point)",
+      "outroEnd": "Outro End (Out-point)",
+      "playIntroTooltip": "Play from Intro Start",
+      "playOutroTooltip": "Play 3.5s before Outro End",
+      "grabCurrent": "Grab Current",
+      "grabStartTooltip": "Set Start to current playhead",
+      "grabEndTooltip": "Set End to current playhead",
+      "effectiveDuration": "Effective duration:",
+      "unmute": "Unmute",
+      "volumeTooltip": "Volume: {{percent}}%",
+      "waveformTrimCutWarning": "{{count}} synced lyric line(s) fall inside the trimmed intro section",
+      "conflictTitle": "Lyrics Conflict Detected",
+      "conflictMessage": "{{count}} synced lyric line(s) fall inside the trimmed intro section. How would you like to handle their timestamps?",
+      "conflictRawPreserved": "(Raw lyrics text is preserved in all cases)",
+      "conflictDrop": "Drop from Synced Timeline (Recommended)",
+      "conflictClamp": "Group at 00:00.00",
+      "conflictCancel": "Back to Editor"
     },
     "download": {
       "title": "Download Manager",
@@ -843,6 +866,12 @@
         "discard": "Don't Save",
         "saveAndContinue": "Save and Continue"
       }
+    },
+    "ruby": {
+      "furigana": "Furigana",
+      "romaji": "Romaji",
+      "pinyin": "Pinyin",
+      "koreanRomanization": "Korean Romanization"
     }
   },
   "overlays": {
@@ -1084,7 +1113,13 @@
       "highestNoteSeek": "Highest note {{note}} at {{time}} (duration {{duration}}s) - Click to seek",
       "warnHigh": "Highest note too high (+{{count}} st)",
       "warnLow": "Lowest note too low (-{{count}} st)",
-      "setupPrompt": "Set up your vocal range for key recommendations ➔"
+      "setupPrompt": "Set up your vocal range for key recommendations ➔",
+      "recommendOriginal": "✨ Original Key (±0)",
+      "recommendCurrent": "✨ Current Key Fits ({{offset}})",
+      "recommendShift": "⚡ Suggest {{offset}}",
+      "recommendOctaveLower": "⚡ Suggest {{offset}} (Sing 1 octave lower)",
+      "recommendOctaveHigher": "⚡ Suggest {{offset}} (Sing 1 octave higher)",
+      "warnLowEvidence": "Lowest note too low (minimum {{note}})"
     },
     "modal": {
       "title": "Vocal Range Profile Setup",

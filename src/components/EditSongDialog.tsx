@@ -427,8 +427,8 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
                 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '14px', fontWeight: 600, color: '#fff' }}>✂️ Audio Trim</span>
-                            <span style={{ fontSize: '11px', color: '#777' }}>(Non-destructive, Headphone preview)</span>
+                            <span style={{ fontSize: '14px', fontWeight: 600, color: '#fff' }}>✂️ {t('songManagement.editDialog.trimTitle', { defaultValue: 'Audio Trim' })}</span>
+                            <span style={{ fontSize: '11px', color: '#777' }}>({t('songManagement.editDialog.trimSubtitle', { defaultValue: 'Non-destructive, Headphone preview' })})</span>
                         </div>
                         <button
                             onClick={handleResetTrim}
@@ -442,7 +442,7 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
                                 cursor: 'pointer',
                             }}
                         >
-                            ↺ Reset to Full
+                            ↺ {t('songManagement.editDialog.resetTrim', { defaultValue: 'Reset to Full' })}
                         </button>
                     </div>
 
@@ -470,7 +470,7 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                     <button
                                         onClick={handlePlayIntroStart}
-                                        title={isPlayingIntro ? 'Pause' : 'Play from Intro Start'}
+                                        title={isPlayingIntro ? t('common.pause', { defaultValue: 'Pause' }) : t('songManagement.editDialog.playIntroTooltip', { defaultValue: 'Play from Intro Start' })}
                                         style={miniPlayBtnStyle}
                                         onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.92)'; }}
                                         onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
@@ -482,14 +482,14 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
                                             style={{ width: '9px', height: '9px', display: 'block', marginLeft: isPlayingIntro ? '0' : '1px' }}
                                         />
                                     </button>
-                                    <span>Intro Start (In-point)</span>
+                                    <span>{t('songManagement.editDialog.introStart', { defaultValue: 'Intro Start (In-point)' })}</span>
                                 </div>
                                 <button
                                     onClick={grabStartFromPlayhead}
                                     style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '11px', cursor: 'pointer', padding: 0 }}
-                                    title="Set Start to current playhead"
+                                    title={t('songManagement.editDialog.grabStartTooltip', { defaultValue: 'Set Start to current playhead' })}
                                 >
-                                    Grab Current
+                                    {t('songManagement.editDialog.grabCurrent', { defaultValue: 'Grab Current' })}
                                 </button>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -524,7 +524,7 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                     <button
                                         onClick={handlePlayOutroEnd}
-                                        title={isPlayingOutro ? 'Pause' : 'Play 3.5s before Outro End'}
+                                        title={isPlayingOutro ? t('common.pause', { defaultValue: 'Pause' }) : t('songManagement.editDialog.playOutroTooltip', { defaultValue: 'Play 3.5s before Outro End' })}
                                         style={miniPlayBtnStyle}
                                         onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.92)'; }}
                                         onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
@@ -536,14 +536,14 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
                                             style={{ width: '9px', height: '9px', display: 'block', marginLeft: isPlayingOutro ? '0' : '1px' }}
                                         />
                                     </button>
-                                    <span>Outro End (Out-point)</span>
+                                    <span>{t('songManagement.editDialog.outroEnd', { defaultValue: 'Outro End (Out-point)' })}</span>
                                 </div>
                                 <button
                                     onClick={grabEndFromPlayhead}
                                     style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '11px', cursor: 'pointer', padding: 0 }}
-                                    title="Set End to current playhead"
+                                    title={t('songManagement.editDialog.grabEndTooltip', { defaultValue: 'Set End to current playhead' })}
                                 >
-                                    Grab Current
+                                    {t('songManagement.editDialog.grabCurrent', { defaultValue: 'Grab Current' })}
                                 </button>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -578,7 +578,7 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <button
                                 onClick={handleMainPlayToggle}
-                                title={auditionPlayer.isPlaying ? 'Pause' : 'Play'}
+                                title={auditionPlayer.isPlaying ? t('common.pause', { defaultValue: 'Pause' }) : t('playbackControl.play', { defaultValue: 'Play' })}
                                 style={mainPlayBtnStyle}
                                 onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.95)'; }}
                                 onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
@@ -604,7 +604,7 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
                             >
                                 <button
                                     onClick={handleToggleMute}
-                                    title={auditionPlayer.volume === 0 ? 'Unmute' : `Volume: ${Math.round(auditionPlayer.volume * 100)}%`}
+                                    title={auditionPlayer.volume === 0 ? t('songManagement.editDialog.unmute', { defaultValue: 'Unmute' }) : t('songManagement.editDialog.volumeTooltip', { percent: Math.round(auditionPlayer.volume * 100), defaultValue: `Volume: ${Math.round(auditionPlayer.volume * 100)}%` })}
                                     style={{
                                         background: 'none',
                                         border: 'none',
@@ -659,7 +659,8 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
                         </div>
 
                         <div style={{ fontSize: '11px', color: '#777' }}>
-                            Effective duration: <span style={{ color: '#fff', fontFamily: 'monospace' }}>{formatTimecode(Math.max(0, trimEnd - trimStart))}</span>
+                            {t('songManagement.editDialog.effectiveDuration', { defaultValue: 'Effective duration:' })}{' '}
+                            <span style={{ color: '#fff', fontFamily: 'monospace' }}>{formatTimecode(Math.max(0, trimEnd - trimStart))}</span>
                         </div>
                     </div>
                 </div>
@@ -726,13 +727,15 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
                             textAlign: 'center',
                         }}>
                             <div style={{ fontSize: '16px', fontWeight: 600, marginBottom: '10px', color: '#ffb74d' }}>
-                                ⚠️ Lyrics Conflict Detected
+                                ⚠️ {t('songManagement.editDialog.conflictTitle', { defaultValue: 'Lyrics Conflict Detected' })}
                             </div>
                             <p style={{ fontSize: '13px', color: '#ccc', lineHeight: 1.5, marginBottom: '16px' }}>
-                                <strong>{conflictModalState.conflictCount}</strong> synced lyric line(s) fall inside the trimmed intro section.
-                                How would you like to handle their timestamps?
+                                {t('songManagement.editDialog.conflictMessage', {
+                                    count: conflictModalState.conflictCount,
+                                    defaultValue: `${conflictModalState.conflictCount} synced lyric line(s) fall inside the trimmed intro section. How would you like to handle their timestamps?`
+                                })}
                                 <br />
-                                <span style={{ fontSize: '11px', color: '#888' }}>(Raw lyrics text is preserved in all cases)</span>
+                                <span style={{ fontSize: '11px', color: '#888' }}>{t('songManagement.editDialog.conflictRawPreserved', { defaultValue: '(Raw lyrics text is preserved in all cases)' })}</span>
                             </p>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
                                 <button
@@ -749,7 +752,7 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
                                         fontWeight: 600,
                                     }}
                                 >
-                                    Drop from Synced Timeline (Recommended)
+                                    {t('songManagement.editDialog.conflictDrop', { defaultValue: 'Drop from Synced Timeline (Recommended)' })}
                                 </button>
                                 <button
                                     onClick={() => performSave('clamp')}
@@ -765,7 +768,7 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
                                         fontWeight: 600,
                                     }}
                                 >
-                                    Group at 00:00.00
+                                    {t('songManagement.editDialog.conflictClamp', { defaultValue: 'Group at 00:00.00' })}
                                 </button>
                             </div>
                             <button
@@ -778,7 +781,7 @@ const EditSongDialog: React.FC<EditSongDialogProps> = ({ song, onClose }) => {
                                     cursor: 'pointer',
                                 }}
                             >
-                                Back to Editor
+                                {t('songManagement.editDialog.conflictCancel', { defaultValue: 'Back to Editor' })}
                             </button>
                         </div>
                     </div>

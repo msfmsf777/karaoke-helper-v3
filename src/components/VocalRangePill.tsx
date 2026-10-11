@@ -163,10 +163,31 @@ export const VocalRangePill: React.FC<VocalRangePillProps> = ({
     const songSpan = songRange.highestMidi - songRange.lowestMidi;
     const userSpan = vocalRange.highestMidi - vocalRange.lowestMidi;
     if (songSpan > userSpan && recommendation?.warning) {
-      return recommendation.warning;
+      return t('vocalRange.pill.warnLowEvidence', {
+        note: midiToNoteName(recommendation.effectiveLowMidi),
+        defaultValue: recommendation.warning,
+      });
     }
     return undefined;
-  }, [vocalRange, songRange, shiftedHigh, shiftedLow, recommendation?.warning, t]);
+  }, [vocalRange, songRange, shiftedHigh, shiftedLow, recommendation?.warning, recommendation?.effectiveLowMidi, t]);
+
+  const recommendationLabel = useMemo(() => {
+    if (!recommendation) return '';
+    const offset = recommendation.transposeOffset;
+    const formattedOffset = offset > 0 ? `+${offset}` : `${offset}`;
+    if (recommendation.mode === 'current_ok') {
+      return offset === 0
+        ? t('vocalRange.pill.recommendOriginal', { defaultValue: '✨ 適合原調 (±0)' })
+        : t('vocalRange.pill.recommendCurrent', { offset: formattedOffset, defaultValue: `✨ 目前調性合適 (${formattedOffset})` });
+    }
+    if (recommendation.mode === 'octave_lower') {
+      return t('vocalRange.pill.recommendOctaveLower', { offset: formattedOffset, defaultValue: `⚡ 建議 ${formattedOffset} (低八度唱)` });
+    }
+    if (recommendation.mode === 'octave_higher') {
+      return t('vocalRange.pill.recommendOctaveHigher', { offset: formattedOffset, defaultValue: `⚡ 建議 ${formattedOffset} (高八度唱)` });
+    }
+    return t('vocalRange.pill.recommendShift', { offset: formattedOffset, defaultValue: `⚡ 建議 ${formattedOffset}` });
+  }, [recommendation, t]);
 
   const handleApplyRecommendation = () => {
     if (!song || !recommendation) return;
@@ -675,7 +696,7 @@ export const VocalRangePill: React.FC<VocalRangePillProps> = ({
                 gap: '4px',
               }}
             >
-              <span>{recommendation.label}</span>
+              <span>{recommendationLabel}</span>
             </button>
             {activeWarning && (
               <span style={{ fontSize: '10px', color: '#f59e0b', fontWeight: 500 }}>

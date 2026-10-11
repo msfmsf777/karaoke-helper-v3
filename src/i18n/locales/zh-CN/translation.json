@@ -22,7 +22,8 @@
     "none": "无",
     "default": "默认",
     "copied": "已复制",
-    "close": "关闭"
+    "close": "关闭",
+    "pause": "暂停"
   },
   "settings": {
     "nav": {
@@ -335,7 +336,9 @@
     }
   },
   "playbackControl": {
-    "clickToEdit": "点击编辑"
+    "clickToEdit": "点击编辑",
+    "play": "播放",
+    "pause": "暂停"
   },
   "domain": {
     "songType": {
@@ -623,7 +626,27 @@
       "artistLabel": "艺术家",
       "titleRequired": "歌名不能为空",
       "saveFailed": "保存失败。请稍后重试。",
-      "saving": "正在保存..."
+      "saving": "正在保存...",
+      "trimTitle": "音频裁剪",
+      "trimSubtitle": "非破坏性，仅耳机试听",
+      "resetTrim": "重置为完整长度",
+      "introStart": "片头起点 (入点)",
+      "outroEnd": "片尾终点 (出点)",
+      "playIntroTooltip": "从片头起点试听",
+      "playOutroTooltip": "从片尾前 3.5 秒试听",
+      "grabCurrent": "套用当前时间",
+      "grabStartTooltip": "将起点设为当前播放位置",
+      "grabEndTooltip": "将终点设为当前播放位置",
+      "effectiveDuration": "有效时长：",
+      "unmute": "取消静音",
+      "volumeTooltip": "试听音量：{{percent}}%",
+      "waveformTrimCutWarning": "有 {{count}} 行已同步歌词落在裁剪掉的片头区间",
+      "conflictTitle": "检测到歌词时间冲突",
+      "conflictMessage": "有 {{count}} 行已同步歌词落在裁剪掉的片头区间。您希望如何处理这些歌词的时间标记？",
+      "conflictRawPreserved": "(任何情况下均会完整保留原始歌词文本)",
+      "conflictDrop": "从同步时间轴移除 (推荐)",
+      "conflictClamp": "对齐至 00:00.00",
+      "conflictCancel": "返回编辑器"
     },
     "download": {
       "title": "下载管理器",
@@ -843,6 +866,12 @@
         "discard": "不保存",
         "saveAndContinue": "保存并继续"
       }
+    },
+    "ruby": {
+      "furigana": "振假名 (Furigana)",
+      "romaji": "罗马字 (Romaji)",
+      "pinyin": "拼音 (Pinyin)",
+      "koreanRomanization": "韩语罗马字 (Korean Romanization)"
     }
   },
   "overlays": {
@@ -1060,5 +1089,51 @@
     "btnChangeFolder": "更改目录...",
     "defaultBadge": "默认 AppData",
     "customBadge": "自定义目录"
+  },
+  "vocalRange": {
+    "settings": {
+      "title": "个人音域",
+      "configured": "当前舒适音域：{{range}}",
+      "unconfigured": "尚未设置音域，设置后可为歌曲提供专属智能转调建议",
+      "modify": "修改音域",
+      "setup": "设置音域",
+      "autoShowTitle": "自动弹出歌曲音域",
+      "autoShowDesc": "开启时，于切歌或打开调性调整菜单时自动显示音域胶囊；关闭后仅能通过歌词框顶部按钮手动打开"
+    },
+    "pill": {
+      "noSeparatedTrack": "此歌曲尚未分离人声",
+      "analyzing": "正在分析人声音域...",
+      "reopen": "显示歌曲音域与推荐调性",
+      "title": "歌曲音域",
+      "autoBadge": "仅供参考",
+      "autoBadgeTooltip": "音域根据分离后的人声音频自动估算，可能受到和声、混响及分离品质影响。可点击最高音或最低音，跳转至对应片段确认。",
+      "lowestNote": "最低音",
+      "highestNote": "最高音",
+      "lowestNoteSeek": "最低音 {{note}} 出现于 {{time}} (长度 {{duration}}s) - 点击跳转试听",
+      "highestNoteSeek": "最高音 {{note}} 出现于 {{time}} (长度 {{duration}}s) - 点击跳转试听",
+      "warnHigh": "最高音偏高 ({{count}} 个半音)",
+      "warnLow": "最低音偏低 ({{count}} 个半音)",
+      "setupPrompt": "设置个人音域以获取推荐调性 ➔",
+      "recommendOriginal": "✨ 适合原调 (±0)",
+      "recommendCurrent": "✨ 当前调性合适 ({{offset}})",
+      "recommendShift": "⚡ 建议 {{offset}}",
+      "recommendOctaveLower": "⚡ 建议 {{offset}} (低八度唱)",
+      "recommendOctaveHigher": "⚡ 建议 {{offset}} (高八度唱)",
+      "warnLowEvidence": "低音偏低 (最低 {{note}})"
+    },
+    "modal": {
+      "title": "个人音域设置",
+      "subtitle": "点击琴键或选择预设以设置您的安全演唱音域，点击时仅耳机发声。",
+      "lowestNote": "最低音",
+      "selecting": "选取中",
+      "highestNote": "最高音",
+      "clear": "清除设置"
+    },
+    "presets": {
+      "soprano": "女高音 (C4~A5)",
+      "mezzo": "女中音 (A3~F5)",
+      "tenor": "男高音 (C3~A4)",
+      "baritone": "男中音 (G2~E4)"
+    }
   }
 }

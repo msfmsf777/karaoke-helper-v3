@@ -22,7 +22,8 @@
     "none": "없음",
     "default": "기본값",
     "copied": "복사됨",
-    "close": "닫기"
+    "close": "닫기",
+    "pause": "일시정지"
   },
   "settings": {
     "nav": {
@@ -183,6 +184,59 @@
       "stopTest": "테스트 중지",
       "startTest": "테스트 시작",
       "saveApply": "저장 및 적용"
+    },
+    "storage": {
+      "title": "음원 라이브러리 저장소",
+      "description": "노래 파일, AI 음원 분리 트랙 및 가사가 저장되는 컴퓨터 내 위치를 관리합니다.",
+      "loading": "저장소 정보를 불러오는 중...",
+      "currentFolder": "현재 저장 경로",
+      "defaultBadge": "기본 AppData (C: 드라이브)",
+      "customBadge": "사용자 지정 폴더",
+      "openFolder": "파일 탐색기에서 폴더 열기",
+      "openInExplorer": "탐색기에서 열기",
+      "totalSongs": "총 곡 수",
+      "usedSpace": "사용 공간",
+      "freeDriveSpace": "드라이브 여유 공간",
+      "migrationActive": "마이그레이션 진행 중",
+      "viewDetails": "상세 보기 / 취소",
+      "changeLocationButton": "저장 위치 변경 및 이동...",
+      "modalTitle": "음원 저장 위치 변경",
+      "currentLocation": "현재 위치",
+      "songsCount": "곡",
+      "selectNewLocation": "새 저장 대상 폴더 선택",
+      "placeholder": "찾아보기를 클릭하여 폴더를 선택하세요...",
+      "browse": "찾아보기...",
+      "checking": "확인 중...",
+      "driveFree": "대상 드라이브 여유 공간",
+      "spaceRequired": "이동에 필요한 공간",
+      "existingSongsDetected": "선택한 폴더에 기존 KHelper 라이브러리가 감지되었습니다 (총 {{count}}곡)",
+      "directSwitchOption": "즉시 전환 (파일 이동 없이 해당 폴더의 기존 곡 라이브러리 사용)",
+      "mergeOption": "현재 라이브러리를 대상 폴더로 복사 및 병합",
+      "backgroundNote": "이 창을 닫아도 안전합니다. 마이그레이션은 백그라운드에서 계속 진행됩니다.",
+      "completeTitle": "라이브러리 이동 완료!",
+      "completeSubtitle": "모든 곡 파일이 새 위치로 안전하게 복사되었습니다.",
+      "completeTitleSwitch": "라이브러리 전환 완료!",
+      "completeSubtitleSwitch": "KHelper가 선택한 라이브러리를 사용하도록 설정되었습니다.",
+      "reloadNoticeSwitch": "새 라이브러리 경로를 적용하고 곡을 다시 색인하려면 KHelper를 다시 로드하세요.",
+      "cleanupTitleDefault": "AppData 디스크 여유 공간을 확보할까요?",
+      "cleanupTitleCustom": "이전 저장 폴더 공간을 정리할까요?",
+      "cleanupDescDefault": "원본 곡 파일(~{{size}})이 AppData에 남아 있습니다. 다시 로드하여 안전하게 삭제해 공간을 확보하거나 백업으로 보관할 수 있습니다.",
+      "cleanupDescCustom": "원본 곡 파일(~{{size}})이 {{path}}에 남아 있습니다. 다시 로드하여 안전하게 삭제해 공간을 확보하거나 백업으로 보관할 수 있습니다.",
+      "reloadAndClean": "다시 로드하고 공간 확보",
+      "reloadKeepBackup": "다시 로드 (백업 유지)",
+      "reloadToApply": "KHelper 다시 로드하여 적용",
+      "cleanupPromptTitle": "이전 파일 정리",
+      "cleanupPromptDesc": "원본 곡 파일이 AppData 디렉터리에 남아 있습니다 (~{{size}}). 지금 안전하게 삭제하여 디스크 공간을 확보하거나 백업으로 보관할 수 있습니다.",
+      "cleaning": "정리 중...",
+      "cleanOldButton": "이전 파일 정리",
+      "keepBackup": "백업 유지",
+      "cleanedSuccess": "C: 드라이브에서 {{size}} 공간을 확보했습니다!",
+      "cancel": "취소",
+      "startSwitch": "라이브러리 전환",
+      "startMove": "마이그레이션 시작",
+      "runInBackground": "백그라운드에서 실행",
+      "cancelMigration": "마이그레이션 취소",
+      "done": "완료"
     }
   },
   "analyticsConsent": {
@@ -258,7 +312,8 @@
       "queued": "대기 중",
       "running": "처리 중",
       "succeeded": "완료됨",
-      "failed": "실패"
+      "failed": "실패",
+      "waiting_for_engine": "분리 엔진 준비 대기 중..."
     },
     "quality": {
       "fast": "빠름",
@@ -266,10 +321,24 @@
     },
     "sepMigration": {
       "title": "AI 분리 엔진 이동"
+    },
+    "separationEnv": {
+      "title": "AI 음원 분리 엔진",
+      "inProgress": "분리 엔진 환경 구성 중..."
+    },
+    "migration": {
+      "title": "저장소 마이그레이션",
+      "moving": "곡 파일 복사 중...",
+      "verifying": "파일 무결성 검증 중...",
+      "completed": "마이그레이션 완료",
+      "failed": "마이그레이션 실패",
+      "cancelled": "마이그레이션 취소됨"
     }
   },
   "playbackControl": {
-    "clickToEdit": "편집하려면 클릭하세요"
+    "clickToEdit": "편집하려면 클릭하세요",
+    "play": "재생",
+    "pause": "일시정지"
   },
   "domain": {
     "songType": {
@@ -557,7 +626,27 @@
       "artistLabel": "아티스트",
       "titleRequired": "노래 제목은 비워둘 수 없습니다.",
       "saveFailed": "저장하지 못했습니다. 나중에 다시 시도해 주세요.",
-      "saving": "저장 중..."
+      "saving": "저장 중...",
+      "trimTitle": "오디오 구간 자르기",
+      "trimSubtitle": "비파괴 편집 · 헤드폰 미리듣기 전용",
+      "resetTrim": "전체 길이로 초기화",
+      "introStart": "도입부 시작 (In점)",
+      "outroEnd": "후주부 끝 (Out점)",
+      "playIntroTooltip": "도입부 시작점부터 재생",
+      "playOutroTooltip": "후주부 끝 3.5초 전부터 재생",
+      "grabCurrent": "현재 재생위치 적용",
+      "grabStartTooltip": "현재 재생위치를 시작점으로 설정",
+      "grabEndTooltip": "현재 재생위치를 끝점으로 설정",
+      "effectiveDuration": "재생 구간 길이:",
+      "unmute": "음소거 해제",
+      "volumeTooltip": "미리듣기 볼륨: {{percent}}%",
+      "waveformTrimCutWarning": "잘려나간 앞부분에 동기화 가사 {{count}}줄이 포함되어 있습니다",
+      "conflictTitle": "가사 타임스탬프 충돌 감지",
+      "conflictMessage": "잘려나간 앞부분에 동기화 가사 {{count}}줄이 포함되어 있습니다. 해당 타임스탬프를 어떻게 처리하시겠습니까?",
+      "conflictRawPreserved": "(어떠한 경우에도 원본 가사 텍스트는 온전히 보존됩니다)",
+      "conflictDrop": "동기화 타임라인에서 제외 (권장)",
+      "conflictClamp": "00:00.00에 맞춤",
+      "conflictCancel": "편집기로 돌아가기"
     },
     "download": {
       "title": "다운로드 관리자",
@@ -775,7 +864,14 @@
         "leavePageMessage": "이 페이지를 나가면 저장하지 않은 변경 사항이 사라집니다.",
         "discard": "저장하지 않음",
         "saveAndContinue": "저장하고 계속하기"
-      }
+      },
+      "editSong": "곡 정보 편집"
+    },
+    "ruby": {
+      "furigana": "후리가나 (Furigana)",
+      "romaji": "로마자 (Romaji)",
+      "pinyin": "병음 (Pinyin)",
+      "koreanRomanization": "국어의 로마자 표기 (Korean Romanization)"
     }
   },
   "overlays": {
@@ -993,5 +1089,51 @@
     "btnChangeFolder": "폴더 변경...",
     "defaultBadge": "기본 AppData",
     "customBadge": "사용자 지정 폴더"
+  },
+  "vocalRange": {
+    "settings": {
+      "title": "보컬 음역대 프로필",
+      "configured": "편안한 음역대: {{range}}",
+      "unconfigured": "음역대가 설정되지 않았습니다. 설정 시 노래에 맞는 스마트 조옮김 추천을 받을 수 있습니다.",
+      "modify": "음역대 수정",
+      "setup": "음역대 설정",
+      "autoShowTitle": "노래 음역대 팝업 자동 표시",
+      "autoShowDesc": "활성화 시 곡 변경 또는 키 조절 메뉴를 열 때 자동으로 음역대 캡슐을 표시합니다. 비활성화 시 가사 상단 버튼을 통해서만 수동으로 열 수 있습니다."
+    },
+    "pill": {
+      "noSeparatedTrack": "이 곡은 아직 보컬 분리가 되지 않았습니다",
+      "analyzing": "보컬 음역대 분석 중...",
+      "reopen": "노래 음역대 및 추천 키 표시",
+      "title": "곡 음역대",
+      "autoBadge": "참고용",
+      "autoBadgeTooltip": "분리된 보컬 오디오에서 자동 추정된 음역대이며 화음, 잔향 및 분리 품질에 영향을 받을 수 있습니다. 최고음/최저음을 클릭하여 해당 구간을 청취할 수 있습니다.",
+      "lowestNote": "최저음",
+      "highestNote": "최고음",
+      "lowestNoteSeek": "최저음 {{note}} ({{time}}, 길이 {{duration}}초) - 클릭하여 구간 청취",
+      "highestNoteSeek": "최고음 {{note}} ({{time}}, 길이 {{duration}}초) - 클릭하여 구간 청취",
+      "warnHigh": "최고음이 다소 높음 (+{{count}} 반음)",
+      "warnLow": "최저음이 다소 낮음 (-{{count}} 반음)",
+      "setupPrompt": "음역대를 설정하고 맞춤 추천 키 받기 ➔",
+      "recommendOriginal": "✨ 원키 추천 (±0)",
+      "recommendCurrent": "✨ 현재 키 적합 ({{offset}})",
+      "recommendShift": "⚡ 추천 키 {{offset}}",
+      "recommendOctaveLower": "⚡ 추천 키 {{offset}} (1옥타브 낮춰 부르기)",
+      "recommendOctaveHigher": "⚡ 추천 키 {{offset}} (1옥타브 높여 부르기)",
+      "warnLowEvidence": "저음이 다소 낮음 (최저음 {{note}})"
+    },
+    "modal": {
+      "title": "보컬 음역대 설정",
+      "subtitle": "건반을 클릭하거나 프리셋을 선택하여 편안하게 부를 수 있는 음역대를 설정하세요 (소리는 헤드폰으로만 출력됩니다).",
+      "lowestNote": "최저음",
+      "selecting": "선택 중",
+      "highestNote": "최고음",
+      "clear": "설정 초기화"
+    },
+    "presets": {
+      "soprano": "소프라노 (C4~A5)",
+      "mezzo": "메조소프라노 (A3~F5)",
+      "tenor": "테너 (C3~A4)",
+      "baritone": "바리톤 (G2~E4)"
+    }
   }
 }

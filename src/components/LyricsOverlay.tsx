@@ -332,13 +332,13 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({
                         <>
                             <JapaneseToggleButton
                                 label="あ"
-                                title="振假名 (Furigana)"
+                                title={t('lyrics.ruby.furigana', { defaultValue: '振假名 (Furigana)' })}
                                 active={furiganaEnabled}
                                 onToggle={onToggleFurigana}
                             />
                             <JapaneseToggleButton
                                 label="a"
-                                title="羅馬字 (Romaji)"
+                                title={t('lyrics.ruby.romaji', { defaultValue: '羅馬字 (Romaji)' })}
                                 active={romajiEnabled}
                                 onToggle={onToggleRomaji}
                             />
@@ -347,7 +347,7 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({
                     {detectedLang === 'zh' && (
                         <JapaneseToggleButton
                             label="拼"
-                            title="拼音 (Pinyin)"
+                            title={t('lyrics.ruby.pinyin', { defaultValue: '拼音 (Pinyin)' })}
                             active={furiganaEnabled}
                             onToggle={onToggleFurigana}
                         />
@@ -355,7 +355,7 @@ const LyricsOverlay: React.FC<LyricsOverlayProps> = ({
                     {detectedLang === 'ko' && (
                         <JapaneseToggleButton
                             label="a"
-                            title="羅馬拼音 (Romanization)"
+                            title={t('lyrics.ruby.koreanRomanization', { defaultValue: '韓語羅馬拼音 (Korean Romanization)' })}
                             active={romajiEnabled}
                             onToggle={onToggleRomaji}
                         />
