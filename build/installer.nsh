@@ -234,6 +234,8 @@ LangString KHelperUnReviewKeepSection 1054 "=== รายการที่จ�
 
 !ifdef BUILD_UNINSTALLER
 
+!define NSD_CreateTextMultiline "nsDialogs::CreateControl EDIT ${DEFAULT_STYLES}|${WS_TABSTOP}|${WS_VSCROLL}|${ES_MULTILINE}|${ES_AUTOVSCROLL}|${ES_READONLY} ${WS_EX_WINDOWEDGE}|${WS_EX_CLIENTEDGE}"
+
 ; Global state variables for uninstaller data selection
 Var unDeleteSongs
 Var unDeleteModels
@@ -485,7 +487,7 @@ Function un.PageConfirmReview
     StrCpy $0 "$0 - $(KHelperUnItemSettings): $unSettingsDir$\r$\n"
   ${EndIf}
 
-  ${NSD_CreateText} 10u 18u 280u 115u "$0"
+  ${NSD_CreateTextMultiline} 10u 18u 280u 115u "$0"
   Pop $unTxtReview
   SendMessage $unTxtReview ${EM_SETREADONLY} 1 0
 

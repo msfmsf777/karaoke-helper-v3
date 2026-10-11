@@ -65,6 +65,8 @@ describe('Windows uninstaller lifecycle and selective data cleanup', () => {
       installerInclude,
       /!macro customUnWelcomePage[\s\S]*!insertmacro MUI_UNPAGE_WELCOME[\s\S]*UninstPage custom un\.PageDataSelection un\.PageDataSelectionLeave[\s\S]*UninstPage custom un\.PageConfirmReview un\.PageConfirmReviewLeave[\s\S]*!macroend/,
     );
+    assert.match(installerInclude, /ES_MULTILINE/);
+    assert.match(installerInclude, /\$\{NSD_CreateTextMultiline\}/);
   });
 
   it('deletes only user-selected directories during uninstallation', () => {
