@@ -64,6 +64,7 @@ const OVERLAY_UI_TEXT_KEYS: Record<string, string> = {
   '歌單覆蓋': 'overlays.ui.setlistOverlay',
   '歌詞覆蓋編輯器': 'overlays.ui.lyricsEditor',
   '歌單覆蓋編輯器': 'overlays.ui.setlistEditor',
+  '範例歌詞預覽': 'overlays.ui.sampleLyricsPreview',
   '範例日文歌詞預覽': 'overlays.ui.sampleLyricsPreview',
   範例資料: 'overlays.ui.sampleData',
   目前佇列: 'overlays.ui.currentQueue',
@@ -89,13 +90,18 @@ const OVERLAY_UI_TEXT_KEYS: Record<string, string> = {
   描邊粗細: 'overlays.ui.strokeWidth',
   發光色: 'overlays.ui.glowColor',
   發光強度: 'overlays.ui.glowStrength',
+  標音輔助: 'overlays.ui.japaneseAssist',
   日文輔助: 'overlays.ui.japaneseAssist',
+  字上標音: 'overlays.ui.furigana',
   注音: 'overlays.ui.furigana',
+  羅馬拼音: 'overlays.ui.romaji',
   羅馬字: 'overlays.ui.romaji',
   '跟隨 App': 'overlays.ui.followApp',
   顯示: 'overlays.ui.show',
   隱藏: 'overlays.ui.hide',
+  羅馬拼音字距: 'overlays.ui.romajiLetterSpacing',
   羅馬字間距: 'overlays.ui.romajiLetterSpacing',
+  羅馬拼音上方間距: 'overlays.ui.romajiMarginTop',
   羅馬字上方距離: 'overlays.ui.romajiMarginTop',
   樣式: 'overlays.ui.style',
   外觀預設: 'overlays.ui.preset',
@@ -1002,13 +1008,13 @@ const LyricsInspector: React.FC<{
         <RangeControl label="發光強度" min={0} max={1} step={0.05} value={config.glowStrength} onChange={(glowStrength) => updateConfig({ glowStrength })} />
       </ControlGroup>
 
-      <ControlGroup title="日文輔助">
-        <SelectControl label="注音" value={config.furiganaPolicy} onChange={(furiganaPolicy) => updateConfig({ furiganaPolicy: furiganaPolicy as any })} options={[['follow_app', '跟隨 App'], ['show', '顯示'], ['hide', '隱藏']]} />
-        <SelectControl label="羅馬字" value={config.romajiPolicy} onChange={(romajiPolicy) => updateConfig({ romajiPolicy: romajiPolicy as any })} options={[['follow_app', '跟隨 App'], ['show', '顯示'], ['hide', '隱藏']]} />
+      <ControlGroup title="標音輔助">
+        <SelectControl label="字上標音" value={config.furiganaPolicy} onChange={(furiganaPolicy) => updateConfig({ furiganaPolicy: furiganaPolicy as any })} options={[['follow_app', '跟隨 App'], ['show', '顯示'], ['hide', '隱藏']]} />
+        <SelectControl label="羅馬拼音" value={config.romajiPolicy} onChange={(romajiPolicy) => updateConfig({ romajiPolicy: romajiPolicy as any })} options={[['follow_app', '跟隨 App'], ['show', '顯示'], ['hide', '隱藏']]} />
         {config.romajiPolicy !== 'hide' && (
           <>
-            <RangeControl label="羅馬字間距" min={0} max={16} value={config.romajiLetterSpacing} onChange={(romajiLetterSpacing) => updateConfig({ romajiLetterSpacing })} />
-            <RangeControl label="羅馬字上方距離" min={-20} max={40} value={config.romajiMarginTop} onChange={(romajiMarginTop) => updateConfig({ romajiMarginTop })} />
+            <RangeControl label="羅馬拼音字距" min={0} max={16} value={config.romajiLetterSpacing} onChange={(romajiLetterSpacing) => updateConfig({ romajiLetterSpacing })} />
+            <RangeControl label="羅馬拼音上方間距" min={-20} max={40} value={config.romajiMarginTop} onChange={(romajiMarginTop) => updateConfig({ romajiMarginTop })} />
           </>
         )}
       </ControlGroup>
