@@ -13,7 +13,7 @@ import { PRIVACY_NOTICE_URL } from '../constants/privacy';
 const SOCIAL_LINKS = [
     {
         id: 'website',
-        url: 'https://github.com/msfmsf777/karaoke-helper-v3', // TODO: Enter official site URL
+        url: 'https://khelper.live/',
         titleKey: 'about.links.website.title',
         icon: WebIcon,
         labelKey: 'about.links.website.label',
