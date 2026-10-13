@@ -40,6 +40,23 @@ LangString KHelperVcRuntimeFailed 1042 "Microsoft Visual C++ 재배포 가능 �
 LangString KHelperVcRuntimeFailed 1057 "Penginstal Microsoft Visual C++ Redistributable keluar dengan kode $0."
 LangString KHelperVcRuntimeFailed 1054 "ตัวติดตั้ง Microsoft Visual C++ Redistributable จบการทำงานด้วยรหัส $0"
 
+; Installation Progress Messages
+LangString KHelperInstallingSubtext 1033 "Extracting application files and AI runtime. This may take 1-2 minutes..."
+LangString KHelperInstallingSubtext 1028 "正在解壓縮應用程式與 AI 執行環境，這可能需要 1 到 2 分鐘..."
+LangString KHelperInstallingSubtext 2052 "正在解压应用程序与 AI 运行环境，这可能需要 1 到 2 分钟..."
+LangString KHelperInstallingSubtext 1041 "アプリ本体と AI 実行環境を展開しています。1〜2分程度かかる場合があります..."
+LangString KHelperInstallingSubtext 1042 "애플리케이션 파일 및 AI 실행 환경을 압축 해제하는 중입니다. 1~2분 정도 걸릴 수 있습니다..."
+LangString KHelperInstallingSubtext 1057 "Mengekstrak file aplikasi dan runtime AI. Ini mungkin memakan waktu 1-2 menit..."
+LangString KHelperInstallingSubtext 1054 "กำลังแตกไฟล์โปรแกรมและสภาพแวดล้อมรันไทม์ AI ขั้นตอนนี้อาจใช้เวลาประมาณ 1-2 นาที..."
+
+LangString KHelperInstallingExtractingText 1033 "Extracting core files and separation engine..."
+LangString KHelperInstallingExtractingText 1028 "正在解壓縮核心檔案與人聲分離引擎..."
+LangString KHelperInstallingExtractingText 2052 "正在解压核心文件与人声分离引擎..."
+LangString KHelperInstallingExtractingText 1041 "コアファイルとボーカル分離エンジンを展開しています..."
+LangString KHelperInstallingExtractingText 1042 "핵심 파일 및 보컬 분리 엔진 압축 해제 중..."
+LangString KHelperInstallingExtractingText 1057 "Mengekstrak file inti dan mesin pemisahan..."
+LangString KHelperInstallingExtractingText 1054 "กำลังแตกไฟล์หลักและเอนจินแยกเสียงร้อง..."
+
 ; Active Process Warning
 LangString KHelperRunningPrompt 1033 "KHelper is currently running. Would you like to close it cleanly to continue uninstalling?"
 LangString KHelperRunningPrompt 1028 "KHelper 目前正在執行中。是否要立即關閉應用程式以繼續解除安裝？"
@@ -174,6 +191,27 @@ LangString KHelperUnReviewKeepSection 1054 "=== รายการที่จ�
   ${EndIf}
 !macroend
 
+!ifndef BUILD_UNINSTALLER
+
+Function KHelperInstFilesShow
+  ${If} $mui.Header.SubText != 0
+    SendMessage $mui.Header.SubText ${WM_SETTEXT} 0 "STR:$(KHelperInstallingSubtext)"
+  ${EndIf}
+  FindWindow $0 "#32770" "" $HWNDPARENT
+  ${If} $0 != 0
+    GetDlgItem $1 $0 1006
+    ${If} $1 != 0
+      SendMessage $1 ${WM_SETTEXT} 0 "STR:$(KHelperInstallingExtractingText)"
+    ${EndIf}
+  ${EndIf}
+FunctionEnd
+
+!macro customPageAfterChangeDir
+  !define MUI_PAGE_CUSTOMFUNCTION_SHOW KHelperInstFilesShow
+!macroend
+
+!endif
+
 !macro customFinishPage
   Function KHelperLaunchInstalledApp
     ${If} ${isUpdated}
@@ -208,6 +246,14 @@ LangString KHelperUnReviewKeepSection 1054 "=== รายการที่จ�
   ${If} ${Errors}
   ${OrIf} $0 != 1
   ${OrIf} $1 < 35211
+    FindWindow $2 "#32770" "" $HWNDPARENT
+    ${If} $2 != 0
+      GetDlgItem $3 $2 1006
+      ${If} $3 != 0
+        SendMessage $3 ${WM_SETTEXT} 0 "STR:$(KHelperVcRuntimeInstalling)"
+      ${EndIf}
+    ${EndIf}
+    SetDetailsPrint textonly
     DetailPrint "$(KHelperVcRuntimeInstalling)"
     ExecWait '"$INSTDIR\resources\bin\VC_redist.x64.exe" /install /passive /norestart' $0
     ; 0 = Success, 3010 = Reboot required (success), 1638 = Newer version already installed (success)
@@ -217,6 +263,13 @@ LangString KHelperUnReviewKeepSection 1054 "=== รายการที่จ�
       DetailPrint "$(KHelperVcRuntimeFailed)"
     ${Else}
       DetailPrint "$(KHelperVcRuntimeInstalled)"
+    ${EndIf}
+    FindWindow $2 "#32770" "" $HWNDPARENT
+    ${If} $2 != 0
+      GetDlgItem $3 $2 1006
+      ${If} $3 != 0
+        SendMessage $3 ${WM_SETTEXT} 0 "STR:$(KHelperVcRuntimeInstalled)"
+      ${EndIf}
     ${EndIf}
   ${Else}
     DetailPrint "$(KHelperVcRuntimeInstalled)"

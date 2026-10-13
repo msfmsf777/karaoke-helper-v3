@@ -44,6 +44,23 @@ describe('Windows installer prerequisite robustness', () => {
   });
 });
 
+describe('Windows installer progress and stage transparency', () => {
+  it('hooks instfiles show callback to set realistic extraction expectation and progress labels', () => {
+    assert.match(
+      installerInclude,
+      /!macro customPageAfterChangeDir[\s\S]*!define MUI_PAGE_CUSTOMFUNCTION_SHOW KHelperInstFilesShow[\s\S]*!macroend/,
+    );
+    assert.match(installerInclude, /Function KHelperInstFilesShow[\s\S]*\$mui\.Header\.SubText/);
+    assert.match(installerInclude, /GetDlgItem \$1 \$0 1006[\s\S]*KHelperInstallingExtractingText/);
+  });
+
+  it('updates progress label and details during VC redistributable installation', () => {
+    assert.match(installerInclude, /SetDetailsPrint textonly/);
+    assert.match(installerInclude, /GetDlgItem \$3 \$2 1006[\s\S]*KHelperVcRuntimeInstalling/);
+    assert.match(installerInclude, /GetDlgItem \$3 \$2 1006[\s\S]*KHelperVcRuntimeInstalled/);
+  });
+});
+
 describe('Windows uninstaller lifecycle and selective data cleanup', () => {
   it('checks if KHelper is running before starting uninstall and prompts for clean exit', () => {
     assert.match(installerInclude, /!macro customUnInit[\s\S]*\$\{nsProcess::FindProcess\} "KHelperV3\.exe"/);
