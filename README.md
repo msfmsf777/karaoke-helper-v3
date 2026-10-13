@@ -8,14 +8,14 @@
 **KHelper V3** 是一款專為 **VTuber** 與 **實況主** 打造的 K 歌直播輔助工具。  
 整合歌曲管理、YouTube 線上播放、AI 人聲分離、日文歌詞輔助與直播場景整合，讓你的歌回直播更穩、更順、更專業。
 
-> 🚀 **Official Release 正式版本 (v3.4.0)** 
+> 🚀 **Official Release 正式版本 (v3.4.1)** 
 > 歡迎自由下載使用與回報問題，協助我們把 KHelper V3 變得更好！
 
 > ⚠️ 目前僅支援 **Windows (64-bit)**，其他平台暫不支援。
 
 > 🔒 KHelper 會在應用程式內詢問是否允許選用的隱私保護使用統計；不允許不會影響任何功能。詳情請見 [隱私權聲明 / Privacy Notice](./PRIVACY.md)。
 
-【[直接下載連結 (v3.4.0)](https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v3.4.0/KHelperV3-Setup-3.4.0.exe)】
+【[直接下載連結 (v3.4.1)](https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v3.4.1/KHelperV3-Setup-3.4.1.exe)】
 
 
 ----------
@@ -78,13 +78,13 @@
 
 ### 一般使用者
 
-1.  前往 GitHub Releases或使用【[最新版本 (v3.4.0) 下載連結](https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v3.4.0/KHelperV3-Setup-3.4.0.exe)】：  
+1.  前往 GitHub Releases或使用【[最新版本 (v3.4.1) 下載連結](https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v3.4.1/KHelperV3-Setup-3.4.1.exe)】：  
     👉 `https://github.com/msfmsf777/karaoke-helper-v3/releases`
     
 2.  找到想要的版本。
     
 3.  下載 Windows 安裝檔，例如：  
-    `KHelperV3-Setup-3.4.0.exe`
+    `KHelperV3-Setup-3.4.1.exe`
     
 4.  執行安裝程式並依照步驟完成安裝。**若遇到 Windows SmartScreen（未簽章），點「更多資訊 → 仍要執行」**。
     
