@@ -157,13 +157,6 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 audioEngine.setPlaybackTransform(transform);
             }
 
-            // Force seek to 0 to ensure SoundTouch filter is cleared/primed with new settings
-            // This fixes the desync issue on start
-            if (!isCurrentLoad()) return;
-            audioEngine.seek(0);
-
-            // Wait for seek/clear to propagate and stabilize
-            await new Promise(resolve => setTimeout(resolve, 100));
             if (!isCurrentLoad()) return;
 
             if (autoPlay) {

@@ -234,9 +234,35 @@ class AudioPlayer {
     this.workletNode?.port.postMessage({ type: 'volumes', payload: { instr, vocal } });
   }
 
+  private transform: PlaybackTransform = { speed: 1.0, transpose: 0 };
+  private slewFactor = 1.0;
+
+  async resume(): Promise<void> {
+    if (this.audioContext.state === 'suspended') {
+      await this.audioContext.resume();
+    }
+  }
+
   setTransform(transform: PlaybackTransform) {
+    this.transform = transform;
+    this.applyTransform();
+  }
+
+  setSlew(slewFactor: number) {
+    if (Math.abs(this.slewFactor - slewFactor) < 0.0001) return;
+    this.slewFactor = slewFactor;
+    this.applyTransform();
+  }
+
+  private applyTransform() {
     if (this.workletNode) {
-      this.workletNode.port.postMessage({ type: 'setPlaybackTransform', payload: transform });
+      this.workletNode.port.postMessage({
+        type: 'setPlaybackTransform',
+        payload: {
+          speed: this.transform.speed * this.slewFactor,
+          transpose: this.transform.transpose,
+        },
+      });
     } else {
       console.warn(`[${this.role}Player] setTransform called but workletNode is null`);
     }
@@ -333,12 +359,13 @@ export class DualAudioEngine implements AudioEngine {
       if (this.isPlaying()) {
         const time = this.getCurrentTime();
         
-        // Sync native stream player if drifting
+        // Sync stream player if drifting
         const nativeRouting = this.getResolvedOutputGains();
+        const dualOutputAudible = nativeRouting.stream > 0 && nativeRouting.headphone > 0;
+
         if (
           this.activeMode === 'native'
-          && nativeRouting.stream > 0
-          && nativeRouting.headphone > 0
+          && dualOutputAudible
           && this.nativeStreamPlayer.isPlaying
           && this.nativeHeadphonePlayer.isPlaying
         ) {
@@ -347,6 +374,33 @@ export class DualAudioEngine implements AudioEngine {
              if (Math.abs(drift) > 0.15) {
                  this.nativeStreamPlayer.seek(Math.max(0, this.nativeHeadphonePlayer.currentTime + desiredDiff));
              }
+        } else if (
+          this.activeMode === 'soundtouch'
+          && dualOutputAudible
+          && this.streamPlayer.isPlaying
+          && this.headphonePlayer.isPlaying
+        ) {
+          const hpTime = this.headphonePlayer.currentTime;
+          const streamTime = this.streamPlayer.currentTime;
+          const drift = streamTime - hpTime;
+
+          // Only perform drift adaptation after initial startup warmup (> 0.25s)
+          if (hpTime > 0.25) {
+            if (Math.abs(drift) > 0.35) {
+              // Safety fallback: if drift becomes extreme (> 350ms), snap seek
+              this.streamPlayer.seek(hpTime);
+              this.streamPlayer.setSlew(1.0);
+            } else if (drift < -0.025) {
+              // Stream lags behind headphone by > 25ms: gently micro-slew (+0.5% speedup)
+              this.streamPlayer.setSlew(1.005);
+            } else if (drift > 0.025) {
+              // Stream leads headphone by > 25ms: gently micro-slew (-0.5% slowdown)
+              this.streamPlayer.setSlew(0.995);
+            } else {
+              // In sync within +-25ms deadband: normal rate
+              this.streamPlayer.setSlew(1.0);
+            }
+          }
         }
 
         this.timeUpdateSubscribers.forEach((cb) => cb(time));
@@ -458,7 +512,7 @@ export class DualAudioEngine implements AudioEngine {
     this.nativeHeadphonePlayer.setVolume(this.instrVolume * outputGains.headphone);
   }
 
-  play(): void {
+  async play(): Promise<void> {
     if (this.activeMode === 'native') {
         const outputGains = this.getResolvedOutputGains();
         const dualOutputAudible = outputGains.stream > 0 && outputGains.headphone > 0;
@@ -473,6 +527,21 @@ export class DualAudioEngine implements AudioEngine {
         if (outputGains.stream > 0) this.nativeStreamPlayer.play(delays.stream);
         if (outputGains.headphone > 0) this.nativeHeadphonePlayer.play(delays.headphone);
     } else {
+        // SoundTouch mode:
+        // 1. Ensure both AudioContexts are actively running before playback
+        await Promise.all([
+          this.streamPlayer.resume(),
+          this.headphonePlayer.resume()
+        ]);
+
+        // 2. Align start playheads and reset slew to 1.0
+        const position = this.headphonePlayer.currentTime;
+        this.streamPlayer.seek(position);
+        this.headphonePlayer.seek(position);
+        this.streamPlayer.setSlew(1.0);
+        this.headphonePlayer.setSlew(1.0);
+
+        // 3. Trigger playback
         this.streamPlayer.play();
         this.headphonePlayer.play();
     }
@@ -486,6 +555,7 @@ export class DualAudioEngine implements AudioEngine {
     } else {
         this.streamPlayer.pause();
         this.headphonePlayer.pause();
+        this.streamPlayer.setSlew(1.0);
     }
     this.stopTimer();
     const time = this.getCurrentTime();
@@ -499,6 +569,7 @@ export class DualAudioEngine implements AudioEngine {
     } else {
         this.streamPlayer.stop();
         this.headphonePlayer.stop();
+        this.streamPlayer.setSlew(1.0);
     }
     this.stopTimer();
     this.timeUpdateSubscribers.forEach(cb => cb(0));
@@ -515,6 +586,7 @@ export class DualAudioEngine implements AudioEngine {
     } else {
         this.streamPlayer.seek(positionSeconds);
         this.headphonePlayer.seek(positionSeconds);
+        this.streamPlayer.setSlew(1.0);
     }
     this.timeUpdateSubscribers.forEach(cb => cb(positionSeconds));
   }
