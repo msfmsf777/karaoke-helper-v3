@@ -1,0 +1,173 @@
+{
+  "version": "3.4.0",
+  "locales": {
+    "zh-TW": {
+      "title": "KHelper v3.4.0 更新內容",
+      "summary": "KHelper v3.4.0 正式版帶來了 GPU 人聲分離加速、自訂儲存目錄、非破壞性歌曲修剪、LUFS 音量平衡與音域歌唱輔助等多項重大功能與體驗優化。",
+      "sections": [
+        {
+          "title": "新功能與重點更新",
+          "items": [
+            "AI 人聲分離輕量化安裝與 GPU 硬體加速支援",
+            "自訂歌曲庫與分離模型儲存路徑支援",
+            "內建非破壞性音訊修剪與即時試聽",
+            "LUFS 音量自動標準化平衡",
+            "CJK 歌詞注音輔助擴充（日文假名、中文拼音、韓文羅馬拼音）",
+            "音域分析與唱法降調智慧推薦"
+          ]
+        },
+        {
+          "title": "音訊引擎與穩定性優化",
+          "items": [
+            "雙音訊輸出同步優化，徹底解決直播與耳機輸出延遲漂移問題",
+            "高負載背景 AI 分離時的即時播放同步強化，確保從第一秒起流暢無卡頓"
+          ]
+        }
+      ]
+    },
+    "en": {
+      "title": "KHelper v3.4.0 Update",
+      "summary": "KHelper v3.4.0 official release brings GPU audio separation acceleration, custom storage directories, non-destructive song trimming, LUFS loudness normalization, and vocal range singing assists.",
+      "sections": [
+        {
+          "title": "New Features & Highlights",
+          "items": [
+            "Lightweight AI audio separation installation and GPU hardware acceleration support",
+            "Custom storage directory support for song library and separation runtime",
+            "Built-in non-destructive audio trimming with live audition",
+            "Automatic LUFS loudness normalization",
+            "Expanded CJK lyrics phonetic assist (Japanese Furigana, Chinese Pinyin, Korean Romanization)",
+            "Vocal range analysis and intelligent key recommendations"
+          ]
+        },
+        {
+          "title": "Audio Engine & Stability Improvements",
+          "items": [
+            "Dual audio output synchronization optimization, eliminating stream and headphone drift",
+            "Enhanced playback sync during background AI separation load, ensuring glitch-free startup"
+          ]
+        }
+      ]
+    },
+    "zh-CN": {
+      "title": "KHelper v3.4.0 更新内容",
+      "summary": "KHelper v3.4.0 正式版带来 GPU 人声分离加速、自定义存储目录、非破坏性歌曲修剪、LUFS 音量平衡与音域歌唱辅助等多项重大更新。",
+      "sections": [
+        {
+          "title": "新功能与重点更新",
+          "items": [
+            "AI 人声分离轻量化安装与 GPU 硬件加速支持",
+            "自定义歌曲库与分离模型存储路径支持",
+            "内置非破坏性音频修剪与即时试听",
+            "LUFS 音量自动标准化平衡",
+            "CJK 歌词注音辅助扩充（日文假名、中文拼音、韩文罗马拼音）",
+            "音域分析与演唱降调智能推荐"
+          ]
+        },
+        {
+          "title": "音频引擎与稳定性优化",
+          "items": [
+            "双音频输出同步优化，彻底解决直播与耳机输出延迟漂移问题",
+            "高负载后台 AI 分离时的即时播放同步强化，确保从第一秒起流畅无卡顿"
+          ]
+        }
+      ]
+    },
+    "ja": {
+      "title": "KHelper v3.4.0 アップデート内容",
+      "summary": "KHelper v3.4.0 正式版では、GPU ボーカル分離アクセラレーション、カスタム保存先、非破壊オーディオトリミング、LUFS 音量ノーマライズ、音域アシストなど大幅な機能強化を実施しました。",
+      "sections": [
+        {
+          "title": "新機能とハイライト",
+          "items": [
+            "AI ボーカル分離の軽量インストールと GPU ハードウェア加速対応",
+            "楽曲ライブラリと分離ランタイムのカスタム保存先設定",
+            "アプリ内での非破壊オーディオトリミングとプレビュー試聴",
+            "LUFS 自動音量ノーマライズ",
+            "CJK 歌詞発音補助の拡張（日本語ふりがな、中国語ピンイン、韓国語ローマ字）",
+            "音域分析とスマートキー推奨"
+          ]
+        },
+        {
+          "title": "オーディオエンジンと安定性の向上",
+          "items": [
+            "デュアルオーディオ出力の同期最適化、配信とヘッドホンのズレを解消",
+            "バックグラウンド AI 分離高負荷時の再生同期強化、頭出しからの安定再生"
+          ]
+        }
+      ]
+    },
+    "ko": {
+      "title": "KHelper v3.4.0 업데이트 내용",
+      "summary": "KHelper v3.4.0 정식 버전에서는 GPU 보컬 분리 가속, 사용자 지정 저장 경로, 비파괴 음원 트림, LUFS 음량 표준화, 음역대 가이드 등 주요 기능이 대폭 강화되었습니다.",
+      "sections": [
+        {
+          "title": "새로운 기능 및 주요 업데이트",
+          "items": [
+            "AI 보컬 분리 경량화 설치 및 GPU 하드웨어 가속 지원",
+            "곡 라이브러리 및 분리 런타임 사용자 지정 저장 경로 지원",
+            "앱 내 비파괴 오디오 트림 및 실시간 미리듣기",
+            "LUFS 자동 음량 표준화",
+            "CJK 가사 발음 보조 확장 (일본어 후리가나, 중국어 병음, 한국어 로마자)",
+            "음역대 분석 및 스마트 키 추천"
+          ]
+        },
+        {
+          "title": "오디오 엔진 및 안정성 개선",
+          "items": [
+            "듀얼 오디오 출력 동기화 최적화로 방송 및 헤드폰 출력 싱크 어긋남 해결",
+            "백그라운드 AI 분리 부하 시 실시간 재생 동기화 강화로 첫 시작부터 매끄러운 재생"
+          ]
+        }
+      ]
+    },
+    "id": {
+      "title": "Pembaruan KHelper v3.4.0",
+      "summary": "Rilis resmi KHelper v3.4.0 menghadirkan akselerasi pemisahan vokal AI berbasis GPU, direktori penyimpanan kustom, pemangkasan audio non-destruktif, normalisasi kenyaringan LUFS, dan panduan rentang vokal.",
+      "sections": [
+        {
+          "title": "Fitur Baru & Sorotan",
+          "items": [
+            "Instalasi pemisahan vokal AI ringan dan dukungan akselerasi GPU",
+            "Dukungan direktori penyimpanan kustom untuk perpustakaan lagu dan runtime pemisahan",
+            "Pemangkasan audio non-destruktif dengan pratinjau langsung",
+            "Normalisasi kenyaringan LUFS otomatis",
+            "Bantuan fonetik lirik CJK yang diperluas (Furigana Jepang, Pinyin Mandarin, Romanisasi Korea)",
+            "Analisis rentang vokal dan rekomendasi nada cerdas"
+          ]
+        },
+        {
+          "title": "Peningkatan Mesin Audio & Stabilitas",
+          "items": [
+            "Optimalisasi sinkronisasi output audio ganda, menghilangkan pergeseran antara stream dan headphone",
+            "Peningkatan sinkronisasi pemutaran di bawah beban pemisahan AI latar belakang"
+          ]
+        }
+      ]
+    },
+    "th": {
+      "title": "อัปเดต KHelper v3.4.0",
+      "summary": "KHelper v3.4.0 เวอร์ชันทางการมาพร้อมการเร่งความเร็วการแยกเสียงร้อง AI ด้วย GPU, การกำหนดโฟลเดอร์จัดเก็บ, การตัดแต่งเสียงแบบไม่ทำลายต้นฉบับ, การปรับความดัง LUFS และตัวช่วยช่วงเสียงร้อง",
+      "sections": [
+        {
+          "title": "ฟีเจอร์ใหม่และไฮไลต์",
+          "items": [
+            "การติดตั้งระบบแยกเสียงร้อง AI แบบประหยัดพื้นที่และการรองรับ GPU",
+            "รองรับการเลือกโฟลเดอร์จัดเก็บคลังเพลงและรันไทม์การแยกเสียง",
+            "การตัดแต่งเสียงแบบไม่ทำลายไฟล์ต้นฉบับพร้อมฟังตัวอย่างทันที",
+            "การปรับสมดุลความดังอัตโนมัติตามมาตรฐาน LUFS",
+            "ระบบช่วยอ่านเนื้อเพลง CJK (ฟุริงะนะญี่ปุ่น, พินอินจีน, โรมาไนซ์เกาหลี)",
+            "การวิเคราะห์ช่วงเสียงร้องและคำแนะนำการปรับคีย์อัจฉริยะ"
+          ]
+        },
+        {
+          "title": "การปรับปรุงระบบเสียงและความเสถียร",
+          "items": [
+            "เพิ่มประสิทธิภาพการซิงค์เอาต์พุตเสียงคู่ แก้ปัญหาเสียงดีเลย์ระหว่างสตรีมและหูฟัง",
+            "ปรับปรุงการซิงค์ขณะรันการแยกเสียง AI ในพื้นหลังให้ราบรื่นตั้งแต่เริ่มเล่น"
+          ]
+        }
+      ]
+    }
+  }
+}

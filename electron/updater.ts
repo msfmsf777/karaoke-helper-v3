@@ -8,7 +8,7 @@ import { categorizeAnalyticsFailure } from '../shared/analytics';
 // Configure AutoUpdater
 autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = false;
-autoUpdater.allowPrerelease = true; // Support beta releases
+autoUpdater.allowPrerelease = true; // Support prereleases if present
 
 // State Definition
 type UpdaterStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'installing' | 'error';

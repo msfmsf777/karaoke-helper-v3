@@ -1,7 +1,7 @@
 # KHelper Privacy Notice / KHelper 隱私權聲明
 
-Last updated: 2026-05-26  
-Notice version: 1
+Last updated: 2026-10-13  
+Notice version: 2
 
 ## 繁體中文
 
@@ -13,7 +13,7 @@ KHelper 由 `msfmsf777` 維護。如有隱私疑問、Bug 或功能建議，請�
 
 KHelper 會在應用程式內詢問您是否允許傳送隱私保護使用統計。這是自願選項；選擇「不允許」不會影響任何功能。除非您主動選擇「允許」，否則 KHelper 不會傳送產品分析事件。
 
-若您允許，KHelper 使用 [TelemetryDeck](https://telemetrydeck.com/privacy/) 作為分析服務提供者，目的僅為瞭解功能採用狀況與可靠性問題，以改善公開測試版本。
+若您允許，KHelper 使用 [TelemetryDeck](https://telemetrydeck.com/privacy/) 作為分析服務提供者，目的僅為瞭解功能採用狀況與可靠性問題，以改善軟體開發與正式發布版本。
 
 ### 允許後可能傳送的資料
 
@@ -27,7 +27,7 @@ TelemetryDeck 表示其 SDK 會在裝置端匿名化識別碼，且不會在伺�
 ### 絕不作為產品分析傳送的資料
 
 - 歌名、歌手名稱、YouTube ID、網址、縮圖或線上搜尋文字。
-- 本機檔名、路徑、歌詞、LRC 文字或時間、日文輔助輸出。
+- 本機檔名、路徑、歌詞、LRC 文字或時間、日文／CJK 歌詞輔助輸出。
 - 我的最愛、播放歷史、佇列內容或歌單名稱。
 - 自訂 OBS 範本名稱、文字、顏色、ID 或複製的 OBS 網址。
 - 音訊裝置 ID 或名稱、同步偏移、音量與快捷鍵設定。
@@ -41,7 +41,7 @@ TelemetryDeck 表示其 SDK 會在裝置端匿名化識別碼，且不會在伺�
 
 ### 保存期間
 
-正式啟用分析前，維護者會在 TelemetryDeck 設定保存政策並於此文件公布實際期限。在保存期限尚未公開並完成測試資料檢查前，正式建置不應設定 TelemetryDeck 應用程式 ID。
+TelemetryDeck 伺服器端對於所接收之匿名統計事件設有最長 3 個月（90 天）的滾動保存期限。超過此期限之歷史事件將自動過期並自伺服器移除。
 
 ### 其他網路服務
 
@@ -62,7 +62,7 @@ KHelper is maintained by `msfmsf777`. For privacy questions, bugs, or feature re
 
 KHelper asks inside the app whether you allow privacy-preserving usage statistics. This is voluntary; choosing `Do not allow` does not affect any feature. KHelper sends no product analytics event unless you affirmatively select `Allow`.
 
-If allowed, KHelper uses [TelemetryDeck](https://telemetrydeck.com/privacy/) as its analytics provider solely to understand feature adoption and reliability issues during public beta development.
+If allowed, KHelper uses [TelemetryDeck](https://telemetrydeck.com/privacy/) as its analytics provider solely to understand feature adoption and reliability issues during software development and release.
 
 ### Data That May Be Sent After You Allow
 
@@ -76,7 +76,7 @@ TelemetryDeck states that its SDK anonymizes identifiers on device and that IP a
 ### Data Never Sent As Product Analytics
 
 - Song titles, artist names, YouTube IDs, URLs, thumbnails, or online search text.
-- Local filenames or paths, lyrics, LRC text or timings, or Japanese-assist output.
+- Local filenames or paths, lyrics, LRC text or timings, or Japanese/CJK lyrics-assist output.
 - Favorites, playback history, queue contents, or playlist names.
 - Custom OBS template names, text, colors, IDs, or copied OBS URLs.
 - Audio device IDs or names, sync offsets, volume values, or hotkey bindings.
@@ -90,7 +90,7 @@ If the provider, purpose, or categories change materially, KHelper will incremen
 
 ### Retention
 
-Before production analytics is enabled, the maintainer will configure a TelemetryDeck retention policy and publish the enforced duration in this notice. A production build should not be configured with a TelemetryDeck application ID until retention and outbound payload review are complete.
+Anonymized product analytics events received by TelemetryDeck are retained for a rolling window of 3 months (90 days), after which they expire and are removed from the server.
 
 ### Other Network Services
 

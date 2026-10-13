@@ -1,7 +1,7 @@
 import type { SupportedLanguage } from './i18n';
 import type { SetlistTemplateId } from './overlayTemplates';
 
-export const ANALYTICS_NOTICE_VERSION = 1;
+export const ANALYTICS_NOTICE_VERSION = 2;
 
 export type AnalyticsConsent = 'unset' | 'enabled' | 'disabled';
 
