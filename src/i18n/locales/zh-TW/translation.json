@@ -122,7 +122,10 @@
       "movingFiles": "正在搬移分離環境檔案...",
       "migrationCompleted": "分離引擎目錄搬移完成！",
       "migrationCompletedDesc": "已成功將分離引擎搬移至新目錄，日後分離歌曲將直接自新位置調用。",
-      "startMigration": "開始搬移"
+      "startMigration": "開始搬移",
+      "driverOutdatedTitle": "顯卡驅動程式需更新",
+      "driverOutdatedDesc": "偵測到 NVIDIA 顯卡驅動版本較舊，建議更新驅動程式以獲得完整的 GPU 加速與相容性支援。",
+      "btnUpdateDriver": "前往 NVIDIA 官網更新驅動"
     },
     "storage": {
       "title": "歌曲庫儲存位置",
@@ -335,6 +338,11 @@
     },
     "sepMigration": {
       "title": "AI 分離引擎搬移"
+    },
+    "hardwareBadge": {
+      "gpu": "GPU 加速處理",
+      "cpu": "CPU 運算處理",
+      "fallback": "GPU 加速失敗，已切換為 CPU (Fallback)"
     }
   },
   "playbackControl": {
@@ -1090,7 +1098,10 @@
     "storageLocation": "安裝儲存位置",
     "btnChangeFolder": "變更目錄...",
     "defaultBadge": "預設 AppData",
-    "customBadge": "自訂目錄"
+    "customBadge": "自訂目錄",
+    "driverOutdatedTitle": "顯卡驅動程式需更新",
+    "driverOutdatedDesc": "偵測到您的顯卡驅動程式版本較舊，建議更新以完整支援 GPU 核心加速與避免運算錯誤。",
+    "btnUpdateDriver": "前往 NVIDIA 官網更新驅動"
   },
   "vocalRange": {
     "settings": {

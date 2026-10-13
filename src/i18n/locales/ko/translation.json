@@ -122,7 +122,10 @@
       "movingFiles": "분리 엔진 파일 이동 중...",
       "migrationCompleted": "분리 엔진 이동이 완료되었습니다!",
       "migrationCompletedDesc": "새 저장 위치로 분리 엔진을 성공적으로 이동했습니다. 향후 음원 분리는 새 경로에서 바로 실행됩니다.",
-      "startMigration": "이동 시작"
+      "startMigration": "이동 시작",
+      "driverOutdatedTitle": "그래픽 드라이버 업데이트 필요",
+      "driverOutdatedDesc": "이전 버전의 NVIDIA 그래픽 드라이버가 감지되었습니다. 원활한 GPU 가속과 호환성을 위해 드라이버를 업데이트하는 것을 권장합니다.",
+      "btnUpdateDriver": "NVIDIA 드라이버 업데이트"
     },
     "privacy": {
       "title": "개인정보 보호 및 제품 개선",
@@ -335,6 +338,11 @@
       "completed": "마이그레이션 완료",
       "failed": "마이그레이션 실패",
       "cancelled": "마이그레이션 취소됨"
+    },
+    "hardwareBadge": {
+      "gpu": "GPU 가속 처리",
+      "cpu": "CPU 연산 처리",
+      "fallback": "GPU 가속 실패로 CPU로 전환되었습니다 (Fallback)"
     }
   },
   "playbackControl": {
@@ -1090,7 +1098,10 @@
     "storageLocation": "설치 저장 위치",
     "btnChangeFolder": "폴더 변경...",
     "defaultBadge": "기본 AppData",
-    "customBadge": "사용자 지정 폴더"
+    "customBadge": "사용자 지정 폴더",
+    "driverOutdatedTitle": "그래픽 드라이버 업데이트 필요",
+    "driverOutdatedDesc": "그래픽 드라이버 버전이 오래되었습니다. GPU 가속을 완전히 지원하고 연산 오류를 방지하기 위해 드라이버를 업데이트하세요.",
+    "btnUpdateDriver": "NVIDIA 드라이버 업데이트"
   },
   "vocalRange": {
     "settings": {

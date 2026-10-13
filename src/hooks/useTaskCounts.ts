@@ -26,9 +26,42 @@ export function useTaskCounts(): TaskCounts {
 
   // Separation subscription
   useEffect(() => {
-    getAllJobs().then(setSepJobs).catch(() => {});
-    const unsub = subscribeJobUpdates((jobs) => setSepJobs(jobs));
-    return () => unsub();
+    const load = () => {
+      getAllJobs()
+        .then((jobs) => {
+          const debugJobs = (import.meta.env.DEV && (window as any).__khelper_debug_sep_jobs) || [];
+          setSepJobs([...debugJobs, ...jobs]);
+        })
+        .catch(() => {});
+    };
+    load();
+
+    const unsub = subscribeJobUpdates((jobs) => {
+      const debugJobs = (import.meta.env.DEV && (window as any).__khelper_debug_sep_jobs) || [];
+      setSepJobs([...debugJobs, ...jobs]);
+    });
+
+    let handleDebugInject: ((e: Event) => void) | undefined;
+    let handleDebugClear: (() => void) | undefined;
+    if (import.meta.env.DEV) {
+      handleDebugInject = (e: Event) => {
+        const customEvent = e as CustomEvent<SeparationJob[]>;
+        if (Array.isArray(customEvent.detail)) {
+          setSepJobs((prev) => [...customEvent.detail, ...prev]);
+        }
+      };
+      handleDebugClear = () => {
+        load();
+      };
+      window.addEventListener('khelper:debug-inject-sep-jobs', handleDebugInject);
+      window.addEventListener('khelper:debug-clear-sep-jobs', handleDebugClear);
+    }
+
+    return () => {
+      unsub();
+      if (handleDebugInject) window.removeEventListener('khelper:debug-inject-sep-jobs', handleDebugInject);
+      if (handleDebugClear) window.removeEventListener('khelper:debug-clear-sep-jobs', handleDebugClear);
+    };
   }, []);
 
   // Download subscription

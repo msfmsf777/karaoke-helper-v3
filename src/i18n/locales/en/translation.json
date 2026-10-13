@@ -122,7 +122,10 @@
       "movingFiles": "Moving separation runtime files...",
       "migrationCompleted": "Separation engine migration completed!",
       "migrationCompletedDesc": "Successfully moved the separation engine to the new location. Future separations will run directly from here.",
-      "startMigration": "Start Migration"
+      "startMigration": "Start Migration",
+      "driverOutdatedTitle": "Graphics Driver Update Required",
+      "driverOutdatedDesc": "An outdated NVIDIA graphics driver was detected. We recommend updating your driver for full GPU acceleration and compatibility.",
+      "btnUpdateDriver": "Update Driver from NVIDIA"
     },
     "storage": {
       "title": "Song Library Storage",
@@ -335,6 +338,11 @@
     },
     "sepMigration": {
       "title": "Separation Runtime Migration"
+    },
+    "hardwareBadge": {
+      "gpu": "GPU Accelerated",
+      "cpu": "CPU Processing",
+      "fallback": "GPU acceleration failed, switched to CPU (Fallback)"
     }
   },
   "playbackControl": {
@@ -1090,7 +1098,10 @@
     "storageLocation": "Installation Storage Location",
     "btnChangeFolder": "Change Folder...",
     "defaultBadge": "Default AppData",
-    "customBadge": "Custom Directory"
+    "customBadge": "Custom Directory",
+    "driverOutdatedTitle": "Graphics Driver Update Required",
+    "driverOutdatedDesc": "An outdated GPU driver was detected. Please update your driver for full GPU acceleration and to prevent runtime errors.",
+    "btnUpdateDriver": "Update Driver from NVIDIA"
   },
   "vocalRange": {
     "settings": {

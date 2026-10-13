@@ -37,6 +37,8 @@ interface SeparationEnvContextType {
   switchMode: (mode: SeparationEngineMode) => Promise<{ success: boolean; mode?: SeparationEngineMode; requiresInstall?: boolean; error?: string }>;
   rescanFolder: (targetPath?: string) => Promise<SeparationEnvStatus | null>;
   refreshStatus: () => Promise<void>;
+  _debugSetState?: (state: { envStatus?: Partial<SeparationEnvStatus>; gpuInfo?: Partial<GpuDeviceInfo> }) => void;
+  _debugReset?: () => void;
 }
 
 const SeparationEnvContext = createContext<SeparationEnvContextType | null>(null);
@@ -169,6 +171,20 @@ export const SeparationEnvProvider: React.FC<{ children: React.ReactNode }> = ({
   const isReady = envStatus?.status === 'ready';
   const isInstalling = installProgress?.stage === 'downloading' || installProgress?.stage === 'installing' || installProgress?.stage === 'verifying' || envStatus?.status === 'installing';
 
+  const _debugSetState = useCallback((patch: { envStatus?: Partial<SeparationEnvStatus>; gpuInfo?: Partial<GpuDeviceInfo> }) => {
+    if (patch.envStatus) {
+      setEnvStatus((prev) => (prev ? { ...prev, ...patch.envStatus } : (patch.envStatus as SeparationEnvStatus)));
+    }
+    if (patch.gpuInfo) {
+      setGpuInfo((prev) => (prev ? { ...prev, ...patch.gpuInfo } : (patch.gpuInfo as GpuDeviceInfo)));
+    }
+  }, []);
+
+  const _debugReset = useCallback(() => {
+    void refreshStatus();
+    void refreshGpuInfo();
+  }, [refreshStatus, refreshGpuInfo]);
+
   return (
     <SeparationEnvContext.Provider
       value={{
@@ -187,6 +203,7 @@ export const SeparationEnvProvider: React.FC<{ children: React.ReactNode }> = ({
         switchMode,
         rescanFolder,
         refreshStatus,
+        ...(import.meta.env.DEV ? { _debugSetState, _debugReset } : {}),
       }}
     >
       {children}

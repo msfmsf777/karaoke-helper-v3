@@ -213,6 +213,7 @@ class SeparationEnvManager {
         installedAt: meta.installedAt,
         vramMb: meta.vramMb,
         gpuModel: meta.gpuModel,
+        cudaKernelFunctional: activeMode === 'gpu' ? true : undefined,
         customRuntimePath: this.isCustomPath() ? currentEnvDir : undefined,
       };
     }
@@ -226,6 +227,7 @@ class SeparationEnvManager {
         installedAt: settings.separationEngine.installedAt ? new Date(settings.separationEngine.installedAt).toISOString() : undefined,
         vramMb: settings.separationEngine.vramMb,
         gpuModel: settings.separationEngine.gpuModel,
+        cudaKernelFunctional: settings.separationEngine.mode === 'gpu' ? true : undefined,
         customRuntimePath: this.isCustomPath() ? currentEnvDir : undefined,
       };
     }
@@ -266,16 +268,28 @@ class SeparationEnvManager {
         installedAt: newMeta.installedAt,
         vramMb: newMeta.vramMb,
         gpuModel: newMeta.gpuModel,
+        cudaKernelFunctional: probeMode === 'gpu' ? true : undefined,
         customRuntimePath: this.isCustomPath() ? currentEnvDir : undefined,
       };
+    }
+
+    const probeExitCode = this.lastProbeResult?.code;
+    let errorMessage: string;
+    if (settings.separationEngine?.mode === 'gpu') {
+      if (probeExitCode === 3) {
+        errorMessage = '顯卡硬體或驅動程式與 PyTorch CUDA 核心不相容（CUDA kernel execution failed），建議更新顯卡驅動程式或切換至 CPU 模式。';
+      } else {
+        errorMessage = 'GPU 加速環境校驗失敗（未偵測到 CUDA 裝置），請確認顯卡驅動程式支援。';
+      }
+    } else {
+      errorMessage = '分離環境檔案可能已損毀，請嘗試重新安裝。';
     }
 
     return {
       status: 'error',
       mode: settings.separationEngine?.mode || null,
-      errorMessage: settings.separationEngine?.mode === 'gpu'
-        ? 'GPU 加速環境校驗失敗（未偵測到 CUDA 裝置），請嘗試重新安裝。'
-        : '分離環境檔案可能已損毀，請嘗試重新安裝。',
+      errorMessage,
+      cudaKernelFunctional: false,
       customRuntimePath: this.isCustomPath() ? currentEnvDir : undefined,
     };
   }
@@ -397,6 +411,8 @@ class SeparationEnvManager {
   /**
    * Fast verify without spawning heavy ML tasks.
    */
+  private lastProbeResult: { success: boolean; code?: number; error?: string } | null = null;
+
   async verifyEnvironmentFast(expectedMode?: SeparationEngineMode, targetDir?: string): Promise<boolean> {
     try {
       const pythonPath = await getPythonPath();
@@ -422,8 +438,14 @@ if os.path.exists(torch_lib):
             pass
 import audio_separator
 import torch
-if sys.argv[2] == 'gpu' and not torch.cuda.is_available():
-    sys.exit(2)
+if sys.argv[2] == 'gpu':
+    if not torch.cuda.is_available():
+        sys.exit(2)
+    try:
+        t = torch.zeros(1, device='cuda') + 1
+        _ = t.cpu()
+    except Exception:
+        sys.exit(3)
 sys.exit(0)
 `.trim();
 
@@ -431,8 +453,11 @@ sys.exit(0)
         timeout: 60000,
         windowsHide: true,
       });
+      this.lastProbeResult = { success: true, code: 0 };
       return true;
-    } catch (err: unknown) {
+    } catch (err: any) {
+      const exitCode = typeof err?.code === 'number' ? err.code : undefined;
+      this.lastProbeResult = { success: false, code: exitCode, error: err?.message };
       console.warn('[SeparationEnv] Quick verification probe failed', err);
       return false;
     }
@@ -700,8 +725,8 @@ sys.exit(0)
 
     try {
       if (mode === 'gpu') {
-        // Step 1: Install PyTorch CUDA 12.6 explicitly from official PyTorch index so pip never defaults to CPU wheel from PyPI
-        console.log('[SeparationEnv] Step 1: Installing PyTorch CUDA 12.6');
+        // Step 1: Install PyTorch CUDA 12.8 explicitly from official PyTorch index so pip never defaults to CPU wheel from PyPI
+        console.log('[SeparationEnv] Step 1: Installing PyTorch CUDA 12.8');
         await this.runPipCommand(
           pythonPath,
           [
@@ -712,7 +737,7 @@ sys.exit(0)
             '--prefix',
             envDir,
             '--index-url',
-            'https://download.pytorch.org/whl/cu126',
+            'https://download.pytorch.org/whl/cu128',
             'torch',
             'torchvision',
           ],
@@ -720,7 +745,7 @@ sys.exit(0)
           'downloading',
           10,
           70,
-          '正在下載 PyTorch CUDA 12.6 加速核心...'
+          '正在下載 PyTorch CUDA 12.8 加速核心...'
         );
 
         // Step 2: Install audio-separator[gpu]
@@ -735,7 +760,7 @@ sys.exit(0)
             '--prefix',
             envDir,
             '--extra-index-url',
-            'https://download.pytorch.org/whl/cu126',
+            'https://download.pytorch.org/whl/cu128',
             'audio-separator[gpu]',
           ],
           envDir,
@@ -774,8 +799,11 @@ sys.exit(0)
 
       const isProbeSuccess = await this.verifyEnvironmentFast(mode);
       if (!isProbeSuccess) {
+        const exitCode = this.lastProbeResult?.code;
         const err = mode === 'gpu'
-          ? '環境校驗未通過：PyTorch 無法啟用 CUDA 硬體加速，請確認顯卡驅動程式支援。'
+          ? (exitCode === 3
+              ? '顯卡硬體或驅動程式與 PyTorch CUDA 核心不相容（CUDA kernel execution failed），建議更新顯卡驅動程式或切換至 CPU 模式。'
+              : '環境校驗未通過：PyTorch 無法啟用 CUDA 硬體加速，請確認顯卡驅動程式支援。')
           : '環境校驗未通過，可能遺失必要模組。';
         this.lastError = err;
         this.notifyProgress({

@@ -155,11 +155,14 @@ def main():
         print(json.dumps({"error": "audio-separator not installed"}))
         sys.exit(1)
 
-    try:
+    def run_pipeline(force_cpu=False):
+        if force_cpu:
+            os.environ['CUDA_VISIBLE_DEVICES'] = ''
+
         # Phase 1: Initialization & Model Loading (0-10%)
         tracker.set_phase("loading_model", 0, 10)
         
-        separator = Separator(
+        sep = Separator(
             log_level=logging.WARNING,
             model_file_dir=args.model_dir,
             output_dir=str(output_dir),
@@ -167,15 +170,23 @@ def main():
             output_bitrate=args.bitrate
         )
 
+        if force_cpu:
+            try:
+                import torch
+                sep.torch_device = torch.device('cpu')
+                sep.onnx_execution_provider = ['CPUExecutionProvider']
+            except Exception:
+                pass
+
         # Emit device info for Electron logging & diagnostics
-        active_device = str(getattr(separator, 'torch_device', 'unknown'))
-        active_providers = getattr(separator, 'onnx_execution_provider', [])
+        active_device = str(getattr(sep, 'torch_device', 'unknown'))
+        active_providers = getattr(sep, 'onnx_execution_provider', [])
         active_provider = active_providers[0] if active_providers else 'unknown'
         cuda_avail = False
         gpu_name = None
         try:
             import torch
-            cuda_avail = torch.cuda.is_available()
+            cuda_avail = torch.cuda.is_available() and not force_cpu
             if cuda_avail:
                 gpu_name = torch.cuda.get_device_name(0)
         except Exception:
@@ -183,7 +194,7 @@ def main():
 
         print(json.dumps({
             "status": "device_info",
-            "requested_device": device_mode,
+            "requested_device": "cpu" if force_cpu else device_mode,
             "torch_device": active_device,
             "onnx_provider": active_provider,
             "cuda_available": cuda_avail,
@@ -194,7 +205,7 @@ def main():
         print(json.dumps({"status": "loading_model", "model": model_filename}))
         sys.stdout.flush()
         
-        separator.load_model(model_filename=model_filename)
+        sep.load_model(model_filename=model_filename)
 
         # Phase 2: Separation (10-95%)
         tracker.set_phase("separating", 10, 95)
@@ -202,8 +213,45 @@ def main():
         print(json.dumps({"status": "separating"}))
         sys.stdout.flush()
         
-        output_files = separator.separate(str(input_path))
-        
+        files = sep.separate(str(input_path))
+        return sep, files
+
+    try:
+        separator = None
+        output_files = None
+        is_cpu_mode = (device_mode == 'cpu')
+
+        try:
+            separator, output_files = run_pipeline(force_cpu=is_cpu_mode)
+        except Exception as first_err:
+            if not is_cpu_mode:
+                err_msg = str(first_err)
+                print(json.dumps({
+                    "status": "warning",
+                    "code": "GPU_FALLBACK_TO_CPU",
+                    "reason": err_msg,
+                    "message": f"GPU 加速執行失敗 ({err_msg[:60]}...)，已自動降級至 CPU 模式繼續處理。"
+                }))
+                sys.stdout.flush()
+
+                # Cleanup GPU resources before fallback
+                try:
+                    del separator
+                except Exception:
+                    pass
+                try:
+                    import gc
+                    gc.collect()
+                    import torch
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+                except Exception:
+                    pass
+
+                separator, output_files = run_pipeline(force_cpu=True)
+            else:
+                raise first_err
+
         # Phase 3: Finalizing (95-100%)
         tracker.set_phase("finalizing", 95, 100)
         

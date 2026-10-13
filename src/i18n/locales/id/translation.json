@@ -122,7 +122,10 @@
       "movingFiles": "Memindahkan file runtime pemisahan...",
       "migrationCompleted": "Migrasi mesin pemisah selesai!",
       "migrationCompletedDesc": "Berhasil memindahkan mesin pemisah ke lokasi baru. Pemisahan berikutnya akan langsung berjalan dari sini.",
-      "startMigration": "Mulai Migrasi"
+      "startMigration": "Mulai Migrasi",
+      "driverOutdatedTitle": "Pembaruan Driver Grafis Diperlukan",
+      "driverOutdatedDesc": "Driver grafis NVIDIA versi lama terdeteksi. Disarankan memperbarui driver untuk akselerasi GPU penuh dan stabilitas kompatibilitas.",
+      "btnUpdateDriver": "Perbarui Driver NVIDIA"
     },
     "privacy": {
       "title": "Privasi & perbaikan",
@@ -335,6 +338,11 @@
       "completed": "Migrasi Selesai",
       "failed": "Migrasi Gagal",
       "cancelled": "Migrasi Dibatalkan"
+    },
+    "hardwareBadge": {
+      "gpu": "Akselerasi GPU",
+      "cpu": "Pemrosesan CPU",
+      "fallback": "Akselerasi GPU gagal, dialihkan ke CPU (Fallback)"
     }
   },
   "playbackControl": {
@@ -1090,7 +1098,10 @@
     "storageLocation": "Lokasi Penyimpanan Instalasi",
     "btnChangeFolder": "Ubah Folder...",
     "defaultBadge": "AppData Default",
-    "customBadge": "Direktori Kustom"
+    "customBadge": "Direktori Kustom",
+    "driverOutdatedTitle": "Pembaruan Driver Grafis Diperlukan",
+    "driverOutdatedDesc": "Driver GPU Anda versi lama. Harap perbarui driver untuk mendukung akselerasi GPU penuh dan mencegah kesalahan runtime.",
+    "btnUpdateDriver": "Perbarui Driver NVIDIA"
   },
   "vocalRange": {
     "settings": {

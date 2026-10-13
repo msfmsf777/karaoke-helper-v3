@@ -139,6 +139,92 @@ const ProgressBar: React.FC<{ value: number; color?: string }> = ({ value, color
   </div>
 );
 
+/* ── Hardware engine badge ──────────────────────────────────── */
+
+const EngineBadge: React.FC<{ job: SeparationJob }> = ({ job }) => {
+  const { t } = useTranslation();
+  if (job.fallbackNotice) {
+    const tooltip = job.fallbackNotice === 'GPU 加速失敗，已切換為 CPU (Fallback)'
+      ? t('tasks.hardwareBadge.fallback')
+      : (job.fallbackNotice || t('tasks.hardwareBadge.fallback'));
+    return (
+      <span
+        title={tooltip}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '3px',
+          fontSize: '10px',
+          fontWeight: 600,
+          color: '#fbbf24',
+          background: 'rgba(245, 158, 11, 0.15)',
+          border: '1px solid rgba(245, 158, 11, 0.35)',
+          borderRadius: '4px',
+          padding: '1px 5px',
+          cursor: 'help',
+          flexShrink: 0,
+          lineHeight: '1.2',
+        }}
+      >
+        <span>⚠️</span>
+        <span>CPU</span>
+      </span>
+    );
+  }
+
+  if (job.engineMode === 'gpu') {
+    return (
+      <span
+        title={t('tasks.hardwareBadge.gpu')}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '3px',
+          fontSize: '10px',
+          fontWeight: 600,
+          color: '#4ade80',
+          background: 'rgba(34, 197, 94, 0.12)',
+          border: '1px solid rgba(34, 197, 94, 0.25)',
+          borderRadius: '4px',
+          padding: '1px 5px',
+          flexShrink: 0,
+          lineHeight: '1.2',
+        }}
+      >
+        <span>⚡</span>
+        <span>GPU</span>
+      </span>
+    );
+  }
+
+  if (job.engineMode === 'cpu') {
+    return (
+      <span
+        title={t('tasks.hardwareBadge.cpu')}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '3px',
+          fontSize: '10px',
+          fontWeight: 600,
+          color: '#9ca3af',
+          background: 'rgba(156, 163, 175, 0.12)',
+          border: '1px solid rgba(156, 163, 175, 0.25)',
+          borderRadius: '4px',
+          padding: '1px 5px',
+          flexShrink: 0,
+          lineHeight: '1.2',
+        }}
+      >
+        <span>💻</span>
+        <span>CPU</span>
+      </span>
+    );
+  }
+
+  return null;
+};
+
 /* ── Main component ─────────────────────────────────────────── */
 
 const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate }) => {
@@ -168,7 +254,8 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
     const load = async () => {
       try {
         const list = await getAllJobs();
-        setSepJobs(list);
+        const debugJobs = (import.meta.env.DEV && (window as any).__khelper_debug_sep_jobs) || [];
+        setSepJobs([...debugJobs, ...list]);
       } catch (err) {
         console.error('[TaskPane] Failed to load separation jobs', err);
       }
@@ -177,11 +264,33 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
     refreshSongs();
 
     const unsub = subscribeJobUpdates((next) => {
-      setSepJobs(next);
+      const debugJobs = (import.meta.env.DEV && (window as any).__khelper_debug_sep_jobs) || [];
+      setSepJobs([...debugJobs, ...next]);
       refreshSongs();
     });
     return () => unsub();
   }, [refreshSongs]);
+
+  /* DEV Mode Debug Job Injection */
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const handleDebugInject = (e: Event) => {
+      const customEvent = e as CustomEvent<SeparationJob[]>;
+      if (Array.isArray(customEvent.detail)) {
+        setSepJobs((prev) => [...customEvent.detail, ...prev]);
+      }
+    };
+    const handleDebugClear = () => {
+      (window as any).__khelper_debug_sep_jobs = [];
+      void getAllJobs().then(setSepJobs);
+    };
+    window.addEventListener('khelper:debug-inject-sep-jobs', handleDebugInject);
+    window.addEventListener('khelper:debug-clear-sep-jobs', handleDebugClear);
+    return () => {
+      window.removeEventListener('khelper:debug-inject-sep-jobs', handleDebugInject);
+      window.removeEventListener('khelper:debug-clear-sep-jobs', handleDebugClear);
+    };
+  }, []);
 
   /* Download subscription */
   useEffect(() => {
@@ -252,6 +361,10 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
   const isEmpty = !hasSepSection && !hasDownloadSection && !hasMigrationSection && !hasSepMigrationSection && !isInstalling && (!installProgress || installProgress.stage !== 'error');
 
   const getSongName = (songId: string) => {
+    if (songId === 'mock-song-gpu') return '測試歌曲 1';
+    if (songId === 'mock-song-cpu') return '測試歌曲 2';
+    if (songId === 'mock-song-fallback') return '測試歌曲 3';
+    if (songId === 'mock-song-done') return '測試歌曲 4';
     const song = songs[songId];
     if (!song) return songId;
     return `${song.title}${song.artist ? ` - ${song.artist}` : ''}`;
@@ -721,8 +834,14 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
                     textOverflow: 'ellipsis',
                     flex: 1,
                     minWidth: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
                   }}>
-                    {getSongName(job.songId)}
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {getSongName(job.songId)}
+                    </span>
+                    <EngineBadge job={job} />
                   </div>
                   <div style={{
                     fontSize: '11px',
@@ -836,8 +955,14 @@ const TaskPaneDropdown: React.FC<TaskPaneDropdownProps> = ({ onClose, onNavigate
                     textOverflow: 'ellipsis',
                     flex: 1,
                     minWidth: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
                   }}>
-                    {getSongName(job.songId)}
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {getSongName(job.songId)}
+                    </span>
+                    <EngineBadge job={job} />
                   </div>
                   <div style={{
                     fontSize: '11px',

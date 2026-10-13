@@ -12,6 +12,48 @@ export interface GpuDetectionResult {
   driverVersion?: string;
   recommendation: 'gpu' | 'cpu';
   recommendationReason: string;
+  driverOutdated?: boolean;
+  minRequiredDriver?: string;
+  driverUpdateUrl?: string;
+}
+
+function parseNvidiaDriverVersion(raw?: string): number | null {
+  if (!raw) return null;
+  const directMatch = raw.match(/\b(\d{3})\.(\d+)\b/);
+  if (directMatch) {
+    return parseFloat(`${directMatch[1]}.${directMatch[2]}`);
+  }
+  const wmiMatch = raw.match(/(\d+)\.(\d{2})(\d{2})$/);
+  if (wmiMatch) {
+    return parseFloat(`${wmiMatch[1]}${wmiMatch[2]}.${wmiMatch[3]}`);
+  }
+  return null;
+}
+
+function checkNvidiaDriverStatus(modelName: string, rawDriver?: string): {
+  driverOutdated?: boolean;
+  minRequiredDriver?: string;
+  driverUpdateUrl?: string;
+} {
+  const parsed = parseNvidiaDriverVersion(rawDriver);
+  if (!parsed) return {};
+
+  const isRtx50Series = /50\d{2}|blackwell/i.test(modelName);
+  const minRequired = isRtx50Series ? 572.16 : 528.33;
+  const minRequiredStr = isRtx50Series ? '572.16+' : '528.33+';
+
+  if (parsed < minRequired) {
+    return {
+      driverOutdated: true,
+      minRequiredDriver: minRequiredStr,
+      driverUpdateUrl: 'https://www.nvidia.com/Download/index.aspx',
+    };
+  }
+  return {
+    driverOutdated: false,
+    minRequiredDriver: minRequiredStr,
+    driverUpdateUrl: 'https://www.nvidia.com/Download/index.aspx',
+  };
 }
 
 /**
@@ -43,6 +85,15 @@ export async function detectGpuHardware(): Promise<GpuDetectionResult> {
       const driverVersion = parts[2] || undefined;
       const vramGb = vramMb ? (vramMb / 1024).toFixed(1) : undefined;
       const isCapable = !vramMb || vramMb >= 3500; // 4GB+ standard VRAM for robust separation
+      const driverStatus = checkNvidiaDriverStatus(modelName, driverVersion);
+
+      let reason = isCapable
+        ? `${modelName}${vramGb ? ` (${vramGb} GB)` : ''} detected. CUDA acceleration strongly recommended (15–30s per song).`
+        : `${modelName} detected, but VRAM may be limited. CPU mode recommended for stability.`;
+
+      if (driverStatus.driverOutdated) {
+        reason = `檢測到 ${modelName}，但驅動程式版本過舊 (v${driverVersion || '未知'}，需 ${driverStatus.minRequiredDriver})。建議前往 NVIDIA 官網更新驅動以解鎖 GPU 極速分離。`;
+      }
 
       return {
         hasCapableGpu: isCapable,
@@ -51,9 +102,8 @@ export async function detectGpuHardware(): Promise<GpuDetectionResult> {
         vramMb,
         driverVersion,
         recommendation: isCapable ? 'gpu' : 'cpu',
-        recommendationReason: isCapable
-          ? `${modelName}${vramGb ? ` (${vramGb} GB)` : ''} detected. CUDA acceleration strongly recommended (15–30s per song).`
-          : `${modelName} detected, but VRAM may be limited. CPU mode recommended for stability.`,
+        recommendationReason: reason,
+        ...driverStatus,
       };
     }
   } catch {
@@ -81,15 +131,23 @@ export async function detectGpuHardware(): Promise<GpuDetectionResult> {
           const modelName = nvidiaCard.Name.trim();
           const rawRam = Number(nvidiaCard.AdapterRAM);
           const vramMb = !isNaN(rawRam) && rawRam > 0 ? Math.round(rawRam / (1024 * 1024)) : undefined;
+          const driverVersion = nvidiaCard.DriverVersion || undefined;
+          const driverStatus = checkNvidiaDriverStatus(modelName, driverVersion);
+
+          let reason = `${modelName} detected. GPU acceleration recommended.`;
+          if (driverStatus.driverOutdated) {
+            reason = `檢測到 ${modelName}，但驅動程式版本過舊。更新驅動程式即可啟用 GPU 極速加速。`;
+          }
 
           return {
             hasCapableGpu: true,
             vendor: 'nvidia',
             modelName,
             vramMb,
-            driverVersion: nvidiaCard.DriverVersion || undefined,
+            driverVersion,
             recommendation: 'gpu',
-            recommendationReason: `${modelName} detected. GPU acceleration recommended.`,
+            recommendationReason: reason,
+            ...driverStatus,
           };
         }
 

@@ -122,7 +122,10 @@
       "movingFiles": "分離環境ファイルを移動中...",
       "migrationCompleted": "分離エンジンの移行が完了しました！",
       "migrationCompletedDesc": "新しい保存先に正常に移動されました。以後の音声分離は新しいフォルダーから実行されます。",
-      "startMigration": "移行を開始"
+      "startMigration": "移行を開始",
+      "driverOutdatedTitle": "グラフィックドライバの更新が必要",
+      "driverOutdatedDesc": "古いバージョンの NVIDIA グラフィックドライバが検出されました。完全な GPU 加速と互換性を得るため、ドライバの更新をおすすめします。",
+      "btnUpdateDriver": "NVIDIA 公式で更新"
     },
     "storage": {
       "title": "楽曲ライブラリの保存場所",
@@ -335,6 +338,11 @@
     },
     "sepMigration": {
       "title": "AI 分離エンジンの移行"
+    },
+    "hardwareBadge": {
+      "gpu": "GPU 高速処理",
+      "cpu": "CPU 演算処理",
+      "fallback": "GPU 加速に失敗したため CPU に切り替えました (Fallback)"
     }
   },
   "playbackControl": {
@@ -1090,7 +1098,10 @@
     "storageLocation": "インストール保存先",
     "btnChangeFolder": "フォルダーを変更...",
     "defaultBadge": "デフォルト AppData",
-    "customBadge": "カスタムフォルダー"
+    "customBadge": "カスタムフォルダー",
+    "driverOutdatedTitle": "グラフィックドライバの更新が必要",
+    "driverOutdatedDesc": "グラフィックドライバのバージョンが古いため、GPU 加速の安定動作および演算エラー防止のために更新をおすすめします。",
+    "btnUpdateDriver": "NVIDIA 公式で更新"
   },
   "vocalRange": {
     "settings": {

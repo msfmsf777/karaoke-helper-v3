@@ -9,6 +9,8 @@ export interface SeparationJob {
   errorMessage?: string;
   progress?: number;
   quality?: 'high' | 'normal' | 'fast';
+  engineMode?: 'gpu' | 'cpu';
+  fallbackNotice?: string;
 }
 
 export type SeparationEngineMode = 'gpu' | 'cpu';
@@ -36,6 +38,7 @@ export interface SeparationEnvStatus {
   errorMessage?: string;
   diskUsageBytes?: number;
   customRuntimePath?: string;
+  cudaKernelFunctional?: boolean;
 }
 
 export interface SeparationInstallProgress {
@@ -54,6 +57,9 @@ export interface GpuDeviceInfo {
   driverVersion?: string;
   recommendation: 'gpu' | 'cpu';
   recommendationReason: string;
+  driverOutdated?: boolean;
+  minRequiredDriver?: string;
+  driverUpdateUrl?: string;
 }
 
 export interface SeparationStorageInfo {

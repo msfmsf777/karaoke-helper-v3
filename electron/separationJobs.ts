@@ -28,7 +28,8 @@ async function runDemucsSeparation(
   quality: QualityPreset,
   modelDir: string,
   onProgress?: (percent: number) => void,
-  onProcess?: (proc: ChildProcess) => void
+  onProcess?: (proc: ChildProcess) => void,
+  onHardwareStatus?: (status: { engineMode: 'gpu' | 'cpu'; fallbackNotice?: string }) => void
 ): Promise<{ instrumentalPath: string; vocalPath: string }> {
   const pythonPath = await getPythonPath();
   const settings = await loadSettings();
@@ -107,6 +108,11 @@ async function runDemucsSeparation(
             onProgress?.(msg.progress);
           } else if (msg.status === 'device_info') {
             console.log('[Separation] Hardware engine status:', msg);
+            const detectedMode: 'gpu' | 'cpu' = (msg.requested_device === 'cuda' || msg.torch_device?.includes('cuda')) ? 'gpu' : 'cpu';
+            onHardwareStatus?.({ engineMode: detectedMode });
+          } else if (msg.status === 'warning' && msg.code === 'GPU_FALLBACK_TO_CPU') {
+            console.warn('[Separation] Engine fallback triggered:', msg);
+            onHardwareStatus?.({ engineMode: 'cpu', fallbackNotice: msg.message || 'GPU 加速失敗，已切換為 CPU (Fallback)' });
           } else if (msg.error) {
             reject(new Error(`${msg.error} ${msg.details || ''}`));
           }
@@ -321,7 +327,13 @@ class SeparationJobManager {
         audio_status: 'separating',
         last_separation_error: null,
       }));
-      this.updateJob(job.id, { status: 'running', progress: 0, errorMessage: undefined });
+      const initialEngineMode = envStatus.mode || 'cpu';
+      this.updateJob(job.id, {
+        status: 'running',
+        progress: 0,
+        errorMessage: undefined,
+        engineMode: job.engineMode || initialEngineMode,
+      });
       this.notify();
 
       const { songDir, originalPath } = await this.ensureOriginalPath(meta);
@@ -348,6 +360,13 @@ class SeparationJobManager {
           // Called synchronously right after spawn — guaranteed to have the real handle
           this.activeProcess = proc;
           console.log('[Separation] Process spawned, PID:', proc.pid);
+        },
+        (hardwareStatus) => {
+          this.updateJob(job.id, {
+            engineMode: hardwareStatus.engineMode,
+            fallbackNotice: hardwareStatus.fallbackNotice,
+          });
+          this.notify();
         }
       );
 
@@ -459,11 +478,12 @@ class SeparationJobManager {
     }));
 
     // Load quality setting or use override
+    const settings = await loadSettings();
     let quality = qualityOverride;
     if (!quality) {
-      const settings = await loadSettings();
       quality = settings.separationQuality || 'normal';
     }
+    const plannedEngineMode = settings.separationEngine?.mode || 'cpu';
 
     const now = new Date().toISOString();
     const job: SeparationJob = {
@@ -473,6 +493,7 @@ class SeparationJobManager {
       createdAt: now,
       updatedAt: now,
       status: 'queued',
+      engineMode: plannedEngineMode,
     };
     this.jobs = [job, ...this.jobs];
     this.notify();

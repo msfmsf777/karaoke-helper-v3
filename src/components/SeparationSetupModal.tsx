@@ -241,6 +241,51 @@ export const SeparationSetupModal: React.FC = () => {
             )}
           </div>
 
+          {/* Outdated Driver Guidance */}
+          {gpuInfo?.driverOutdated && (
+            <div
+              style={{
+                padding: '12px 16px',
+                borderRadius: '12px',
+                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                border: '1px solid rgba(245, 158, 11, 0.35)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+              }}
+            >
+              <div style={{ fontSize: '12px', color: '#fde68a', lineHeight: 1.4 }}>
+                ⚠️ <strong>{t('separationSetup.driverOutdatedTitle', '顯卡驅動程式需更新')}</strong>
+                <div style={{ marginTop: '2px', color: '#fcd34d' }}>
+                  {t(
+                    'separationSetup.driverOutdatedDesc',
+                    `偵測到您的 ${gpuInfo.modelName} 驅動程式版本較舊，建議更新至版本 ${gpuInfo.minRequiredDriver || '528.33'} 或以上以完整支援 GPU 核心加速與避免運算錯誤。`
+                  )}
+                </div>
+              </div>
+              {gpuInfo.driverUpdateUrl && (
+                <button
+                  type="button"
+                  onClick={() => void window.api?.openExternal?.(gpuInfo.driverUpdateUrl!)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '6px',
+                    backgroundColor: '#d97706',
+                    border: 'none',
+                    color: '#fff',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {t('separationSetup.btnUpdateDriver', '前往 NVIDIA 官網更新驅動')}
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Mode Selection or Progress View */}
           {!isInstalling ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

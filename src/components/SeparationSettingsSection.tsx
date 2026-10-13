@@ -9,6 +9,8 @@ import {
 import { SeparationMigrationModal } from './SeparationMigrationModal';
 import FolderOpenIcon from '../assets/icons/folder_open.svg';
 
+const DebugSeparationUI = React.lazy(() => import('./DebugSeparationUI'));
+
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';
   const k = 1024;
@@ -103,9 +105,16 @@ export const SeparationSettingsSection: React.FC = () => {
 
   return (
     <div style={{ marginBottom: '24px' }}>
-      <label style={{ display: 'block', marginBottom: '12px', color: '#fff', fontSize: '15px', fontWeight: 'bold' }}>
-        {t('settings.separationEngine.title', 'AI 分離引擎與硬體加速')}
-      </label>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+        <label style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold' }}>
+          {t('settings.separationEngine.title', 'AI 分離引擎與硬體加速')}
+        </label>
+        {import.meta.env.DEV && (
+          <React.Suspense fallback={null}>
+            <DebugSeparationUI inline />
+          </React.Suspense>
+        )}
+      </div>
 
       <div
         style={{
@@ -291,6 +300,50 @@ export const SeparationSettingsSection: React.FC = () => {
                 💻 {t('settings.separationEngine.cpu', 'CPU 模式')}
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Outdated Driver Warning Banner */}
+        {gpuInfo?.driverOutdated && (
+          <div
+            style={{
+              padding: '12px 16px',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(245, 158, 11, 0.1)',
+              border: '1px solid rgba(245, 158, 11, 0.35)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+            }}
+          >
+            <div style={{ fontSize: '12px', color: '#fde68a', lineHeight: 1.4 }}>
+              ⚠️ <strong>{t('settings.separationEngine.driverOutdatedTitle', '顯卡驅動程式需更新')}</strong>
+              <div style={{ marginTop: '2px', color: '#fcd34d' }}>
+                {t(
+                  'settings.separationEngine.driverOutdatedDesc',
+                  '偵測到 NVIDIA 顯卡驅動版本較舊，建議更新驅動程式以獲得完整的 GPU 加速與相容性支援。'
+                )}
+              </div>
+            </div>
+            {gpuInfo.driverUpdateUrl && (
+              <button
+                onClick={() => void window.api?.openExternal?.(gpuInfo.driverUpdateUrl!)}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '6px',
+                  backgroundColor: '#d97706',
+                  border: 'none',
+                  color: '#fff',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {t('settings.separationEngine.btnUpdateDriver', '前往 NVIDIA 官網更新驅動')}
+              </button>
+            )}
           </div>
         )}
 
