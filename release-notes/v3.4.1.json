@@ -3,7 +3,7 @@
   "locales": {
     "zh-TW": {
       "title": "🔥K歌小幫手 v3.4.1 更新內容🔥",
-      "summary": "KHelper v3.4.1 帶來 GPU 人聲分離相容性優化（PyTorch CUDA 12.8）、顯卡驅動版本檢測、防禦性 CPU 自動降級保護與任務面板狀態標籤等多項重大改進與音訊穩定性優化。",
+      "summary": "KHelper v3.4.1 帶來 GPU 人聲分離相容性優化（PyTorch CUDA 12.6 加速核心）、顯卡驅動版本檢測、防禦性 CPU 自動降級保護與任務面板狀態標籤等多項重大改進與音訊穩定性優化。",
       "sections": [
         {
           "title": "🩵新功能🩵",
@@ -19,7 +19,7 @@
         {
           "title": "🩵其他使用體驗優化 / Bug 修復🩵",
           "items": [
-            "🛠️GPU 人聲分離相容性與防禦保護：升級 PyTorch 至 CUDA 12.8 專屬版本，提升 RTX 50 系列等新架構顯卡相容性；新增顯示卡驅動相容性檢測引導、GPU 分離失敗時防禦性自動降級至 CPU 保護，並於任務面板即時顯示運算引擎標籤。",
+            "🛠️GPU 人聲分離相容性與防禦保護：升級 PyTorch 至官方穩定版 CUDA 加速核心，提升顯示卡相容性；新增顯示卡驅動相容性檢測引導、GPU 分離失敗時防禦性自動降級至 CPU 保護，並於任務面板即時顯示運算引擎標籤。",
             "🛠️修復雙音訊輸出同步問題：徹底解決在同時啟用直播與耳機輸出並設定延遲校正時，播放分離歌曲可能發生的聲音不同步與延遲逐漸擴大問題。",
             "🛠️修復高負載起播不同步問題：解決在背景執行 AI 人聲分離時播放歌曲發生的初始卡頓與延遲，確保從第 1 秒起平穩流暢播放。",
             "🌟最佳化設定介面分類與分區導航圖示，改善歌曲編輯器與任務面板的使用體驗。"
@@ -29,7 +29,7 @@
     },
     "en": {
       "title": "🔥KHelper v3.4.1 Update🔥",
-      "summary": "KHelper v3.4.1 official release brings GPU audio separation compatibility optimization (PyTorch CUDA 12.8), GPU driver compatibility detection, defensive CPU automatic fallback, and task pane processing engine badges alongside audio stability improvements.",
+      "summary": "KHelper v3.4.1 official release brings GPU audio separation compatibility optimization (PyTorch CUDA 12.6 acceleration core), GPU driver compatibility detection, defensive CPU automatic fallback, and task pane processing engine badges alongside audio stability improvements.",
       "sections": [
         {
           "title": "🩵New Features🩵",
@@ -45,7 +45,7 @@
         {
           "title": "🩵UX Improvements / Bug Fixes🩵",
           "items": [
-            "🛠️GPU Separation Compatibility & Defensive Protection: Upgraded PyTorch wheels to CUDA 12.8 for enhanced modern GPU architecture compatibility (including RTX 50 series); added driver compatibility guidance, automatic defensive fallback to CPU on GPU separation failure, and task pane engine badges.",
+            "🛠️GPU Separation Compatibility & Defensive Protection: Upgraded PyTorch wheels to official stable CUDA acceleration core for enhanced GPU compatibility; added driver compatibility guidance, automatic defensive fallback to CPU on GPU separation failure, and task pane engine badges.",
             "🛠️Fixed dual audio output synchronization: resolved an issue where audio between stream and headphone outputs could drift out of sync when playing separated tracks with latency calibration.",
             "🛠️Fixed playback desync under heavy load: resolved initial startup lag and drift when playing songs while background AI vocal separation is running, ensuring smooth playback from the first second.",
             "🌟Polished Settings layout navigation and section SVG icons, and refined song editor and task pane user experience."
@@ -55,7 +55,7 @@
     },
     "zh-CN": {
       "title": "🔥KHelper v3.4.1 更新内容🔥",
-      "summary": "KHelper v3.4.1 正式版带来 GPU 人声分离兼容性优化（PyTorch CUDA 12.8）、显卡驱动版本检测、防御性 CPU 自动降级保护与任务面板状态标签等多项重大改进与音频稳定性优化。",
+      "summary": "KHelper v3.4.1 正式版带来 GPU 人声分离兼容性优化（PyTorch CUDA 12.6 加速核心）、显卡驱动版本检测、防御性 CPU 自动降级保护与任务面板状态标签等多项重大改进与音频稳定性优化。",
       "sections": [
         {
           "title": "🩵新功能🩵",
@@ -71,7 +71,7 @@
         {
           "title": "🩵其他使用体验优化 / Bug 修复🩵",
           "items": [
-            "🛠️GPU 人声分离兼容性与防御保护：升级 PyTorch 至 CUDA 12.8 专属版本，提升 RTX 50 系列等新架构显卡兼容性；新增显卡驱动兼容性检测引导、GPU 分离失败时防御性自动降级至 CPU 保护，并于任务面板实时显示运算引擎标签。",
+            "🛠️GPU 人声分离兼容性与防御保护：升级 PyTorch 至官方稳定版 CUDA 加速核心，提升显卡兼容性；新增显卡驱动兼容性检测引导、GPU 分离失败时防御性自动降级至 CPU 保护，并于任务面板实时显示运算引擎标签。",
             "🛠️修复双音频输出同步问题：彻底解决在同时启用直播与耳机输出并设置延迟校正时，播放分离歌曲可能发生的声音不同步与延迟逐渐扩大问题。",
             "🛠️修复高负载起播不同步问题：解决在后台执行 AI 人声分离时播放歌曲发生的初始卡顿与延迟，确保从第 1 秒起平稳流畅播放。",
             "🌟优化设置界面分类与分区导航图标，改善歌曲编辑器与任务面板的使用体验。"
@@ -81,7 +81,7 @@
     },
     "ja": {
       "title": "🔥KHelper v3.4.1 アップデート内容🔥",
-      "summary": "KHelper v3.4.1 正式版では、GPU ボーカル分離の互換性最適化（PyTorch CUDA 12.8）、GPU ドライバ互換性チェック、防御的 CPU 自動フォールバック、タスクパネルの処理エンジンバッジ表示など、大幅な機能強化と音声エンジンの安定化を実施しました。",
+      "summary": "KHelper v3.4.1 正式版では、GPU ボーカル分離の互換性最適化（PyTorch CUDA 12.6 加速コア）、GPU ドライバ互換性チェック、防御的 CPU 自動フォールバック、タスクパネルの処理エンジンバッジ表示など、大幅な機能強化と音声エンジンの安定化を実施しました。",
       "sections": [
         {
           "title": "🩵新機能🩵",
@@ -97,7 +97,7 @@
         {
           "title": "🩵使いやすさの改善 / 不具合修正🩵",
           "items": [
-            "🛠️GPU 分離の互換性と防御的保護：PyTorch を CUDA 12.8 専用版にアップグレードし、RTX 50 シリーズ等の最新 GPU アーキテクチャの互換性を向上。ドライバ互換性チェック、GPU 分離失敗時の安全な CPU 自動フォールバック、タスクパネルへの処理エンジンバッジ表示を追加しました。",
+            "🛠️GPU 分離の互換性と防御的保護：PyTorch を公式安定版 CUDA 加速コアにアップグレードし、GPU の互換性を向上。ドライバ互換性チェック、GPU 分離失敗時の安全な CPU 自動フォールバック、タスクパネルへの処理エンジンバッジ表示を追加しました。",
             "🛠️デュアルオーディオ出力の同期を修正：配信とヘッドホンを同時出力し遅延補正を設定している際、分離済み曲で発生していた音のズレや徐々に遅延が広がる問題を解決しました。",
             "🛠️高負荷時の再生開始同期を修正：バックグラウンドで AI ボーカル分離が実行されている最中に曲を再生した際の初期カクつきやズレを解消し、最初の1秒から安定して再生されます。",
             "🌟設定画面のカテゴリナビゲーションと SVG アイコンをブラッシュアップし、曲エディターとタスクパネルの使いやすさを向上させました。"
@@ -107,7 +107,7 @@
     },
     "ko": {
       "title": "🔥KHelper v3.4.1 업데이트 내용🔥",
-      "summary": "KHelper v3.4.1 정식 버전에서는 GPU 보컬 분리 호환성 최적화(PyTorch CUDA 12.8), 그래픽카드 드라이버 호환성 감지, 방어적 CPU 자동 폴백, 작업 패널 엔진 배지 표시 등 주요 기능 대폭 강화와 오디오 엔진 안정화를 제공합니다.",
+      "summary": "KHelper v3.4.1 정식 버전에서는 GPU 보컬 분리 호환성 최적화(PyTorch CUDA 12.6 가속 코어), 그래픽카드 드라이버 호환성 감지, 방어적 CPU 자동 폴백, 작업 패널 엔진 배지 표시 등 주요 기능 대폭 강화와 오디오 엔진 안정화를 제공합니다.",
       "sections": [
         {
           "title": "🩵새 기능🩵",
@@ -123,7 +123,7 @@
         {
           "title": "🩵사용성 개선 / 버그 수정🩵",
           "items": [
-            "🛠️GPU 분리 호환성 및 방어적 폴백 강화: PyTorch를 CUDA 12.8 전용 빌드로 업그레이드하여 RTX 50 시리즈 등 최신 GPU 아키텍처 호환성을 향상했습니다. 드라이버 호환성 안내, GPU 분리 실패 시 안전한 CPU 자동 폴백, 작업 패널 처리 엔진 배지 표시를 추가했습니다.",
+            "🛠️GPU 분리 호환성 및 방어적 폴백 강화: PyTorch를 공식 안정판 CUDA 가속 빌드로 업그레이드하여 GPU 호환성을 향상했습니다. 드라이버 호환성 안내, GPU 분리 실패 시 안전한 CPU 자동 폴백, 작업 패널 처리 엔진 배지 표시를 추가했습니다.",
             "🛠️듀얼 오디오 출력 동기화 문제 해결: 방송 및 헤드폰 출력을 동시에 사용하고 지연 보정을 설정했을 때 분리된 곡에서 발생하던 싱크 어긋남 및 점진적 딜레이 증가 현상을 수정했습니다.",
             "🛠️고부하 상태 재생 동기화 문제 해결: 백그라운드 AI 보컬 분리가 실행 중일 때 곡을 재생할 경우 발생하던 초기 끊김과 딜레이를 해결하여 첫 1초부터 매끄럽게 재생되도록 보장합니다.",
             "🌟설정 화면 카테고리 내비게이션 및 SVG 아이콘을 개선하고, 곡 편집기와 작업 패널의 사용성을 다듬었습니다."
@@ -133,7 +133,7 @@
     },
     "id": {
       "title": "🔥Pembaruan KHelper v3.4.1🔥",
-      "summary": "Rilis resmi KHelper v3.4.1 menghadirkan optimasi kompatibilitas pemisahan audio GPU (PyTorch CUDA 12.8), deteksi kompatibilitas driver GPU, fallback CPU defensif otomatis, lencana mesin pemrosesan panel tugas, dan peningkatan stabilitas audio.",
+      "summary": "Rilis resmi KHelper v3.4.1 menghadirkan optimasi kompatibilitas pemisahan audio GPU (inti akselerasi PyTorch CUDA 12.6), deteksi kompatibilitas driver GPU, fallback CPU defensif otomatis, lencana mesin pemrosesan panel tugas, dan peningkatan stabilitas audio.",
       "sections": [
         {
           "title": "🩵Fitur baru🩵",
@@ -149,7 +149,7 @@
         {
           "title": "🩵Peningkatan UX / Perbaikan bug🩵",
           "items": [
-            "🛠️Kompatibilitas Pemisahan GPU & Perlindungan Fallback: Memperbarui PyTorch ke build CUDA 12.8 untuk kompatibilitas GPU arsitektur terbaru (termasuk RTX 50 series); menambahkan panduan kompatibilitas driver, fallback defensif otomatis ke CPU saat pemisahan GPU gagal, dan lencana mesin pemrosesan pada panel tugas.",
+            "🛠️Kompatibilitas Pemisahan GPU & Perlindungan Fallback: Memperbarui PyTorch ke build akselerasi CUDA stabil resmi untuk meningkatkan kompatibilitas GPU; menambahkan panduan kompatibilitas driver, fallback defensif otomatis ke CPU saat pemisahan GPU gagal, dan lencana mesin pemrosesan pada panel tugas.",
             "🛠️Memperbaiki sinkronisasi output audio ganda: mengatasi masalah audio antara output stream dan headphone yang dapat hilang sinkronisasinya saat memutar lagu terpisah dengan kalibrasi latensi.",
             "🛠️Memperbaiki desinkronisasi pemutaran saat beban tinggi: mengatasi jeda awal dan pergeseran saat memutar lagu sementara pemisahan vokal AI berjalan di latar belakang, memastikan pemutaran lancar sejak detik pertama.",
             "🌟Mempercantik navigasi tata letak Pengaturan dan ikon SVG, serta menyempurnakan pengalaman pengguna editor lagu dan panel tugas."
@@ -159,7 +159,7 @@
     },
     "th": {
       "title": "🔥อัปเดต KHelper v3.4.1🔥",
-      "summary": "KHelper v3.4.1 เวอร์ชันทางการมาพร้อมการปรับความเข้ากันได้ของการแยกเสียงร้องด้วย GPU (PyTorch CUDA 12.8), การตรวจสอบความเข้ากันได้ของไดรเวอร์ GPU, ระบบสลับไปใช้ CPU อัตโนมัติแบบป้องกันความล้มเหลว, ป้ายแสดงสถานะเครื่องมือประมวลผล และความเสถียรของระบบเสียง",
+      "summary": "KHelper v3.4.1 เวอร์ชันทางการมาพร้อมการปรับความเข้ากันได้ของการแยกเสียงร้องด้วย GPU (PyTorch CUDA 12.6), การตรวจสอบความเข้ากันได้ของไดรเวอร์ GPU, ระบบสลับไปใช้ CPU อัตโนมัติแบบป้องกันความล้มเหลว, ป้ายแสดงสถานะเครื่องมือประมวลผล และความเสถียรของระบบเสียง",
       "sections": [
         {
           "title": "🩵ฟีเจอร์ใหม่🩵",
@@ -175,7 +175,7 @@
         {
           "title": "🩵ปรับปรุง UX / แก้ไขบั๊ก🩵",
           "items": [
-            "🛠️ความเข้ากันได้และการป้องกันการทำงานล้มเหลวของการแยกเสียงด้วย GPU: อัปเกรด PyTorch เป็นเวอร์ชัน CUDA 12.8 เพื่อเพิ่มความเข้ากันได้กับสถาปัตยกรรม GPU รุ่นใหม่ (รวมถึง RTX 50 series), เพิ่มคำแนะนำความเข้ากันได้ของไดรเวอร์, การสลับไปใช้ CPU อัตโนมัติเมื่อ GPU ทำงานล้มเหลว และป้ายแสดงสถานะเครื่องมือประมวลผลในแถบงาน",
+            "🛠️ความเข้ากันได้และการป้องกันการทำงานล้มเหลวของการแยกเสียงด้วย GPU: อัปเกรด PyTorch เป็นเวอร์ชัน CUDA ที่เสถียรอย่างเป็นทางการเพื่อเพิ่มความเข้ากันได้ของการ์ดจอ, เพิ่มคำแนะนำความเข้ากันได้ของไดรเวอร์, การสลับไปใช้ CPU อัตโนมัติเมื่อ GPU ทำงานล้มเหลว และป้ายแสดงสถานะเครื่องมือประมวลผลในแถบงาน",
             "🛠️แก้ไขการซิงค์เอาต์พุตเสียงคู่: แก้ปัญหาเสียงเหลื่อมระหว่างสตรีมและหูฟังที่อาจหลุดการซิงค์เมื่อเล่นเพลงที่แยกเสียงพร้อมการชดเชยดีเลย์",
             "🛠️แก้ไขการกระตุกขณะโหลดสูง: แก้ปัญหาการดีเลย์ช่วงเริ่มต้นเมื่อเล่นเพลงระหว่างที่การแยกเสียง AI กำลังทำงานในพื้นหลัง เพื่อให้เล่นได้อย่างราบรื่นตั้งแต่วินาทีแรก",
             "🌟ปรับปรุงการนำทางในหน้าการตั้งค่าและไอคอน SVG พร้อมเพิ่มความสะดวกในการใช้งานตัวแก้ไขเพลงและแถบงาน"

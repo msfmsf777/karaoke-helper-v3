@@ -725,8 +725,8 @@ sys.exit(0)
 
     try {
       if (mode === 'gpu') {
-        // Step 1: Install PyTorch CUDA 12.8 explicitly from official PyTorch index so pip never defaults to CPU wheel from PyPI
-        console.log('[SeparationEnv] Step 1: Installing PyTorch CUDA 12.8');
+        // Step 1: Install PyTorch CUDA 12.6 explicitly from official PyTorch index so pip never defaults to CPU wheel from PyPI
+        console.log('[SeparationEnv] Step 1: Installing PyTorch CUDA 12.6');
         await this.runPipCommand(
           pythonPath,
           [
@@ -737,7 +737,7 @@ sys.exit(0)
             '--prefix',
             envDir,
             '--index-url',
-            'https://download.pytorch.org/whl/cu128',
+            'https://download.pytorch.org/whl/cu126',
             'torch',
             'torchvision',
           ],
@@ -745,7 +745,7 @@ sys.exit(0)
           'downloading',
           10,
           70,
-          '正在下載 PyTorch CUDA 12.8 加速核心...'
+          '正在下載 PyTorch CUDA 加速核心...'
         );
 
         // Step 2: Install audio-separator[gpu]
@@ -760,7 +760,7 @@ sys.exit(0)
             '--prefix',
             envDir,
             '--extra-index-url',
-            'https://download.pytorch.org/whl/cu128',
+            'https://download.pytorch.org/whl/cu126',
             'audio-separator[gpu]',
           ],
           envDir,
