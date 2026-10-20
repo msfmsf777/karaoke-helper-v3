@@ -5,9 +5,10 @@ import { spawn, exec, execFile, ChildProcess } from 'node:child_process';
 import { promisify } from 'node:util';
 import { app } from 'electron';
 import { getPythonPath } from './pythonRuntime';
-import { detectGpuHardware, GpuDetectionResult } from './gpuDetector';
+import { classifyNvidiaGpuArchitecture, detectGpuHardware, GpuDetectionResult } from './gpuDetector';
 import { loadSettings, saveSettings } from './userData';
 import type {
+  CudaIndexVariant,
   SeparationEngineMode,
   SeparationEnvStatus,
   SeparationInstallProgress,
@@ -19,6 +20,66 @@ import type {
 const execAsync = promisify(exec);
 const execFileAsync = promisify(execFile);
 const RUNTIME_META_FILE = 'runtime_meta.json';
+
+export interface CudaWheelProfile {
+  cudaIndex: CudaIndexVariant;
+  indexUrl: string;
+  packages: string[];
+}
+
+/**
+ * Returns the deterministic, version-pinned PyTorch wheel profile for a given CUDA index.
+ * - cu128: Native support for Turing (sm_75), Ampere (sm_80/86), Ada (sm_89), Hopper (sm_90), and Blackwell (sm_100/120).
+ * - cu126: Legacy fallback for Maxwell (sm_50/52) and Pascal (sm_60/61) GPUs (GTX 750 / 900 / 10-series).
+ */
+export function getCudaWheelProfile(cudaIndex: CudaIndexVariant = 'cu128'): CudaWheelProfile {
+  if (cudaIndex === 'cu126') {
+    return {
+      cudaIndex: 'cu126',
+      indexUrl: 'https://download.pytorch.org/whl/cu126',
+      packages: [
+        'torch==2.14.1+cu126',
+        'torchvision==0.29.1+cu126',
+        'torchaudio==2.11.0+cu126',
+      ],
+    };
+  }
+  return {
+    cudaIndex: 'cu128',
+    indexUrl: 'https://download.pytorch.org/whl/cu128',
+    packages: [
+      'torch==2.11.0+cu128',
+      'torchvision==0.26.0+cu128',
+      'torchaudio==2.11.0+cu128',
+    ],
+  };
+}
+
+/**
+ * Builds Python CLI arguments that inject `<envDir>/Lib/site-packages` via `site.addsitedir()`
+ * before invoking `pip`. This is required because the bundled `python310._pth` enables CPython
+ * isolated mode, which ignores the `PYTHONPATH` environment variable.
+ */
+export function buildPipBootstrapArgs(packagesDir: string, pipArgs: string[]): string[] {
+  const normalizedArgs =
+    pipArgs[0] === '-m' && pipArgs[1] === 'pip' ? pipArgs.slice(2) : pipArgs;
+  const bootstrapScript =
+    "import site, sys, runpy; site.addsitedir(sys.argv[1]); sys.argv = ['pip'] + sys.argv[2:]; runpy.run_module('pip', run_name='__main__', alter_sys=True)";
+  return ['-c', bootstrapScript, packagesDir, ...normalizedArgs];
+}
+
+function formatProbeErrorMessage(mode: SeparationEngineMode, exitCode?: number): string {
+  if (mode === 'gpu') {
+    if (exitCode === 3) {
+      return '目前安裝的 CUDA 套件與您的顯卡架構不相容（CUDA kernel execution failed）。請點擊「重新配置」重新下載支援您顯卡的 GPU 加速引擎，或更新顯卡驅動程式。';
+    }
+    if (exitCode === 4) {
+      return '分離引擎核心檔案損毀或版本衝突（DLL 載入失敗），請點擊「重新配置」重新安裝。';
+    }
+    return 'GPU 加速環境校驗失敗（未偵測到 CUDA 裝置），請確認顯卡驅動程式支援，或切換至 CPU 模式。';
+  }
+  return '分離環境檔案可能已損毀，請嘗試重新安裝。';
+}
 
 type ProgressSubscriber = (progress: SeparationInstallProgress) => void;
 type MigrationSubscriber = (progress: SeparationMigrationProgress) => void;
@@ -147,7 +208,7 @@ class SeparationEnvManager {
   /**
    * Returns current status of separation environment.
    */
-  async getStatus(): Promise<SeparationEnvStatus> {
+  async getStatus(options?: { forceVerify?: boolean }): Promise<SeparationEnvStatus> {
     await this.initFromSettings();
 
     if (this.isInstalling) {
@@ -181,7 +242,14 @@ class SeparationEnvManager {
     const activeMode: SeparationEngineMode = settings.separationEngine?.mode || meta?.mode || 'gpu';
     const supportedModes: SeparationEngineMode[] = meta?.mode === 'gpu' ? ['gpu', 'cpu'] : (meta?.mode ? ['cpu'] : ['gpu', 'cpu']);
 
-    if (meta && meta.verified) {
+    // Check if an existing GPU runtime_meta.json predates cu128 on a Blackwell (RTX 50-series) GPU
+    const needsBlackwellReverify =
+      activeMode === 'gpu' &&
+      meta?.gpuModel &&
+      classifyNvidiaGpuArchitecture(meta.gpuModel).isBlackwell &&
+      meta.cudaIndex !== 'cu128';
+
+    if (!options?.forceVerify && !needsBlackwellReverify && meta && meta.verified) {
       this.verifiedReady = true;
       this.lastError = null;
 
@@ -219,7 +287,7 @@ class SeparationEnvManager {
     }
 
     // If verifiedReady this session, return ready
-    if (this.verifiedReady && settings.separationEngine) {
+    if (!options?.forceVerify && this.verifiedReady && settings.separationEngine) {
       return {
         status: 'ready',
         mode: settings.separationEngine.mode,
@@ -233,7 +301,7 @@ class SeparationEnvManager {
     }
 
     // Fallback: run verification probe and generate runtime_meta.json upon success
-    const probeMode = settings.separationEngine?.mode || 'gpu';
+    const probeMode: SeparationEngineMode = settings.separationEngine?.mode || meta?.mode || 'gpu';
     const isProbeValid = await this.verifyEnvironmentFast(probeMode);
     if (isProbeValid) {
       this.verifiedReady = true;
@@ -243,10 +311,12 @@ class SeparationEnvManager {
         version: '1.0',
         mode: probeMode,
         verified: true,
-        installedAt: new Date().toISOString(),
+        installedAt: meta?.installedAt || new Date().toISOString(),
         gpuModel: gpuInfo.modelName,
         vramMb: gpuInfo.vramMb,
         torchCuda: probeMode === 'gpu',
+        cudaIndex: probeMode === 'gpu' ? (meta?.cudaIndex || gpuInfo.cudaIndex || 'cu128') : undefined,
+        totalBytes: meta?.totalBytes,
       };
       await this.writeRuntimeMeta(newMeta, currentEnvDir);
       void this.updateDiskUsageInBackground(currentEnvDir);
@@ -274,20 +344,11 @@ class SeparationEnvManager {
     }
 
     const probeExitCode = this.lastProbeResult?.code;
-    let errorMessage: string;
-    if (settings.separationEngine?.mode === 'gpu') {
-      if (probeExitCode === 3) {
-        errorMessage = '顯卡硬體或驅動程式與 PyTorch CUDA 核心不相容（CUDA kernel execution failed），建議更新顯卡驅動程式或切換至 CPU 模式。';
-      } else {
-        errorMessage = 'GPU 加速環境校驗失敗（未偵測到 CUDA 裝置），請確認顯卡驅動程式支援。';
-      }
-    } else {
-      errorMessage = '分離環境檔案可能已損毀，請嘗試重新安裝。';
-    }
+    const errorMessage = formatProbeErrorMessage(probeMode, probeExitCode);
 
     return {
       status: 'error',
-      mode: settings.separationEngine?.mode || null,
+      mode: settings.separationEngine?.mode || meta?.mode || probeMode,
       errorMessage,
       cudaKernelFunctional: false,
       customRuntimePath: this.isCustomPath() ? currentEnvDir : undefined,
@@ -356,6 +417,7 @@ class SeparationEnvManager {
           gpuModel: gpuInfo.modelName,
           vramMb: gpuInfo.vramMb,
           torchCuda: true,
+          cudaIndex: gpuInfo.cudaIndex || 'cu128',
         };
         await this.writeRuntimeMeta(updatedMeta, envDir);
         const settings = await loadSettings();
@@ -401,7 +463,7 @@ class SeparationEnvManager {
     this.verifiedReady = false;
     this.lastError = null;
     this.cachedDiskUsage = null;
-    return await this.getStatus();
+    return await this.getStatus({ forceVerify: true });
   }
 
   isReady(): boolean {
@@ -436,8 +498,11 @@ if os.path.exists(torch_lib):
             os.add_dll_directory(torch_lib)
         except Exception:
             pass
-import audio_separator
-import torch
+try:
+    import audio_separator
+    import torch
+except Exception:
+    sys.exit(4)
 if sys.argv[2] == 'gpu':
     if not torch.cuda.is_available():
         sys.exit(2)
@@ -568,6 +633,35 @@ sys.exit(0)
     return { valid: true, freeBytes };
   }
 
+  /**
+   * Removes stale runtime_meta.json and any existing torch / torchvision / torchaudio / onnxruntime
+   * package directories before installing or repairing, preventing orphaned DLL conflicts (e.g. c10_cuda.dll).
+   */
+  private async cleanupStaleTorchPackages(envDir: string): Promise<void> {
+    const metaPath = this.getRuntimeMetaPath(envDir);
+    try {
+      if (existsSync(metaPath)) {
+        await fs.rm(metaPath, { force: true });
+      }
+    } catch (err) {
+      console.warn('[SeparationEnv] Could not remove old runtime_meta.json', err);
+    }
+
+    const packagesDir = path.join(envDir, 'Lib', 'site-packages');
+    if (!existsSync(packagesDir)) return;
+
+    try {
+      const entries = await fs.readdir(packagesDir);
+      const stalePattern = /^(torch|torch-|torchvision|torchaudio|onnxruntime|functorch)/i;
+      for (const name of entries) {
+        if (stalePattern.test(name)) {
+          await fs.rm(path.join(packagesDir, name), { recursive: true, force: true });
+        }
+      }
+    } catch (err) {
+      console.warn('[SeparationEnv] Could not clean stale torch/onnxruntime directories', err);
+    }
+  }
 
   /**
    * Helper to run pip command with streaming progress reporting.
@@ -589,7 +683,8 @@ sys.exit(0)
       });
 
       const packagesDir = path.join(envDir, 'Lib', 'site-packages');
-      const proc = spawn(pythonPath, args, {
+      const spawnArgs = buildPipBootstrapArgs(packagesDir, args);
+      const proc = spawn(pythonPath, spawnArgs, {
         windowsHide: true,
         env: {
           ...process.env,
@@ -722,11 +817,15 @@ sys.exit(0)
 
     const pythonPath = await getPythonPath();
     const gpuInfo: GpuDetectionResult = await detectGpuHardware();
+    const cudaProfile = getCudaWheelProfile(gpuInfo.cudaIndex || 'cu128');
 
     try {
+      // Clean any previous/corrupted torch & onnxruntime directories before installing
+      await this.cleanupStaleTorchPackages(envDir);
+
       if (mode === 'gpu') {
-        // Step 1: Install PyTorch CUDA 12.6 explicitly from official PyTorch index so pip never defaults to CPU wheel from PyPI
-        console.log('[SeparationEnv] Step 1: Installing PyTorch CUDA 12.6');
+        // Step 1: Install pinned PyTorch CUDA wheels explicitly from official PyTorch index
+        console.log(`[SeparationEnv] Step 1: Installing PyTorch CUDA (${cudaProfile.cudaIndex})`, cudaProfile.packages);
         await this.runPipCommand(
           pythonPath,
           [
@@ -737,19 +836,18 @@ sys.exit(0)
             '--prefix',
             envDir,
             '--index-url',
-            'https://download.pytorch.org/whl/cu126',
-            'torch',
-            'torchvision',
+            cudaProfile.indexUrl,
+            ...cudaProfile.packages,
           ],
           envDir,
           'downloading',
           10,
           70,
-          '正在下載 PyTorch CUDA 加速核心...'
+          `正在下載 PyTorch CUDA (${cudaProfile.cudaIndex.toUpperCase()}) 加速核心...`
         );
 
-        // Step 2: Install audio-separator[gpu]
-        console.log('[SeparationEnv] Step 2: Installing audio-separator[gpu]');
+        // Step 2: Install audio-separator[gpu] with explicit PyTorch version pins so pip never clobbers CUDA wheels with PyPI CPU wheels
+        console.log('[SeparationEnv] Step 2: Installing audio-separator[gpu] with pinned CUDA constraints');
         await this.runPipCommand(
           pythonPath,
           [
@@ -760,7 +858,8 @@ sys.exit(0)
             '--prefix',
             envDir,
             '--extra-index-url',
-            'https://download.pytorch.org/whl/cu126',
+            cudaProfile.indexUrl,
+            ...cudaProfile.packages,
             'audio-separator[gpu]',
           ],
           envDir,
@@ -800,11 +899,7 @@ sys.exit(0)
       const isProbeSuccess = await this.verifyEnvironmentFast(mode);
       if (!isProbeSuccess) {
         const exitCode = this.lastProbeResult?.code;
-        const err = mode === 'gpu'
-          ? (exitCode === 3
-              ? '顯卡硬體或驅動程式與 PyTorch CUDA 核心不相容（CUDA kernel execution failed），建議更新顯卡驅動程式或切換至 CPU 模式。'
-              : '環境校驗未通過：PyTorch 無法啟用 CUDA 硬體加速，請確認顯卡驅動程式支援。')
-          : '環境校驗未通過，可能遺失必要模組。';
+        const err = formatProbeErrorMessage(mode, exitCode);
         this.lastError = err;
         this.notifyProgress({
           stage: 'error',
@@ -827,6 +922,7 @@ sys.exit(0)
         gpuModel: gpuInfo.modelName,
         vramMb: gpuInfo.vramMb,
         torchCuda: mode === 'gpu',
+        cudaIndex: mode === 'gpu' ? cudaProfile.cudaIndex : undefined,
         totalBytes: diskUsage,
       };
       await this.writeRuntimeMeta(meta, envDir);
@@ -959,7 +1055,7 @@ sys.exit(0)
             filesToCopy.push({ src: fullSrc, dest: fullDest, size: stat.size });
           }
         }
-      }
+      };
 
       if (existsSync(sourceDir)) {
         await scan(sourceDir, sourceDir);
@@ -1008,6 +1104,7 @@ sys.exit(0)
         gpuModel: existingMeta?.gpuModel || currentSettings.separationEngine?.gpuModel,
         vramMb: existingMeta?.vramMb || currentSettings.separationEngine?.vramMb,
         torchCuda: (expectedMode || existingMeta?.mode) === 'gpu',
+        cudaIndex: existingMeta?.cudaIndex,
         totalBytes: finalBytes,
       };
       await this.writeRuntimeMeta(updatedMeta, targetDir);

@@ -15,6 +15,8 @@ export interface SeparationJob {
 
 export type SeparationEngineMode = 'gpu' | 'cpu';
 
+export type CudaIndexVariant = 'cu128' | 'cu126';
+
 export type SeparationEnvStatusStage = 'not_installed' | 'installing' | 'ready' | 'error';
 
 export interface SeparationRuntimeMeta {
@@ -25,6 +27,7 @@ export interface SeparationRuntimeMeta {
   gpuModel?: string;
   vramMb?: number;
   torchCuda?: boolean;
+  cudaIndex?: CudaIndexVariant;
   totalBytes?: number;
 }
 
@@ -60,6 +63,7 @@ export interface GpuDeviceInfo {
   driverOutdated?: boolean;
   minRequiredDriver?: string;
   driverUpdateUrl?: string;
+  cudaIndex?: CudaIndexVariant;
 }
 
 export interface SeparationStorageInfo {

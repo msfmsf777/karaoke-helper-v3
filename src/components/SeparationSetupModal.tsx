@@ -30,9 +30,12 @@ export const SeparationSetupModal: React.FC = () => {
   const [pickingFolder, setPickingFolder] = useState(false);
   const [folderError, setFolderError] = useState<string | null>(null);
 
+  const isGpuSupported = Boolean(gpuInfo?.hasCapableGpu);
+  const isDriverOutdated = Boolean(gpuInfo?.driverOutdated);
+
   // Pre-select mode based on existing setting or hardware detection
   useEffect(() => {
-    if (envStatus?.mode) {
+    if (envStatus?.mode && (envStatus.mode === 'cpu' || gpuInfo?.hasCapableGpu)) {
       setSelectedMode(envStatus.mode);
     } else if (gpuInfo?.hasCapableGpu) {
       setSelectedMode('gpu');
@@ -200,11 +203,17 @@ export const SeparationSetupModal: React.FC = () => {
             style={{
               padding: '12px 16px',
               borderRadius: '12px',
-              backgroundColor: gpuInfo?.hasCapableGpu
-                ? 'rgba(74, 222, 128, 0.08)'
+              backgroundColor: isGpuSupported
+                ? isDriverOutdated
+                  ? 'rgba(245, 158, 11, 0.08)'
+                  : 'rgba(74, 222, 128, 0.08)'
                 : 'rgba(255, 255, 255, 0.04)',
               border: `1px solid ${
-                gpuInfo?.hasCapableGpu ? 'rgba(74, 222, 128, 0.25)' : 'rgba(255, 255, 255, 0.08)'
+                isGpuSupported
+                  ? isDriverOutdated
+                    ? 'rgba(245, 158, 11, 0.3)'
+                    : 'rgba(74, 222, 128, 0.25)'
+                  : 'rgba(255, 255, 255, 0.08)'
               }`,
               display: 'flex',
               alignItems: 'center',
@@ -213,9 +222,15 @@ export const SeparationSetupModal: React.FC = () => {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '18px' }}>{gpuInfo?.hasCapableGpu ? '🎮' : '💻'}</span>
+              <span style={{ fontSize: '18px' }}>{isGpuSupported ? '🎮' : '💻'}</span>
               <div>
-                <div style={{ fontSize: '13px', fontWeight: 600, color: gpuInfo?.hasCapableGpu ? '#86efac' : '#e2e8f0' }}>
+                <div
+                  style={{
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    color: isGpuSupported ? (isDriverOutdated ? '#fde68a' : '#86efac') : '#e2e8f0',
+                  }}
+                >
                   {gpuInfo?.modelName || '硬體檢測中...'}
                   {gpuInfo?.vramMb ? ` (${(gpuInfo.vramMb / 1024).toFixed(1)} GB VRAM)` : ''}
                 </div>
@@ -224,7 +239,7 @@ export const SeparationSetupModal: React.FC = () => {
                 </div>
               </div>
             </div>
-            {gpuInfo?.hasCapableGpu && (
+            {isGpuSupported && !isDriverOutdated && (
               <span
                 style={{
                   fontSize: '11px',
@@ -291,11 +306,14 @@ export const SeparationSetupModal: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {/* Option A: GPU Acceleration */}
               <div
-                onClick={() => setSelectedMode('gpu')}
+                onClick={() => {
+                  if (isGpuSupported) setSelectedMode('gpu');
+                }}
                 style={{
                   padding: '16px',
                   borderRadius: '12px',
-                  cursor: 'pointer',
+                  cursor: isGpuSupported ? 'pointer' : 'not-allowed',
+                  opacity: isGpuSupported ? 1 : 0.55,
                   border: `2px solid ${
                     selectedMode === 'gpu' ? '#6366f1' : 'rgba(255, 255, 255, 0.08)'
                   }`,
@@ -310,8 +328,15 @@ export const SeparationSetupModal: React.FC = () => {
                   type="radio"
                   name="separationMode"
                   checked={selectedMode === 'gpu'}
-                  onChange={() => setSelectedMode('gpu')}
-                  style={{ marginTop: '3px', accentColor: '#6366f1', cursor: 'pointer' }}
+                  disabled={!isGpuSupported}
+                  onChange={() => {
+                    if (isGpuSupported) setSelectedMode('gpu');
+                  }}
+                  style={{
+                    marginTop: '3px',
+                    accentColor: '#6366f1',
+                    cursor: isGpuSupported ? 'pointer' : 'not-allowed',
+                  }}
                 />
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
@@ -319,7 +344,7 @@ export const SeparationSetupModal: React.FC = () => {
                       <span style={{ fontWeight: 600, fontSize: '14px', color: '#fff' }}>
                         {t('separationSetup.gpuTitle', 'NVIDIA GPU 硬體加速')}
                       </span>
-                      {gpuInfo?.hasCapableGpu && (
+                      {isGpuSupported ? (
                         <span
                           style={{
                             fontSize: '10px',
@@ -332,6 +357,21 @@ export const SeparationSetupModal: React.FC = () => {
                         >
                           {t('separationSetup.recommended', '強烈推薦')}
                         </span>
+                      ) : (
+                        gpuInfo && (
+                          <span
+                            style={{
+                              fontSize: '10px',
+                              fontWeight: 600,
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                              color: '#a1a1aa',
+                            }}
+                          >
+                            {t('separationSetup.notSupportedBadge', '硬體不支援')}
+                          </span>
+                        )
                       )}
                     </div>
                     <span style={{ fontSize: '12px', fontWeight: 600, color: '#4ade80' }}>
@@ -339,7 +379,7 @@ export const SeparationSetupModal: React.FC = () => {
                     </span>
                   </div>
                   <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#a1a1aa', lineHeight: 1.4 }}>
-                    {t('separationSetup.gpuDesc', '利用 NVIDIA 顯示卡張量核心極速分離，處理時間縮減至幾十秒。需要下載約 1.8 GB PyTorch CUDA 依賴。')}
+                    {t('separationSetup.gpuDesc', '利用 NVIDIA 顯示卡張量核心極速分離，處理時間縮減至幾十秒。需要下載約 2.7 GB PyTorch CUDA 依賴。')}
                   </p>
                 </div>
               </div>
@@ -370,9 +410,25 @@ export const SeparationSetupModal: React.FC = () => {
                 />
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                    <span style={{ fontWeight: 600, fontSize: '14px', color: '#fff' }}>
-                      {t('separationSetup.cpuTitle', '標準 CPU 處理模式')}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontWeight: 600, fontSize: '14px', color: '#fff' }}>
+                        {t('separationSetup.cpuTitle', '標準 CPU 處理模式')}
+                      </span>
+                      {gpuInfo && !isGpuSupported && (
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 600,
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            backgroundColor: '#6366f1',
+                            color: '#fff',
+                          }}
+                        >
+                          {t('separationSetup.recommended', '強烈推薦')}
+                        </span>
+                      )}
+                    </div>
                     <span style={{ fontSize: '12px', color: '#94a3b8' }}>
                       🐢 ~5–10m / 首
                     </span>

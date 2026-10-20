@@ -51,6 +51,7 @@ export const SeparationSettingsSection: React.FC = () => {
   }, []);
 
   const handleModeSelect = async (mode: 'gpu' | 'cpu') => {
+    if (mode === 'gpu' && !gpuInfo?.hasCapableGpu && envStatus?.mode !== 'gpu') return;
     if (envStatus?.mode === mode || isSwitchingMode) return;
     setIsSwitchingMode(true);
     try {
@@ -102,6 +103,7 @@ export const SeparationSettingsSection: React.FC = () => {
   const isReady = envStatus?.status === 'ready';
   const isCpuMode = envStatus?.mode === 'cpu';
   const hasGpuUpgradeOpportunity = isReady && isCpuMode && gpuInfo?.hasCapableGpu;
+  const isGpuToggleDisabled = !gpuInfo?.hasCapableGpu && envStatus?.mode !== 'gpu';
 
   return (
     <div style={{ marginBottom: '24px' }}>
@@ -267,7 +269,8 @@ export const SeparationSettingsSection: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <button
                 onClick={() => void handleModeSelect('gpu')}
-                disabled={isSwitchingMode}
+                disabled={isSwitchingMode || isGpuToggleDisabled}
+                title={isGpuToggleDisabled ? t('separationSetup.notSupportedBadge', '硬體不支援') : undefined}
                 style={{
                   padding: '5px 12px',
                   borderRadius: '6px',
@@ -276,7 +279,8 @@ export const SeparationSettingsSection: React.FC = () => {
                   color: envStatus?.mode === 'gpu' ? '#fff' : '#a1a1aa',
                   fontSize: '12px',
                   fontWeight: envStatus?.mode === 'gpu' ? 600 : 400,
-                  cursor: isSwitchingMode ? 'wait' : 'pointer',
+                  opacity: isGpuToggleDisabled ? 0.45 : 1,
+                  cursor: isSwitchingMode ? 'wait' : isGpuToggleDisabled ? 'not-allowed' : 'pointer',
                   transition: 'all 0.15s ease',
                 }}
               >

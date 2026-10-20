@@ -107,7 +107,7 @@ export const DebugSeparationUI: React.FC<DebugSeparationUIProps> = ({ inline }) 
     );
   }
 
-  // 1. Outdated driver scenarios
+  // 1. Outdated driver & hardware capability scenarios
   const mockOutdatedRtx40 = () => {
     _debugSetState({
       gpuInfo: {
@@ -115,7 +115,7 @@ export const DebugSeparationUI: React.FC<DebugSeparationUIProps> = ({ inline }) 
         modelName: 'NVIDIA GeForce RTX 4070',
         vramMb: 12288,
         driverOutdated: true,
-        minRequiredDriver: '528.33',
+        minRequiredDriver: '528.33+',
         driverUpdateUrl: 'https://www.nvidia.com/Download/index.aspx',
         recommendationReason: '檢測到 NVIDIA GPU，但驅動程式版本過舊 (< 528.33)',
       },
@@ -129,7 +129,7 @@ export const DebugSeparationUI: React.FC<DebugSeparationUIProps> = ({ inline }) 
         modelName: 'NVIDIA GeForce RTX 5080',
         vramMb: 16384,
         driverOutdated: true,
-        minRequiredDriver: '572.16',
+        minRequiredDriver: '572.16+',
         driverUpdateUrl: 'https://www.nvidia.com/Download/index.aspx',
         recommendationReason: '檢測到 RTX 50 系列顯卡，需要驅動版本 >= 572.16',
       },
@@ -140,12 +140,28 @@ export const DebugSeparationUI: React.FC<DebugSeparationUIProps> = ({ inline }) 
     _debugSetState({
       gpuInfo: {
         hasCapableGpu: true,
-        modelName: 'NVIDIA GeForce RTX 4070',
-        vramMb: 12288,
+        modelName: 'NVIDIA GeForce RTX 5080',
+        vramMb: 16384,
         driverOutdated: false,
         minRequiredDriver: undefined,
         driverUpdateUrl: undefined,
         recommendationReason: '硬體具備完整的 CUDA 深度學習加速能力',
+      },
+    });
+  };
+
+  const mockUnsupportedGpu = () => {
+    _debugSetState({
+      gpuInfo: {
+        hasCapableGpu: false,
+        vendor: 'intel',
+        modelName: 'Intel(R) Iris(R) Xe Graphics',
+        vramMb: undefined,
+        driverOutdated: false,
+        minRequiredDriver: undefined,
+        driverUpdateUrl: undefined,
+        recommendation: 'cpu',
+        recommendationReason: 'Intel(R) Iris(R) Xe Graphics detected. CPU separation engine is recommended for stable performance.',
       },
     });
   };
@@ -156,7 +172,7 @@ export const DebugSeparationUI: React.FC<DebugSeparationUIProps> = ({ inline }) 
       envStatus: {
         status: 'error',
         mode: 'gpu',
-        errorMessage: '顯卡硬體或驅動程式與 PyTorch CUDA 核心不相容（CUDA kernel execution failed），建議更新顯卡驅動程式或切換至 CPU 模式。',
+        errorMessage: '目前安裝的 CUDA 套件與您的顯卡架構不相容（CUDA kernel execution failed）。請點擊「重新配置」重新下載支援您顯卡的 GPU 加速引擎，或更新顯卡驅動程式。',
         cudaKernelFunctional: false,
       },
     });
@@ -167,7 +183,7 @@ export const DebugSeparationUI: React.FC<DebugSeparationUIProps> = ({ inline }) 
       envStatus: {
         status: 'error',
         mode: 'gpu',
-        errorMessage: 'GPU 加速環境校驗失敗（未偵測到 CUDA 裝置），請確認顯卡驅動程式支援。',
+        errorMessage: 'GPU 加速環境校驗失敗（未偵測到 CUDA 裝置），請確認顯卡驅動程式支援，或切換至 CPU 模式。',
         cudaKernelFunctional: false,
       },
     });
@@ -323,7 +339,7 @@ export const DebugSeparationUI: React.FC<DebugSeparationUIProps> = ({ inline }) 
         </span>
       </div>
 
-      <div style={{ fontSize: '11px', color: '#a1a1aa' }}>1. 顯卡驅動警告測試 (Settings / Modal)</div>
+      <div style={{ fontSize: '11px', color: '#a1a1aa' }}>1. 顯卡與驅動狀態測試 (Settings / Modal)</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
         <button style={btnStyle} onClick={mockOutdatedRtx40}>
           ⚠️ 模擬 RTX 4070 (驅動 &lt; 528.33)
@@ -332,7 +348,10 @@ export const DebugSeparationUI: React.FC<DebugSeparationUIProps> = ({ inline }) 
           ⚠️ 模擬 RTX 5080 (驅動 &lt; 572.16)
         </button>
         <button style={btnStyle} onClick={mockNormalGpu}>
-          ✓ 模擬正常驅動 (RTX 4070)
+          ✓ 模擬正常驅動 (RTX 5080)
+        </button>
+        <button style={btnStyle} onClick={mockUnsupportedGpu}>
+          💻 模擬無獨立顯卡 / 不支援 GPU
         </button>
       </div>
 
