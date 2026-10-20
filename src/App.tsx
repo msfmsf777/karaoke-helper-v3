@@ -33,11 +33,13 @@ const AboutPopup = lazy(() => import('./components/AboutPopup'));
 import MiniPlayerSync from './components/MiniPlayer/MiniPlayerSync';
 import AnalyticsConsentModal from './components/AnalyticsConsentModal';
 import UpdatePopup from './components/UpdatePopup';
+import { useButtonTextFit } from './utils/useButtonTextFit';
 
 type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history' | 'download-manager' | 'settings' | string;
 
 function AppContent() {
   const { t } = useTranslation();
+  useButtonTextFit();
   const [currentView, setCurrentView] = useState<View>('library');
   const [previousView, setPreviousView] = useState<View>('library');
   const [isPlaying, setIsPlaying] = useState(false);
@@ -576,22 +578,95 @@ function AppContent() {
       )}
 
       {updatedNoticeVersion && (
-        <div className="fixed bottom-24 right-6 z-50 flex items-center gap-3 bg-emerald-700/95 text-white px-4 py-3 rounded-xl shadow-2xl border border-emerald-400/40 backdrop-blur-md text-sm font-medium">
-          <span>{t('updatesPopup.justUpdated', { version: updatedNoticeVersion })}</span>
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '104px',
+            right: '24px',
+            zIndex: 1200,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            backgroundColor: '#192820',
+            border: '1px solid rgba(29, 185, 84, 0.45)',
+            borderRadius: '12px',
+            padding: '12px 16px',
+            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.55)',
+            backdropFilter: 'blur(8px)',
+            color: '#fff',
+            fontSize: '13px',
+            fontWeight: 500,
+            maxWidth: 'calc(100vw - 48px)',
+          }}
+        >
+          <span
+            style={{
+              width: '20px',
+              height: '20px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(29, 185, 84, 0.22)',
+              border: '1px solid rgba(29, 185, 84, 0.5)',
+              color: '#4ade80',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '12px',
+              fontWeight: 700,
+              flexShrink: 0,
+            }}
+          >
+            ✓
+          </span>
+          <span style={{ color: '#f0fdf4' }}>
+            {t('updatesPopup.justUpdated', { version: updatedNoticeVersion })}
+          </span>
           <button
             onClick={() => {
+              const targetVer = updatedNoticeVersion;
               setUpdatedNoticeVersion(null);
-              setChangelogModal({ version: updatedNoticeVersion, fallbackNotes: updatedNoticeNotes });
-              setUpdatedNoticeVersion(null);
+              setChangelogModal({ version: targetVer, fallbackNotes: updatedNoticeNotes });
             }}
-            className="px-2.5 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-semibold transition-colors"
+            style={{
+              padding: '5px 12px',
+              backgroundColor: 'rgba(29, 185, 84, 0.2)',
+              border: '1px solid rgba(29, 185, 84, 0.45)',
+              borderRadius: '6px',
+              color: '#86efac',
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              transition: 'background-color 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(29, 185, 84, 0.32)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(29, 185, 84, 0.2)';
+            }}
           >
             {t('updatesPopup.viewChanges')}
           </button>
           <button
             onClick={() => setUpdatedNoticeVersion(null)}
-            className="p-1 text-white/70 hover:text-white transition-colors"
             aria-label="Close"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#9ca3af',
+              cursor: 'pointer',
+              padding: '4px 6px',
+              borderRadius: '6px',
+              fontSize: '14px',
+              lineHeight: 1,
+              transition: 'color 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = '#fff';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '#9ca3af';
+            }}
           >
             ✕
           </button>

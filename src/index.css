@@ -49,6 +49,7 @@ body {
 
 button {
   font-family: inherit;
+  text-wrap: balance;
 }
 
 /* Global Input Styling */

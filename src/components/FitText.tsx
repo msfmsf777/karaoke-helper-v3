@@ -89,7 +89,7 @@ const FitText: React.FC<FitTextProps> = ({
 
           next = { fontSize: Math.floor(low * 10) / 10, truncated: false };
         } else {
-          next = { fontSize: resolvedBase, truncated: true };
+          next = { fontSize: resolvedMin, truncated: true };
         }
       }
 
