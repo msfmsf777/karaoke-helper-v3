@@ -219,7 +219,11 @@ FunctionEnd
     ${Else}
       StrCpy $1 ""
     ${EndIf}
-    ${StdUtils.ExecShellAsUser} $0 "$launchLink" "open" "$1"
+    ${If} ${isUpdated}
+      ${StdUtils.ExecShellAsUser} $0 "$appExe" "open" "--updated"
+    ${Else}
+      ${StdUtils.ExecShellAsUser} $0 "$launchLink" "open" ""
+    ${EndIf}
   FunctionEnd
 
   Function KHelperFinishPagePre
@@ -255,7 +259,11 @@ FunctionEnd
     ${EndIf}
     SetDetailsPrint textonly
     DetailPrint "$(KHelperVcRuntimeInstalling)"
-    ExecWait '"$INSTDIR\resources\bin\VC_redist.x64.exe" /install /passive /norestart' $0
+    ${If} ${Silent}
+      ExecWait '"$INSTDIR\resources\bin\VC_redist.x64.exe" /install /quiet /norestart' $0
+    ${Else}
+      ExecWait '"$INSTDIR\resources\bin\VC_redist.x64.exe" /install /passive /norestart' $0
+    ${EndIf}
     ; 0 = Success, 3010 = Reboot required (success), 1638 = Newer version already installed (success)
     ${If} $0 != 0
     ${AndIf} $0 != 3010
@@ -277,6 +285,11 @@ FunctionEnd
 
   ; Delete temporary installer payload from permanent installation directory to save 25.6 MB
   Delete "$INSTDIR\resources\bin\VC_redist.x64.exe"
+
+  ; Ensure silent updates launch the executable directly so --updated is forwarded reliably
+  ${If} ${isUpdated}
+    StrCpy $launchLink "$appExe"
+  ${EndIf}
 
   SetRegView lastused
 !macroend

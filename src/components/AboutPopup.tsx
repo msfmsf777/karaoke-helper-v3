@@ -23,7 +23,7 @@ const SOCIAL_LINKS = [
     },
     {
         id: 'twitter',
-        url: 'https://x.com/msfmsf777', // TODO: Enter X (Twitter) URL
+        url: 'https://x.com/msfmsf777',
         titleKey: 'about.links.twitter.title',
         icon: XIcon,
         labelKey: 'about.links.twitter.label',
@@ -33,7 +33,7 @@ const SOCIAL_LINKS = [
     },
     {
         id: 'discord',
-        url: 'https://discord.gg/96zfTcBgZG', // TODO: Enter Discord invite URL
+        url: 'https://discord.gg/96zfTcBgZG',
         titleKey: 'about.links.discord.title',
         icon: DiscordIcon,
         labelKey: 'about.links.discord.label',
@@ -43,7 +43,7 @@ const SOCIAL_LINKS = [
     },
     {
         id: 'report',
-        url: 'https://github.com/msfmsf777/karaoke-helper-v3/issues/new', // TODO: Enter issue report URL
+        url: 'https://github.com/msfmsf777/karaoke-helper-v3/issues/new',
         titleKey: 'about.links.report.title',
         icon: BugIcon,
         labelKey: 'about.links.report.label',
@@ -61,34 +61,38 @@ interface AboutPopupProps {
 const AboutPopup: React.FC<AboutPopupProps> = ({ open, onClose }) => {
     const { t } = useTranslation();
     const [visible, setVisible] = useState(false);
-    const { checkForUpdates, downloadUpdate, installUpdate, status } = useUpdater();
-    const isUpdaterBusy = status === 'checking' || status === 'downloading' || status === 'installing';
+    const [checkedManually, setCheckedManually] = useState(false);
+    const { checkForUpdates, openUpdatePopup, status, errorCode } = useUpdater();
+    const isActionableError = status === 'error' && (errorCode === 'disk_full' || errorCode === 'install_failed');
+    const isUpdaterBusy = status === 'checking' || status === 'installing';
+    const isReadyToInstall = status === 'downloaded';
+
     const updateButtonLabel = status === 'checking'
         ? t('settings.updates.checking')
-        : status === 'downloading'
-            ? t('updatesPopup.status.downloading')
-            : status === 'installing'
-                ? t('updatesPopup.status.installing')
-                : status === 'available'
-                    ? t('updatesPopup.updateNow')
-                    : status === 'downloaded'
-                        ? t('updatesPopup.restart')
+        : status === 'installing'
+            ? t('updatesPopup.status.installing')
+            : isReadyToInstall
+                ? t('updatesPopup.updateNow')
+                : isActionableError
+                    ? t('updatesPopup.retry')
+                    : checkedManually
+                        ? `✓ ${t('settings.updates.upToDate')}`
                         : t('settings.updates.check');
+
     const handleUpdaterAction = () => {
-        if (status === 'available') {
-            downloadUpdate();
+        if (isReadyToInstall || isActionableError) {
+            onClose();
+            openUpdatePopup();
             return;
         }
-        if (status === 'downloaded') {
-            installUpdate();
-            return;
-        }
+        setCheckedManually(true);
         checkForUpdates(true);
     };
 
     useEffect(() => {
         if (open) {
             setVisible(true);
+            setCheckedManually(false);
         } else {
             const timer = setTimeout(() => setVisible(false), 200);
             return () => clearTimeout(timer);
@@ -147,28 +151,29 @@ const AboutPopup: React.FC<AboutPopupProps> = ({ open, onClose }) => {
                         position: 'absolute',
                         top: '12px',
                         left: '12px',
-                        background: 'none',
-                        border: '1px solid #444',
-                        color: '#aaa',
+                        background: isReadyToInstall ? 'var(--accent-color)' : 'none',
+                        border: '1px solid ' + (isReadyToInstall ? 'var(--accent-color)' : '#444'),
+                        color: isReadyToInstall ? '#fff' : (checkedManually && !isUpdaterBusy ? '#76d394' : '#aaa'),
                         cursor: isUpdaterBusy ? 'wait' : 'pointer',
-                        padding: '4px 8px',
+                        padding: '4px 10px',
                         borderRadius: '6px',
                         fontSize: '11px',
+                        fontWeight: isReadyToInstall ? 600 : 400,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         transition: 'background-color 0.2s, color 0.2s',
                     }}
                     onMouseEnter={(e) => {
-                        if (!isUpdaterBusy) {
+                        if (!isUpdaterBusy && !isReadyToInstall) {
                             e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
                             e.currentTarget.style.color = '#fff';
                         }
                     }}
                     onMouseLeave={(e) => {
-                        if (!isUpdaterBusy) {
+                        if (!isUpdaterBusy && !isReadyToInstall) {
                             e.currentTarget.style.backgroundColor = 'transparent';
-                            e.currentTarget.style.color = '#aaa';
+                            e.currentTarget.style.color = checkedManually ? '#76d394' : '#aaa';
                         }
                     }}
                 >

@@ -28,7 +28,14 @@ import {
   loadFavorites, loadHistory, loadPlaylists, loadSettings, loadSettingsWithMeta,
   saveFavorites, saveHistory, savePlaylists, saveSettings
 } from './userData'
-import { initUpdater, checkForUpdates, onStatusChange } from './updater'
+import {
+  initUpdater,
+  checkForUpdates,
+  onStatusChange,
+  broadcastJustUpdatedIfPending,
+  cleanupUpdaterOnQuit,
+  registerUpdaterLifecycleHooks,
+} from './updater'
 import type { HotkeyAction, HotkeyConfig } from '../shared/hotkeys'
 import { applyGlobalHotkeys, getHotkeyRegistrationStatus, unregisterGlobalHotkeys } from './hotkeys'
 import { resolveOverlayDesign, mergeOverlayTemplatesConfig } from '../shared/overlayTemplates'
@@ -421,8 +428,8 @@ function createWindow() {
 
   win.webContents.on('did-finish-load', () => {
     win?.webContents.send('main-process-message', (new Date).toLocaleString())
-    if (process.argv.includes('--updated')) {
-      win?.webContents.send('updater:just-updated', { version: app.getVersion() })
+    if (true) {
+      broadcastJustUpdatedIfPending(win)
     }
   })
 
@@ -656,7 +663,14 @@ app.on('window-all-closed', () => {
 })
 
 app.on('before-quit', () => {
+  isQuitting = true
+  cleanupUpdaterOnQuit()
   vocalRangeAutoQueue.destroy()
+  separationEnvManager.cancelInstallation()
+  if (miniWin && !miniWin.isDestroyed()) {
+    miniWin.destroy()
+    miniWin = null
+  }
   killActiveSeparation()
   unregisterGlobalHotkeys()
   void shutdownAnalytics()
@@ -1121,7 +1135,40 @@ if (!gotTheLock) {
     registerAnalyticsIpc()
 
     // Initialize Updater
-    initUpdater()
+    registerUpdaterLifecycleHooks({
+      prepareForInstall: () => {
+        isQuitting = true
+        cleanupUpdaterOnQuit()
+        vocalRangeAutoQueue.destroy()
+        killActiveSeparation()
+        separationEnvManager.cancelInstallation()
+        unregisterGlobalHotkeys()
+        stopOverlayServer()
+        if (miniWin && !miniWin.isDestroyed()) {
+          miniWin.destroy()
+          miniWin = null
+        }
+        if (tray) {
+          tray.destroy()
+          tray = null
+        }
+      },
+      setMainWindowVisible: (visible: boolean) => {
+        if (!win || win.isDestroyed()) return
+        if (visible) {
+          if (win.isMinimized()) win.restore()
+          win.show()
+          win.focus()
+        } else {
+          win.hide()
+          if (miniWin && !miniWin.isDestroyed() && miniWin.isVisible()) {
+            miniWin.hide()
+          }
+        }
+      },
+    })
+
+    await initUpdater()
 
     // Initialize Tray
     createTray()

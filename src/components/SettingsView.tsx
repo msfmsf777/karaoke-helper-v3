@@ -1096,45 +1096,54 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 
 const LastCheckedText: React.FC = () => {
     const { t } = useTranslation();
-    const { lastCheckTime } = useUpdater();
+    const { lastCheckTime, status, errorCode } = useUpdater();
+    if (status === 'downloaded') {
+        return <div style={{ color: '#76d394', fontSize: '13px' }}>{t('updatesPopup.readyToRestart')}</div>;
+    }
+    if (status === 'error' && errorCode === 'disk_full') {
+        return <div style={{ color: '#fcd34d', fontSize: '13px' }}>{t('updatesPopup.diskFullError')}</div>;
+    }
+    if (status === 'error' && errorCode === 'install_failed') {
+        return <div style={{ color: '#ff8e8e', fontSize: '13px' }}>{t('updatesPopup.installFailedError')}</div>;
+    }
 
     if (!lastCheckTime) return <div style={{ color: '#aaa', fontSize: '13px' }}>{t('settings.updates.neverChecked')}</div>;
 
     const date = new Date(lastCheckTime);
     const timeString = date.toLocaleString(); // Or simpler formatting
 
-    return <div style={{ color: '#aaa', fontSize: '13px' }}>{t('settings.updates.lastChecked', { time: timeString })}</div>;
+    return (
+        <div style={{ color: '#aaa', fontSize: '13px' }}>
+            <span style={{ color: '#76d394', marginRight: '8px' }}>✓ {t('settings.updates.upToDate')}</span>
+            <span>({t('settings.updates.lastChecked', { time: timeString })})</span>
+        </div>
+    );
 };
 
 // Sub-component for clean context usage
 const CheckForUpdatesButton: React.FC = () => {
     const { t } = useTranslation();
-    const { checkForUpdates, downloadUpdate, installUpdate, status } = useUpdater();
-    const isBusy = status === 'checking' || status === 'downloading' || status === 'installing';
+    const { checkForUpdates, openUpdatePopup, status, errorCode } = useUpdater();
+    const isActionableError = status === 'error' && (errorCode === 'disk_full' || errorCode === 'install_failed');
+    const isBusy = status === 'checking' || status === 'installing';
     const label = status === 'checking'
         ? t('settings.updates.checking')
-        : status === 'downloading'
-            ? t('updatesPopup.status.downloading')
-            : status === 'installing'
-                ? t('updatesPopup.status.installing')
-                : status === 'available'
-                    ? t('updatesPopup.updateNow')
-                    : status === 'downloaded'
-                        ? t('updatesPopup.restart')
-                        : t('settings.updates.check');
+        : status === 'installing'
+            ? t('updatesPopup.status.installing')
+            : status === 'downloaded'
+                ? t('updatesPopup.updateNow')
+                : isActionableError
+                    ? t('updatesPopup.retry')
+                    : t('settings.updates.check');
     const handleClick = () => {
-        if (status === 'available') {
-            downloadUpdate();
-            return;
-        }
-        if (status === 'downloaded') {
-            installUpdate();
+        if (status === 'downloaded' || isActionableError) {
+            openUpdatePopup();
             return;
         }
         checkForUpdates(true);
     };
 
-    const isPrimary = status === 'available' || status === 'downloaded';
+    const isPrimary = status === 'downloaded';
 
     return (
         <button

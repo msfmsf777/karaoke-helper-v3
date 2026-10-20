@@ -159,99 +159,105 @@ const SearchResultItem: React.FC<{
 
 const UpdateIndicator: React.FC = () => {
   const { t } = useTranslation();
-  const { status, progress } = useUpdater();
-  const [showPopup, setShowPopup] = useState(false);
+  const { status, errorCode, isPopupOpen, openUpdatePopup, closeUpdatePopup } = useUpdater();
 
-  const isVisible = ['available', 'downloading', 'downloaded', 'installing', 'error'].includes(status);
-  const downloadPercent = Math.max(0, Math.min(100, progress?.percent ?? 0));
+  const isActionableError = status === 'error' && (errorCode === 'disk_full' || errorCode === 'install_failed');
+  const isReady = status === 'downloaded' || status === 'installing';
+  const isVisible = isReady || isActionableError;
 
-  if (!isVisible) return null;
+  const tooltip = isActionableError
+    ? (errorCode === 'disk_full' ? t('updatesPopup.diskFullError') : t('updatesPopup.installFailedError'))
+    : t('updatesPopup.readyToRestart');
 
   return (
     <>
-      <button
-        onClick={() => setShowPopup(true)}
-        title={status === 'error'
-          ? t('shell.topBar.updateFailed')
-          : status === 'downloaded'
-            ? t('updatesPopup.readyToRestart')
-            : t('shell.topBar.updateAvailable')}
-        style={{
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          padding: '8px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          opacity: status === 'error' || status === 'downloaded' ? 1 : 0.8,
-          transition: 'opacity 0.2s',
-          position: 'relative',
-          // @ts-ignore
-          WebkitAppRegion: 'no-drag',
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-        onMouseLeave={(e) => e.currentTarget.style.opacity = status === 'error' ? '1' : '0.8'}
-      >
-        <div style={{ position: 'relative', display: 'flex', width: '24px', height: '24px' }}>
-          <img
-            src={UpdateIconBase}
-            alt="Update"
-            style={{
-              width: '24px',
-              height: '24px',
-              display: 'block',
-              filter: status === 'error'
-                ? 'sepia(1) saturate(10000%) hue-rotate(0deg) brightness(80%) saturate(1000%)'
-                : 'none'
-            }}
-          />
-          {status === 'downloaded' && (
-            <span aria-hidden="true" style={{
-              position: 'absolute',
-              right: '-5px',
-              bottom: '-4px',
-              width: '12px',
-              height: '12px',
-              borderRadius: '50%',
-              backgroundColor: 'var(--accent-color)',
-              border: '2px solid #111',
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '8px',
-              fontWeight: 700,
-              lineHeight: 1,
-            }}>
-              &#10003;
-            </span>
-          )}
-          {status === 'downloading' && (
-            <span aria-hidden="true" style={{
-              position: 'absolute',
-              left: 0,
-              right: 0,
-              bottom: '-6px',
-              height: '3px',
-              borderRadius: '999px',
-              backgroundColor: 'rgba(255, 255, 255, 0.16)',
-              overflow: 'hidden',
-            }}>
-              <span style={{
+      {isVisible && (
+        <button
+          onClick={() => openUpdatePopup()}
+          title={tooltip}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '8px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: 0.92,
+            transition: 'opacity 0.2s, transform 0.15s',
+            position: 'relative',
+            // @ts-ignore
+            WebkitAppRegion: 'no-drag',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.opacity = '1';
+            e.currentTarget.style.transform = 'scale(1.06)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.opacity = '0.92';
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
+        >
+          <div style={{ position: 'relative', display: 'flex', width: '24px', height: '24px' }}>
+            <img
+              src={UpdateIconBase}
+              alt="Update"
+              style={{
+                width: '24px',
+                height: '24px',
                 display: 'block',
-                width: `${downloadPercent}%`,
-                height: '100%',
-                borderRadius: 'inherit',
+                filter: isActionableError
+                  ? 'hue-rotate(-75deg) saturate(180%) brightness(105%)'
+                  : 'none',
+              }}
+            />
+            {isReady && (
+              <span aria-hidden="true" style={{
+                position: 'absolute',
+                right: '-5px',
+                bottom: '-4px',
+                width: '13px',
+                height: '13px',
+                borderRadius: '50%',
                 backgroundColor: 'var(--accent-color)',
-                transition: 'width 0.2s ease',
-              }} />
-            </span>
-          )}
-        </div>
-      </button>
-      {showPopup && <UpdatePopup onClose={() => setShowPopup(false)} />}
+                border: '2px solid #111',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '8px',
+                fontWeight: 700,
+                lineHeight: 1,
+              }}>
+                &#10003;
+              </span>
+            )}
+            {isActionableError && (
+              <span aria-hidden="true" style={{
+                position: 'absolute',
+                right: '-5px',
+                bottom: '-4px',
+                width: '13px',
+                height: '13px',
+                borderRadius: '50%',
+                backgroundColor: '#f59e0b',
+                border: '2px solid #111',
+                color: '#111',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '9px',
+                fontWeight: 900,
+                lineHeight: 1,
+              }}>
+                !
+              </span>
+            )}
+          </div>
+        </button>
+      )}
+      {isPopupOpen && <UpdatePopup onClose={closeUpdatePopup} />}
     </>
   );
 };

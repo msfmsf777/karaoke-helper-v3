@@ -144,7 +144,8 @@
       "check": "업데이트 확인",
       "checking": "확인 중...",
       "neverChecked": "확인하지 않음",
-      "lastChecked": "마지막 확인: {{time}}"
+      "lastChecked": "마지막 확인: {{time}}",
+      "upToDate": "최신 버전입니다"
     },
     "overlay": {
       "unsavedLeaveConfirm": "라이브 오버레이 템플릿에 저장되지 않은 변경사항이 있습니다. 편집자를 떠나시겠습니까?"
@@ -288,7 +289,9 @@
     "restart": "다시 시작하여 업데이트",
     "retry": "업데이트 다시 시도",
     "openDownloadPage": "다운로드 페이지 열기",
-    "readyToRestart": "업데이트 다운로드가 완료되었습니다. KHelper를 다시 시작하면 설치됩니다.",
+    "readyToRestart": "업데이트 준비가 완료되었습니다. '지금 업데이트'를 클릭하면 자동으로 설치하고 다시 시작합니다.",
+    "diskFullError": "디스크 여유 공간이 부족하여 업데이트를 다운로드 및 설치할 수 없습니다. 공간을 확보한 후 다시 시도하거나 수동으로 설치해 주세요.",
+    "installFailedError": "자동 업데이트 설치가 완료되지 않았거나 중단되었습니다. '업데이트 다시 시도'를 클릭하거나 다운로드 페이지에서 수동으로 설치해 주세요.",
     "progress": "{{transferred}} / {{total}} 다운로드됨",
     "status": {
       "downloading": "업데이트를 다운로드하는 중...",

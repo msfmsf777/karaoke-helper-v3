@@ -9,14 +9,18 @@ import {
 
 interface UpdatePopupProps {
     onClose: () => void;
+    releaseNotesOnly?: {
+        version: string;
+        fallbackNotes?: string | Array<{ note?: string }>;
+    };
 }
 
-const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose }) => {
+const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose, releaseNotesOnly }) => {
     const { t, i18n } = useTranslation();
     const {
         status,
         updateInfo,
-        progress,
+        errorCode,
         checkForUpdates,
         downloadUpdate,
         installUpdate,
@@ -26,20 +30,24 @@ const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose }) => {
     const [isClosing, setIsClosing] = useState(false);
     const [localizedNotes, setLocalizedNotes] = useState<ResolvedReleaseNotes | null>(null);
 
-    useEffect(() => {
-        if (status === 'idle') {
-            onClose();
-        }
-    }, [status, onClose]);
+    const isReadOnlyChangelog = Boolean(releaseNotesOnly);
+    const displayVersion = releaseNotesOnly?.version ?? updateInfo?.version;
+    const rawFallbackNotes = releaseNotesOnly?.fallbackNotes ?? updateInfo?.releaseNotes;
 
     useEffect(() => {
-        if (!updateInfo?.version) {
+        if (!isReadOnlyChangelog && status === 'idle') {
+            onClose();
+        }
+    }, [isReadOnlyChangelog, status, onClose]);
+
+    useEffect(() => {
+        if (!displayVersion) {
             setLocalizedNotes(null);
             return;
         }
 
         const controller = new AbortController();
-        const url = `https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v${updateInfo.version}/release-notes.json`;
+        const url = `https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v${displayVersion}/release-notes.json`;
 
         fetch(url, { signal: controller.signal })
             .then(async (response) => {
@@ -60,13 +68,13 @@ const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose }) => {
             });
 
         return () => controller.abort();
-    }, [i18n.language, updateInfo?.version]);
+    }, [i18n.language, displayVersion]);
 
     const fallbackReleaseNotes = useMemo(() => (
-        normalizeFallbackReleaseNotes(updateInfo?.releaseNotes)
-    ), [updateInfo?.releaseNotes]);
+        normalizeFallbackReleaseNotes(rawFallbackNotes)
+    ), [rawFallbackNotes]);
 
-    if (!updateInfo && status !== 'error') return null;
+    if (!isReadOnlyChangelog && !updateInfo && status !== 'error') return null;
 
     const handleClose = () => {
         setIsClosing(true);
@@ -74,6 +82,11 @@ const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose }) => {
     };
 
     const handlePrimaryAction = () => {
+        if (isReadOnlyChangelog) {
+            handleClose();
+            return;
+        }
+
         if (status === 'downloaded') {
             installUpdate();
             return;
@@ -95,13 +108,18 @@ const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose }) => {
         handleClose();
     };
 
-    const canClose = status !== 'installing';
-    const isBusy = status === 'downloading' || status === 'installing';
-    const percent = status === 'downloaded'
-        ? 100
-        : Math.max(0, Math.min(100, progress?.percent ?? 0));
-    const primaryDisabled = status === 'checking' || status === 'downloading' || status === 'installing';
-    const primaryLabel = getPrimaryLabel(status, Boolean(updateInfo), t);
+    const canClose = isReadOnlyChangelog || status !== 'installing';
+    const isBusy = !isReadOnlyChangelog && (status === 'downloading' || status === 'installing');
+    const primaryDisabled = !isReadOnlyChangelog && (status === 'checking' || status === 'downloading' || status === 'installing');
+    const primaryLabel = isReadOnlyChangelog
+        ? t('common.close')
+        : getPrimaryLabel(status, Boolean(updateInfo), t);
+
+    const errorMessage = errorCode === 'disk_full'
+        ? t('updatesPopup.diskFullError')
+        : errorCode === 'install_failed'
+            ? t('updatesPopup.installFailedError')
+            : t('updatesPopup.error');
 
     return (
         <div style={{
@@ -141,11 +159,13 @@ const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose }) => {
                 }}>
                     <div>
                         <h2 style={{ margin: 0, fontSize: '18px', color: '#fff' }}>
-                            {t('updatesPopup.title')}
+                            {isReadOnlyChangelog
+                                ? t('updatesPopup.justUpdated', { version: displayVersion })
+                                : t('updatesPopup.title')}
                         </h2>
-                        {updateInfo && (
+                        {displayVersion && (
                             <div style={{ fontSize: '13px', color: 'var(--accent-color)', marginTop: '4px' }}>
-                                v{updateInfo.version}
+                                v{displayVersion}
                             </div>
                         )}
                     </div>
@@ -175,13 +195,13 @@ const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose }) => {
                     fontSize: '14px',
                     lineHeight: '1.6'
                 }}>
-                    {updateInfo && (
+                    {displayVersion && (
                         <div style={{
                             backgroundColor: '#1f1f1f',
                             padding: '16px',
                             borderRadius: '8px',
                             border: '1px solid #333',
-                            maxHeight: '220px',
+                            maxHeight: '240px',
                             overflowY: 'auto',
                             whiteSpace: 'normal',
                             color: '#ccc'
@@ -198,42 +218,44 @@ const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose }) => {
                         </div>
                     )}
 
-                    {(status === 'downloading' || status === 'downloaded' || status === 'installing') && (
-                        <div style={{ marginTop: '18px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#aaa', marginBottom: '8px' }}>
-                                <span>{status === 'downloaded' ? t('updatesPopup.readyToRestart') : t(`updatesPopup.status.${status}`)}</span>
-                                <span>{Math.round(percent)}%</span>
-                            </div>
-                            <div style={{ height: '8px', background: '#151515', borderRadius: '999px', overflow: 'hidden', border: '1px solid #333' }}>
-                                <div style={{
-                                    width: `${percent}%`,
-                                    height: '100%',
-                                    background: 'var(--accent-color)',
-                                    transition: 'width 0.2s ease',
-                                }} />
-                            </div>
-                            {progress && status === 'downloading' && (
-                                <div style={{ marginTop: '6px', color: '#888', fontSize: '12px' }}>
-                                    {t('updatesPopup.progress', {
-                                        transferred: formatBytes(progress.transferred),
-                                        total: formatBytes(progress.total),
-                                    })}
-                                </div>
-                            )}
+                    {!isReadOnlyChangelog && (status === 'downloaded' || status === 'installing') && (
+                        <div style={{
+                            marginTop: '16px',
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            backgroundColor: 'rgba(29, 185, 84, 0.1)',
+                            border: '1px solid rgba(29, 185, 84, 0.3)',
+                            color: '#86efac',
+                            fontSize: '13px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                        }}>
+                            <span>✓</span>
+                            <span>
+                                {status === 'installing'
+                                    ? t('updatesPopup.status.installing')
+                                    : t('updatesPopup.readyToRestart')}
+                            </span>
                         </div>
                     )}
 
-                    {status === 'error' && (
+                    {!isReadOnlyChangelog && status === 'error' && (
                         <div style={{
-                            marginTop: '20px',
-                            padding: '12px',
-                            backgroundColor: 'rgba(255, 0, 0, 0.1)',
-                            border: '1px solid #ff4444',
+                            marginTop: '16px',
+                            padding: '12px 14px',
+                            backgroundColor: errorCode === 'disk_full'
+                                ? 'rgba(245, 158, 11, 0.12)'
+                                : 'rgba(255, 68, 68, 0.1)',
+                            border: errorCode === 'disk_full'
+                                ? '1px solid rgba(245, 158, 11, 0.5)'
+                                : '1px solid #ff4444',
                             borderRadius: '8px',
-                            color: '#ff4444',
-                            fontSize: '13px'
+                            color: errorCode === 'disk_full' ? '#fcd34d' : '#ff6b6b',
+                            fontSize: '13px',
+                            lineHeight: 1.5,
                         }}>
-                            {t('updatesPopup.error')}
+                            {errorMessage}
                         </div>
                     )}
                 </div>
@@ -246,24 +268,26 @@ const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose }) => {
                     justifyContent: 'flex-end',
                     gap: '12px'
                 }}>
-                    <button
-                        onClick={handleIgnore}
-                        disabled={!updateInfo || isBusy || status === 'downloaded'}
-                        style={{
-                            padding: '8px 16px',
-                            backgroundColor: 'transparent',
-                            color: '#888',
-                            border: '1px solid transparent',
-                            borderRadius: '6px',
-                            cursor: (!updateInfo || isBusy || status === 'downloaded') ? 'default' : 'pointer',
-                            fontSize: '14px',
-                            marginRight: 'auto',
-                            opacity: (!updateInfo || isBusy || status === 'downloaded') ? 0.45 : 1
-                        }}
-                    >
-                        {t('updatesPopup.ignore')}
-                    </button>
-                    {status === 'error' && updateInfo && (
+                    {!isReadOnlyChangelog && (
+                        <button
+                            onClick={handleIgnore}
+                            disabled={!updateInfo || isBusy}
+                            style={{
+                                padding: '8px 16px',
+                                backgroundColor: 'transparent',
+                                color: '#888',
+                                border: '1px solid transparent',
+                                borderRadius: '6px',
+                                cursor: (!updateInfo || isBusy) ? 'default' : 'pointer',
+                                fontSize: '14px',
+                                marginRight: 'auto',
+                                opacity: (!updateInfo || isBusy) ? 0.45 : 1
+                            }}
+                        >
+                            {t('updatesPopup.ignore')}
+                        </button>
+                    )}
+                    {!isReadOnlyChangelog && status === 'error' && updateInfo && (
                         <button
                             onClick={openReleasePage}
                             style={{
@@ -279,22 +303,24 @@ const UpdatePopup: React.FC<UpdatePopupProps> = ({ onClose }) => {
                             {t('updatesPopup.openDownloadPage')}
                         </button>
                     )}
-                    <button
-                        onClick={canClose ? handleClose : undefined}
-                        disabled={!canClose}
-                        style={{
-                            padding: '8px 16px',
-                            backgroundColor: 'transparent',
-                            color: '#aaa',
-                            border: '1px solid #444',
-                            borderRadius: '6px',
-                            cursor: canClose ? 'pointer' : 'default',
-                            fontSize: '14px',
-                            opacity: canClose ? 1 : 0.45
-                        }}
-                    >
-                        {t('common.cancel')}
-                    </button>
+                    {!isReadOnlyChangelog && (
+                        <button
+                            onClick={canClose ? handleClose : undefined}
+                            disabled={!canClose}
+                            style={{
+                                padding: '8px 16px',
+                                backgroundColor: 'transparent',
+                                color: '#aaa',
+                                border: '1px solid #444',
+                                borderRadius: '6px',
+                                cursor: canClose ? 'pointer' : 'default',
+                                fontSize: '14px',
+                                opacity: canClose ? 1 : 0.45
+                            }}
+                        >
+                            {t('common.cancel')}
+                        </button>
+                    )}
                     <button
                         onClick={handlePrimaryAction}
                         disabled={primaryDisabled}
@@ -365,15 +391,8 @@ function stripHtml(value: string): string {
     return value.replace(/<[^>]*>/g, '');
 }
 
-function formatBytes(value: number): string {
-    if (!Number.isFinite(value) || value <= 0) return '0 MB';
-    const mb = value / (1024 * 1024);
-    return `${mb.toFixed(mb >= 10 ? 0 : 1)} MB`;
-}
-
 function getPrimaryLabel(status: string, hasUpdateInfo: boolean, t: (key: string) => string): string {
-    if (status === 'downloaded') return t('updatesPopup.restart');
-    if (status === 'downloading') return t('updatesPopup.status.downloading');
+    if (status === 'downloaded') return t('updatesPopup.updateNow');
     if (status === 'installing') return t('updatesPopup.status.installing');
     if (status === 'error') return hasUpdateInfo ? t('updatesPopup.retry') : t('settings.updates.check');
     return t('updatesPopup.updateNow');

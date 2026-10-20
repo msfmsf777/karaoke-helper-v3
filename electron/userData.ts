@@ -369,6 +369,9 @@ export interface UserSettings {
     volumeNormalization?: boolean;
     targetLoudnessPreset?: 'standard' | 'voice_priority' | 'gentle' | 'custom';
     targetLoudnessCustom?: number;
+    pendingUpdateTargetVersion?: string;
+    pendingUpdateFromVersion?: string;
+    pendingUpdateReleaseNotes?: string | Array<{ note?: string }>;
 }
 
 export async function saveSettings(settings: UserSettings): Promise<void> {

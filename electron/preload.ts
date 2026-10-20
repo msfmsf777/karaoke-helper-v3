@@ -272,11 +272,19 @@ contextBridge.exposeInMainWorld('khelper', {
       ipcRenderer.on('updater:status', listener)
       return () => ipcRenderer.off('updater:status', listener)
     },
-    onUpdatedNotice: (callback: (data: { version: string }) => void) => {
-      const listener = (_event: Electron.IpcRendererEvent, payload: { version: string }) => callback(payload)
+    onUpdatedNotice: (callback: (data: { version: string; releaseNotes?: string | Array<{ note?: string }> }) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, payload: { version: string; releaseNotes?: string | Array<{ note?: string }> }) => callback(payload)
       ipcRenderer.on('updater:just-updated', listener)
       return () => ipcRenderer.off('updater:just-updated', listener)
     },
+    onOpenPopup: (callback: () => void) => {
+      const listener = () => callback()
+      ipcRenderer.on('updater:open-popup', listener)
+      return () => ipcRenderer.off('updater:open-popup', listener)
+    },
+    debugSetState: (payload: any) => ipcRenderer.invoke('updater:debug-set-state', payload),
+    debugSimulateFlow: (payload: { outcome: 'success' | 'fail'; version?: string }) =>
+      ipcRenderer.invoke('updater:debug-simulate-flow', payload),
   },
   hotkeys: {
     getStatus: (): Promise<HotkeyRegistrationStatus> => ipcRenderer.invoke('hotkeys:get-status'),

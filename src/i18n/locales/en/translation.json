@@ -197,7 +197,8 @@
       "check": "Check for Updates",
       "checking": "Checking...",
       "neverChecked": "Never checked",
-      "lastChecked": "Last checked: {{time}}"
+      "lastChecked": "Last checked: {{time}}",
+      "upToDate": "Up to date"
     },
     "overlay": {
       "unsavedLeaveConfirm": "The live overlay template has unsaved changes. Leave the editor?"
@@ -288,7 +289,9 @@
     "restart": "Restart to update",
     "retry": "Retry update",
     "openDownloadPage": "Open download page",
-    "readyToRestart": "Update ready. Restart KHelper to install it.",
+    "readyToRestart": "Update is ready. Click Update Now to install and restart KHelper automatically.",
+    "diskFullError": "Insufficient disk space to download and install the update. Please free up disk space and retry, or download manually.",
+    "installFailedError": "The automatic update could not be completed. Click Retry Update, or open the download page to install manually.",
     "progress": "{{transferred}} / {{total}} downloaded",
     "status": {
       "downloading": "Downloading update...",

@@ -197,7 +197,8 @@
       "check": "檢查更新",
       "checking": "檢查中...",
       "neverChecked": "尚未檢查",
-      "lastChecked": "上次檢查時間：{{time}}"
+      "lastChecked": "上次檢查時間：{{time}}",
+      "upToDate": "已是最新版本"
     },
     "overlay": {
       "unsavedLeaveConfirm": "直播覆蓋模板有尚未儲存的變更，確定要離開編輯器嗎？"
@@ -288,7 +289,9 @@
     "restart": "重新啟動並更新",
     "retry": "重試更新",
     "openDownloadPage": "前往下載頁面",
-    "readyToRestart": "更新已下載完成，重新啟動 KHelper 後即可安裝。",
+    "readyToRestart": "新版本已準備就緒，點擊「立即更新」將自動安裝並重啟 KHelper。",
+    "diskFullError": "磁碟空間不足，無法下載並安裝更新。請清理磁碟空間後重試，或前往下載頁面手動安裝。",
+    "installFailedError": "自動更新安裝未完成或被中斷。請點擊「重試更新」，或前往下載頁面手動下載最新安裝包。",
     "progress": "已下載 {{transferred}} / {{total}}",
     "status": {
       "downloading": "正在下載更新...",

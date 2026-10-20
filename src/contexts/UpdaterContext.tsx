@@ -1,8 +1,7 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-// Define types based on what we exposed
 export type UpdaterStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'installing' | 'error';
+export type UpdaterErrorCode = 'disk_full' | 'network' | 'install_failed' | 'unknown';
 
 export interface UpdaterProgress {
     percent: number;
@@ -21,21 +20,26 @@ export interface UpdateInfo {
     releaseDate: string;
 }
 
-interface UpdaterState {
+export interface UpdaterState {
     status: UpdaterStatus;
     updateInfo: UpdateInfo | null;
     progress: UpdaterProgress | null;
     error: string | null;
+    errorCode?: UpdaterErrorCode | null;
     lastCheckTime: number | null;
 }
 
 interface UpdaterContextType extends UpdaterState {
+    isPopupOpen: boolean;
+    openUpdatePopup: () => void;
+    closeUpdatePopup: () => void;
     checkForUpdates: (manual?: boolean) => void;
     downloadUpdate: () => void;
     installUpdate: () => void;
     openReleasePage: () => void;
     ignoreVersion: (version: string) => void;
-    _debugSetState?: (state: Partial<UpdaterState>) => void;
+    _debugSetState?: (state: Partial<UpdaterState> & { simulatedOutcome?: 'success' | 'fail' }) => void;
+    _debugSimulateFlow?: (outcome: 'success' | 'fail', version?: string) => void;
 }
 
 const UpdaterContext = createContext<UpdaterContextType | null>(null);
@@ -46,57 +50,86 @@ export const UpdaterProvider: React.FC<{ children: React.ReactNode }> = ({ child
         updateInfo: null,
         progress: null,
         error: null,
+        errorCode: null,
         lastCheckTime: null,
     });
+    const [isPopupOpen, setIsPopupOpen] = useState(false);
 
     useEffect(() => {
-        // Initial fetch
-        if (window.khelper?.updater) {
-            window.khelper.updater.getStatus().then(setState);
+        if (!window.khelper?.updater) return;
 
-            // Subscribe
-            const unsub = window.khelper.updater.onStatus((newState: UpdaterState) => {
-                setState(newState);
-            });
-            return unsub;
-        }
+        window.khelper.updater.getStatus().then((initialState: UpdaterState) => {
+            if (initialState) {
+                setState(initialState);
+                if (initialState.status === 'error' && initialState.errorCode === 'install_failed') {
+                    setIsPopupOpen(true);
+                }
+            }
+        });
+
+        const unsubStatus = window.khelper.updater.onStatus((newState: UpdaterState) => {
+            setState(newState);
+        });
+
+        const unsubPopup = window.khelper.updater.onOpenPopup?.(() => {
+            setIsPopupOpen(true);
+        });
+
+        return () => {
+            unsubStatus?.();
+            unsubPopup?.();
+        };
     }, []);
 
+    const openUpdatePopup = () => setIsPopupOpen(true);
+    const closeUpdatePopup = () => setIsPopupOpen(false);
+
     const checkForUpdates = async () => {
-        window.khelper?.updater.check();
+        await window.khelper?.updater.check();
     };
 
     const openReleasePage = async () => {
-        window.khelper?.updater.openReleasePage();
+        await window.khelper?.updater.openReleasePage();
     };
 
     const downloadUpdate = async () => {
-        window.khelper?.updater.download();
+        await window.khelper?.updater.download();
     };
 
     const installUpdate = async () => {
-        window.khelper?.updater.install();
+        await window.khelper?.updater.install();
     };
 
     const ignoreVersion = async (version: string) => {
-        window.khelper?.updater.ignore(version);
+        await window.khelper?.updater.ignore(version);
     };
 
-    const _debugSetState = (newState: Partial<UpdaterState>) => {
+    const _debugSetState = (newState: Partial<UpdaterState> & { simulatedOutcome?: 'success' | 'fail' }) => {
         if (import.meta.env.DEV) {
-            setState(prev => ({ ...prev, ...newState }));
+            const { simulatedOutcome, ...statePatch } = newState;
+            setState(prev => ({ ...prev, ...statePatch }));
+            void window.khelper?.updater.debugSetState?.(newState);
+        }
+    };
+
+    const _debugSimulateFlow = (outcome: 'success' | 'fail', version?: string) => {
+        if (import.meta.env.DEV) {
+            void window.khelper?.updater.debugSimulateFlow?.({ outcome, version });
         }
     };
 
     return (
         <UpdaterContext.Provider value={{
             ...state,
+            isPopupOpen,
+            openUpdatePopup,
+            closeUpdatePopup,
             checkForUpdates,
             downloadUpdate,
             installUpdate,
             openReleasePage,
             ignoreVersion,
-            ...(import.meta.env.DEV ? { _debugSetState } : {})
+            ...(import.meta.env.DEV ? { _debugSetState, _debugSimulateFlow } : {}),
         }}>
             {children}
         </UpdaterContext.Provider>

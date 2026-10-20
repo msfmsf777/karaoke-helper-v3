@@ -10,9 +10,14 @@ const installerConfig = fs.readFileSync(path.join(root, 'electron-builder.config
 const installerInclude = fs.readFileSync(path.join(root, 'build', 'installer.nsh'), 'utf8');
 
 describe('Windows in-app update installer handoff', () => {
-  it('opens an update progress window instead of running the installer silently', () => {
-    assert.match(updaterSource, /autoUpdater\.quitAndInstall\(false\)/);
-    assert.doesNotMatch(updaterSource, /autoUpdater\.quitAndInstall\(true,\s*true\)/);
+  it('launches the custom update splash screen and runs the NSIS installer silently with auto-restart', () => {
+    assert.match(updaterSource, /launchUpdateSplash\(/);
+    assert.match(updaterSource, /autoUpdater\.quitAndInstall\(true,\s*true\)/);
+    assert.doesNotMatch(updaterSource, /autoUpdater\.quitAndInstall\(false\)/);
+  });
+
+  it('pre-downloads updates silently in the background when an update is available', () => {
+    assert.match(updaterSource, /autoUpdater\.on\('update-available'[\s\S]*void downloadUpdate\(\)/);
   });
 
   it('prompts for installer language only for interactive installs', () => {
@@ -24,6 +29,10 @@ describe('Windows in-app update installer handoff', () => {
   });
 
   it('relaunches automatically when an update-only installer finishes', () => {
+    assert.match(
+      installerInclude,
+      /!macro customInstall[\s\S]*\$\{If\} \$\{isUpdated\}[\s\S]*StrCpy \$launchLink "\$appExe"/,
+    );
     assert.match(
       installerInclude,
       /!macro customFinishPage[\s\S]*\$\{If\} \$\{isUpdated\}[\s\S]*Call KHelperLaunchInstalledApp[\s\S]*Quit[\s\S]*!insertmacro MUI_PAGE_FINISH[\s\S]*!macroend/,

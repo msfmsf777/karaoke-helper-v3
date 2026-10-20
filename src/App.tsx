@@ -32,6 +32,7 @@ const SearchResultsView = lazy(() => import('./components/SearchResultsView'));
 const AboutPopup = lazy(() => import('./components/AboutPopup'));
 import MiniPlayerSync from './components/MiniPlayer/MiniPlayerSync';
 import AnalyticsConsentModal from './components/AnalyticsConsentModal';
+import UpdatePopup from './components/UpdatePopup';
 
 type View = 'library' | 'lyrics' | 'stream' | 'favorites' | 'history' | 'download-manager' | 'settings' | string;
 
@@ -63,10 +64,13 @@ function AppContent() {
   const { hotkeys } = useUserData();
   const [focusSearchRequest, setFocusSearchRequest] = useState(0);
   const [updatedNoticeVersion, setUpdatedNoticeVersion] = useState<string | null>(null);
+  const [updatedNoticeNotes, setUpdatedNoticeNotes] = useState<string | Array<{ note?: string }> | undefined>(undefined);
+  const [changelogModal, setChangelogModal] = useState<{ version: string; fallbackNotes?: string | Array<{ note?: string }> } | null>(null);
 
   useEffect(() => {
     const unsubscribe = window.khelper?.updater?.onUpdatedNotice?.((data) => {
       setUpdatedNoticeVersion(data.version);
+      setUpdatedNoticeNotes(data.releaseNotes);
     });
     return () => {
       unsubscribe?.();
@@ -564,6 +568,12 @@ function AppContent() {
         )}
       </Suspense>
       <AnalyticsConsentModal />
+      {changelogModal && (
+        <UpdatePopup
+          releaseNotesOnly={changelogModal}
+          onClose={() => setChangelogModal(null)}
+        />
+      )}
 
       {updatedNoticeVersion && (
         <div className="fixed bottom-24 right-6 z-50 flex items-center gap-3 bg-emerald-700/95 text-white px-4 py-3 rounded-xl shadow-2xl border border-emerald-400/40 backdrop-blur-md text-sm font-medium">
@@ -571,7 +581,8 @@ function AppContent() {
           <button
             onClick={() => {
               setUpdatedNoticeVersion(null);
-              setShowAboutPopup(true);
+              setChangelogModal({ version: updatedNoticeVersion, fallbackNotes: updatedNoticeNotes });
+              setUpdatedNoticeVersion(null);
             }}
             className="px-2.5 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-semibold transition-colors"
           >

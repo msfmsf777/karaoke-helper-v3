@@ -197,7 +197,8 @@
       "check": "检查更新",
       "checking": "正在检查...",
       "neverChecked": "从未检查过",
-      "lastChecked": "最后检查：{{time}}"
+      "lastChecked": "最后检查：{{time}}",
+      "upToDate": "已是最新版本"
     },
     "overlay": {
       "unsavedLeaveConfirm": "实时覆盖模板有未保存的更改。要离开编辑器吗？"
@@ -288,7 +289,9 @@
     "restart": "重启并更新",
     "retry": "重试更新",
     "openDownloadPage": "打开下载页面",
-    "readyToRestart": "更新已下载完成，重启 KHelper 后即可安装。",
+    "readyToRestart": "新版本已准备就绪，点击“立即更新”将自动安装并重启 KHelper。",
+    "diskFullError": "磁盘空间不足，无法下载并安装更新。请清理磁盘空间后重试，或前往下载页面手动安装。",
+    "installFailedError": "自动更新安装未完成或被中断。请点击“重试更新”，或前往下载页面手动下载最新安装包。",
     "progress": "已下载 {{transferred}} / {{total}}",
     "status": {
       "downloading": "正在下载更新...",

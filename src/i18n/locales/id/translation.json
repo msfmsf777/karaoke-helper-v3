@@ -144,7 +144,8 @@
       "check": "Periksa Pembaruan",
       "checking": "Memeriksa...",
       "neverChecked": "Tidak pernah diperiksa",
-      "lastChecked": "Terakhir diperiksa: {{time}}"
+      "lastChecked": "Terakhir diperiksa: {{time}}",
+      "upToDate": "Sudah versi terbaru"
     },
     "overlay": {
       "unsavedLeaveConfirm": "Templat hamparan langsung memiliki perubahan yang belum disimpan. Keluar dari editor?"
@@ -288,7 +289,9 @@
     "restart": "Mulai ulang untuk update",
     "retry": "Coba Perbarui Lagi",
     "openDownloadPage": "Buka Halaman Unduhan",
-    "readyToRestart": "Pembaruan selesai diunduh. Mulai ulang KHelper untuk memasangnya.",
+    "readyToRestart": "Pembaruan siap dipasang. Klik Perbarui Sekarang untuk memasang dan memulai ulang secara otomatis.",
+    "diskFullError": "Ruang disk tidak mencukupi untuk mengunduh dan memasang pembaruan. Kosongkan ruang disk lalu coba lagi, atau unduh secara manual.",
+    "installFailedError": "Pemasangan pembaruan otomatis gagal atau terhenti. Klik Coba Perbarui Lagi, atau buka halaman unduhan untuk memasang secara manual.",
     "progress": "{{transferred}} / {{total}} diunduh",
     "status": {
       "downloading": "Mengunduh pembaruan...",

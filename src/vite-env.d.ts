@@ -167,7 +167,10 @@ interface Window {
       ignore: (version: string) => Promise<void>;
       getStatus: () => Promise<any>;
       onStatus: (callback: (status: any) => void) => () => void;
-      onUpdatedNotice?: (callback: (data: { version: string }) => void) => () => void;
+      onUpdatedNotice?: (callback: (data: { version: string; releaseNotes?: string | Array<{ note?: string }> }) => void) => () => void;
+      onOpenPopup?: (callback: () => void) => () => void;
+      debugSetState?: (payload: any) => Promise<void>;
+      debugSimulateFlow?: (payload: { outcome: 'success' | 'fail'; version?: string }) => Promise<void>;
     };
     hotkeys: {
       getStatus: () => Promise<import('../shared/hotkeys').HotkeyRegistrationStatus>;
