@@ -8,14 +8,14 @@
 **KHelper V3** 是一款專為 **VTuber** 與 **實況主** 打造的 K 歌直播輔助工具。  
 整合歌曲管理、YouTube 線上播放、AI 人聲分離、日文歌詞輔助與直播場景整合，讓你的歌回直播更穩、更順、更專業。
 
-> 🚀 **Official Release 正式版本 (v3.4.1)** 
+> 🚀 **Official Release 最新正式版本** 
 > 歡迎自由下載使用與回報問題，協助我們把 KHelper V3 變得更好！
 
 > ⚠️ 目前僅支援 **Windows (64-bit)**，其他平台暫不支援。
 
 > 🔒 KHelper 會在應用程式內詢問是否允許選用的隱私保護使用統計；不允許不會影響任何功能。詳情請見 [隱私權聲明 / Privacy Notice](./PRIVACY.md)。
 
-【[直接下載連結 (v3.4.1)](https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v3.4.1/KHelperV3-Setup-3.4.1.exe)】
+【[下載最新版本 (Download Latest Version)](https://github.com/msfmsf777/karaoke-helper-v3/releases/latest)】
 
 
 ----------
@@ -38,13 +38,21 @@
 
 -  **列表搜尋 / 篩選 / 排序**：歌曲庫、我的最愛、最近播放與自訂歌單皆支援快速搜尋、篩選與排序。
 
+-  **自訂儲存目錄**：歌曲庫、分離音檔與 AI 模型支援自訂儲存路徑，可自由存放於其他硬碟槽（不再受限於系統 C 槽 AppData 空間）。
+
 ### 🤖 AI 音訊處理 (Powered by UVR)
 
 -  **人聲分離**：內建 AI 模型，可將原曲自動分離為「人聲」與「伴奏」軌道。
 
+-  **GPU 硬體加速分離**：支援 NVIDIA 顯示卡（包含最新 RTX 50 系列 Blackwell 及 RTX 20/30/40 等架構）CUDA 加速，顯著縮短高品質人聲分離時間；內建驅動檢測與防禦性 CPU 自動降級保護。
+
 -  **獨立音控**：直播時可獨立調整伴奏與人聲的音量，實現即時導唱/消音功能。
 
 -  **雙輸出路由**：支援將音樂分別輸出至「直播串流 (Stream)」與「監聽耳機 (Monitor)」，觀眾只能聽到伴奏，而主播則可以聽到伴奏 + 人聲導唱。
+
+-  **LUFS 音量標準化平衡**：自動校準歌曲之間的感知響度，避免切歌時音量忽大忽小，並提供透明安全防爆音限制器。
+
+-  **應用內非破壞性修剪 (Trim)**：直接在軟體內編輯歌曲的開始與結束時間，並支援即時試聽預覽。
 
 ### 📝 強大的歌詞系統
 
@@ -54,7 +62,7 @@
 
 -  **敲擊對齊 (Tap Sync)**：直覺的敲擊模式，輕鬆製作精準的 LRC 動態滾動歌詞。
 
--  **日文輔助**：自動為日文歌詞標註平假名 (Furigana) 與羅馬拼音 (Romaji)。
+-  **多語言讀音標示輔助 (Ruby Text)**：除日文振假名 (Furigana) 與羅馬拼音 (Romaji) 外，全面支援中文漢語拼音與韓文羅馬拼音輔助。
 
 -  **OBS 同步顯示**：實況模式中的日文輔助顯示狀態可同步至 OBS / Browser Source 歌詞畫面。
 
@@ -63,6 +71,8 @@
 -  **直播界面 (Stream View)**：簡潔的直播專屬界面，隱藏不必要的控制項，專注於演唱。
 
 -  **迷你播放器 (Mini Player)**：懸浮的小型控制台，方便在直播時快速控制歌曲播放而無需占用大量空間。
+
+-  **音域分析與唱法輔助**：分析歌曲音高範圍，結合歌手音域設定提供鋼琴鍵 HUD 與智慧升降 Key 推薦。
 
 -  **快速播放佇列**：迷你播放器可查看播放佇列並快速切換歌曲。
 
@@ -78,17 +88,11 @@
 
 ### 一般使用者
 
-1.  前往 GitHub Releases或使用【[最新版本 (v3.4.1) 下載連結](https://github.com/msfmsf777/karaoke-helper-v3/releases/download/v3.4.1/KHelperV3-Setup-3.4.1.exe)】：  
-    👉 `https://github.com/msfmsf777/karaoke-helper-v3/releases`
+1.  前往【[GitHub 最新版本發布頁 (Releases/Latest)](https://github.com/msfmsf777/karaoke-helper-v3/releases/latest)】下載最新的 Windows 安裝檔（例如 `KHelperV3-Setup-*.exe`）。
     
-2.  找到想要的版本。
+2.  執行安裝程式並依照步驟完成安裝。**若遇到 Windows SmartScreen（未簽章），點「更多資訊 → 仍要執行」**。
     
-3.  下載 Windows 安裝檔，例如：  
-    `KHelperV3-Setup-3.4.1.exe`
-    
-4.  執行安裝程式並依照步驟完成安裝。**若遇到 Windows SmartScreen（未簽章），點「更多資訊 → 仍要執行」**。
-    
-5.  安裝完成後，可以從桌面捷徑或開始選單啟動 **KHelper V3**。
+3.  安裝完成後，可以從桌面捷徑或開始選單啟動 **KHelper V3**。
     
 
 ----------
@@ -106,17 +110,14 @@
     -   或直接搜尋 **YouTube 線上結果** 進行播放、加入歌單，或下載後加入歌庫。
         
     -   若已經有 YouTube 連結，也可以在新增歌曲精靈中貼上連結，讓 KHelper 自動下載音訊並加入歌庫。
-    - 注：測試版本所有檔案只會存放在系統硬碟Appdata裏。由於分離以及下載品質都為直播打造（偏高），可能會占用大量儲存空間。當前不支持調整儲存位置，後續版本可能會調整（一首~3分鐘歌曲原檔 + 分離音檔總計約~30MB空間）。
+    -   注：歌曲與 AI 分離模型預設存放在 AppData 目錄。若硬碟空間有限，可隨時在「設定 → 歌曲庫儲存空間」中一鍵遷移至其他硬碟分區（如 D: 或 E: 槽）。
         
 2.  **AI 人聲分離 (可選)**
     
     -   選擇歌曲後，點選「分離」：
         
         -   快速 / 標準 / 高品質 三種模式（可在設定中調整，也可以右鍵歌曲選擇分離品質）。
-        -   分離速度（實際根據CPU效能而定，由於兼容性目前沒有GPU選項，以下是在i5-12400F CPU環境下**分離1分鐘歌曲**的估計值）：
-            -   快速：約50秒
-            -   標準：約1分鐘
-            -   高品質：約6分鐘
+        -   分離速度：支援 NVIDIA GPU 硬體加速與 CPU 運算，高品質模式下具備相容 GPU 分離一首 3–5 分鐘歌曲僅需約 15–30 秒；若使用 CPU 分離約需數分鐘。
             
     -   完成後播放將自動使用分離音檔，若分離時正在播放原曲，完成後請重新載入歌曲。
         
@@ -237,7 +238,9 @@
     -   **Python 3.10** (AI & Audio Processing Runtime)
         
 -   **Audio / AI Core**
+    -   **PyTorch** & **CUDA** (GPU Vocal Separation Acceleration)
     -   **UVR (Ultimate Vocal Remover)** / **MDX-Net** / **Demucs** (Vocal Separation)
+    -   **SoundTouchJS** (Audio Pitch & Tempo Scaling)
     -   **youtubei.js** (YouTube online search / streaming metadata)
     -   **yt-dlp** (Media Downloader)
     -   **FFmpeg** (Audio Conversion & Processing)
@@ -251,8 +254,12 @@
 
 KHelper V3 的誕生離不開這些強大開源專案與社群的貢獻：
 
+*   **[PyTorch](https://pytorch.org/)**:  
+    提供強大且高效的深度學習與 CUDA 張量運算框架。
 *   **[Ultimate Vocal Remover](https://github.com/Anjok07/ultimatevocalremovergui)** & **[audio-separator](https://github.com/karaokenerds/python-audio-separator)**:  
     提供世界頂尖的 AI 人聲分離核心與模型參考。
+*   **[SoundTouch](https://soundtouch.surina.net/)** / **[SoundTouchJS](https://github.com/cutterbl/SoundTouchJS)**:  
+    精準的即時音訊變速與變調處理庫。
 *   **[yt-dlp](https://github.com/yt-dlp/yt-dlp)**:  
     強大且持續更新的媒體下載工具。
 *   **[youtubei.js](https://github.com/LuanRT/YouTube.js)**:  
