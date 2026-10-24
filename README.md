@@ -4,6 +4,11 @@
 [![GitHub all releases](https://img.shields.io/github/downloads/msfmsf777/karaoke-helper-v3/total)](https://github.com/msfmsf777/karaoke-helper-v3/releases)
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 [![GitHub license](https://img.shields.io/github/license/msfmsf777/karaoke-helper-v3)](https://github.com/msfmsf777/karaoke-helper-v3/blob/main/LICENSE)
+[![Website](https://img.shields.io/badge/Website-khelper.live-8b5cf6?style=flat&logo=google-chrome&logoColor=white)](https://khelper.live/)
+[![Guides](https://img.shields.io/badge/Guides-khelper.live%2Fguides-3b82f6?style=flat&logo=gitbook&logoColor=white)](https://khelper.live/guides/)
+[![Twitter Follow](https://img.shields.io/badge/Twitter-@msfmsf777-1DA1F2?style=flat&logo=x&logoColor=white)](https://x.com/msfmsf777)
+
+🌐 **Official Website & Live Demo**: [https://khelper.live/](https://khelper.live/) &nbsp;|&nbsp; 📚 **OBS & Karaoke Setup Guides**: [https://khelper.live/guides/](https://khelper.live/guides/) &nbsp;|&nbsp; 🐦 **Author X/Twitter**: [https://x.com/msfmsf777](https://x.com/msfmsf777)
 
 **KHelper V3** 是一款專為 **VTuber** 與 **實況主** 打造的 K 歌直播輔助工具。  
 整合歌曲管理、YouTube 線上播放、AI 人聲分離、日文歌詞輔助與直播場景整合，讓你的歌回直播更穩、更順、更專業。
@@ -204,6 +209,25 @@
 1.  在 OBS 中的音效混音器中點下方齒輪按鈕 (進階音訊屬性)，將剛剛新增的 `Audio Input Capture` 來源的音訊檢測設定爲「監測和輸出」。
 
 2.  在 KHelperV3 設定中開始「輸出同步偏移」調整，並根據界面提示進行調整。完成後儲存。**推薦每次直播前再次確認同步偏移**。
+
+----------
+
+## 🌐 Official Website, OBS Setup Guides & Technical Architecture (官方網站與歌回技術指南)
+
+**KHelper V3 (Karaoke Helper V3)** is a 100% free, open-source (MIT) Windows 10/11 all-in-one VTuber singing stream & karaoke console combining offline local AI vocal separation (UVR MDX-Net & Demucs with NVIDIA CUDA 12.6 GPU & Intel i5 CPU ONNX engines), zero-leakage dual-track audio routing via VB-CABLE (private headphone guide vocals vs clean OBS broadcast), `-14 LUFS` ITU-R BS.1770-4 loudness normalization, non-destructive waveform trimming, acoustic YIN vocal range key transpose, and 12 OBS Browser Source dynamic lyric overlays with automatic Japanese Furigana (`<ruby>`), Romaji, Korean RR, and Chinese Pinyin.
+
+**白芙妮 K 歌小幫手 V3 (KHelper V3)** 是專為 VTuber 與實況主打造的一站式開源 (MIT) 歌回直播控制台。為協助創作者克服直播串音、伴奏音量忽大忽小、以及歌詞讀音標示等技術挑戰，我們在官方技術網站提供深度技術架構解析與全套 OBS 歌回實戰指南：
+
+| 技術指南主題 / Technical Guide | 核心技術架構 / Core Architecture & Implementation | 官方深度教學連結 / Canonical Guide Link |
+| :--- | :--- | :--- |
+| **官方網站與即時控制台**<br>Official Console & Live Preview | 完整功能特性導覽、最新 Windows 安裝檔載點與 Web 在線預覽模擬器 | 🔗 [KHelper V3 Official Console & Live Preview (`khelper.live`)](https://khelper.live/) |
+| **歌回直播百科技術總目錄**<br>Singing Stream Encyclopedia Hub | VTuber 歌回軟硬體配置、OBS 場景架構、音訊路由與常見故障排除全指南 | 📖 [Complete VTuber Karaoke & OBS Singing Stream Encyclopedia Hub (`/guides/`)](https://khelper.live/guides/) |
+| **雙軌音訊路由與私密導唱**<br>Dual-Track Routing & VB-CABLE | 徹底杜絕串音！VB-CABLE 虛擬音源分離，主播耳機獨享人聲導唱，OBS 僅收純淨伴奏 | 🎧 [Dual-Track Audio Routing & VB-CABLE Private Guide Vocals in OBS](https://khelper.live/guides/dual-track-audio-routing/) |
+| **本地 AI 人聲分離技術**<br>Local AI Vocal Separation on Windows | 支援 UVR MDX-Net & Demucs 架構，深度整合 NVIDIA CUDA 12.6 GPU 加速與 CPU 自動降級機制 | 🤖 [Local AI Vocal Separation on Windows: UVR MDX-Net & Demucs on GPU & No-GPU Laptops](https://khelper.live/guides/uvr-ai-vocal-separation-windows/) |
+| **OBS 動態歌詞與多語言注音**<br>OBS Dynamic Lyrics & Furigana | 12 款透明背景 Browser Source 疊加層，支援日文振假名 (`<ruby>`)、羅馬拼音、韓文 RR 與漢語拼音 | 📝 [OBS Dynamic Lyrics Overlay with Automatic Japanese Furigana, Romaji, Korean RR & Pinyin](https://khelper.live/guides/obs-dynamic-lyrics-furigana/) |
+| **-14 LUFS 音量標準化平衡**<br>LUFS Loudness Normalization in OBS | 遵循 ITU-R BS.1770-4 廣播標準與透明安全防爆音限制器，自動平抑歌曲響度差異 | 🔊 [How to Normalize Karaoke Audio Loudness to -14 LUFS in OBS Without Clipping (`ITU-R BS.1770-4`)](https://khelper.live/guides/lufs-loudness-normalization-obs/) |
+| **非破壞性波形修剪與 LRC 對齊**<br>Waveform Trimming & Lyric Sync | 應用內視覺化音訊波形裁剪、毫秒級試聽預覽與直覺式敲擊打點 (Tap Sync) 精準對齊歌詞 | ✂️ [Non-Destructive Karaoke Audio Waveform Trimming & Synchronized LRC Alignment](https://khelper.live/guides/audio-trimming-lyric-sync/) |
+| **YIN 音高偵測與智慧升降 Key**<br>Acoustic YIN Vocal Range Transpose | 自適應 YIN 演算法實時音高分析，搭配鋼琴鍵 HUD 與個人化演唱最佳調性推薦 | 🎼 [Acoustic YIN Vocal Range Detection & Optimal Key Transposition for Singers](https://khelper.live/guides/vocal-range-key-recommendation/) |
 
 ----------
 
